@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<!--[if lte IE 9]><html class="no-js lt-ie10" lang="en"><![endif]-->
+<!--[if gt IE 9]><!-->
+<html class="no-js" lang="en">
+<!--<![endif]-->
+<html data-category-scroll="true" data-product-reviews="true" data-enable-vol-cart="true">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+
+<script type="text/javascript" src="/a/j/product_details.js"></script>
+				
+<script type="text/javascript" src="/a/j/vzoom.js"></script>
+<link type="text/css" rel="stylesheet" href="/a/c/vzoom.css"/>
+				<title>Toughbuilt 24-in Lighted Magnetic Box Level</title>
+<meta name="description" content="ToughBuilt&#8217;s 24-in Lighted Magnetic Box Level is designed to meet the rigorous standards of industry Pros. The illuminating vials are built for sustained low-light clarity and all-day reliable accuracy where it counts." />
+<meta name="keywords" content="Fiber, Telecom, Aerial, OSP, Underground, Audio/Video, Burial, Utility, Electrical, Broadband, Low Voltage" />
+<meta property="og:title" content="Toughbuilt 24-in Lighted Magnetic Box Level" />
+<meta property="og:type" content="product" />
+<meta property="og:description" content="ToughBuilt’s 24-in Lighted Magnetic Box Level is designed to meet the rigorous standards of industry Pros. The illuminating vials are built for sustained low-light clarity and all-day reliable accuracy where it counts." />
+<meta property="og:site_name" content="TechToolSupply.com" />
+<meta property="og:url" content="https://www.techtoolsupply.com/product-p/tb-h2-l-24lh-m-6bes.htm" />
+<meta property="og:image" content="https://www.techtoolsupply.com/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-2T.jpg" />
+<meta name="robots" content="index, follow" />
+<meta name="GOOGLEBOT" content="INDEX, FOLLOW" />
+ <meta name="globalsign-domain-verification" content="nnY33GlMxQrIkeYtzNdgEvDUxmqzyQ0Mk485SmvPk9" /> 
+
+<link rel="canonical" href="https://www.techtoolsupply.com/Toughbuilt-24in-Lighted-Magnetic-Box-Level-p/tb-h2-l-24lh-m-6bes.htm" />
+		
+<link type="text/css" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.4/themes/base/jquery-ui.css" rel="stylesheet" />
+<link type="text/css" href="/a/c/default.css" rel="stylesheet" />
+
+
+
+
+
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script type="text/javascript" src="/a/j/jquery-migrate-merged.js"></script>
+<script type="text/javascript">
+	jQuery.curCSS = function(element, prop, val) {
+		return jQuery(element).css(prop, val);
+	};
+</script>
+
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.4/jquery-ui.min.js"></script>
+
+
+
+
+<script type="text/javascript">
+	var Config_VCompare_MaxProducts = '3';
+	var PageText_783 = "Compare";
+	var PageText_784 = "Change Selections";
+	var PageText_785 = "You've attempted to select more than {0} items. Click {1} to continue with your initial {0} items or {2} to change your selections.";
+	var PageText_819 = "Product Comparison";
+    var PageText_822 = "Compare";
+    var PageText_840 = "Create Password";
+    var PageText_841 = "Retype Password";
+    var PageText_842 = "Added to cart";
+    var PageText_843 = "Subtotal";
+    var PageText_844 = "items in cart";
+</script>
+<script type="text/javascript" src="/a/j/volusion.js?42381dfd7acd11bdd45de802dc60de135570ee59"></script>
+<script type="text/javascript">
+    (function ($) {
+        volusion.ready(function () {
+            if (volusion.cart.isObservingCount()) {
+                var ts = new Date().getTime();
+                $.getJSON('/ajaxcart.asp?Action=itemCount&cachebust=' + ts, function (data) {
+                    var quantityTotal = 0;
+                    $.each(data.Products, function (key, val) {
+                        if (val.IsProduct === 'Y') {
+                            quantityTotal += parseInt(val.Quantity);
+                        } else if (val.IsAccessory === 'Y') {
+                            quantityTotal += parseInt(val.Quantity);
+                        }
+                    });
+                    quantityTotal = quantityTotal || '0';
+                    volusion.cart.itemCount(quantityTotal);
+                });
+            }
+        });
+    } (jQuery));
+</script>
+<link type="text/css" rel="stylesheet" href="/a/contentbuilder/assets/default/content.css"/>
+<script type="text/javascript" src="/a/j/paypal-rest-default-buttons.js"></script>
+
+	<script type="text/javascript" src="/a/j/soft_add.js"></script>
+
+	<!-- Support for multi-product add to soft cart missing from product details page and possibly others -->
+	<script type="text/javascript" src="/a/j/soft_add_mult.js"></script>
+
+
+<link type="text/css" rel="stylesheet" href="/a/c/soft_add.css"/>
+<script type="text/javascript">
+	var global_Config_EnableDisplayOptionProducts = 'False';
+	var global_Config_ForceSecureShoppingCartPage = false;
+	var global_PageText_OtherItemsAdded = '(All other items have been added to the cart)';
+	var Config_EnableSoftAddToCart = true;
+</script>
+
+	<script type="text/javascript" src="/a/j/javascripts.js?6_5_42381dfd7acd11bdd45de802dc60de135570ee59"></script>
+
+<script type="text/javascript">
+	var Config_Search_Auto_Complete = false;
+</script>
+
+<script type="text/javascript">
+/* New Checkout JS */
+
+if (!String.prototype.includes) {
+    String.prototype.includes = function() {
+        'use strict';
+        return String.prototype.indexOf.apply(this, arguments) !== -1;
+    };
+}
+
+if (!Array.prototype.includes) {
+  Object.defineProperty(Array.prototype, "includes", {
+    enumerable: false,
+    value: function(obj) {
+        var newArr = this.filter(function(el) {
+          return el == obj;
+        });
+        return newArr.length > 0;
+      }
+  });
+}
+
+var whichCheckoutToGoTo = "new"
+function setWhichCheckoutToGoTo(choice) {
+	whichCheckoutToGoTo = choice
+}
+
+function goToCheckout() {
+	var IsAGift = $('#IsAGift').val();
+	if (whichCheckoutToGoTo === "new") {
+		proceedToNewCheckout(IsAGift)
+	} else {
+		proceedToOldCheckout()
+	}
+}
+
+function proceedToOldCheckout() {
+  window.location.href = "/one-page-checkout.asp";
+}
+
+function proceedToNewCheckout(IsAGift) {
+    if (IsAGift == "Y") {
+		window.location.href = "/GiftOptions.asp";
+    } else {
+		window.location.href = "/checkout/?text=656565&bg=FFFFFF&font=Lato%2C+ui%2Dsans%2Dserif%2C+system%2Dui%2C+%2Dapple%2Dsystem%2C+BlinkMacSystemFont%2C+Segoe+UI%2C+Roboto%2C+Helvetica+Neue%2C+Arial";
+    }
+}
+
+function linkCheckoutButtonsToNewCheckout() {
+	/* Replace links to one-page-checkout.asp to instead open new checkout modal */
+	var anchors = document.getElementsByTagName("a");
+	for (var i = 0; i < anchors.length; i++) {
+		if (anchors[i].href.includes("/one-page-checkout.asp")) {
+			anchors[i].href = "javascript:void(0);"
+			anchors[i].setAttribute("onclick","goToCheckout()")
+		}
+	}
+	/* Also look for the patterns we see for proceed to checkout buttons on shoppingcart.asp */
+	var inputs = document.getElementsByTagName("input");
+	for (var i = 0; i < inputs.length; i++) {
+		if (inputs[i].name.includes("btn_checkout_guest")) {
+			inputs[i].setAttribute("onclick","goToCheckout()")
+		}
+	}
+
+	if (document.Proceed_To_Checkout_Form) {
+		document.Proceed_To_Checkout_Form.action = "javascript:void(0);"
+	}
+}
+document.addEventListener("DOMContentLoaded", linkCheckoutButtonsToNewCheckout); /* this one runs super fast right away on page load */
+window.addEventListener("load", linkCheckoutButtonsToNewCheckout); /* this one is important to run after credo template does its replacements */
+</script>
+<style type="text/css">
+/* New Checkout CSS */
+
+.new-secure-checkout-modal {
+  background: linear-gradient(45deg, rgba(0, 0, 0, 0.5), rgba(54, 54, 54, 0.5));
+  backdrop-filter: blur(3px);
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1000; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  text-align: center;
+}
+
+.new-secure-checkout-modal-content {
+  margin: auto;
+  width: 100%;
+  height: 100%;
+  background: none;
+}
+
+.new-secure-checkout-iframe {
+  height:calc(100vh - 4px);
+  width:calc(100vw - 4px);
+  box-sizing: border-box;
+}
+</style>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-1399167-37"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-1399167-37');
+</script>
+
+    <script src="https://www.paypal.com/sdk/js?client-id=AeDWFs5RFH33pB3skuP1M57jTWgMHSuKFMxJtkMddpYsR7SSEBanfqI1RN7LlRaQ_Jmjxb8-L_1dbIJW&merchant-id=HSPUMEQRX9938&currency=USD&commit=false&intent=capture&disable-funding=card,credit&components=buttons,hosted-fields&enable-funding=venmo"></script>
+
+
+    <title>Tech Tool Supply Cable and Satellite Tools</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+    <meta name="google-site-verification" content="yA6z08EtQrlZ10w264h4U-9xbr07dxvUHNPy87HcfVI">
+    <meta name="msvalidate.01" content="749C27B2D967A649966AA7BD3190ED98" />
+    <meta name="p:domain_verify" content="f63306f0be2fa16e76abf91bbdbbdeee" />
+
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta id="v65-layout-mode" data-cart="storedot" data-checkout="storedot" data-use-simplified-checkout="true">
+    <!-- LOGO UPLOAD TOOL *** SET HEIGHT & WIDTH *** -->
+    <meta id="v65-logo-dimensions" data-width="200" data-height="80">
+    <!-- TEMPLATE -->
+    <link href="/v/vspfiles/templates/techtoolsupply/css/template.css?v=2" rel="stylesheet">
+    
+    <style type="text/css">@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/cyrillic-ext/wght/normal.woff2);unicode-range:U+0460-052F,U+1C80-1C88,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/latin/wght/normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/latin-ext/wght/normal.woff2);unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20CF,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/vietnamese/wght/normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/cyrillic/wght/normal.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/greek-ext/wght/normal.woff2);unicode-range:U+1F00-1FFF;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/greek/wght/normal.woff2);unicode-range:U+0370-03FF;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/vietnamese/wght/normal.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/greek/wght/normal.woff2);unicode-range:U+0370-03FF;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/latin/wght/normal.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/cyrillic/wght/normal.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/greek-ext/wght/normal.woff2);unicode-range:U+1F00-1FFF;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/cyrillic-ext/wght/normal.woff2);unicode-range:U+0460-052F,U+1C80-1C88,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:normal;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/latin-ext/wght/normal.woff2);unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20CF,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/latin/wght/italic.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/cyrillic-ext/wght/italic.woff2);unicode-range:U+0460-052F,U+1C80-1C88,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/greek/wght/italic.woff2);unicode-range:U+0370-03FF;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/greek-ext/wght/italic.woff2);unicode-range:U+1F00-1FFF;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/cyrillic/wght/italic.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/vietnamese/wght/italic.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:400;src:url(/cf-fonts/v/roboto-condensed/5.0.14/latin-ext/wght/italic.woff2);unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20CF,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/vietnamese/wght/italic.woff2);unicode-range:U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+0300-0301,U+0303-0304,U+0308-0309,U+0323,U+0329,U+1EA0-1EF9,U+20AB;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/greek-ext/wght/italic.woff2);unicode-range:U+1F00-1FFF;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/cyrillic/wght/italic.woff2);unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/cyrillic-ext/wght/italic.woff2);unicode-range:U+0460-052F,U+1C80-1C88,U+20B4,U+2DE0-2DFF,U+A640-A69F,U+FE2E-FE2F;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/latin/wght/italic.woff2);unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/latin-ext/wght/italic.woff2);unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20CF,U+2113,U+2C60-2C7F,U+A720-A7FF;font-display:swap;}@font-face {font-family:Roboto Condensed;font-style:italic;font-weight:700;src:url(/cf-fonts/v/roboto-condensed/5.0.14/greek/wght/italic.woff2);unicode-range:U+0370-03FF;font-display:swap;}</style>
+    <style>
+        html:not(.v-logged-out) .hide-on-login {
+            display: none !important
+        }
+
+        html:not(.v-logged-in) .hide-on-logout {
+            display: none !important
+        }
+    </style>
+    <link rel="stylesheet" href="/v/vspfiles/templates/techtoolsupply/owl/css/owl.carousel.css">
+    <link rel="stylesheet" href="/v/vspfiles/templates/techtoolsupply/owl/css/owl.theme.default.css">
+    <link rel="stylesheet" href="/v/vspfiles/templates/techtoolsupply/owl/css/animate.css">
+    <link rel="stylesheet" href="/v/vspfiles/templates/techtoolsupply/css/fpslide.css">
+    <link rel="stylesheet" href="/v/vspfiles/templates/techtoolsupply/css/v1-push-cart.css"> <!-- DESIGN TOOLKIT -->
+
+    <!-- Google Tag Manager -->
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        (function (w, d, s, l, i) {
+            w[l] = w[l] || [];
+            w[l].push({
+                'gtm.start': new Date().getTime(),
+                event: 'gtm.js'
+            });
+            var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s),
+                dl = l != 'dataLayer' ? '&l=' + l : '';
+            j.async = true;
+            j.src =
+                'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+            f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-KSQR7V');
+    </script>
+    <!-- End Google Tag Manager -->
+
+
+<!-- GA4 Google Tag Manager -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-739238-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-739238-1');
+</script>
+<!-- GA4 End Google Tag Manager -->
+
+
+
+
+    <script src="/v/vspfiles/templates/techtoolsupply/js/min/design-toolkit.min.js"></script>
+    <!-- SVG LOADING -->
+    <script>
+        $(function () {
+            $("#svgIncludes").load("/v/vspfiles/templates/techtoolsupply/images/svgdefs.svg");
+        });
+    </script>
+
+</head>
+<!-- ========== techtoolsupply ======================
+    DESIGNER: JR
+    DEVELOPER: DR
+    CODE DATE: 2021-03
+    ROUNDHOUSE: v3.5.1
+========================================= -->
+<script src="//cdn.searchspring.net/search/v3/lts/searchspring.catalog.js?d7f66l" hide-content=".search_results_section"
+    search="Search"></script>
+
+<body>
+    <!-- START BH SCRIPTS 04/21/2021 -->
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KSQR7V" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Start Failover Check -->
+    <script type="text/javascript">
+        manualFolderOmnis = 'https://techtoolsupply.secure.omnis.com/manuals/';
+        manualFolder = 'https://www.techtoolsupply.info/manuals/';
+        manualFolderBackup = '/v/vspfiles/manuals/';
+        techFolderOmnis = 'https://techtoolsupply.secure.omnis.com/VR/';
+        techFolder = 'https://www.techtoolsupply.info/VR/';
+        techFolderBackup = '/v/vspfiles/VR/';
+        verifyImage = 'https://www.techtoolsupply.info/urlTest.gif?' + new Date().getTime();
+
+        function backupSource() {
+            manualFolder = manualFolderBackup;
+            techFolder = techFolderBackup;
+        }
+    </script>
+    <img style="display:none;" id='urlChecker' src="https://www.techtoolsupply.info/urlTest.gif"
+        onerror="backupSource()" />
+    <script type="text/javascript">
+        document.getElementById('urlChecker').src = verifyImage;
+    </script>
+    <!-- End Failover Check -->
+    <!-- END BH SCRIPTS 04/21/2021 -->
+
+
+    <span style="display:none;" id="svgIncludes"></span>
+    
+        <a href="#content_area" id="skip-to-content" class="sr-only">Skip to content</a>
+    
+    <noscript id="no-js-notice">
+        To take full advantage of this site, please enable your browser's JavaScript feature. <a
+            href="http://www.activatejavascript.org/" target="_blank" rel="nofollow">Learn how</a>
+    </noscript>
+    <div class="vol-container">
+        <div class="vol-inner">
+            <nav class="menu push-menu hidden-md hidden-lg" data-menu-type="slide-left">
+                <div class="push-menu__close-btn close-menu">
+                    <svg class="icon">
+                        <use xlink:href="#svg-close"></use>
+                    </svg>
+                </div>
+                <div class="push-menu__utility" id="rollLink">
+                    <a href="/aboutus.asp">ABOUT US</a>
+                    <a href="/AccountSettings.asp?AddNewCustomer=Y&ReturnTo=">NEW CUSTOMER</a>
+                    <a href="/login.asp">LOGIN</a>
+                    <a href="/help.asp">HELP</a>
+                </div>
+                <div class="push-menu__menu-wrapper"></div>
+                <div class="push-menu__checkout">
+                    <a href="/one-page-checkout.asp">CHECKOUT</a>
+                </div>
+            </nav><!-- /slide menu left -->
+            <div class="page-wrap">
+                <header class="header" data-ui-block="header-1">
+                    <div class="header__section--top">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-xs-12 text-center-sm-and-down col-md-7">
+                                    <a href="/article-a/57.htm">
+
+
+                                    <span>
+                                        <font style="font-weight:bold;padding-right: 25px;">FREE SHIPPING<font
+                                                style="color:#e3e3e3;"> OVER $50</font>
+                                        </font>
+                                        </font>
+                                    </span>
+                                    </a>
+                                    
+
+
+                                </div>
+                                <div class="col-md-5 hidden-xs hidden-sm">
+                                    <div class="utility-wrapper">
+                                        <div class="utility-inner">
+                                            <a href="/aboutus.asp">ABOUT US</a>
+                                            <a href="/AccountSettings.asp?AddNewCustomer=Y&ReturnTo=">NEW CUSTOMER</a>
+                                            <a href="/login.asp">LOGIN</a>
+                                            <a href="/help.asp">HELP</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header__section--middle">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-xs-12 col-md-5 logo-wrapper">
+                                    <div class="microblock logo">
+                                        <div id="display_homepage_title"><span class="vol-logo vol-logo--graphic" itemscope itemtype='http://schema.org/HardwareStore'><meta itemprop='name' content='TechToolSupply.com'><a class="vol-logo__link" href="https://www.techtoolsupply.com/default.asp" title="TechToolSupply.com">TechToolSupply.com</a></span></div>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-md-5 search-wrapper">
+                                    <div class="microblock search">
+                                        <form class="search__form" action="/searchresults.asp" method="get"
+                                            name="SearchBoxForm">
+                                            <label class="search__label sr-only" for="search">
+                                                Search site:
+                                            </label>
+                                            <input class="search__input" id="search" placeholder="Search our store..."
+                                                type="text" name="Search" value="">
+                                            <button type="submit" name="Submit" class="search__submit">
+                                                <span class="hidden-xs hidden-sm">SEARCH</span>
+                                                <svg class="icon search__submit--icon hidden-md hidden-lg">
+                                                    <use xlink:href="#svg-search"></use>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-md-2 cart-wrapper text-right no-pad-left">
+                                    <div class="microblock cart" data-v-anchor="cart">
+                                        <a href="/shoppingcart.asp" class="microblock__body" rel="nofollow">
+                                            <span class="cart__text hidden-xs hidden-sm">VIEW CART</span>
+                                            <svg class="cart__icon">
+                                                <use xlink:href="#svg-cart"></use>
+                                            </svg>
+                                            <span class="cart__count" data-v-observable="cart-count"> </span>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 menu-toggle-wrapper hidden-md hidden-lg">
+                                    <div class="microblock menu-toggle">
+                                        <a class="menu-toggle__link" href="javascript:void(0);" id="nav-toggle"
+                                            data-menu-type="slide-left">
+                                            <svg class="menu-toggle__icon icon">
+                                                <use xlink:href="#svg-menu"></use>
+                                            </svg>
+                                            <span class="menu-toggle__text hidden-xs">Shop Our Categories</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header__section--bottom">
+                        <div class="container">
+                            <div class="hidden-xs hidden-sm col-md-12">
+                                <nav class="microblock main-menu">
+                                    <!-- #############################################
+                                    Supported link-alignment:
+                                    ** "left"
+                                    ** "center"
+                                    ** "right"
+                                    ** "space-between"
+                                    ** "space-around"
+                                    ############################################# -->
+                                    <div id="display_menu_1" class="menu" link-alignment="left"><script type="text/javascript">var breadCrumb="|229||175||13704|";</script>
+<link rel='stylesheet' type='text/css' href='/a/c/vnav.css'>
+<script src='/a/j/vnav.js?1'></script>
+<ul class='vnav vnav--horizontal vnav--level1'>
+<li class='vnav__item'><a href='https://www.techtoolsupply.com/category-s/13704.htm' class='vnav__link'>Categories</a>
+<ul class='vnav vnav__subnav vnav--level2'>
+<li class='vnav__item'><a href='https://www.techtoolsupply.com/category-s/14918.htm' class='vnav__link'>Aerial Construction</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Bags-Belts-and-Cases-s/28.htm' class='vnav__link'>Bags, Belts, & Storage</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Cable-Satellite-Tools-s/55.htm' class='vnav__link'>Cable Prep & Termination</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Cable-Satellite-Tools-s/13623.htm' class='vnav__link'>CAT/UTP Prep & Termination</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Connectors-s/136.htm' class='vnav__link'>Connectors & Adapters</a>
+</li><li class='vnav__item'><a href='/SearchResults.asp?Cat=47' class='vnav__link'>Coring Tools</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Wire-Installation-Tools-s/511.htm' class='vnav__link'>Drilling, Running & Fishing</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Fiber-s/157.htm' class='vnav__link'>Fiber Prep & Termination</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Flashlights-s/167.htm' class='vnav__link'>Flashlights & Lighting</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Hand-Tools-s/175.htm' class='vnav__link'>Hand Tools</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Installation-Supplies-s/263.htm' class='vnav__link'>Installation Supplies</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Installation-Supplies-s/8391.htm' class='vnav__link'>Ladders</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Racks-and-Accessories-s/253.htm' class='vnav__link'>Racks & Enclosures</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/HeadEnd-Products-s/242.htm' class='vnav__link'>RF Distribution</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Safety-Outdoor-Gear-s/325.htm' class='vnav__link'>Safety & Outdoor Gear</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Safety-Outdoor-Gear-s/25854.htm' class='vnav__link'>Solar Tools & Equipment</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Test-Equipment-s/414.htm' class='vnav__link'>Test & Measurement</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Tool-Kits-s/447.htm' class='vnav__link'>Tool Kits</a>
+</li><li class='vnav__item'><a href='https://www.techtoolsupply.com/Underground-Construction-s/11827.htm' class='vnav__link'>Underground Construction</a>
+</li></ul>
+</li>
+<li class='vnav__item'><a href='/Articles.asp?ID=317' class='vnav__link'>Shop by Brand</a>
+</li>
+<li class='vnav__item'><a href='/SearchResults.asp?Cat=637' class='vnav__link'>New Arrivals</a>
+</li>
+<li class='vnav__item'><a href='/SearchResults.asp?Cat=1578' class='vnav__link'>Sale Items</a>
+</li>
+<li class='vnav__item'><a href='/SearchResults.asp?Cat=1427' class='vnav__link'>Best Sellers</a>
+</li>
+<li class='vnav__item'><a href='/Articles.asp?ID=315' class='vnav__link'>Weekly Flyer</a>
+</li>
+</ul>
+</div>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+                <div class="container container--content">
+                    <aside class="vol-list-grid text-right vol-hide">
+                        <section class="vol-list-grid-toggle vol-grid" data-grid-type="grid">
+                            <svg class="icon grid-toggle__icon">
+                                <use xlink:href="#svg-cat-toggle-grid"></use>
+                            </svg>
+                        </section>
+                        <section class="vol-list-grid-toggle vol-list" data-grid-type="list">
+                            <svg class="icon grid-toggle__icon">
+                                <use xlink:href="#svg-cat-toggle-list"></use>
+                            </svg>
+                        </section>
+                    </aside>
+                    <div class="row">
+                        <div class="sidebar-wrapper col-md-3 hidden-xs hidden-sm" role="complementary">
+                            <div id="search_refinement_filters"></div>
+                            <div class="sidebar left-nav" menu-type="smart-expand toggle-expand" menu-icon-type="plus">
+                            </div>
+                        </div>
+                        <section class="content_area-wrapper col-xs-12 col-md-9" role="main">
+                            <div id="content_area" class="clearfix"><link rel='stylesheet' type='text/css' href='/a/j/shadowbox/shadowbox.css' />
+<script type='text/javascript' src='/a/j/shadowbox/shadowbox.js'></script>
+
+<script type="text/javascript">
+    var global_Config_StoreFolderName = '/';
+    var global_Config_ProductPhotosFolder = 'v/vspfiles/photos';
+    var global_Current_ProductCode = 'TB-H2-L-24LH-M-6BES';
+    var global_SEOImage = '/PhotoDetails.asp';
+    var global_URL_Encode_Current_ProductCode = 'TB%2DH2%2DL%2D24LH%2DM%2D6BES';
+    var global_src_part_Config_ProductPhotosFolder = 'v%2Fvspfiles%2Fphotos';
+    var global_ImageSeed = '';
+    if (global_ImageSeed) {
+        global_ImageSeed = '?' + global_ImageSeed;
+    }
+
+    var global_Config_EnablePhotosPopup = true;
+    var global_SEOImage_PhotoGallery = '/PhotoGallery.asp';
+</script>
+<script type="text/javascript" src="/a/j/product_details.js"></script>
+
+<script type="text/javascript" src="/a/j/product_details.js"></script>
+
+
+<script type="text/javascript">
+
+    //module variable set from Qty: text box {ENTER} and read from <form> onsubmit event
+    var IESuppressFormSubmit = false;
+
+    function QtyEnabledAddToCart_SuppressFormIE() {
+        //Only target Internet Explorer
+        if (/Internet Explorer/gi.test(navigator.appName)) { return (!IESuppressFormSubmit); }
+        return true;
+    }
+
+    //Enter Key const
+    var ENTER_KEY = 13;
+
+    //determine if the {ENTER} key was pressed from the Qty: text box
+    function QtyEnabledAddToCart(e) {
+
+        //Only target Internet Explorer
+        if (/Internet Explorer/gi.test(navigator.appName) == false) { return; }
+
+        var evt = (e) ? e : (window.event) ? window.event : null;
+
+        if (!evt) { return; }
+
+        var keycode = evt.keyCode ? evt.keyCode : evt.charCode;
+
+        if (keycode != ENTER_KEY) { return; }
+
+        var el = document.getElementById('btnaddtocart');
+
+        if (!el) { return; }
+
+        //flag key press
+        IESuppressFormSubmit = true;
+
+        //suppress immediate form submits and then click "AddToCart"        
+        window.setTimeout(QtyEnabledAddToCartManualClick, 250);
+
+    }
+
+    function QtyEnabledAddToCartManualClick() {
+        IESuppressFormSubmit = false;
+        document.getElementById('btnaddtocart').click();
+    }
+
+</script>
+
+<div itemscope itemtype="http://schema.org/Product">
+<meta itemprop='productID' content='50810023383500'>
+<form id="vCSS_mainform" method="post" name="MainForm" action="/ProductDetails.asp?ProductCode=TB%2DH2%2DL%2D24LH%2DM%2D6BES" onsubmit="javascript:return QtyEnabledAddToCart_SuppressFormIE();">
+
+        <img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="5" height="5" alt="" /><br />
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" id="v65-product-parent">
+        <tr>
+          <td colspan="2" class="vCSS_breadcrumb_td"><b>
+&nbsp; 
+<a href="https://www.techtoolsupply.com/">Home</a> > 
+<a href="https://www.techtoolsupply.com/category-s/13704.htm" title=""> Categories</a> > <a href="https://www.techtoolsupply.com/Hand-Tools-s/175.htm" title="Hand Tools"> Hand Tools</a> > <a href="https://www.techtoolsupply.com/Hand-Tools-Tape-Measures-s/229.htm" title="Hand Tools Tape Measures"> Tape Measures</a> > 
+
+            </b>
+      <br /><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="5" height="5" alt="" /><br />
+            <font class="productnamecolorLARGE colors_productname"><span itemprop="name">Toughbuilt 24-in Lighted Magnetic Box Level</span></font><br />
+      <img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="5" height="5" alt="" />
+      </td>
+        </tr>
+        <tr> 
+          <td align="center" valign="top">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr> 
+        <!--<td>&nbsp;</td>-->
+            <td align="center">
+      <meta itemprop="manufacturer" content="ToughBuilt">
+            <img class="vCSS_img_mfg_logo" src="/v/vspfiles/photos/manufacturers/ToughBuilt.jpg" border="0" alt="Toughbuilt 24-in Lighted Magnetic Box Level"><br />
+<script type='text/javascript'>Shadowbox.init({ modal: false, animate: false, counterType: 'skip', continuous: true, counterLimit: 11, overlayOpacity: '0.75' });</script>
+<a id='product_photo_zoom_url' rel='shadowbox[ProductImages]' title='Toughbuilt 24-in Lighted Magnetic Box Level' href='/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-2.jpg?v-cache=1692271086'>
+<img class="vCSS_img_product_photo" itemprop='image' id="product_photo" src="/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-2T.jpg?v-cache=1692271086" border="0" title="Toughbuilt 24-in Lighted Magnetic Box Level" alt="Toughbuilt 24-in Lighted Magnetic Box Level" onload="vZoom.add(this, '/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-2.jpg?v-cache=1692271086');" /></a>
+<br /><div id="add_3d_vid_buttons"></div><br /><a id='product_photo_zoom_url2' rel='shadowbox[ProductImages]' title='Toughbuilt 24-in Lighted Magnetic Box Level' href='/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-2.jpg?v-cache=1692271086'><img class="vCSS_img_larger_photo" src="/v/vspfiles/templates/techtoolsupply/images/buttons/btn_largerphoto.gif" border="0"></a>
+        </td>
+        <td>&nbsp;</td></tr></table>
+
+<span id='altviews'>Alternative Views:<br /><br />
+<a href='/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-2.jpg?v-cache=1692271086' rel='shadowbox[ProductImages]' title='Toughbuilt 24-in Lighted Magnetic Box Level' data-sbkey='1'><img class="vCSS_img_alternate_product_photo" id="alternate_product_photo_2" style="border-color:#666666;" src="/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-2S.jpg?v-cache=1692271086" border="1" onmouseover='javascript:change_product_photo(2);return false;'></a>
+<a href='/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-3.jpg?v-cache=1692271086' rel='shadowbox[ProductImages]' title='Toughbuilt 24-in Lighted Magnetic Box Level' data-sbkey='2'><img class="vCSS_img_alternate_product_photo" id="alternate_product_photo_3" style="border-color:#666666;" src="/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-3S.jpg?v-cache=1692271086" border="1" onmouseover='javascript:change_product_photo(3);return false;'></a>
+<a href='/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-4.jpg?v-cache=1692271086' rel='shadowbox[ProductImages]' title='Toughbuilt 24-in Lighted Magnetic Box Level' data-sbkey='3'><img class="vCSS_img_alternate_product_photo" id="alternate_product_photo_4" style="border-color:#666666;" src="/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-4S.jpg?v-cache=1692271086" border="1" onmouseover='javascript:change_product_photo(4);return false;'></a>
+<a href='/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-5.jpg?v-cache=1692271086' rel='shadowbox[ProductImages]' title='Toughbuilt 24-in Lighted Magnetic Box Level' data-sbkey='4'><img class="vCSS_img_alternate_product_photo" id="alternate_product_photo_5" style="border-color:#666666;" src="/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-5S.jpg?v-cache=1692271086" border="1" onmouseover='javascript:change_product_photo(5);return false;'></a>
+<a href='/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-6.jpg?v-cache=1692271086' rel='shadowbox[ProductImages]' title='Toughbuilt 24-in Lighted Magnetic Box Level' data-sbkey='5'><img class="vCSS_img_alternate_product_photo" id="alternate_product_photo_6" style="border-color:#666666;" src="/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-6S.jpg?v-cache=1692271086" border="1" onmouseover='javascript:change_product_photo(6);return false;'></a>
+<a href='/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-7.jpg?v-cache=1692271086' rel='shadowbox[ProductImages]' title='Toughbuilt 24-in Lighted Magnetic Box Level' data-sbkey='6'><img class="vCSS_img_alternate_product_photo" id="alternate_product_photo_7" style="border-color:#666666;" src="/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-7S.jpg?v-cache=1692271086" border="1" onmouseover='javascript:change_product_photo(7);return false;'></a>
+<a href='/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-8.jpg?v-cache=1692271086' rel='shadowbox[ProductImages]' title='Toughbuilt 24-in Lighted Magnetic Box Level' data-sbkey='7'><img class="vCSS_img_alternate_product_photo" id="alternate_product_photo_8" style="border-color:#666666;" src="/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-8S.jpg?v-cache=1692271086" border="1" onmouseover='javascript:change_product_photo(8);return false;'></a>
+<a href='/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-9.jpg?v-cache=1692271086' rel='shadowbox[ProductImages]' title='Toughbuilt 24-in Lighted Magnetic Box Level' data-sbkey='8'><img class="vCSS_img_alternate_product_photo" id="alternate_product_photo_9" style="border-color:#666666;" src="/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-9S.jpg?v-cache=1692271086" border="1" onmouseover='javascript:change_product_photo(9);return false;'></a>
+<a href='/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-10.jpg?v-cache=1692271086' rel='shadowbox[ProductImages]' title='Toughbuilt 24-in Lighted Magnetic Box Level' data-sbkey='9'><img class="vCSS_img_alternate_product_photo" id="alternate_product_photo_10" style="border-color:#666666;" src="/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-10S.jpg?v-cache=1692271086" border="1" onmouseover='javascript:change_product_photo(10);return false;'></a>
+<a href='/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-11.jpg?v-cache=1692271086' rel='shadowbox[ProductImages]' title='Toughbuilt 24-in Lighted Magnetic Box Level' data-sbkey='10'><img class="vCSS_img_alternate_product_photo" id="alternate_product_photo_11" style="border-color:#666666;" src="/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-11S.jpg?v-cache=1692271086" border="1" onmouseover='javascript:change_product_photo(11);return false;'></a>
+<br /></span>
+
+      </td>
+          <td valign="top" align="right">
+
+      <span id="listOfErrorsSpan">
+      
+      </span>
+
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" class="colors_pricebox">
+              <tr> 
+            <td>
+
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+              <tr> 
+                <td valign="top" width="1" align="left"><img src="/v/vspfiles/templates/techtoolsupply/images/PBox_Border_Left_Top.gif" alt="" /></td>
+                <td width="100%" valign="top" background="/v/vspfiles/templates/techtoolsupply/images/PBox_Border_Top.gif"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+                <td width="1" valign="top"><img src="/v/vspfiles/templates/techtoolsupply/images/PBox_Border_Right_Top.gif" alt="" /></td>
+              </tr>
+              <tr> 
+                <td width="1" background="/v/vspfiles/templates/techtoolsupply/images/PBox_Border_Left.gif"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+                <td width="100%" valign="top"> 
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                          <tr> 
+                            <td>
+<span itemprop='description'>
+<div id="wholesaleAppLink"></div>
+</span>
+<div itemprop="offers" itemscope itemtype="http://schema.org/Offer">
+    <meta itemprop='priceCurrency' content='USD' >
+                          <table border="0" cellspacing="0" cellpadding="0">
+                            <tr>
+                              <td>
+
+<font class="text colors_text">    <div class="product_productprice">TTS PRICE: $55.99     </div></font><b><font class="pricecolor colors_productprice">    <div class="product_saleprice">Sale Price: $<span itemprop='price' content='27.99'>27.99</span>     </div></font></b>
+
+                            </tr>
+                          </table>
+
+
+                              
+                              <br />
+                              <b>STATUS</b>:<span id="inStock" class="inStockText">&nbsp;<img src="/v/vspfiles/images/greencheck.gif"><B> IN STOCK</b></span><meta itemprop='availability' content='InStock'>
+                <br />
+              
+          <br /><a href="javascript:void(0);" onclick="window.open('/help_FreeShipping.asp', 'FreeShipping', 'scrollbars,status,resizable,width=300,height=300');" title="(Opens new window) View Free Shipping Details">
+                <img class="vCSS_img_icon_free_shipping" src="/v/vspfiles/templates/techtoolsupply/images/Icon_FreeShipping.gif" alt="Free Shipping" border="0" alt="" /></a>          
+       
+                <br /><b></b></font><font color="#000000"><BR><b>Availability</b>:</b> <div class='' id='shippingTicker'>Normally Ships Same Day</div>
+                              <br />
+                <i><font color="#999999"><span class="product_code_title">PRODUCT CODE:</span> <span class="product_code">TB-H2-L-24LH-M-6BES</span> </font></i> 
+                <meta itemprop='itemCondition' content='new'>
+                             </div>
+                            </td>
+                            <td align="right" valign="top" class="v65-productdetail-options" id="v65-productdetail-action-wrapper">
+
+              <table cellspacing="0" cellpadding="3" border="0"><tr><td valign="top">
+                              QUANTITY: <input type="text"  class="v65-productdetail-cartqty" name="QTY.TB-H2-L-24LH-M-6BES" size="3" maxlength="8" onkeydown="javascript:QtyEnabledAddToCart();" value="1" title="Quantity">
+
+                </td><td>
+                              <input class="vCSS_input_addtocart" type="image" src="/v/vspfiles/templates/techtoolsupply/images/buttons/btn_addtocart.gif" name="btnaddtocart" alt="Add to cart" border="0" onclick="return addToCart(this.form, this);" />
+
+                <input type="hidden" name="ReplaceCartID" value="" />
+                <input type="hidden" name="ProductCode" value="TB-H2-L-24LH-M-6BES" />
+                <input type="hidden" name="e" value="" />
+                
+                  <input type="hidden" name="ReturnTo" value="ShoppingCart.asp" />
+                
+                </td></tr></table>
+                <br />
+                <table style="text-align:center;">
+                              
+                <tr><td>
+                <input type="image" src="/v/vspfiles/templates/techtoolsupply/images/buttons/btn_addtowishlist.gif" id="v65-product-wishlist-button" name="btnaddtowishlist" alt="Add To Wish List" border="0" />
+                </td></tr>
+                
+                             <!--  -->
+                </table>
+                
+
+                            </td>
+            </tr>
+            <tr>
+            <td colspan="2">
+
+            
+            
+            
+            
+            </td>
+            </tr>
+                        </table>
+                </td>
+                <td width="1" background="/v/vspfiles/templates/techtoolsupply/images/PBox_Border_Right.gif" valign="middle"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+              </tr>
+              <tr> 
+                <td width="1" valign="top"><img src="/v/vspfiles/templates/techtoolsupply/images/PBox_Border_Left_Bottom.gif" alt="" /></td>
+                <td width="100%" valign="top" background="/v/vspfiles/templates/techtoolsupply/images/PBox_Border_Bottom.gif"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+                <td width="1" valign="top"><img src="/v/vspfiles/templates/techtoolsupply/images/PBox_Border_Right_Bottom.gif" alt="" /></td>
+              </tr>
+            </table>
+      </td></tr></table>
+
+          </td>
+        </tr>
+        <tr> 
+          <td colspan="2"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="5" height="5" alt="" /></td>
+        </tr>
+      </table>
+
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr> 
+          <td valign="top">
+
+
+            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+              <tr> 
+                <td valign="top"> 
+                  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                    <tr> 
+                 
+                 
+            <td background="/v/vspfiles/templates/techtoolsupply/images/expand_tab_left.gif" width="1">
+              <img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="8" height="17" alt="" />
+            </td>
+            <td background="/v/vspfiles/templates/techtoolsupply/images/expand_tab_back.gif" id="Header_ProductDetail_ProductDetails" onclick="javascript:ProductDetail_ProductDetails();" class="vCSS_tab_selected">
+              <nobr>
+                <span class="productnamecolorSMALL colors_productname" id="Header_ProductDetail_ProductDetails_span" style="font-weight:bold;">
+                        PRODUCT DESCRIPTION
+                </span>
+              </nobr>
+            </td>
+
+            <td background="/v/vspfiles/templates/techtoolsupply/images/expand_tab_right.gif" width="1">
+              <img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="17" height="17" alt="" />
+            </td>
+                      
+                      
+                      
+                      
+                      
+                      <td width="90%"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+                    </tr>
+                  </table>
+                </td>
+                <td width="1" valign="bottom">&nbsp;</td>
+              </tr>
+            </table>
+            
+
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" class="colors_descriptionbox">
+              <tr> 
+                <td valign="top" width="1" align="left"><img src="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Left_Top.gif" alt="" /></td>
+                <td width="100%" valign="top" background="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Top.gif"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+                <td valign="top" width="1" align="left"><img src="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Right_Top.gif" alt="" /></td>
+              </tr>
+              <tr> 
+                <td width="1" background="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Left.gif" valign="middle"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+                <td width="100%" valign="top"> 
+                  <table width="100%" cellpadding="0" cellspacing="0"  border="0">
+                    <tr> 
+                      <td>
+              <div id="ProductDetail_ProductDetails_div">
+                            <span id="product_description">
+<div style="font-family:Arial, sans-serif; line-height:1.6;">
+  <p>
+    <b>See level lines clearly — even in low light.</b> The ToughBuilt 24-in Lighted Magnetic Box Level is built for pros who demand precision and durability. With illuminated vials for reliable visibility, this level delivers all-day accuracy and performance where it counts. Rugged aluminum construction, shock-absorbing endcaps, and powerful rare earth magnets make it a jobsite-ready tool that won’t let you down.
+  </p>
+  <p>
+    Whether you’re framing, installing, or finishing, this box level ensures accuracy within 0.0005 in/in while standing up to tough daily use.
+  </p>
+
+  <b>Key Features:</b>
+  <ul style="margin:0 0 1em 1.2em;">
+    <li>Illuminated vials for sustained clarity in low-light conditions</li>
+    <li>Precision-milled edges for exact measurements</li>
+    <li>Shock-absorbing endcaps protect against drops and impacts</li>
+    <li>Powerful rare earth magnets for superior holding strength</li>
+  </ul>
+
+  <b>Specifications:</b>
+  <ul style="margin:0 0 1em 1.2em;">
+    <li>Level type: Box beam</li>
+    <li>Material: Aluminum</li>
+    <li>Number of vials: 3</li>
+    <li>Length: 24 in</li>
+    <li>Width: 2.95 in</li>
+    <li>Weight: 2 lbs</li>
+    <li>Accuracy: 0.0005 in/in</li>
+  </ul>
+
+  <p style="background:#f9f9f9; border:1px solid #ddd; padding:0.8em; margin-top:1em;">
+    &#9989; Work faster and with confidence — <b>Get Yours Now!</b>
+  </p>
+</div></span>
+
+                                <div style="height: 15px;"></div>
+                            
+                            <div style="clear: both;"></div>
+              </div>   
+              <div id="ProductDetail_TechSpecs_div" style="display:none;">
+              <ul></ul>
+              </div>                      
+              <div id="ProductDetail_ExtInfo_div" style="display:none;">
+              
+              </div>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+                <td width="1" background="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Right.gif" valign="middle"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+              </tr>
+              <tr id="ProductDetails_MainBorder" style="display:none;"> 
+                <td valign="bottom" width="1"><img src="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Left_Bottom.gif" alt="" /></td>
+                <td width="100%" valign="top" background="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Bottom.gif"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+                <td valign="bottom" width="1" align="left"><img src="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Right_Bottom.gif" alt="" /></td>
+              </tr>
+            </table>
+
+            <div id="ProductDetail_ProductDetails_div2">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" class="colors_descriptionbox">
+              
+        
+          <tr> 
+          <td valign="bottom" width="1"><img src="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Left_Bottom.gif" alt="" /></td>
+          <td width="100%" valign="top" background="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Bottom.gif"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+          <td valign="bottom" width="1" align="left"><img src="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Right_Bottom.gif" alt="" /></td>
+          </tr>
+          <tr> 
+          <td valign="top" width="1" align="left"><img src="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Left_MidDiv.gif" alt="" /></td>
+          <td width="100%" valign="top" background="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Top.gif"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+          <td valign="top" width="1" align="left"><img src="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Right_MidDiv.gif" alt="" /></td>
+          </tr>
+          
+          <tr> 
+          <td width="1" background="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Left.gif" valign="middle"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+          <td width="100%" valign="top"> 
+            <table width="100%" cellpadding="0" cellspacing="0"  border="0">
+            <tr> 
+              <td>
+              <ul><li><script src="/v/vspfiles/js/MOF.js" type="text/javascript"></script></li></ul>
+
+              </td>
+            </tr>
+            </table>
+          </td>
+          <td width="1" background="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Right.gif" valign="middle"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+          </tr>
+        
+          <tr> 
+          <td valign="bottom" width="1"><img src="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Left_Bottom.gif" alt="" /></td>
+          <td width="100%" valign="top" background="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Bottom.gif"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="1" height="1" alt="" /></td>
+          <td valign="bottom" width="1" align="left"><img src="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Right_Bottom.gif" alt="" /></td>
+          </tr>
+        </table>
+            </div>
+
+      
+
+<img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="17" height="17" alt="" /><br /> 
+  
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" align="center" class="colors_lines_light" id="v65-product-related">
+                <tr class="v65-product-related-header-row">
+                    <td class="v65-product-related-header-cell">
+                        <table width="100%" border="0" cellspacing="1" cellpadding="2" align="center">
+                            <tr>
+                                <td id="related_products_header" class="colors_backgroundlight">
+                                    <font class="productnamecolorSMALL colors_productname"><b>Related Products:</b></font>
+                                </td>
+                            </tr>
+                            <tr class="v65-product-related-details-row"> 
+                                <td id="related_products_content" class="smalltext colors_background_main colors_text v65-product-related-details-cell"> 
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0" class="v65-productDisplay"> 
+<tr class="v65-productDisplay-row"> 
+<td valign="top" class="v65-productDisplay-cell v65-productName" width="25%"> 
+<a href="https://www.techtoolsupply.com/Klein-Tools-7-5M-Magnetic-Tape-Measure-Double-Hook-p/kln-86375.htm" class="productnamecolorsmall colors_productname" title="Klein Tools Metric Tape Measure 7 5M, KLN-86375"> 
+Klein Tools Metric Tape Measure 7 5M
+</a>
+</td> 
+<td class="v65-productDisplay-cell v65-productColumn-divider v65-product-rowspan" rowspan="3" background="/v/vspfiles/templates/techtoolsupply/images/Grid_Divider_Vertical.gif"> 
+<img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="9" height="3" alt=""> 
+</td> 
+<td valign="top" class="v65-productDisplay-cell v65-productName" width="25%"> 
+<a href="https://www.techtoolsupply.com/Laser-Distance-Meter-131ft-p/rmt-nf-2140.htm" class="productnamecolorsmall colors_productname" title="Laser Distance Meter 131ft &#177;1/32in Accuracy, RMT-NF-2140"> 
+Laser Distance Meter 131ft ±1/32in Accuracy
+</a>
+</td> 
+<td class="v65-productDisplay-cell v65-productColumn-divider v65-product-rowspan" rowspan="3" background="/v/vspfiles/templates/techtoolsupply/images/Grid_Divider_Vertical.gif"> 
+<img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="9" height="3" alt=""> 
+</td> 
+<td valign="top" class="v65-productDisplay-cell v65-productName" width="25%"> 
+<a href="https://www.techtoolsupply.com/Klein-Tools-IR5-Dual-Laser-Infrared-Thermometer-p/kln-ir5.htm" class="productnamecolorsmall colors_productname" title="Klein Tools Dual-Laser Infrared Thermometer, KLN-IR5"> 
+Klein Tools Dual-Laser Infrared Thermometer
+</a>
+</td> 
+<td class="v65-productDisplay-cell v65-productColumn-divider v65-product-rowspan" rowspan="3" background="/v/vspfiles/templates/techtoolsupply/images/Grid_Divider_Vertical.gif"> 
+<img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="9" height="3" alt=""> 
+</td> 
+<td valign="top" class="v65-productDisplay-cell v65-productName" width="25%"> 
+<a href="https://www.techtoolsupply.com/Keson-4ft-Steel-Digital-Measuring-Wheel-99999ft-p/mp401e.htm" class="productnamecolorsmall colors_productname" title="Keson MP401E 4ft Steel Digital Measuring Wheel - 99,999ft, MP401E"> 
+Keson MP401E 4ft Steel Digital Measuring Wheel - 99,999ft
+</a>
+</td> 
+</tr> 
+<tr class="v65-productDisplay-row"> 
+<td valign="top" width="25%" class="v65-productDisplay-cell v65-productDetailInfo"> 
+<div>
+<meta itemprop='productID' content='092644863752'>
+<table width="100%"cellpadding="0" cellspacing="0"><tr>
+<td valign="top" class="v65-productDisplay-cell v65-productAvailability">
+<div>
+<font class="pricecolorsmall colors_productprice">    <div class="product_productprice">        <b><font class="smalltext colors_text">TTS PRICE:</font> $29.99 </b>    </div></font>
+</div>
+<br />Add <input type="checkbox" name="ProductCode2"
+value="KLN-86375"> 
+<img alt="Free Shipping" src="/v/vspfiles/templates/techtoolsupply/images/Icon_FreeShipping_Small.gif">
+</td>
+</tr></table> 
+</div>
+</td> 
+<td valign="top" width="25%" class="v65-productDisplay-cell v65-productDetailInfo"> 
+<div>
+
+<table width="100%"cellpadding="0" cellspacing="0"><tr>
+<td valign="top" class="v65-productDisplay-cell v65-productAvailability">
+<div>
+<b><font class="pricecolorsmall colors_productprice">    <div class="product_saleprice">Sale Price: $13.00     </div></font></b>
+</div>
+<br />Add <input type="checkbox" name="ProductCode2"
+value="RMT-NF-2140"> 
+<img alt="Free Shipping" src="/v/vspfiles/templates/techtoolsupply/images/Icon_FreeShipping_Small.gif">
+</td>
+</tr></table> 
+</div>
+</td> 
+<td valign="top" width="25%" class="v65-productDisplay-cell v65-productDetailInfo"> 
+<div>
+<meta itemprop='productID' content='092644690303'>
+<table width="100%"cellpadding="0" cellspacing="0"><tr>
+<td valign="top" class="v65-productDisplay-cell v65-productAvailability">
+<div>
+<font class="pricecolorsmall colors_productprice">    <div class="product_productprice">        <b><font class="smalltext colors_text">TTS PRICE:</font> $74.98 </b>    </div></font>
+</div>
+<br />Add <input type="checkbox" name="ProductCode2"
+value="KLN-IR5"> 
+<img alt="Free Shipping" src="/v/vspfiles/templates/techtoolsupply/images/Icon_FreeShipping_Small.gif">
+</td>
+</tr></table> 
+</div>
+</td> 
+<td valign="top" width="25%" class="v65-productDisplay-cell v65-productDetailInfo"> 
+<div>
+<meta itemprop='productID' content='052837026715'>
+<table width="100%"cellpadding="0" cellspacing="0"><tr>
+<td valign="top" class="v65-productDisplay-cell v65-productAvailability">
+<div>
+<font class="pricecolorsmall colors_productprice">    <div class="product_productprice">        <b><font class="smalltext colors_text">TTS PRICE:</font> $214.79 </b>    </div></font>
+</div>
+<br />Add <input type="checkbox" name="ProductCode2"
+value="MP401E"> 
+</td>
+</tr></table> 
+</div>
+</td> 
+</tr> 
+<tr class="v65-productDisplay-row"> 
+<td valign="top" class="v65-productDisplay-cell v65-productPhoto" width="25%" align="center"> 
+<a href="https://www.techtoolsupply.com/Klein-Tools-7-5M-Magnetic-Tape-Measure-Double-Hook-p/kln-86375.htm" title="Klein Tools 7M Magnetic Tape Measure - Double Hook" alt="Klein Tools 7M Magnetic Tape Measure - Double Hook">
+<img src="/v/vspfiles/photos/KLN-86375-0.jpg?v-cache=1487320842" border=0 alt="Klein Tools 7M Magnetic Tape Measure - Double Hook" title="Klein Tools 7M Magnetic Tape Measure - Double Hook"></a>
+<script type="text/javascript">if(window.VCompare){VCompare('KLN-86375', 2);}</script>
+</td> 
+<td valign="top" class="v65-productDisplay-cell v65-productPhoto" width="25%" align="center"> 
+<a href="https://www.techtoolsupply.com/Laser-Distance-Meter-131ft-p/rmt-nf-2140.htm" title="Laser Distance Meter 131ft &#177;1/32in Accuracy" alt="Laser Distance Meter 131ft &#177;1/32in Accuracy">
+<img src="/v/vspfiles/photos/RMT-NF-2140-0.jpg?v-cache=1556260408" border=0 alt="Laser Distance Meter 131ft &#177;1/32in Accuracy" title="Laser Distance Meter 131ft &#177;1/32in Accuracy"></a>
+<script type="text/javascript">if(window.VCompare){VCompare('RMT-NF-2140', 2);}</script>
+</td> 
+<td valign="top" class="v65-productDisplay-cell v65-productPhoto" width="25%" align="center"> 
+<a href="https://www.techtoolsupply.com/Klein-Tools-IR5-Dual-Laser-Infrared-Thermometer-p/kln-ir5.htm" title="Klein Tools IR5 Dual-Laser Infrared Thermometer" alt="Klein Tools IR5 Dual-Laser Infrared Thermometer">
+<img src="/v/vspfiles/photos/KLN-IR5-0.jpg?v-cache=1463582225" border=0 alt="Klein Tools IR5 Dual-Laser Infrared Thermometer" title="Klein Tools IR5 Dual-Laser Infrared Thermometer"></a>
+<script type="text/javascript">if(window.VCompare){VCompare('KLN-IR5', 2);}</script>
+</td> 
+<td valign="top" class="v65-productDisplay-cell v65-productPhoto" width="25%" align="center"> 
+<a href="https://www.techtoolsupply.com/Keson-4ft-Steel-Digital-Measuring-Wheel-99999ft-p/mp401e.htm" title="Keson MP401E 4ft Steel Digital Measuring Wheel - 99,999ft" alt="Keson MP401E 4ft Steel Digital Measuring Wheel - 99,999ft">
+<img src="/v/vspfiles/photos/MP401E-0.jpg?v-cache=1536750822" border=0 alt="Keson MP401E 4ft Steel Digital Measuring Wheel - 99,999ft" title="Keson MP401E 4ft Steel Digital Measuring Wheel - 99,999ft"></a>
+<script type="text/javascript">if(window.VCompare){VCompare('MP401E', 2);}</script>
+</td> 
+</tr> 
+<tr> 
+<td class="v65-productDisplay-cell v65-productRow-divider v65-product-colspan" background="/v/vspfiles/templates/techtoolsupply/images/Grid_Divider_Horizontal.gif" colspan="7"> 
+<img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="3" height="9" alt=""> 
+</td> 
+</tr> 
+<tr class="v65-productDisplay-row"> 
+<td valign="top" class="v65-productDisplay-cell v65-productName" width="25%"> 
+<a href="https://www.techtoolsupply.com/Klein-Tools-Magnetic-Double-Hook-Tape-Measure-25ft-p/kln-9225.htm" class="productnamecolorsmall colors_productname" title="Klein Tools Magnetic Double Hook Tape Measure - 25ft, KLN-9225"> 
+Klein Tools Magnetic Double Hook Tape Measure - 25ft
+</a>
+</td> 
+<td class="v65-productDisplay-cell v65-productColumn-divider v65-product-rowspan" rowspan="3" background="/v/vspfiles/templates/techtoolsupply/images/Grid_Divider_Vertical.gif"> 
+<img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="9" height="3" alt=""> 
+</td> 
+<td valign="top" class="v65-productDisplay-cell v65-productName" width="25%"> 
+<a href="https://www.techtoolsupply.com/Jameson-25-Telescoping-Fiberglass-Measuring-Pole-p/jam-tp-125m.htm" class="productnamecolorsmall colors_productname" title="Jameson 25ft Telescoping Fiberglass Measuring Pole, JAM-TP-125M"> 
+Jameson 25ft Telescoping Fiberglass Measuring Pole
+</a>
+</td> 
+<td class="v65-productDisplay-cell v65-productColumn-divider v65-product-rowspan" rowspan="3" background="/v/vspfiles/templates/techtoolsupply/images/Grid_Divider_Vertical.gif"> 
+<img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="9" height="3" alt=""> 
+</td> 
+<td valign="top" class="v65-productDisplay-cell v65-productName" width="25%"> 
+<a href="https://www.techtoolsupply.com/Klein-Rechg-Self-Leveling-Green-Planar-Laser-Level-p/kln-93pll.htm" class="productnamecolorsmall colors_productname" title="Klein Rechargeable Self-Leveling Green Planar Laser Level, KLN-93PLL"> 
+Klein Rechargeable Self-Leveling Green Planar Laser Level
+</a>
+</td> 
+<td class="v65-productDisplay-cell v65-productColumn-divider v65-product-rowspan" rowspan="3" background="/v/vspfiles/templates/techtoolsupply/images/Grid_Divider_Vertical.gif"> 
+<img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="9" height="3" alt=""> 
+</td> 
+<td valign="top" class="v65-productDisplay-cell v65-productName" width="25%"> 
+<a href="https://www.techtoolsupply.com/Keson-RR318N-3ft-Measuring-Wheel-9999ft-p/rr318n.htm" class="productnamecolorsmall colors_productname" title="Keson RR318N 3ft Measuring Wheel - 9,999ft, RR318N"> 
+Keson RR318N 3ft Measuring Wheel - 9,999ft
+</a>
+</td> 
+</tr> 
+<tr class="v65-productDisplay-row"> 
+<td valign="top" width="25%" class="v65-productDisplay-cell v65-productDetailInfo"> 
+<div>
+<meta itemprop='productID' content='092644692697'>
+<table width="100%"cellpadding="0" cellspacing="0"><tr>
+<td valign="top" class="v65-productDisplay-cell v65-productAvailability">
+<div>
+<font class="pricecolorsmall colors_productprice">    <div class="product_productprice">        <b><font class="smalltext colors_text">TTS PRICE:</font> $32.98 </b>    </div></font>
+</div>
+<br />Add <input type="checkbox" name="ProductCode2"
+value="KLN-9225"> 
+<img alt="Free Shipping" src="/v/vspfiles/templates/techtoolsupply/images/Icon_FreeShipping_Small.gif">
+</td>
+</tr></table> 
+</div>
+</td> 
+<td valign="top" width="25%" class="v65-productDisplay-cell v65-productDetailInfo"> 
+<div>
+<meta itemprop='productID' content='815963011129'>
+<table width="100%"cellpadding="0" cellspacing="0"><tr>
+<td valign="top" class="v65-productDisplay-cell v65-productAvailability">
+<div>
+<font class="pricecolorsmall colors_productprice">    <div class="product_productprice">        <b><font class="smalltext colors_text">TTS PRICE:</font> $354.99 </b>    </div></font>
+</div>
+<br />Add <input type="checkbox" name="ProductCode2"
+value="JAM-TP-125M"> 
+</td>
+</tr></table> 
+</div>
+</td> 
+<td valign="top" width="25%" class="v65-productDisplay-cell v65-productDetailInfo"> 
+<div>
+<meta itemprop='productID' content='092644692789'>
+<table width="100%"cellpadding="0" cellspacing="0"><tr>
+<td valign="top" class="v65-productDisplay-cell v65-productAvailability">
+<div>
+<font class="pricecolorsmall colors_productprice">    <div class="product_productprice">        <b><font class="smalltext colors_text">TTS PRICE:</font> $329.98 </b>    </div></font>
+</div>
+<br />Add <input type="checkbox" name="ProductCode2"
+value="KLN-93PLL"> 
+<img alt="Free Shipping" src="/v/vspfiles/templates/techtoolsupply/images/Icon_FreeShipping_Small.gif">
+</td>
+</tr></table> 
+</div>
+</td> 
+<td valign="top" width="25%" class="v65-productDisplay-cell v65-productDetailInfo"> 
+<div>
+<meta itemprop='productID' content='052837008506'>
+<table width="100%"cellpadding="0" cellspacing="0"><tr>
+<td valign="top" class="v65-productDisplay-cell v65-productAvailability">
+<div>
+<font class="pricecolorsmall colors_productprice">    <div class="product_productprice">        <b><font class="smalltext colors_text">TTS PRICE:</font> $84.99 </b>    </div></font>
+</div>
+<br />Add <input type="checkbox" name="ProductCode2"
+value="RR318N"> 
+</td>
+</tr></table> 
+</div>
+</td> 
+</tr> 
+<tr class="v65-productDisplay-row"> 
+<td valign="top" class="v65-productDisplay-cell v65-productPhoto" width="25%" align="center"> 
+<a href="https://www.techtoolsupply.com/Klein-Tools-Magnetic-Double-Hook-Tape-Measure-25ft-p/kln-9225.htm" title="Klein Tools Magnetic Double Hook Tape Measure - 25ft" alt="Klein Tools Magnetic Double Hook Tape Measure - 25ft">
+<img src="/v/vspfiles/photos/KLN-9225-0.jpg?v-cache=1583500830" border=0 alt="Klein Tools Magnetic Double Hook Tape Measure - 25ft" title="Klein Tools Magnetic Double Hook Tape Measure - 25ft"></a>
+<script type="text/javascript">if(window.VCompare){VCompare('KLN-9225', 2);}</script>
+</td> 
+<td valign="top" class="v65-productDisplay-cell v65-productPhoto" width="25%" align="center"> 
+<a href="https://www.techtoolsupply.com/Jameson-25-Telescoping-Fiberglass-Measuring-Pole-p/jam-tp-125m.htm" title="Jameson 25&#8217; Telescoping Fiberglass Measuring Pole" alt="Jameson 25&#8217; Telescoping Fiberglass Measuring Pole">
+<img src="/v/vspfiles/photos/JAM-TP-125M-0.jpg?v-cache=1475486932" border=0 alt="Jameson 25&#8217; Telescoping Fiberglass Measuring Pole" title="Jameson 25&#8217; Telescoping Fiberglass Measuring Pole"></a>
+<script type="text/javascript">if(window.VCompare){VCompare('JAM-TP-125M', 2);}</script>
+</td> 
+<td valign="top" class="v65-productDisplay-cell v65-productPhoto" width="25%" align="center"> 
+<a href="https://www.techtoolsupply.com/Klein-Rechg-Self-Leveling-Green-Planar-Laser-Level-p/kln-93pll.htm" title="Klein Rechargeable Self-Leveling Green Planar Laser Level" alt="Klein Rechargeable Self-Leveling Green Planar Laser Level">
+<img src="/v/vspfiles/photos/KLN-93PLL-0.jpg?v-cache=1646404221" border=0 alt="Klein Rechargeable Self-Leveling Green Planar Laser Level" title="Klein Rechargeable Self-Leveling Green Planar Laser Level"></a>
+<script type="text/javascript">if(window.VCompare){VCompare('KLN-93PLL', 2);}</script>
+</td> 
+<td valign="top" class="v65-productDisplay-cell v65-productPhoto" width="25%" align="center"> 
+<a href="https://www.techtoolsupply.com/Keson-RR318N-3ft-Measuring-Wheel-9999ft-p/rr318n.htm" title="Keson RR318N 3ft Measuring Wheel - 9,999ft" alt="Keson RR318N 3ft Measuring Wheel - 9,999ft">
+<img src="/v/vspfiles/photos/RR318N-0.jpg?v-cache=1536755683" border=0 alt="Keson RR318N 3ft Measuring Wheel - 9,999ft" title="Keson RR318N 3ft Measuring Wheel - 9,999ft"></a>
+<script type="text/javascript">if(window.VCompare){VCompare('RR318N', 2);}</script>
+</td> 
+</tr> 
+</table> 
+
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+      <table width="100%" border="0" cellspacing="0" cellpadding="10" id="v65-product-reviews" class="v-reviews">
+        <tr class="v65-product-reviews-row">
+          <td class="v65-product-reviews-cell"> 
+            <div id="product_reviews_aggregate" class="v-reviews__aggregate" itemprop="aggregateRating" itemscope itemtype="http://schema.org/AggregateRating">
+                <span class="v-reviews__item">
+                    <span class="v-reviews__avg-text">Average Customer Review:</span>
+                    <img class="vCSS_img_star_avg_rating v-reviews__star-img" src="/v/vspfiles/templates/techtoolsupply/images/star5.gif" alt="Average Customer Review: 5 of 5" />
+                    <span class="v-reviews__avg-rating">
+                        <span itemprop="ratingValue">5</span> of 5
+                    </span>
+                </span>
+                <span class="v-reviews__item">
+                    <span class="v-reviews__total-text">Total Reviews: <span itemprop="reviewCount">1</span></span>
+                </span>
+                <a href="/login.asp?message=In+order+to+write+a+review%2C+you+must+first+login%2E" class="v-reviews__write-review"><span class="writeReview">WRITE A REVIEW</span></a>
+            </div>
+      </td>
+        </tr>
+      </table>
+      
+
+          </td>
+
+        </tr>
+      </table>
+
+      
+</form>
+
+    
+      <br>
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr> 
+          <td width="1%">&nbsp;</td>
+          <td width="100%" id="product_reviews_helpful">
+		    So far, this Product Review was helpful to 0 TTS Customers.
+		  </td>
+        </tr>
+      </table>
+      <table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr> 
+          <td width="1%">&nbsp;</td>
+          <td width="100%"> 
+            <table width=100% border=0 cellspacing=0 cellpadding=0 id="product_reviews_description_box">
+              <tr> 
+                <td  width=1px valign=top><img src="/v/vspfiles/templates/techtoolsupply/images/RBox_Border_Left_Top.gif" alt=""></td>
+                <td width=100% valign=top background="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Top.gif"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width=1 height=1 alt=""></td>
+                <td  width=1px valign=top><img src="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Right_Top.gif" alt=""></td>
+              </tr>
+              <tr> 
+                <td width=1px background="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Left.gif"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width=1 height=1></td>
+                <td width=100% valign=top> 
+                  <table width=100% cellpadding=0 cellspacing=0  border=0>
+                    <tr> 
+                      <td>
+                      <b><img src="/v/vspfiles/templates/techtoolsupply/images/star5.gif" alt="5 of 5"> 
+                     
+                        Tough built 24-in Lighted Magnetic Box Leve</b> </td>
+                      <td align="right"><i>March 3, 2025</i></td>
+                    </tr>
+                    <tr> 
+                      <td><i>Reviewer: 
+                         Joseph Gulas from Derby, CT United States
+
+                        </i></td>
+                      <td align="right">&nbsp;</td>
+                    </tr>
+                  </table>
+                  Great level! Solidly built. Should last a long time.<br>
+                  <br>
+                  Was this review helpful to you? <a href="/reviewhelpful.asp?ProductCode=TB%2DH2%2DL%2D24LH%2DM%2D6BES&ID=4032&yes=yes"><img src="/v/vspfiles/templates/techtoolsupply/images/buttons/btn_reviews_yes.gif" align="absmiddle" border="0"></a> 
+                  <a href="/reviewhelpful.asp?ProductCode=TB%2DH2%2DL%2D24LH%2DM%2D6BES&ID=4032&yes=no"><img src="/v/vspfiles/templates/techtoolsupply/images/buttons/btn_reviews_no.gif" align="absmiddle" border="0"></a> 
+                  
+                </td>
+                <td width=1px background="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Right.gif"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width=1 height=1 alt=""></td>
+              <tr> 
+                <td  width=1px valign=top><img src="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Left_Bottom.gif"></td>
+                <td width=100% valign=top background="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Bottom.gif"><img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width=1 height=1 alt=""></td>
+                <td  width=1px valign=top><img src="/v/vspfiles/templates/techtoolsupply/images/DBox_Border_Right_Bottom.gif"></td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+      
+      <br />
+    
+    
+      <br />
+      <table width="100%" border="0" cellspacing="0" cellpadding="10">
+        <tr>
+          <td>
+          <b>Browse for more products in the same category as this item:</b><br />
+          <img src="/v/vspfiles/templates/techtoolsupply/images/clear1x1.gif" width="5" height="5" alt="" /><br />
+        <a href="https://www.techtoolsupply.com/category-s/13704.htm" title=""> Categories</a> > <a href="https://www.techtoolsupply.com/Hand-Tools-s/175.htm" title="Hand Tools"> Hand Tools</a> > <a href="https://www.techtoolsupply.com/Hand-Tools-Tape-Measures-s/229.htm" title="Hand Tools Tape Measures"> Tape Measures</a><br />
+<a href="https://www.techtoolsupply.com/category-s/13704.htm" title=""> Categories</a> > <a href="https://www.techtoolsupply.com/Hand-Tools-s/175.htm" title="Hand Tools"> Hand Tools</a><br />
+<a href="https://www.techtoolsupply.com/category-s/13704.htm" title=""> Categories</a><br />
+
+      </td>
+        </tr>
+      </table>
+      
+</div>
+
+    <script>
+        function AutoUpdatePricingWithCheckboxes(arg_selected_option_value, arg_optcat_id) {
+            return false;
+        }
+        function AutoUpdatePriceWithSelectedOptions(arg_selected_option_value, arg_optcat_id) {
+            return false;   
+        }
+    </script>
+</div> <!-- #content_area -->
+                            
+                        </section>
+                    </div> <!-- .row -->
+                </div> <!-- .container -->
+                <footer class="footer" data-ui-block="footer-1">
+                    <div class="footer__section--top text-center">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-4 footer-column-wrapper">
+                                    <h2 class="footer__title" data-v-edit-region="Contact Title">CONTACT US</h2>
+                                    <p>
+                                        <a href="/cdn-cgi/l/email-protection#f695838582858095b68293959e8299999a858386869a8fd895999b"><span class="__cf_email__" data-cfemail="3457414740474257744051575c405b5b5847414444584d1a575b59">[email&#160;protected]</span></a><br>
+                                        Toll Free: <a href="tel:877-208-6657">877-208-6657</a><br>
+                                        Local: <a href="tel:7342077700">734-207-7700</a><br>
+                                        Fax: <a href="fax:8663116824">866-311-6824</a>
+                                    </p>
+                                </div>
+                                <div class="col-xs-12 col-sm-4 footer-column-wrapper">
+                                    <h2 class="footer__title" data-v-edit-region="Visit Title">LOCATION</h2>
+                                    <p>
+                                        Tech Tool Supply, LLC<br>
+                                        9060 General Drive<br>
+                                        Plymouth, MI 48170
+                                    </p>
+                                </div>
+                                <div class="col-xs-12 col-sm-4 footer-column-wrapper">
+                                    <h2 class="footer__title" data-v-edit-region="Social Title">STAY CONNECTED</h2>
+                                    <section class="microblock social">
+                                        <div class="microblock__body">
+                                            <ul class="social__list list-unstyled">
+                                                <li class="social__item">
+                                                    <a class="social__link facebook" href="https://www.facebook.com/"
+                                                        target="_blank"
+                                                        title="Like Tech Tool Supply, LLC on Facebook">
+                                                        <svg class="icon social__icon">
+                                                            <use xlink:href="#svg-facebook"></use>
+                                                        </svg>
+                                                    </a>
+                                                </li>
+                                                <li class="social__item">
+                                                    <a class="social__link twitter" href="https://twitter.com/"
+                                                        target="_blank"
+                                                        title="Follow Tech Tool Supply, LLC on Twitter">
+                                                        <svg class="icon social__icon">
+                                                            <use xlink:href="#svg-twitter"></use>
+                                                        </svg>
+                                                    </a>
+                                                </li>
+                                                <li class="social__item">
+                                                    <a class="social__link instagram" href="https://instagram.com/"
+                                                        target="_blank"
+                                                        title="Follow Tech Tool Supply, LLC on Instagram">
+                                                        <svg class="icon social__icon">
+                                                            <use xlink:href="#svg-instagram"></use>
+                                                        </svg>
+                                                    </a>
+                                                </li>
+                                                <!--
+                                                <li class="social__item">
+                                                    <a class="social__link pinterest" href="https://www.pinterest.com/" target="_blank" title="Pin Tech Tool Supply, LLC to Pinterest">
+                                                        <svg class="icon social__icon"><use xlink:href="#svg-pinterest"></use></svg>
+                                                    </a>
+                                                </li>
+                                                <li class="social__item">
+                                                    <a class="social__link gplus" href="https://plus.google.com/" target="_blank" title="Add Tech Tool Supply, LLC to Your Google+ Circle">
+                                                        <svg class="icon social__icon"><use xlink:href="#svg-gplus"></use></svg>
+                                                    </a>
+                                                </li>
+                                                <li class="social__item">
+                                                    <a class="social__link youtube" href="https://www.youtube.com/" target="_blank" title="Subscribe to Tech Tool Supply, LLC's YouTube Channel">
+                                                        <svg class="icon social__icon"><use xlink:href="#svg-youtube"></use></svg>
+                                                    </a>
+                                                </li>
+                                                <li class="social__item">
+                                                    <a class="social__link blogger" href="http://www.blogspot.com/" target="_blank" title="Subscribe to Tech Tool Supply, LLC's Blog">
+                                                        <svg class="icon social__icon"><use xlink:href="#svg-rss"></use></svg>
+                                                    </a>
+                                                </li>
+                                                <li class="social__item">
+                                                    <a class="social__link linked-in" href="https://www.linkedin.com/" target="_blank" title="Connect with Tech Tool Supply, LLC on LinkedIn">
+                                                        <svg class="icon social__icon"><use xlink:href="#svg-linkedin"></use></svg>
+                                                    </a>
+                                                </li>
+                                                -->
+                                            </ul>
+                                        </div>
+                                    </section>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="footer__section--middle">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-xs-12">
+                                    <section class="microblock link-column">
+                                        <a class="link-column__title microblock__title accordion-toggle collapsed"
+                                            data-toggle="collapse" data-parent="#footer-collapse"
+                                            href="#footerCollapse1">
+                                            QUICK LINKS
+                                            <svg class="collapse__icon link-column__icon icon icon-arrow">
+                                                <use xlink:href="#svg-arrow-down"></use>
+                                            </svg>
+                                        </a>
+                                        <div id="footerCollapse1" class="collapse link-column__body">
+                                            <div class="link-column__body">
+                                                <ul class="link-column list-unstyled"
+                                                    data-v-edit-region="Link Column 1">
+                                                    <li class="link-column__item">
+                                                        <a href="/aboutus.asp" title="Company Info"
+                                                            rel="nofollow">Company Info</a>
+                                                    </li>
+                                                    <li class="link-column__item">
+                                                        <a href="/articles.asp?ID=133"
+                                                            title="Domestic Shipping Policies" rel="nofollow">Domestic
+                                                            Shipping Policies</a>
+                                                    </li>
+                                                    <li class="link-column__item">
+                                                        <a href="/articles.asp?ID=144"
+                                                            title="Canadian Shipping Policies" rel="nofollow">Canadian
+                                                            Shipping Policies</a>
+                                                    </li>
+                                                    <li class="link-column__item">
+                                                        <a href="/articles.asp?ID=142" title="Secure Shopping"
+                                                            rel="nofollow">Secure Shopping</a>
+                                                    </li>
+                                                    <li class="link-column__item">
+                                                        <a href="/returns.asp" title="Returns &amp; Exchanges"
+                                                            rel="nofollow">Returns &amp; Exchanges</a>
+                                                    </li>
+                                                    <li class="link-column__item">
+                                                        <a href="/help.asp" title="Help" rel="nofollow">Help</a>
+                                                    </li>
+                                                    <li class="link-column__item">
+                                                        <a href="/terms.asp" title="Terms of Use" rel="nofollow">Terms
+                                                            of Use</a>
+                                                    </li>
+                                                    <li class="link-column__item">
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </section>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="footer__section--bottom">
+                        <div class="container">
+                            <div class="row">
+                                <div class="col-xs-12 text-center-sm-and-down col-md-6">
+                                    <span class="visible-xs">
+                                        <!-- Volusion SSL -->
+                                        <section class="ssl microblock">
+                                            <div class="microblock__body">
+                                                <a id="ssl__link" href="javascript:void(0);" rel="nofollow">
+                                                    <svg class="icon">
+                                                        <use xlink:href="#svg-ssl"></use>
+                                                    </svg>
+                                                </a>
+                                            </div>
+                                        </section>
+                                    </span>
+                                    <!-- Copyright -->
+                                    <section class="copyright microblock">
+                                        <a href="/terms.asp" title="Terms" rel="nofollow">
+                                            Copyright &copy; <span class="insertYear">2021</span>&nbsp;Tech Tool Supply,
+                                            LLC.
+                                        </a>
+                                        <span class="copyright__line">
+                                            All Rights Reserved.
+                                            
+                                        </span>
+                                    </section>
+                                </div>
+                                <div class="col-xs-12 col-md-6 text-right-md-and-up text-center-sm-and-down">
+                                    <!-- Credit Cards -->
+                                    <div class="credit-cards microblock">
+                                        <svg class="amex icon">
+                                            <use xlink:href="#svg-amex"></use>
+                                        </svg>
+                                        <svg class="visa icon">
+                                            <use xlink:href="#svg-visa"></use>
+                                        </svg>
+                                        <svg class="mc icon">
+                                            <use xlink:href="#svg-mc"></use>
+                                        </svg>
+                                        <svg class="discover icon">
+                                            <use xlink:href="#svg-discover"></use>
+                                        </svg>
+                                        <svg class="paypal icon">
+                                            <use xlink:href="#svg-paypal"></use>
+                                        </svg>
+                                    </div> <span class="hidden-xs">
+                                        <!-- Volusion SSL -->
+                                        <section class="ssl microblock">
+                                            <div class="microblock__body">
+                                                <a id="ssl__link" href="javascript:void(0);" rel="nofollow">
+                                                    <svg class="icon">
+                                                        <use xlink:href="#svg-ssl"></use>
+                                                    </svg>
+                                                </a>
+                                            </div>
+                                        </section>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            </div> <!-- .page-wrap -->
+        </div>
+    </div>
+    
+    <!-- IE9 FIX - CATEGORY GRID LAYOUT -->
+    <!--[if IE 9]><script>"searchresults.asp"===PageName()&&!function(e){e(document).ready(function(){var r,t=0,n=0,i=new Array,h=0;e(".v-product").each(function(){if(r=e(this),h=r.position().top,n!=h){for(currentDiv=0;currentDiv<i.length;currentDiv++)i[currentDiv].height(t);i.length=0,n=h,t=r.height(),i.push(r)}else i.push(r),t=t<r.height()?r.height():t;for(currentDiv=0;currentDiv<i.length;currentDiv++)i[currentDiv].height(t)})})}($jQueryModern);</script><![endif]-->
+    <a class="vol-scroll-top" href="#">
+        <svg class="icon">
+            <use xlink:href="#svg-arrow-up"></use>
+        </svg>
+    </a>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="/v/vspfiles/templates/techtoolsupply/js/min/template.min.js"></script>
+    <aside class="push-cart" id="vol-push-cart" data-vol-cart></aside>
+    <link href="/v/vspfiles/templates/techtoolsupply/css/mega-menu.css" rel="stylesheet">
+    <!--[if lt IE 10]><script src="/v/vspfiles/templates/techtoolsupply/js/multi-col.js"></script><![endif]-->
+    <script src="/v/vspfiles/templates/techtoolsupply/js/mega-menu.js"></script>
+    <script>$(document).megaMenu({});</script>
+
+    <!-- START BH SCRIPTS 04/21/2021 -->
+    <!-- Check Stock Status and Start Countdown Shipping Ticker -->
+    <script src="/v/vspfiles/js/emwbis_090225_1329.js" type="text/javascript"></script>
+    <script src="/v/vspfiles/js/shippingTicker_112825_0916.js" type="text/javascript"></script>
+    <script src="/v/vspfiles/js/shippingSpeed_051121_0838.js" type="text/javascript"></script>
+    <!-- Generate necessary Code for TECH 3D Viewer -->
+    <script src="/v/vspfiles/js/techBuilder_051121_0838.js" type="text/javascript"></script>
+    <!-- Javascript for TECH3D Viewer -->
+    <script type="text/javascript" src="/v/vspfiles/js/Tech3dViewer_051121_0838.js"></script>
+    <!-- Generate Multiple Youtube Video Code -->
+    <script src="/v/vspfiles/js/multiYT_033022_1201.js" type="text/javascript"></script>
+    <!-- Generate Single Vimeo and Youtube Videos -->
+    <script src="/v/vspfiles/js/singleYoutube_033022_1047.js" type="text/javascript"></script>
+    <!-- Replace manual class with link to manual PDF -->
+    <script src="/v/vspfiles/js/manualGen_051121_0838.js" type="text/javascript"></script>
+    <!-- Product Page - Tech3D/Video/MadeUSA/BigBulky -->
+    <script src="/v/vspfiles/js/productPageJavascript_010523_1327.js" type="text/javascript"></script>
+    <!-- Cookie Tools -->
+    <script src="/v/vspfiles/js/cookieTools_052621_0855.js" type="text/javascript"></script>
+    <!-- Pricing Style Updater -->
+    <script src="/v/vspfiles/js/priceUpdater_060221_1221.js" type="text/javascript"></script>
+    <!-- New Account Styling-->
+    <script src="/v/vspfiles/js/crNewAcct_071321_1310.js" type="text/javascript"></script>
+    <!-- Cart Rocket Rules -->
+    <script src="/v/vspfiles/js/cartRocket_Dynamic_071421_0923.js" type="text/javascript"></script>
+    <!-- WIHA PROMO-->
+    <script src="/v/vspfiles/js/special_112624_1839.js" type="text/javascript"></script>
+
+  <!-- Order Status-->
+    <script src="/v/vspfiles/js/orderStatus_062625_1551.js" type="text/javascript"></script>
+
+
+
+
+
+
+    <!--START 4-Tell Recommendations Begin (www.4-tell.com)-->
+    <script type="text/javascript" id="loader4Tell" data-sitealias="TechTool" data-mode="Stage"
+        src="//4tellcdn.azureedge.net/sites/loader.js"></script>
+    <!--END 4-Tell Recommendations Begin (www.4-tell.com)-->
+
+    <!-- END BH SCRIPTS 04/21/2021 -->
+
+
+    </td>
+    </tr>
+    </table>
+
+
+
+
+    <link href="/v/vspfiles/templates/techtoolsupply/css/optionCategories.css" rel="stylesheet" type="text/css">
+    <link href="/v/vspfiles/css/mobileQA.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="/v/vspfiles/css/emailRequestCss.css">
+
+    <!-- TTS Internal Google Tag Manager START - BH25-->
+    <script src="/v/vspfiles/js/fireGTM_080925_1125.js" type="text/javascript"></script>
+    <!-- TTS Internal Google Tag Manager END - BH25 -->
+
+
+    <!-- BEGIN VEXTRAS CODE-->
+    <script src="https://app.vextras.com/stores/store_WQM6CZ9N2XX8CRB2F8J6WWB3P9/js/vextras.js"></script>
+    <!-- END VEXTRAS CODE-->
+
+
+
+    <!-- Searchspring IntelliSuggest -->
+    <script type="text/javascript" src="//cdn.searchspring.net/intellisuggest/is.min.js"></script>
+    <script type="text/javascript">
+
+        var siteid = "d7f66l";
+
+        function ss_PageName() {
+            var pageName = window.location.href.toLowerCase();
+            if (pageName.match("[-_]p/")) {
+                pageName = 'productdetails.asp';
+            } else {
+                pageName = pageName.substr(pageName.lastIndexOf("/") + 1).replace(/\?[\s\S]*/, "");
+            }
+            return pageName;
+        }
+
+        switch (ss_PageName()) {
+            case 'productdetails.asp':
+                // Product Page Tracking
+                try {
+                    var product_code = global_Current_ProductCode;
+                    IntelliSuggest.init({ siteId: siteid, context: 'Product/' + product_code, seed: [product_code] });
+                    IntelliSuggest.viewItem({ sku: product_code });
+                } catch (err) { }
+                break;
+            case 'shoppingcart.asp':
+                // Basket Page Tracking
+                try {
+                    jQuery.getJSON('/ajaxcart.asp?cachebust=' + Date.now(), function (data) {
+                        try {
+                            var seeds = [], items = [];
+                            for (var i = 0; i < data.Products.length; i++) {
+                                code = data.Products[i].ProductCode;
+                                qty = data.Products[i].Quantity;
+                                price = data.Products[i].ProductPrice.replace("$", "").replace(",", "") / qty;
+                                seeds.push(code);
+                                items.push({ sku: code, qty: qty, price: price });
+                            }
+                            IntelliSuggest.init({ siteId: siteid, context: 'Basket', seed: seeds });
+                            for (var i = 0; i < items.length; i++) {
+                                IntelliSuggest.haveItem(items[i]);
+                            }
+                            IntelliSuggest.inBasket({});
+                        } catch (err) { }
+                    });
+                } catch (err) { }
+                break;
+            case 'orderfinished.asp':
+                // Checkout Page Tracking
+                try {
+                    IntelliSuggest.init({ siteId: siteid });
+                    for (var i = 0; i < OrderDetails.length; i++) {
+                        code = OrderDetails[i][2];
+                        qty = OrderDetails[i][6];
+                        price = OrderDetails[i][5];
+                        IntelliSuggest.haveItem({ sku: code, qty: qty, price: price });
+                    }
+                    IntelliSuggest.inSale({ orderId: Order[0] });
+                } catch (err) { }
+                break;
+        }
+
+    </script>
+    <!-- end Searchspring IntelliSuggest -->
+
+        <!-- HeaderSwap-->
+        <script defer src="/v/vspfiles/js/headerSwap.js?v=5" type="text/javascript"></script>
+
+
+
+
+<script type="text/javascript">function store_init(event){vZoom.preloadImage('/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-2T.jpg?v-cache=1692271086','/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-2.jpg?v-cache=1692271086');vZoom.preloadImage('/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-3T.jpg?v-cache=1692271086','/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-3.jpg?v-cache=1692271086');vZoom.preloadImage('/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-4T.jpg?v-cache=1692271086','/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-4.jpg?v-cache=1692271086');vZoom.preloadImage('/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-5T.jpg?v-cache=1692271086','/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-5.jpg?v-cache=1692271086');vZoom.preloadImage('/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-6T.jpg?v-cache=1692271086','/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-6.jpg?v-cache=1692271086');vZoom.preloadImage('/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-7T.jpg?v-cache=1692271086','/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-7.jpg?v-cache=1692271086');vZoom.preloadImage('/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-8T.jpg?v-cache=1692271086','/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-8.jpg?v-cache=1692271086');vZoom.preloadImage('/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-9T.jpg?v-cache=1692271086','/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-9.jpg?v-cache=1692271086');vZoom.preloadImage('/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-10T.jpg?v-cache=1692271086','/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-10.jpg?v-cache=1692271086');vZoom.preloadImage('/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-11T.jpg?v-cache=1692271086','/v/vspfiles/photos/TB-H2-L-24LH-M-6BES-11.jpg?v-cache=1692271086');} AttachEvent(window, 'load', store_init);</script>
+
+<script type="text/javascript">
+    if (!/\/shoppingcart\.asp/i.test(window.location.pathname)) {
+        jQuery(document).ready(function() {
+            jQuery('a').each(AddCartLink)
+        });
+    }
+</script>
+
+<script type="text/javascript">
+    volusion.cbExtendSnippets = true;
+</script>
+
+  <script>
+     if (document.getElementsByName("MailingList")[0]) {
+        var emailSubscribeForm = document.getElementsByName("MailingList")[0];
+        disableSubscribeSubmit = function() {
+          emailSubscribeButton.removeAttribute("type");
+        }
+        forwardToMailingList = function(e) {
+            var subscribeEmail = emailSubscribeForm.querySelector("input").value;
+          sessionStorage.setItem("subEmailAddress", subscribeEmail);
+          emailSubscribeForm.submit();
+        }
+
+        if (emailSubscribeForm.querySelector("button")) {
+            var emailSubscribeButton = emailSubscribeForm.querySelector("button");
+            emailSubscribeButton.addEventListener("click", forwardToMailingList);
+        }
+    }
+  </script>
+<script src="/a/j/class-name-watcher.js" defer ></script>
+
+    <script type="text/javascript">
+        window.isUsingPpcp = true;
+    </script>
+    
+        <script type="text/javascript">
+            window.useNewCheckout = true;
+        </script>
+    
+    <script src="/a/j/paypal-push-cart.js" defer ></script>
+
+    <script src="/a/j/push-cart.js" defer ></script>
+
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b40b8554f587f70',t:'MTc2Njc1MzU5Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+</html>

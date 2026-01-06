@@ -1,0 +1,21 @@
+BUSINESS_RULES={
+    'ip_rating':{
+        'allowed':['IPX7','IP67','IP68','IPX8',]
+    },
+    "screen_size":{
+        'type':'numeric',
+        'min':1,
+        'max':100
+    },
+    'touchscreen':{
+        'type':'boolean'
+    }
+}
+SOURCE_CONFIDENCE={
+    'pdf':'0.95',
+    'excel':"0.90",
+    'official':'0.88',
+    'web':'0.70',
+    'image':'0.60',
+    'inference':'0.40'
+}

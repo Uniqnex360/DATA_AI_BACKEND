@@ -1,0 +1,1942 @@
+<!doctype html>
+<html lang="en-US" class="no-js">
+
+<head>
+	<meta charset="UTF-8">
+			<title>Enabling Proactive Business Process Monitoring in SAP Cloud ALM</title>
+	
+	<link href="//www.google-analytics.com" rel="dns-prefetch">
+	<link href="https://www.yash.com/wp-content/themes/html5blank-stable/images/favicon-16x16.png" rel="shortcut icon">
+	<link href="https://www.yash.com/wp-content/themes/html5blank-stable/images/apple-touch-icon.png" rel="apple-touch-icon-precomposed">
+
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<!-- <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"> -->
+	<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=3">
+	<meta name="keywords" content="" />
+
+	
+	<meta name='robots' content='max-image-preview:large, max-snippet:-1, max-video-preview:-1' />
+
+	<!-- This site is optimized with the Yoast SEO plugin v26.5 - https://yoast.com/wordpress/plugins/seo/ -->
+	<meta name="description" content="Learn how to harness SAP Cloud ALM for business process monitoring with YASH Technologies’ proven methodology and real-life use cases." />
+	<link rel="canonical" href="https://www.yash.com/blog/enabling-proactive-business-process-monitoring-in-sap-cloud-alm/" />
+	<meta property="og:locale" content="en_US" />
+	<meta property="og:type" content="article" />
+	<meta property="og:title" content="Enabling Proactive Business Process Monitoring in SAP Cloud ALM" />
+	<meta property="og:description" content="Learn how to harness SAP Cloud ALM for business process monitoring with YASH Technologies’ proven methodology and real-life use cases." />
+	<meta property="og:url" content="https://www.yash.com/blog/enabling-proactive-business-process-monitoring-in-sap-cloud-alm/" />
+	<meta property="og:site_name" content="Yash Technologies" />
+	<meta property="article:modified_time" content="2025-11-05T07:07:13+00:00" />
+	<meta property="og:image" content="https://www.yash.com/wp-content/uploads/2025/09/sap_cloud.png" />
+	<meta property="og:image:width" content="1350" />
+	<meta property="og:image:height" content="400" />
+	<meta property="og:image:type" content="image/png" />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:label1" content="Est. reading time" />
+	<meta name="twitter:data1" content="4 minutes" />
+	<script type="application/ld+json" class="yoast-schema-graph">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://www.yash.com/blog/enabling-proactive-business-process-monitoring-in-sap-cloud-alm/","url":"https://www.yash.com/blog/enabling-proactive-business-process-monitoring-in-sap-cloud-alm/","name":"Enabling Proactive Business Process Monitoring in SAP Cloud ALM","isPartOf":{"@id":"https://www.yash.com/#website"},"primaryImageOfPage":{"@id":"https://www.yash.com/blog/enabling-proactive-business-process-monitoring-in-sap-cloud-alm/#primaryimage"},"image":{"@id":"https://www.yash.com/blog/enabling-proactive-business-process-monitoring-in-sap-cloud-alm/#primaryimage"},"thumbnailUrl":"https://www.yash.com/wp-content/uploads/2025/09/sap_cloud.png","datePublished":"2025-09-12T11:59:52+00:00","dateModified":"2025-11-05T07:07:13+00:00","description":"Learn how to harness SAP Cloud ALM for business process monitoring with YASH Technologies’ proven methodology and real-life use cases.","breadcrumb":{"@id":"https://www.yash.com/blog/enabling-proactive-business-process-monitoring-in-sap-cloud-alm/#breadcrumb"},"inLanguage":"en-US","potentialAction":[{"@type":"ReadAction","target":["https://www.yash.com/blog/enabling-proactive-business-process-monitoring-in-sap-cloud-alm/"]}]},{"@type":"ImageObject","inLanguage":"en-US","@id":"https://www.yash.com/blog/enabling-proactive-business-process-monitoring-in-sap-cloud-alm/#primaryimage","url":"https://www.yash.com/wp-content/uploads/2025/09/sap_cloud.png","contentUrl":"https://www.yash.com/wp-content/uploads/2025/09/sap_cloud.png","width":1350,"height":400,"caption":"Enabling Proactive Business Process Monitoring in SAP Cloud ALM"},{"@type":"BreadcrumbList","@id":"https://www.yash.com/blog/enabling-proactive-business-process-monitoring-in-sap-cloud-alm/#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.yash.com/"},{"@type":"ListItem","position":2,"name":"blogs","item":"https://www.yash.com/blog/"},{"@type":"ListItem","position":3,"name":"Enabling Proactive Business Process Monitoring in SAP Cloud ALM: A Real-World Walkthrough from YASH Technologies"}]},{"@type":"WebSite","@id":"https://www.yash.com/#website","url":"https://www.yash.com/","name":"Yash Technologies","description":"More than what you think","potentialAction":[{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://www.yash.com/?s={search_term_string}"},"query-input":{"@type":"PropertyValueSpecification","valueRequired":true,"valueName":"search_term_string"}}],"inLanguage":"en-US"}]}</script>
+	<!-- / Yoast SEO plugin. -->
+
+
+		<style>
+			.lazyload,
+			.lazyloading {
+				max-width: 100%;
+			}
+		</style>
+		<style id='wp-img-auto-sizes-contain-inline-css' type='text/css'>
+img:is([sizes=auto i],[sizes^="auto," i]){contain-intrinsic-size:3000px 1500px}
+/*# sourceURL=wp-img-auto-sizes-contain-inline-css */
+</style>
+<style id='classic-theme-styles-inline-css' type='text/css'>
+/*! This file is auto-generated */
+.wp-block-button__link{color:#fff;background-color:#32373c;border-radius:9999px;box-shadow:none;text-decoration:none;padding:calc(.667em + 2px) calc(1.333em + 2px);font-size:1.125em}.wp-block-file__button{background:#32373c;color:#fff;text-decoration:none}
+/*# sourceURL=/wp-includes/css/classic-themes.min.css */
+</style>
+<link rel='stylesheet' id='contact-form-7-css' href='https://www.yash.com/wp-content/plugins/contact-form-7/includes/css/styles.css?ver=6.1.4' media='all' />
+<link rel='stylesheet' id='yashvendormincss-css' href='https://www.yash.com/wp-content/themes/html5blank-stable/css/style-bundle.css?ver=1.0' media='all' />
+<link rel='stylesheet' id='addtoany-css' href='https://www.yash.com/wp-content/plugins/add-to-any/addtoany.min.css?ver=1.16' media='all' />
+<script type="text/javascript" src="https://www.yash.com/wp-includes/js/jquery/jquery.min.js?ver=3.7.1" id="jquery-core-js"></script>
+<script type="text/javascript" src="https://www.yash.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1" id="jquery-migrate-js"></script>
+<script type="text/javascript" src="https://www.yash.com/wp-content/themes/html5blank-stable/js/bootstrap.bundle.min.js?ver=1.0.0" id="bootstrapbundleminjs-js"></script>
+<script type="text/javascript" id="addtoany-core-js-before">
+/* <![CDATA[ */
+window.a2a_config=window.a2a_config||{};a2a_config.callbacks=[];a2a_config.overlays=[];a2a_config.templates={};
+a2a_config.static_server="https://www.yash.com/wp-content/uploads/addtoany";
+
+//# sourceURL=addtoany-core-js-before
+/* ]]> */
+</script>
+<script type="text/javascript" defer src="https://www.yash.com/wp-content/uploads/addtoany/page.js?ver=1766732420" id="addtoany-core-js"></script>
+<script type="text/javascript" defer src="https://www.yash.com/wp-content/plugins/add-to-any/addtoany.min.js?ver=1.1" id="addtoany-jquery-js"></script>
+<script type="text/javascript" id="my_loadmore-js-extra">
+/* <![CDATA[ */
+var loadmore_params = {"ajaxurl":"https://www.yash.com/wp-admin/admin-ajax.php","posts":"{\"page\":0,\"blog\":\"enabling-proactive-business-process-monitoring-in-sap-cloud-alm\",\"post_type\":\"blog\",\"name\":\"enabling-proactive-business-process-monitoring-in-sap-cloud-alm\",\"error\":\"\",\"m\":\"\",\"p\":0,\"post_parent\":\"\",\"subpost\":\"\",\"subpost_id\":\"\",\"attachment\":\"\",\"attachment_id\":0,\"pagename\":\"enabling-proactive-business-process-monitoring-in-sap-cloud-alm\",\"page_id\":0,\"second\":\"\",\"minute\":\"\",\"hour\":\"\",\"day\":0,\"monthnum\":0,\"year\":0,\"w\":0,\"category_name\":\"\",\"tag\":\"\",\"cat\":\"\",\"tag_id\":\"\",\"author\":\"\",\"author_name\":\"\",\"feed\":\"\",\"tb\":\"\",\"paged\":0,\"meta_key\":\"\",\"meta_value\":\"\",\"preview\":\"\",\"s\":\"\",\"sentence\":\"\",\"title\":\"\",\"fields\":\"all\",\"menu_order\":\"\",\"embed\":\"\",\"category__in\":[],\"category__not_in\":[],\"category__and\":[],\"post__in\":[],\"post__not_in\":[],\"post_name__in\":[],\"tag__in\":[],\"tag__not_in\":[],\"tag__and\":[],\"tag_slug__in\":[],\"tag_slug__and\":[],\"post_parent__in\":[],\"post_parent__not_in\":[],\"author__in\":[],\"author__not_in\":[],\"search_columns\":[],\"ignore_sticky_posts\":false,\"suppress_filters\":false,\"cache_results\":true,\"update_post_term_cache\":true,\"update_menu_item_cache\":false,\"lazy_load_term_meta\":true,\"update_post_meta_cache\":true,\"posts_per_page\":12,\"nopaging\":false,\"comments_per_page\":\"50\",\"no_found_rows\":false,\"order\":\"DESC\"}","current_page":"1","max_page":"0"};
+//# sourceURL=my_loadmore-js-extra
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://www.yash.com/wp-content/themes/html5blank-stable/js/myloadmore.js" id="my_loadmore-js"></script>
+		<script>
+			document.documentElement.className = document.documentElement.className.replace('no-js', 'js');
+		</script>
+				<style>
+			.no-js img.lazyload {
+				display: none;
+			}
+
+			figure.wp-block-image img.lazyloading {
+				min-width: 150px;
+			}
+
+			.lazyload,
+			.lazyloading {
+				--smush-placeholder-width: 100px;
+				--smush-placeholder-aspect-ratio: 1/1;
+				width: var(--smush-image-width, var(--smush-placeholder-width)) !important;
+				aspect-ratio: var(--smush-image-aspect-ratio, var(--smush-placeholder-aspect-ratio)) !important;
+			}
+
+						.lazyload {
+				opacity: 0;
+			}
+
+			.lazyloading {
+				border: 0 !important;
+				opacity: 1;
+				background: rgba(255, 255, 255, 0) url('https://www.yash.com/wp-content/plugins/wp-smushit/app/assets/images/smush-lazyloader-3.gif') no-repeat center !important;
+				background-size: 16px auto !important;
+				min-width: 16px;
+			}
+
+					</style>
+		
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+	<!-- <script src="https://www.linkedin.com/autofill/js/autofill.js" type="text/javascript" async></script>  -->
+
+	
+	<!-- OneTrust Cookies Consent Notice start for yash.com -->
+	<script type="text/javascript"  src="https://cdn.cookielaw.org/consent/019928d1-3a80-7b73-8603-fd6aae2b78aa-test/OtAutoBlock.js" integrity="sha256-gtz2uy5zDHrxTXRb31GhpkOse469iVtrWJpAljOGF+M=" crossorigin="anonymous"></script>
+	<script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js" integrity="sha256-V+mf/cql3yaMEV/tQc5FSQ0b/oYHFRc45WEpKl4uXKc=" crossorigin="anonymous" type="text/javascript" charset="UTF-8" data-domain-script="019928d1-3a80-7b73-8603-fd6aae2b78aa" data-blockingmode="auto"></script>
+	<script type="text/javascript">
+	function OptanonWrapper() { }
+	</script>
+	<!-- OneTrust Cookies Consent Notice end for yash.com -->
+
+
+<!-- Google Tag Manager -->
+<script async>
+(function (w, d, s, l, i) {
+w[l] = w[l] || [];
+w[l].push({
+"gtm.start": new Date().getTime(),
+event: "gtm.js",
+});
+var f = d.getElementsByTagName(s)[0],
+j = d.createElement(s),
+dl = l != "dataLayer" ? "&l=" + l : "";
+j.async = true;
+j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+f.parentNode.insertBefore(j, f);
+})(window, document, "script", "dataLayer", "GTM-KJ445G9");
+</script>
+<!-- End Google Tag Manager -->
+
+<!-- Page Schema -->
+<script type="application/ld+json">
+	</script>
+<!-- End Page Schema -->
+
+<style id='global-styles-inline-css' type='text/css'>
+:root{--wp--preset--aspect-ratio--square: 1;--wp--preset--aspect-ratio--4-3: 4/3;--wp--preset--aspect-ratio--3-4: 3/4;--wp--preset--aspect-ratio--3-2: 3/2;--wp--preset--aspect-ratio--2-3: 2/3;--wp--preset--aspect-ratio--16-9: 16/9;--wp--preset--aspect-ratio--9-16: 9/16;--wp--preset--color--black: #000000;--wp--preset--color--cyan-bluish-gray: #abb8c3;--wp--preset--color--white: #ffffff;--wp--preset--color--pale-pink: #f78da7;--wp--preset--color--vivid-red: #cf2e2e;--wp--preset--color--luminous-vivid-orange: #ff6900;--wp--preset--color--luminous-vivid-amber: #fcb900;--wp--preset--color--light-green-cyan: #7bdcb5;--wp--preset--color--vivid-green-cyan: #00d084;--wp--preset--color--pale-cyan-blue: #8ed1fc;--wp--preset--color--vivid-cyan-blue: #0693e3;--wp--preset--color--vivid-purple: #9b51e0;--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg,rgb(6,147,227) 0%,rgb(155,81,224) 100%);--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan: linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%);--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange: linear-gradient(135deg,rgb(252,185,0) 0%,rgb(255,105,0) 100%);--wp--preset--gradient--luminous-vivid-orange-to-vivid-red: linear-gradient(135deg,rgb(255,105,0) 0%,rgb(207,46,46) 100%);--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray: linear-gradient(135deg,rgb(238,238,238) 0%,rgb(169,184,195) 100%);--wp--preset--gradient--cool-to-warm-spectrum: linear-gradient(135deg,rgb(74,234,220) 0%,rgb(151,120,209) 20%,rgb(207,42,186) 40%,rgb(238,44,130) 60%,rgb(251,105,98) 80%,rgb(254,248,76) 100%);--wp--preset--gradient--blush-light-purple: linear-gradient(135deg,rgb(255,206,236) 0%,rgb(152,150,240) 100%);--wp--preset--gradient--blush-bordeaux: linear-gradient(135deg,rgb(254,205,165) 0%,rgb(254,45,45) 50%,rgb(107,0,62) 100%);--wp--preset--gradient--luminous-dusk: linear-gradient(135deg,rgb(255,203,112) 0%,rgb(199,81,192) 50%,rgb(65,88,208) 100%);--wp--preset--gradient--pale-ocean: linear-gradient(135deg,rgb(255,245,203) 0%,rgb(182,227,212) 50%,rgb(51,167,181) 100%);--wp--preset--gradient--electric-grass: linear-gradient(135deg,rgb(202,248,128) 0%,rgb(113,206,126) 100%);--wp--preset--gradient--midnight: linear-gradient(135deg,rgb(2,3,129) 0%,rgb(40,116,252) 100%);--wp--preset--font-size--small: 13px;--wp--preset--font-size--medium: 20px;--wp--preset--font-size--large: 36px;--wp--preset--font-size--x-large: 42px;--wp--preset--spacing--20: 0.44rem;--wp--preset--spacing--30: 0.67rem;--wp--preset--spacing--40: 1rem;--wp--preset--spacing--50: 1.5rem;--wp--preset--spacing--60: 2.25rem;--wp--preset--spacing--70: 3.38rem;--wp--preset--spacing--80: 5.06rem;--wp--preset--shadow--natural: 6px 6px 9px rgba(0, 0, 0, 0.2);--wp--preset--shadow--deep: 12px 12px 50px rgba(0, 0, 0, 0.4);--wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0, 0.2);--wp--preset--shadow--outlined: 6px 6px 0px -3px rgb(255, 255, 255), 6px 6px rgb(0, 0, 0);--wp--preset--shadow--crisp: 6px 6px 0px rgb(0, 0, 0);}:where(.is-layout-flex){gap: 0.5em;}:where(.is-layout-grid){gap: 0.5em;}body .is-layout-flex{display: flex;}.is-layout-flex{flex-wrap: wrap;align-items: center;}.is-layout-flex > :is(*, div){margin: 0;}body .is-layout-grid{display: grid;}.is-layout-grid > :is(*, div){margin: 0;}:where(.wp-block-columns.is-layout-flex){gap: 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}:where(.wp-block-post-template.is-layout-flex){gap: 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}.has-black-color{color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-color{color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-color{color: var(--wp--preset--color--white) !important;}.has-pale-pink-color{color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-color{color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-color{color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-color{color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-color{color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-color{color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-color{color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-color{color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-color{color: var(--wp--preset--color--vivid-purple) !important;}.has-black-background-color{background-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-background-color{background-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-background-color{background-color: var(--wp--preset--color--white) !important;}.has-pale-pink-background-color{background-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-background-color{background-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-background-color{background-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-background-color{background-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-background-color{background-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-background-color{background-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-background-color{background-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-background-color{background-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-background-color{background-color: var(--wp--preset--color--vivid-purple) !important;}.has-black-border-color{border-color: var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-border-color{border-color: var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-border-color{border-color: var(--wp--preset--color--white) !important;}.has-pale-pink-border-color{border-color: var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-border-color{border-color: var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-border-color{border-color: var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-border-color{border-color: var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-border-color{border-color: var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-border-color{border-color: var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-border-color{border-color: var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-border-color{border-color: var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-border-color{border-color: var(--wp--preset--color--vivid-purple) !important;}.has-vivid-cyan-blue-to-vivid-purple-gradient-background{background: var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;}.has-light-green-cyan-to-vivid-green-cyan-gradient-background{background: var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;}.has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange) !important;}.has-luminous-vivid-orange-to-vivid-red-gradient-background{background: var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;}.has-very-light-gray-to-cyan-bluish-gray-gradient-background{background: var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;}.has-cool-to-warm-spectrum-gradient-background{background: var(--wp--preset--gradient--cool-to-warm-spectrum) !important;}.has-blush-light-purple-gradient-background{background: var(--wp--preset--gradient--blush-light-purple) !important;}.has-blush-bordeaux-gradient-background{background: var(--wp--preset--gradient--blush-bordeaux) !important;}.has-luminous-dusk-gradient-background{background: var(--wp--preset--gradient--luminous-dusk) !important;}.has-pale-ocean-gradient-background{background: var(--wp--preset--gradient--pale-ocean) !important;}.has-electric-grass-gradient-background{background: var(--wp--preset--gradient--electric-grass) !important;}.has-midnight-gradient-background{background: var(--wp--preset--gradient--midnight) !important;}.has-small-font-size{font-size: var(--wp--preset--font-size--small) !important;}.has-medium-font-size{font-size: var(--wp--preset--font-size--medium) !important;}.has-large-font-size{font-size: var(--wp--preset--font-size--large) !important;}.has-x-large-font-size{font-size: var(--wp--preset--font-size--x-large) !important;}
+/*# sourceURL=global-styles-inline-css */
+</style>
+</head>
+
+<body class="wp-singular blog-template-default single single-blog postid-35600 single-format-standard wp-theme-html5blank-stable enabling-proactive-business-process-monitoring-in-sap-cloud-alm" data-spy="scroll" data-target="#spy" data-offset="100">
+
+	<!-- header -->
+	<header class="customHeader" id="customHeader">
+		<div class="container">
+			<nav class="navbar navbar-expand-lg navbar-light bg-transparent p-0 position-static">
+				<a class="navbar-brand p-0" href="https://www.yash.com">
+					<img src="https://www.yash.com/wp-content/themes/html5blank-stable/images/yash-logo-new.svg" class="img-fluid" alt="Yash-Technologies" loading="lazy">
+				</a>
+				<div class="order-lg-2 d-flex align-items-center">
+					<div class="rightNav d-flex">
+						<!--a class="nav-link d-flex align-items-center sidebar-link" href="javascript:void(0);"
+                            onclick="openRightMenu();">
+                            <span class="icon-menu-button"></span>
+                        </a-->
+						<!-- <a class="nav-link d-flex align-items-center" href="javascript:void(0);">
+                        <span class="icon-search-icon"></span>
+                    </a> -->
+						<a class="nav-link d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#ytSearchModal" href="#ytSearchModal">
+							<i class="bi bi-search"></i>
+						</a>
+						<a href="https://www.yash.com/contact-us/" class="btn btn-primary ripple-effect contactBtn" target="_blank">Contact Us <i class="bi bi-arrow-up-short"></i></a>
+					</div>
+					<button class="navbar-toggler" id="toggle-menu" type="button" data-bs-toggle="collapse" data-bs-target="#navToggle" aria-controls="navToggle" aria-expanded="false" aria-label="Toggle navigation">
+						<span class="line"></span>
+						<span class="line"></span>
+						<span class="line"></span>
+					</button>
+				</div>
+				<div class="collapse navbar-collapse order-lg-1" id="navToggle"><ul class="navbar-nav ms-auto"><li class="nav-item Submenu"><a class="nav-link" href="https://www.yash.com/services/"> Services</a><span class="bi bi-chevron-down icon-dropArrow"></span><div class="navSubmenu">
+										<div class="container">
+											<div class="row navSubmenu__row w-100">
+												<div class="col-lg-12 navSubmenu__left">
+													<div class="navSubmenu__left__inner">
+													<div class="navSubmenu__heading d-none d-lg-block "> Services<span class="theme-color">.</span></div>
+													<div class="w-100 menus">
+													<ul class="list-unstyled navSubmenu__list"><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/digitalization/" class="">Digitalization</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/digitalization/ai-and-automation-services/" class="">AI & Automation</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/digitalization/ar-vr-mr-services/" class="">AR / VR / MR</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/digitalization/blockchain-services/" class="">Blockchain</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/digitalization/cloud-services/" class="">Cloud</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/digitalization/iot-services/" class="">IoT</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/digitalization/mobility-services/" class="">Mobility</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/digitalization/social-media-marketing-services/" class="">Social Media Marketing</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/digitalization/embedded-factory-automation/" class="">Embedded & Factory Automation</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/modernization/" class="">Modernization</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/modernization/application-migration/" class="">Application Migration and Modernization Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/modernization/cloud-transformation/" class="">Cloud Transformation Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/modernization/enterprise-mobility/" class="">Enterprise Mobile Transformation</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/co-innovation-lab-services/" class="">Co-Innovation Lab Services</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/co-innovation-lab-services/consulting/" class="">Consulting Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/co-innovation-lab-services/ideation/" class="">Ideation Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/co-innovation-lab-services/implementation/" class="">Implementation Services</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/data-analytics-services/" class="">Data Analytics</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/data-analytics-services/data-advisory-services/" class="">Enterprise Data Advisory Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/data-analytics-services/data-modernization-services/" class="">Data Modernization Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/data-analytics-services/data-management-services/" class="">Data Management Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/data-analytics-services/ai-analytics/" class="">Analytics & AI</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/data-analytics-services/data-engineering-services/" class="">Data Engineering Services</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/ai-led-managed-services/" class="">AI-Led Managed Services</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/application-services/" class="">Application Services</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/application-maintenance-and-support/" class="">Application Management Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/" class="">Packaged Application Services</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/application-maintenance-and-support/" class="">NextGen AMS</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/sap-shared-services/" class="">Shared AMS for MSMEs</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/infrastructure-management-services/" class="">Cloud &#038; Infrastructure Management Services</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/infrastructure-management-services/cloud-infrastructure-services/" class="">Cloud Infrastructure Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/infrastructure-management-services/core-infrastructure-support-services/" class="">Core Infrastructure Support Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/infrastructure-management-services/devops/" class="">DevXOps</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/infrastructure-management-services/digital-workplace-services/" class="">Digital Workplace Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/infrastructure-management-services/intelligent-business-services-monitoring/" class="">Intelligent Business Services Monitoring</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/infrastructure-management-services/unified-it-experience-desk/" class="">Unified IT Experience Desk</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/infrastructure-management-services/finops-services/" class="">FinOps Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/infrastructure-management-services/amurra-digital-platform/" class="">YASH AMURAA® Digital Platform</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/infrastructure-management-services/well-architected-framework-assessment/" class="">Well-Architected Framework Assessment</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/intelligence-services/" class="">Intelligence Services</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/intelligence-services/artificial-intelligence-services/" class="">Artificial Intelligence Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/intelligence-services/business-intelligence-solutions/" class="">Business Intelligence Solutions</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/intelligence-services/cognitive-3d-services/" class="">Cognitive 3D Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/intelligence-services/conversational-ai-services/" class="">Conversational AI</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/intelligence-services/data-visualization-services/" class="">Data Visualization</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/intelligence-services/robotic-process-automation-services/" class="">Robotic Process Automation Services</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/global-capability-centers-gccs/" class="">Global Capability Centers (GCCs)</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/connected-convergence-platform/" class="">Connected Convergence Platform</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/connected-convergence-platform/api-enablement-and-integration-services/" class="">API Enablement and Integration Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/connected-convergence-platform/data-lifecycle-management-services/" class="">Data Lifecycle Management Services</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/customer-centric-ecosystem/" class="">Customer Centric Ecosystem</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/customer-centric-ecosystem/crm/" class="">CRM</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/customer-centric-ecosystem/customer-experience/" class="">Customer Experience</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/customer-centric-ecosystem/digital-marketing/" class="">Digital Marketing</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/customer-centric-ecosystem/mobility/" class="">Digital Experience</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/customer-centric-ecosystem/social-listening/" class="">Social Listening</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/cyber-security-services/" class="">Cyber Security Services</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/cmp/25/security-operations-center-services.html" class="">NexGen SOC</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/cmp/22/cyber-security-servicesmanaged-detection-and-response-services.html" class="">Managed Detection and Response (MDR)</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/cmp/24/vulnerability-management-services.html" class="">Vulnerability Mgmt Services (VMS)</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/cmp/24/boost-security-roi-with-holistic-penetration-testing.html" class="">Penetration Testing</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/cmp/24/360-cyber-posture-management.html" class="">360<sup>0</sup> Cyber Posture Management </a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/cyber-security-services/breach-and-attack-simulation/" class="">Breach & Attack Simulation (BAS) Service</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/cmp/23/third-party-risk-management.html" class="">Third Party Risk Management</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/cyber-security-services/ondemand-vciso-services/" class="">Ondemand vCISO Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/cyber-security-services/attack-surface-management/" class="">Know Your Attack Surface (KYAS)</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/sustainability-services/" class="">Sustainability</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/sustainability-services/regulatory-sds/" class="">Regulatory (SDS) Documentation</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/sustainability-services/safetyone/" class="">SafetyOne</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/sustainability-services/ehs-management/" class="">SAP Environment, Health & Safety Management</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/services/sustainability-services/product-safety/" class="">SAP Product Safety & Stewardship</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/services/corporate-real-estate-it-cres-it/" class="">Corporate Real Estate IT (CRES-IT)</a>
+</li></ul></div></div>
+                                    </div>
+									
+									</div></div><div class="menuOverlay"></div></div></li></li><li class="nav-item Submenu"><a class="nav-link" href="https://www.yash.com/coe/"> CoEs</a><span class="bi bi-chevron-down icon-dropArrow"></span><div class="navSubmenu">
+										<div class="container">
+											<div class="row navSubmenu__row w-100">
+												<div class="col-lg-12 navSubmenu__left">
+													<div class="navSubmenu__left__inner">
+													<div class="navSubmenu__heading d-none d-lg-block "> CoEs<span class="theme-color">.</span></div>
+													<div class="w-100 menus">
+													<ul class="list-unstyled navSubmenu__list"><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/" class="">SAP</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/s4hana/" class="">SAP S/4HANA</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/rise-with-sap/" class="">Rise with SAP</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/sap-on-cloud/" class="">SAP on Cloud</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/sap-competencies/intelligent-suite/digital-hr/successfactors/" class="">SAP SuccessFactors</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/digital-platform/" class="">SAP Technical</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/intelligent-technologies/" class="">SAP Infrastructure</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/sap-solution-manager/" class="">Solution Manager</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/sap-solutions/" class="">SAP Solutions</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/sap-higher-education-research/" class="">SAP Higher Education & Research</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/sap-ibp/" class="">SAP IBP</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/sap-competencies/intelligent-suite/digital-supply-chain/digital-supply-chain-digital-manufacturing-solutions/" class="">SAP DM</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/sap-competencies/intelligent-suite/digital-supply-chain/digital-asset-reliability-management-solutions/" class="">SAP DARM</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/sap-data-analytics/" class="">SAP Data & Analytics</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/sap-business-data-cloud-services/" class="">SAP BDC</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/aws/" class="">AWS</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/aws/aws-migration-services/" class="">Migration & Modernization Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/aws/data-analytics-on-aws/" class="">Data & Advanced Analytics</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/aws/genai/" class="">GenAI on AWS</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/cmp/21/sap-workloads-migration-with-yash-and-aws.html" class="">SAP on AWS</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/aws/managed-aws-cloud-services/" class="">Managed Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/aws/devops-services/" class="">DevOps on AWS</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/aws/microsoft-workloads-on-aws/" class="">Microsoft on AWS</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/microsoft/" class="">Microsoft</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/microsoft/microsoft-azure-infrastructure-services/" class="">Azure Infrastructure Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/microsoft/teams-and-sharepoint/" class="">Collaboration - Microsoft Teams and SharePoint</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/microsoft/modern-workplace-m365/" class="">Modern Workplace – M365</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/microsoft/enterprise-modernization-azure/" class="">Enterprise Modernization - Azure</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/microsoft/rapid-application-development/" class="">Rapid Application Development</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/microsoft/powerapps-zero-code-applications/" class="">Zero Code Applications</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/microsoft/dynamics-365/" class="">Microsoft Dynamics 365</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/microsoft/microsoft-fabric/" class="">Microsoft Fabric</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/microsoft/data-and-ai/" class="">Data and AI</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/iot-and-embedded-systems/" class="">IoT &#038; Embedded Systems</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/iot-and-embedded-systems/embedded-services/" class="">Embedded Systems</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/iot-and-embedded-systems/factory-automation/" class="">Factory Automation</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/iot-and-embedded-systems/smart-iot/" class="">Smart IoT</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/servicenow/" class="">ServiceNow</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/servicenow/integrated-risk-management/" class="">Integrated Risk Management (IRM)</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/servicenow/hrsd-partner/" class="">HR Service Delivery</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/servicenow/intelligent-application-development/" class="">Intelligent Application Development</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/servicenow/spm-partner/" class="">Strategic Portfolio Management</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/servicenow/itom-solutions/" class="">IT Operations Management</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/servicenow/itsm-implementaion/" class="">IT Service Management</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/servicenow/security-operations/" class="">Security Operations</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/servicenow/financial-services-institute/" class="">Financial Services Institute</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/servicenow/servicenow-managed-services/" class="">ServiceNow Managed Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/servicenow/field-service-management/" class="">Field Service Management</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/servicenow/vendor-risk-management/" class="">Vendor Risk Management</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/servicenow/legal-service-delivery/" class="">Legal Service Delivery</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/salesforce/" class="">Salesforce</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/salesforce/advisory-services/" class="">Advisory & Consulting Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/salesforce/implementation-services/" class="">Implementation Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/salesforce/application-management-services/" class="">Application Support</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/salesforce/mulesoft-services/" class="">MuleSoft Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/salesforce/accelerators-and-tools/" class="">Accelerators & Tools</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/hyperautomation/" class="">Hyperautomation</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/hyperautomation/advisory-services/" class="">Advisory Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/hyperautomation/rpa-alliance/" class="">Alliance</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/hyperautomation/implementation-support-services/" class="">Implementation and Support</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/hyperautomation/iextractor/" class="">Solutioning - iExtractor</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/google-cloud/" class="">GCP</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/google-cloud/data-and-analytics-on-google-cloud/" class="">Data and Analytics on GCP</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/google-cloud/sap-on-google-cloud/" class="">SAP on GCP</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/oracle/" class="">Oracle</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/oracle/cloud-transformation/" class="">Cloud Transformation</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/oracle/managed-services/" class="">Managed Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/oracle/application-services/" class="">Oracle Application Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/oracle/cloud/" class="">Enterprise Digital Transformation</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/oracle/oracle-integration-services/" class="">Integration Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/oracle/oracle-advisory-and-consulting/" class="">Oracle Advisory & Consulting</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/oracle/oracle-e-business-suite/" class="">Oracle E-Business Suite Services</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/blockchain-coe/" class="">Blockchain</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/qad/" class="">QAD</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/qad/consulting-services/" class="">Consulting Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/qad/cloud-services/" class="">Cloud Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/qad/data-and-ai-services/" class="">QAD Data and AI Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/qad/business-consulting/" class="">Business Consulting</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/qad/support-services/" class="">Support Services</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/databricks/" class="">Databricks</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/snowflake-services/" class="">Snowflake</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/snaplogic/" class="">SnapLogic</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/mobility-coe/" class="">Mobility</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/mobility-coe/mobile-application-design-and-development/" class="">Application Development Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/mobility-coe/custom-app-development/" class="">Codiant</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/mobility-coe/mobile-implementation-and-support/" class="">Implementation and Support Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/mobility-coe/intelligent-mobility/" class="">Intelligent Mobility</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/pega/" class="">Pega</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/integration-services/" class="">Integration Services</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/integration-services/advisory-services/" class="">Advisory Services</a></li><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/integration-services/implementation-and-support-services/" class="">Implementation and Support Services</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/workday/" class="">Workday</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-testing-services/" class="">Tricentis</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/coe/sap/sap-testing-services/transform-your-enterprise-testing-with-yash-technologies/" class="">Transform Your Enterprise Testing with YASH Technologies</a></li></ul></li></ul></div></div>
+                                    </div>
+									
+									</div></div><div class="menuOverlay"></div></div></li></li><li class="nav-item Submenu"><a class="nav-link" href="https://www.yash.com/solutions/"> Solutions</a><span class="bi bi-chevron-down icon-dropArrow"></span><div class="navSubmenu">
+										<div class="container">
+											<div class="row navSubmenu__row w-100">
+												<div class="col-lg-12 navSubmenu__left">
+													<div class="navSubmenu__left__inner">
+													<div class="navSubmenu__heading d-none d-lg-block "> Solutions<span class="theme-color">.</span></div>
+													<div class="w-100 menus">
+													<ul class="list-unstyled navSubmenu__list"><li class="item secondlevel">
+<a target="" href="https://www.yash.com/solutions/digital-shop-floor/" class="">Digital Shop Floor</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/solutions/e-commerce/" class="">E-Commerce</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/solutions/factory-process-automation/" class="">Factory Process Automation</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/solutions/e-learning/" class="">E-Learning</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/solutions/healthcare-and-tele-medicine/" class="">Healthcare &#038; Tele-medicine</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-solutions/mobile-inventory-manager/" class="">Mobile Inventory Manager</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-solutions/safe-at-work/" class="">Safe@Work</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/solutions/data-and-analytics-platform/" class="">Data and Analytics Platform</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-solutions/yash4hana/" class="">YASH4HANA</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/solutions/yash4hana-for-manufacturing/" class="">YASH4HANA for Manufacturing</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/solutions/intelligent-iextractor/" class="">iExtractor</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/solutions/taxiapp/" class="">TaxiApp</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-solutions/chemone/" class="">ChemOne</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-solutions/servicesone/" class="">ServicesOne</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-solutions/manufacturingone/" class="">ManufacturingOne</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-solutions/wholesaleone/" class="">WholesaleOne</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-solutions/techone/" class="">TechOne</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-solutions/financeone/" class="">FinanceOne</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-solutions/cpgone/" class="">CPGOne</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-solutions/sfone/" class="">SFOne</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-solutions/peopleone/" class="">PeopleOne</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/solutions/logistics-and-transportation/" class="">Logistics &#038; Transportation</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/solutions/digital-onboarding-solution/" class="">Digital Onboarding Solution</a>
+</li></ul></div></div>
+                                    </div>
+									
+									</div></div><div class="menuOverlay"></div></div></li></li><li class="nav-item Submenu"><a class="nav-link" href="https://www.yash.com/biznext/"> BizNe<em>XT</em></a><span class="bi bi-chevron-down icon-dropArrow"></span><div class="navSubmenu">
+										<div class="container">
+											<div class="row navSubmenu__row w-100">
+												<div class="col-lg-12 navSubmenu__left">
+													<div class="navSubmenu__left__inner">
+													<div class="navSubmenu__heading d-none d-lg-block "> BizNe<em>XT&#8230;</em><sub>Beyond digital by YASH </sub><span class="theme-color">.</span></div>
+													<div class="w-100 menus">
+													<ul class="list-unstyled navSubmenu__list"><li class="item secondlevel">
+<a target="" href="https://www.yash.com/biznext/digital-strategy/" class="">Digital Strategy</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/biznext/people-advisory/" class="">People Advisory</a>
+<ul class="childMenu_list"><li class="thirdLevel_childMenu_list"><a href="https://www.yash.com/biznext/people-advisory/learning-and-knowledge-management-services/" class="">Learning and Knowledge Management Services</a></li></ul></li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/biznext/technology-advisory-services/" class="">Technology Advisory</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/biznext/digital-in-health/" class="">Digital in Health</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/business-processes/supply-chain-operations/" class="">Supply Chain</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/business-processes/it-ot-convergence/" class="">IT-OT Convergence</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/coe/sap/sap-signavio-services/" class="">SAP Signavio Services</a>
+</li></ul></div></div>
+                                    </div>
+									
+									</div></div><div class="menuOverlay"></div></div></li></li><li class="nav-item">
+<a href="https://www.yashtech.ai/" class="nav-link">YASHTech.AI</a></li></li><li class="nav-item Submenu"><a class="nav-link" href="https://www.yash.com/industries/"> Industries</a><span class="bi bi-chevron-down icon-dropArrow"></span><div class="navSubmenu">
+										<div class="container">
+											<div class="row navSubmenu__row w-100">
+												<div class="col-lg-12 navSubmenu__left">
+													<div class="navSubmenu__left__inner">
+													<div class="navSubmenu__heading d-none d-lg-block "> Industries<span class="theme-color">.</span></div>
+													<div class="w-100 menus">
+													<ul class="list-unstyled navSubmenu__list"><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/manufacturing-solutions/" class="">Manufacturing</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/lifesciences-solutions/" class="">Lifesciences</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/bfs-solutions/" class="">BFSI</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/mining/" class="">Mining</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/agri-solutions/" class="">Agribusiness</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/healthcare/" class="">Healthcare</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/government/" class="">Government</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/utilities-solutions/" class="">Utilities</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/logistics-solutions/" class="">Logistics</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/dairy-farming/" class="">Dairy Farming</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/aviation/" class="">Aviation</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/education/" class="">Education</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/retail-solutions/" class="">Retail</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/telecom-solutions/" class="">Telecom</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/industries/media-and-entertainment-solutions/" class="">Media &#038; Entertainment</a>
+</li></ul></div></div>
+                                    </div>
+									
+									</div></div><div class="menuOverlay"></div></div></li></li><li class="nav-item Submenu"><a class="nav-link" href="https://www.yash.com/about-us/"> About Us</a><span class="bi bi-chevron-down icon-dropArrow"></span><div class="navSubmenu">
+										<div class="container">
+											<div class="row navSubmenu__row w-100">
+												<div class="col-lg-12 navSubmenu__left">
+													<div class="navSubmenu__left__inner">
+													<div class="navSubmenu__heading d-none d-lg-block "> About Us<span class="theme-color">.</span></div>
+													<div class="w-100 menus">
+													<ul class="list-unstyled navSubmenu__list"><li class="item secondlevel">
+<a target="" href="https://www.yash.com/about-us/alliance/" class="">Alliances</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/blog/" class="">Blogs</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/case-studies/" class="">Case Studies</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/event/" class="">Events</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/press_release/" class="">Press Releases</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/webinar/" class="">Webinars</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/podcast/" class="">Podcasts</a>
+</li><li class="item secondlevel">
+<a target="" href="https://www.yash.com/promotion_hub/" class="">Promotions Hub</a>
+</li></ul></div></div>
+                                    </div>
+									
+									</div></div><div class="menuOverlay"></div></div></li></li><li class="nav-item">
+<a href="https://www.yash.com/about-us/career/" class="nav-link">Careers</a></li></li></ul></div>			</nav>
+			<a href="javascript:void(0)" class="close-menu" id="closeMenu"><i class="icon-close"></i></a>
+		</div>
+		<!-- Hamburger Menu - S -->
+				<script type="text/javascript">
+			jQuery(document).ready(function() {
+				$("#search_form").on('submit', function(){
+
+				});
+			});
+		</script>
+	</header>
+
+	<!-- search -->
+	<div class="modal search-full-box-top" id="ytSearchModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+		<button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+			<i class="bi bi-plus-lg"></i>
+		</button>
+		<div class="modal-dialog search-full-box">
+			<div class="modal-content">
+
+				<div class="modal-body ">
+
+						
+					<div class="formsearch container">
+						<!-- <h3 class="modal-title" id="exampleModalLabel">Search</h3> -->
+						<form id="ytSearchForm" class="search d-flex flex-wrap" method="get" action="https://www.yash.com" role="search">
+							<div class="autocomplete form-group searchField">
+								<input class="search-input form-control" id="ytSearch_box" autocomplete="off" type="search" name="s" placeholder="To search, type and hit enter." value="">
+								<!--div id="suggesstion-box"></div-->
+
+							</div>
+							<div class="form-group">
+																<button class="search-submit btn btn-primary ripple-effect" type="submit" role="button"><i class="bi bi-search"></i></button>
+							</div>
+						</form>
+					</div>
+
+					<div class=" relaedSearch">
+						<div class="container">
+
+
+							<h4> Popular Searches</h4>
+							<ul>
+								<li> <a href="/?s=s%2F4hana">S/4HANA</a> </li>
+								<li> <a href="/?s=cloud">Cloud </a> </li>
+								<li> <a href="/?s=Artificial+Intelligence">Artificial Intelligence </a> </li>
+								<li> <a href="/?s=SAP+Services">SAP Services </a> </li>
+								<!-- <li> <a href="/?s=Robotic+Process+Automation">Robotic Process Automation </a> </li> -->
+								<li> <a href="/?s=Digitalization">Digitalization </a> </li>
+								<li> <a href="/?s=Data+Analytics">Data Analytics </a> </li>
+								<li> <a href="/?s=IoT+%26+Embedded+Systems">IoT & Embedded Systems </a> </li>
+								<li> <a href="/?s=Application+Management+Services">Application Management Services </a> </li>
+								<li> <a href="/?s=Cyber+Security+Services">Cyber Security Services </a> </li>
+							</ul>
+						</div>
+					</div>
+					<div class="searchPromoBanners">
+						<div class="container">
+							<div class="row promoOnSearch">
+								<div class="col-sm-8 offset-sm-2">
+									<div class="promoBanners">
+										<div id="promoBanner_search" class="promoBanner_search">
+
+											<div class="promoBanner__item ">
+												<a href="https://www.yash.com/services/application-maintenance-and-support/">
+													<img src="https://www.yash.com/wp-content/themes/html5blank-stable/images/home/nxtGenAMS.webp" alt="application-maintenance-and-support" loading="lazy">
+												</a>
+											</div>
+
+											<div class="promoBanner__item ">
+												<a href="https://www.yash.com/services/sap-shared-services/">
+													<img src="https://www.yash.com/wp-content/themes/html5blank-stable/images/home/sapApplication.webp" alt="sap-shared-services" loading="lazy">
+												</a>
+											</div>
+
+										
+
+											<div class="promoBanner__item ">
+												<a href="https://www.yash.com/cmp/21/yash-ibsm.html">
+													<img src="https://www.yash.com/wp-content/themes/html5blank-stable/images/home/ibsmBanner_Search.webp" alt="yash-ibsm" loading="lazy">
+												</a>
+											</div>
+
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+	<!-- search --><script>
+jQuery(window).on('load', function() {
+    setTimeout(function() {
+        jQuery('#SubscribeModal').modal('show');
+    }, 5000);
+});
+</script>
+<link rel="stylesheet" href="https://www.yash.com/wp-content/themes/html5blank-stable/css/blog.min.css?ver=1.5">
+<style>
+body.single-blog.modal-open {
+    overflow: auto;
+}
+
+body.single-blog.modal-open .modal-backdrop {
+    display: none;
+}
+
+body.single-blog.modal-open div#SubscribeModal {
+    position: inherit;
+}
+
+.hide_cookie {
+    display: none;
+}
+
+.gry-bg {
+    background: #f5f5f5;
+    margin-bottom: 15px;
+    padding: 15px;
+}
+
+.solcial-button ul li a span svg {
+    width: 33px;
+    display: block;
+    margin: 0 auto;
+    padding-top: 6px;
+}
+
+.solcial-button ul li a,
+.solcial-button ul li a span {
+    width: 47px;
+    height: 47px;
+    display: block;
+    border-radius: 100%;
+}
+
+.solcial-button ul li {
+    display: inline-block;
+}
+
+.solcial-button ul {
+    margin: 0px auto;
+    padding: 0px;
+    text-align: center;
+}
+
+.gry-bg .commonTitle__title {
+    font-size: 22px;
+    margin-bottom: 15px;
+}
+
+.more-item-aut>ul {
+    margin: 0;
+    padding: 0;
+}
+
+.more-item-aut>ul>li {
+    border-bottom: solid 2px #d3d3d3;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    list-style-type: none;
+    min-height: 90px;
+}
+
+.more-item-aut>ul>li img {
+    width: 70px;
+    height: 70px;
+    float: left;
+    margin-right: 10px;
+}
+
+.more-item-heading a {
+    font-size: 17px;
+    display: block;
+    color: #000;
+    font-weight: 600;
+    margin-bottom: 7px;
+}
+
+.more-item-heading a:hover {
+    text-decoration: underline;
+}
+
+.more-item-heading li a {
+    font-size: 12px;
+    background: #096EFA;
+}
+
+span.more-date {
+    padding-left: 10px;
+    font-size: 12px;
+    color: #7c7c7c;
+    text-align: right;
+    display: inline-block;
+}
+
+.more-item-heading ul {
+    float: left;
+}
+
+.homePage_perspective_left .textContent {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    color: #fff;
+    z-index: 9;
+    padding: 0 15px;
+}
+
+.position-absolute {
+    position: absolute !important;
+}
+
+.gry-bg.pramotion-box.homePage_perspective_left h4 a {
+    color: #fff;
+    font-size: 1.1rem;
+    line-height: 23px !important;
+    display: block;
+}
+
+.gry-bg.pramotion-box.homePage_perspective_left h4 a:hover {
+    text-decoration: underline;
+}
+
+.gry-bg.pramotion-box.homePage_perspective_left .position-relative {
+    margin-bottom: 15px;
+}
+
+.auth-social-icon ul li {
+    display: inline-block;
+}
+
+.auth-social-icon ul {
+    padding: 0;
+    margin: 0;
+}
+
+.auth-social-icon ul li a {
+    background: #fff;
+    display: block;
+    border-radius: 100%;
+    width: 30px;
+    height: 30px;
+    padding-top: 4px;
+}
+
+.gry-bg.auth-dt {
+    margin-top: 15px;
+    color: #515151;
+}
+
+.gry-bg.auth-dt h5 {
+    font-size: 22px !important;
+}
+
+.gry-bg.auth-dt img {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+    display: block;
+    border-radius: 100%;
+}
+
+p.about.-auth {
+    font-size: 14px;
+}
+
+p.mb-0.font-md {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px !important;
+    display: block;
+}
+
+.auth-social-icon ul li a svg {
+    width: 23px;
+}
+.mobile_author{
+    display: none;
+}
+@media only screen and (max-width: 600px){
+    .auth-BIO-avail{
+        display: none;
+    }
+    .mobile_author{
+        display: block;
+    }
+}
+
+</style>
+
+<main class="mainContent">
+    <div class="blogDetail">
+
+
+        <div class="requestSec">
+            <a href="javascript: void(0);" class="d-flex align-items-center linkSecondary"
+                onclick="requestInformation()">
+                <i class="bi bi-info-circle"></i> <span class="font-bl text-uppercase">Request for Information</span>
+            </a>
+        </div>
+
+        <!-- blog detail banner -->
+        <section class="blogDetailBanner bgBlack">
+            <div class="container">
+                <nav aria-label="breadcrumb ">
+                    <ol class="breadcrumb commonBreadcrumb commonBreadcrumb--gray  bg-transparent p-0"> <a href="https://www.yash.com" rel="v:url" property="v:title"><li class="breadcrumb-item"><a href="https://www.yash.com">Home</a></li></a> <li class="breadcrumb-item"><a href="https://www.yash.com/blog/">blog</a></li> <span class="current">Enabling Proactive Business Process Monitoring in SAP Cloud ALM: A Real-World Walkthrough from YASH Technologies</span></ol><!-- .breadcrumbs -->                </nav>
+                <img data-progressive="https://www.yash.com/wp-content/uploads/2025/09/sap_cloud.png"
+                    class="w-100 progressive__img progressive--not-loaded" alt="Enabling Proactive Business Process Monitoring in SAP Cloud ALM">
+                <!-- <object class="d-flex mx-auto w-100" data="" type="image/webp">
+                    </object> -->
+            </div>
+        </section>
+        <!-- blog detail content -->
+        <section class="blogDetailContent">
+            <div class="container">
+                <div class="row contentRow">
+
+                    <div class="col-md-8">
+
+                        <div class="blogDetailContent__inner" style="padding: 0px;">
+                            <div class="topHeading">
+                                                                        <a href="https://www.yash.com/blog_category/sap"><span
+                                        class="badge badge-pill tag text-white rounded-0 font-bl">SAP</span></a>
+                                                                    <h1>Enabling Proactive Business Process Monitoring in SAP Cloud ALM: A Real-World Walkthrough from YASH Technologies</h1>
+                                <p class="mobile_author"><span class="authors">By: 
+                                                                    <a href="/blog_author/rakesh-singaram">Rakesh Singaram</a>                                    
+
+                                
+                                                                </span></p>
+                                <span class="date">Publish Date: September 12, 2025</span>
+                                
+                                
+                            </div>
+                            <p class="mb-50"><p>As enterprises accelerate their digital transformation journeys, the ability to monitor, analyze, and act on business disruptions in real time has become indispensable. YASH Technologies is helping clients meet this imperative through SAP Cloud ALM, enabling full-stack observability and streamlined issue resolution across hybrid landscapes.</p>
+<p>In this blog, we walk through how YASH integrated an <a href="https://www.yash.com/coe/sap/s4hana/">SAP S/4HANA</a> (S4D) on-premise system with SAP Cloud ALM for business process monitoring (BPMON), highlighting not only the step-by-step technical setup but also the real business impact of this capability in action.</p>
+<h4 class="mt-4 mb-3">Why Business Process Monitoring Matters</h4>
+<p>SAP Cloud ALM provides a centralized, cloud-native platform to monitor both the technical health and business performance of <a href="https://www.yash.com/coe/sap/">SAP</a> applications. When configured correctly, it empowers teams to:</p>
+<ul>
+<li>Detect disruptions early, before they impact operations</li>
+<li>Automate KPI-based alerting across core processes like Lead to Cash</li>
+<li>Reduce MTTR (mean time to resolution) by centralizing analysis and action</li>
+<li>Enable a collaborative, cross-functional response to exceptions</li>
+</ul>
+<p>&nbsp;</p>
+<p>For enterprises running S/4HANA on-premise, this integration bridges operational gaps and brings cloud-based agility to legacy deployments.</p>
+<h4 class="mt-4 mb-3">YASH’s Implementation Blueprint: Connecting S4D to SAP Cloud ALM</h4>
+<p><strong>1. Preparation and Prerequisites</strong></p>
+<p class="mt-0">To ensure successful connectivity, YASH enabled the SAP Cloud ALM APIs via SAP BTP and configured system parameters, SSL certificates, and SNOTE-based authorizations in the S4D system. Two distinct users were created: one for setup and one for ongoing background data push.</p>
+<p><strong>2. System Setup in S/4HANA</strong></p>
+<p class="mt-0">Using transaction /n/SDF/ALM_SETUP, the S4D system was registered with SAP Cloud ALM. Key steps included:</p>
+<ul>
+<li>Uploading the JSON service key from SAP BTP</li>
+<li>Defining the HTTP destination</li>
+<li>Selecting relevant use cases (e.g., BPMON, Health Monitoring)</li>
+<li>Registering the system to retrieve a unique LMS ID</li>
+</ul>
+<p>&nbsp;</p>
+<p>This registration enabled the S4D system to continuously push KPI data to SAP Cloud ALM.</p>
+<p><strong>3. Cloud ALM Configuration</strong></p>
+<p class="mt-0">Once the system was registered, the Cloud ALM operations console was used to:</p>
+<ul>
+<li>Confirm system visibility in the landscape management view</li>
+<li>Activate relevant use cases, such as Business Process Monitoring</li>
+<li>Configure KPI-based thresholds and alerts</li>
+<li>Set data retention policies for detailed and aggregated views</li>
+</ul>
+<h4></h4>
+<h4 class="mt-4 mb-3">Turning KPIs into Actionable Alerts</h4>
+<p>YASH’s implementation enables SAP users to monitor processes like Lead to Cash in near real-time. For instance, if sales orders are created with delivery blocks that exceed acceptable thresholds, alerts are automatically triggered and emailed to responsible users.</p>
+<p>Business process owners can drill down by organization, customer, or document type to investigate anomalies. Order processing agents then coordinate with accounting teams to validate payments and resolve holds, helping ensure on-time delivery and customer satisfaction.</p>
+<p><img decoding="async" class="alignnone wp-image-35704 size-full" src="https://www.yash.com/wp-content/uploads/2025/10/1.png" loading="lazy" /> <img decoding="async" class="alignnone wp-image-35704 size-full" src="https://www.yash.com/wp-content/uploads/2025/10/2.png" loading="lazy" /></p>
+<h4>Behind the Scenes: Automation in Motion</h4>
+<p>Several automated jobs were scheduled in the S4D system to ensure uninterrupted data flow:</p>
+<ul>
+<li>CALM Scheduler and CALM Heartbeat for API-level monitoring</li>
+<li>/SDF/CRBPA_DC_CONTROLLER and /SDF/CRBPA_AUTODISCOVERY for BPMON KPI tracking</li>
+</ul>
+<p>&nbsp;</p>
+<p>These jobs ensure consistent data collection and enable dynamic KPI activation based on live data in the S/4HANA system.</p>
+<h4 class="mt-4 mb-3">Impact</h4>
+<p>By integrating S/4HANA with <a href="https://www.yash.com/coe/sap/sap-on-cloud/">SAP Cloud</a> ALM, YASH enabled:</p>
+<ul>
+<li><strong>Continuous business process transparency</strong> with visibility into key metrics like delivery blocks, order backlogs, and process throughput</li>
+<li><strong>Fast root cause analysis</strong> powered by visual dashboards and drill-down capabilities</li>
+<li><strong>Collaboration across teams</strong> with proactive alerts routed to the right stakeholders</li>
+<li><strong>The result:</strong> smoother operations, higher customer satisfaction, and a foundation for intelligent process automation.</li>
+</ul>
+<h4></h4>
+<h4 class="mt-4 mb-3">Conclusion</h4>
+<p>At YASH Technologies, we believe that business process monitoring is more than just a compliance checkbox; it’s a catalyst for agile, data-driven operations. Our SAP Cloud ALM implementations bring structure, intelligence, and speed to how enterprises manage complexity at scale.</p>
+<p>For organizations looking to future-proof their SAP landscapes while delivering operational excellence, YASH’s Cloud ALM for Operations approach is a proven blueprint.</p>
+<p><strong>Want to learn more or see this in action?</strong><br />
+<a href="https://www.yash.com/contact-us">Connect with our SAP ALM experts</a> to discuss how we can help you activate real-time visibility across your enterprise processes.</p>
+</p>
+                            <ul class="list-inline tagList mb-0">
+                                                                        <li class="list-inline-item"><a href="https://www.yash.com/blog_tag/business-process-monitoring/ " class="badge tag rounded-0 text-white font-bl">Business Process Monitoring</a></li>
+                                                                            <li class="list-inline-item"><a href="https://www.yash.com/blog_tag/sap-cloud/ " class="badge tag rounded-0 text-white font-bl">SAP Cloud</a></li>
+                                                                            <li class="list-inline-item"><a href="https://www.yash.com/blog_tag/sap-solution/ " class="badge tag rounded-0 text-white font-bl">SAP Solution</a></li>
+                                                                </ul>
+                        </div>
+                        <div class="Author_BIO">
+
+                                            </div>
+                    </div>
+
+                    <div class="col-md-4">
+
+                        <div class="gry-bg auth_right_dt">
+                                <!-- Right Side Content - S -->
+                                
+                                    <div class="blogDetailContent__userDetail text-center">
+                                    <div class="user overflow-hidden rounded-circle mx-auto">
+                                                                                    <a href="/blog_author/rakesh-singaram"><img src="https://www.yash.com/wp-content/uploads/2025/09/rakesh_Singaram.jpg" alt="Rakesh Singaram" loading="lazy"></a>
+                                                                            </div>
+                                    <h5 class="h-20 font-md"><a href="/blog_author/rakesh-singaram">Rakesh Singaram</a></h5>
+                                    <p class="mb-0 font-md">Technical Architect</p>
+                                    </div>
+
+                                    
+                                                            </div>
+
+                        <div class="gry-bg solcial-button">
+                            <div class="a2a_kit a2a_kit_size_32 addtoany_list"
+                                data-a2a-url="https://www.yash.com/blog/enabling-proactive-business-process-monitoring-in-sap-cloud-alm/"
+                                data-a2a-title="Enabling Proactive Business Process Monitoring in SAP Cloud ALM: A Real-World Walkthrough from YASH Technologies">
+                                <ul>
+                                    <li class="so-facebook"><a class="a2a_button_facebook"><span
+                                                class="a2a_svg a2a_s__default a2a_s_facebook"
+                                                style="background-color: rgb(24, 119, 242);"><svg focusable="false"
+                                                    aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+                                                    <path fill="#FFF"
+                                                        d="M17.78 27.5V17.008h3.522l.527-4.09h-4.05v-2.61c0-1.182.33-1.99 2.023-1.99h2.166V4.66c-.375-.05-1.66-.16-3.155-.16-3.123 0-5.26 1.905-5.26 5.405v3.016h-3.53v4.09h3.53V27.5h4.223z">
+                                                    </path>
+                                                </svg></span></a></li>
+
+                                    <li class="so-twitter"><a class="a2a_button_twitter"><span
+                                                class="a2a_svg a2a_s__default a2a_s_twitter"
+                                                style="background-color: rgb(85, 172, 238);"><svg focusable="false"
+                                                    aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+                                                    <path fill="#FFF"
+                                                        d="M28 8.557a9.913 9.913 0 0 1-2.828.775 4.93 4.93 0 0 0 2.166-2.725 9.738 9.738 0 0 1-3.13 1.194 4.92 4.92 0 0 0-3.593-1.55 4.924 4.924 0 0 0-4.794 6.049c-4.09-.21-7.72-2.17-10.15-5.15a4.942 4.942 0 0 0-.665 2.477c0 1.71.87 3.214 2.19 4.1a4.968 4.968 0 0 1-2.23-.616v.06c0 2.39 1.7 4.38 3.952 4.83-.414.115-.85.174-1.297.174-.318 0-.626-.03-.928-.086a4.935 4.935 0 0 0 4.6 3.42 9.893 9.893 0 0 1-6.114 2.107c-.398 0-.79-.023-1.175-.068a13.953 13.953 0 0 0 7.55 2.213c9.056 0 14.01-7.507 14.01-14.013 0-.213-.005-.426-.015-.637.96-.695 1.795-1.56 2.455-2.55z">
+                                                    </path>
+                                                </svg></span></a></li>
+
+                                    <li class="so-linkedin"><a class="a2a_button_linkedin"><span
+                                                class="a2a_svg a2a_s__default a2a_s_linkedin"
+                                                style="background-color: rgb(0, 123, 181);"><svg focusable="false"
+                                                    aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+                                                    <path
+                                                        d="M6.227 12.61h4.19v13.48h-4.19V12.61zm2.095-6.7a2.43 2.43 0 0 1 0 4.86c-1.344 0-2.428-1.09-2.428-2.43s1.084-2.43 2.428-2.43m4.72 6.7h4.02v1.84h.058c.56-1.058 1.927-2.176 3.965-2.176 4.238 0 5.02 2.792 5.02 6.42v7.395h-4.183v-6.56c0-1.564-.03-3.574-2.178-3.574-2.18 0-2.514 1.7-2.514 3.46v6.668h-4.187V12.61z"
+                                                        fill="#FFF"></path>
+                                                </svg></span></a></li>
+                                </ul>
+                            </div>
+                        </div>
+                                            <div class="gry-bg more-aut-box">
+                        <h2 class="commonTitle__title aos-init aos-animate" data-aos="fade-up" data-aos-delay="300">
+                            More From Author<span class="theme-color">.</span>
+                        </h2>
+
+                        <div class="more-item-aut">
+                            <ul>
+                                                                <li>
+                                                                        <div class="more-item-heading">
+                                        <strong><a href="https://www.yash.com/blog/strengthening-business-process-reliability-with-job-and-automation-monitoring-in-sap-cloud-alm/">Strengthening Business Process Reliability with Job and Automation Monitoring in SAP Cloud ALM</a></strong>
+                                                                                <ul class="list-inline tagList mb-0">
+                                                                                        <li class="list-inline-item"><a
+                                                    href="/blog_category/sap"
+                                                    class="badge tag rounded-0 text-white font-bl">SAP</a>
+                                            </li>
+                                                                                        <li class="list-inline-item"><a
+                                                    href="/blog_category/"
+                                                    class="badge tag rounded-0 text-white font-bl"></a>
+                                            </li>
+                                                                                    </ul>
+                                                                                <span class="more-date">October 27, 2025</span>
+                                    </div>
+                                </li>
+                                                                <li>
+                                                                        <div class="more-item-heading">
+                                        <strong><a href="https://www.yash.com/blog/ensuring-reliable-data-exchange-with-integration-and-exception-monitoring-in-sap-cloud-alm/">Ensuring Reliable Data Exchange with Integration and Exception Monitoring in SAP Cloud ALM</a></strong>
+                                                                                <ul class="list-inline tagList mb-0">
+                                                                                        <li class="list-inline-item"><a
+                                                    href="/blog_category/sap"
+                                                    class="badge tag rounded-0 text-white font-bl">SAP</a>
+                                            </li>
+                                                                                        <li class="list-inline-item"><a
+                                                    href="/blog_category/"
+                                                    class="badge tag rounded-0 text-white font-bl"></a>
+                                            </li>
+                                                                                    </ul>
+                                                                                <span class="more-date">October 27, 2025</span>
+                                    </div>
+                                </li>
+                                                                <li>
+                                                                        <div class="more-item-heading">
+                                        <strong><a href="https://www.yash.com/blog/driving-operational-resilience-with-sap-cloud-alm-health-monitoring/">Driving Operational Resilience with SAP Cloud ALM Health Monitoring</a></strong>
+                                                                                <ul class="list-inline tagList mb-0">
+                                                                                        <li class="list-inline-item"><a
+                                                    href="/blog_category/sap"
+                                                    class="badge tag rounded-0 text-white font-bl">SAP</a>
+                                            </li>
+                                                                                        <li class="list-inline-item"><a
+                                                    href="/blog_category/"
+                                                    class="badge tag rounded-0 text-white font-bl"></a>
+                                            </li>
+                                                                                    </ul>
+                                                                                <span class="more-date">October 9, 2025</span>
+                                    </div>
+                                </li>
+                                                            </ul>
+                        </div>
+
+
+                    </div>
+                    
+                                            </div>
+            <!-- Right Side Content - E -->
+        
+        </div>
+
+
+    </div>
+    </div>
+    </section>
+    <!-- related post -->
+    <section class="relatedPostSec">
+        <div class="container">
+            <div class="commonTitle">
+                <h2 class="commonTitle__title h-36">Related Posts<span class="theme-color">.</span></h2>
+            </div>
+            <div class="blogListing" id="yashPerspectivesSlider">
+                                                <div class="blogListing__Box">
+                    <div class="blogListing__Box--Img rounded-lg overflow-hidden  position-relative">
+                        <img data-lazy="https://www.yash.com/wp-content/uploads/2025/12/employee_portal-298x181.jpg" class="img-fluid"
+                            alt="EC–ECP Integration">
+                        
+                        <div class="commonTag commonTag--blue position-absolute">
+                            EC-ECP Integration , SAP , SAP SuccessFactors                        </div>
+                        
+                    </div>
+                    <div class="blogListing__Box--info">
+                        <h3 class="font-bd"><a href="https://www.yash.com/blog/why-ec-ecp-integration-breaks-down/"
+                                class="linkSecondary">Why EC-ECP Integration Breaks Down</a></h3>
+                        <p>
+                            <!--span class="font-sm date"> </span-->
+                                                        <span class="font-bd name">Saratchandra Panganamamula</span>
+                                                    </p>
+                    </div>
+                </div>
+
+                                <div class="blogListing__Box">
+                    <div class="blogListing__Box--Img rounded-lg overflow-hidden  position-relative">
+                        <img data-lazy="https://www.yash.com/wp-content/uploads/2025/12/ai-hc-298x181.png" class="img-fluid"
+                            alt="Integrating AI & Automation for Smarter Patient Registration in MEA Healthcare">
+                        
+                        <div class="commonTag commonTag--blue position-absolute">
+                            AI In Healthcare , Healthcare Automation , SAP                        </div>
+                        
+                    </div>
+                    <div class="blogListing__Box--info">
+                        <h3 class="font-bd"><a href="https://www.yash.com/blog/integrating-ai-and-automation-for-smarter-patient-registration-and-scheduling-in-mea-healthcare/"
+                                class="linkSecondary">Integrating AI and Automation for Smarter Patient Registration and Scheduling in MEA Healthcare</a></h3>
+                        <p>
+                            <!--span class="font-sm date"> </span-->
+                                                        <span class="font-bd name">Damian Bonadonna</span>
+                                                    </p>
+                    </div>
+                </div>
+
+                                <div class="blogListing__Box">
+                    <div class="blogListing__Box--Img rounded-lg overflow-hidden  position-relative">
+                        <img data-lazy="https://www.yash.com/wp-content/uploads/2025/12/blog-cta-img-5-298x181.png" class="img-fluid"
+                            alt="Driving Operational Efficiency Through Embedded Learning">
+                        
+                        <div class="commonTag commonTag--blue position-absolute">
+                            Embedded Learning , SAP , SAP Enable                        </div>
+                        
+                    </div>
+                    <div class="blogListing__Box--info">
+                        <h3 class="font-bd"><a href="https://www.yash.com/blog/driving-operational-efficiency-with-embedded-learning/"
+                                class="linkSecondary">Driving Operational Efficiency Through Embedded Learning</a></h3>
+                        <p>
+                            <!--span class="font-sm date"> </span-->
+                                                        <span class="font-bd name">Sadhana Yogesh Ghalsasi</span>
+                                                    </p>
+                    </div>
+                </div>
+
+                                <div class="blogListing__Box">
+                    <div class="blogListing__Box--Img rounded-lg overflow-hidden  position-relative">
+                        <img data-lazy="https://www.yash.com/wp-content/uploads/2025/12/blog_lkm2-298x181.jpg" class="img-fluid"
+                            alt="Integrate SAP Enable Now with LMS Platforms">
+                        
+                        <div class="commonTag commonTag--blue position-absolute">
+                            LMS Integration , SAP , SAP Enable Now                        </div>
+                        
+                    </div>
+                    <div class="blogListing__Box--info">
+                        <h3 class="font-bd"><a href="https://www.yash.com/blog/integrating-sap-enable-now-with-lms-and-km-platforms/"
+                                class="linkSecondary">Creating a Unified Learning Experience: Integrating SAP Enable Now with LMS and KM Platforms</a></h3>
+                        <p>
+                            <!--span class="font-sm date"> </span-->
+                                                        <span class="font-bd name">Sadhana Yogesh Ghalsasi</span>
+                                                    </p>
+                    </div>
+                </div>
+
+                                <div class="blogListing__Box">
+                    <div class="blogListing__Box--Img rounded-lg overflow-hidden  position-relative">
+                        <img data-lazy="https://www.yash.com/wp-content/uploads/2025/12/blog_lkm-298x181.jpg" class="img-fluid"
+                            alt="Enterprise Enablement with SAP Enable Now & WalkMe">
+                        
+                        <div class="commonTag commonTag--blue position-absolute">
+                            SAP , SAP Enable Now , WalkMe                        </div>
+                        
+                    </div>
+                    <div class="blogListing__Box--info">
+                        <h3 class="font-bd"><a href="https://www.yash.com/blog/building-a-future-ready-workforce-with-sap-enable-now-and-walkme/"
+                                class="linkSecondary">Enterprise Enablement at Scale: Building a Future-Ready Workforce with SAP Enable Now and WalkMe</a></h3>
+                        <p>
+                            <!--span class="font-sm date"> </span-->
+                                                        <span class="font-bd name">Sadhana Yogesh Ghalsasi</span>
+                                                    </p>
+                    </div>
+                </div>
+
+                                <div class="blogListing__Box">
+                    <div class="blogListing__Box--Img rounded-lg overflow-hidden  position-relative">
+                        <img data-lazy="https://www.yash.com/wp-content/uploads/2025/12/dfdfddgdfg-298x181.jpg" class="img-fluid"
+                            alt="A Structured Approach to Upgrading Tricentis Tosca: Ensuring Continuity, Confidence, and Quality">
+                        
+                        <div class="commonTag commonTag--blue position-absolute">
+                            SAP Testing , Tosca Migration , Tricentis Tosca                        </div>
+                        
+                    </div>
+                    <div class="blogListing__Box--info">
+                        <h3 class="font-bd"><a href="https://www.yash.com/blog/a-structured-approach-to-upgrading-tricentis-tosca-ensuring-continuity-confidence-and-quality/"
+                                class="linkSecondary">A Structured Approach to Upgrading Tricentis Tosca: Ensuring Continuity, Confidence, and Quality</a></h3>
+                        <p>
+                            <!--span class="font-sm date"> </span-->
+                                                        <span class="font-bd name">Basanth Kumar Swain</span>
+                                                    </p>
+                    </div>
+                </div>
+
+                                <div class="blogListing__Box">
+                    <div class="blogListing__Box--Img rounded-lg overflow-hidden  position-relative">
+                        <img data-lazy="https://www.yash.com/wp-content/uploads/2025/12/Untitled-8-298x181.jpg" class="img-fluid"
+                            alt="SmartRecruiters Solution Overview: AI-Driven Talent Acquisition Platform">
+                        
+                        <div class="commonTag commonTag--blue position-absolute">
+                            AI Recruiting Software , SAP , SmartRecruiters , Talent Acquisition Platform                        </div>
+                        
+                    </div>
+                    <div class="blogListing__Box--info">
+                        <h3 class="font-bd"><a href="https://www.yash.com/blog/smartrecruiters-solution-overview/"
+                                class="linkSecondary">SmartRecruiters Solution Overview: AI-Driven Talent Acquisition Platform</a></h3>
+                        <p>
+                            <!--span class="font-sm date"> </span-->
+                                                        <span class="font-bd name">Yerriswamy Naidu</span>
+                                                    </p>
+                    </div>
+                </div>
+
+                                <div class="blogListing__Box">
+                    <div class="blogListing__Box--Img rounded-lg overflow-hidden  position-relative">
+                        <img data-lazy="https://www.yash.com/wp-content/uploads/2025/11/ecc_Cloud-298x181.png" class="img-fluid"
+                            alt="">
+                        
+                        <div class="commonTag commonTag--blue position-absolute">
+                            SAP , SAP ECC Migration , SAP ERP Public Cloud                        </div>
+                        
+                    </div>
+                    <div class="blogListing__Box--info">
+                        <h3 class="font-bd"><a href="https://www.yash.com/blog/why-sap-ecc-customers-must-act-now-to-migrate-to-sap-erp-public-cloud/"
+                                class="linkSecondary">The Clock is Ticking: Why SAP ECC Customers Must Act Now to Migrate to SAP ERP Public Cloud</a></h3>
+                        <p>
+                            <!--span class="font-sm date"> </span-->
+                                                        <span class="font-bd name">Hari Charan Mantravadi</span>
+                                                    </p>
+                    </div>
+                </div>
+
+                                <div class="blogListing__Box">
+                    <div class="blogListing__Box--Img rounded-lg overflow-hidden  position-relative">
+                        <img data-lazy="https://www.yash.com/wp-content/uploads/2025/11/wfadsfdasfdasfads-298x181.png" class="img-fluid"
+                            alt="Transform Business Data into Action with SAP Signavio">
+                        
+                        <div class="commonTag commonTag--blue position-absolute">
+                            Business Transformation , SAP , SAP Signavio                        </div>
+                        
+                    </div>
+                    <div class="blogListing__Box--info">
+                        <h3 class="font-bd"><a href="https://www.yash.com/blog/leveraging-sap-signavio-process-insights-for-smarter-decisions/"
+                                class="linkSecondary">From Data to Action: Leveraging SAP Signavio Process Insights for Smarter Decisions</a></h3>
+                        <p>
+                            <!--span class="font-sm date"> </span-->
+                                                        <span class="font-bd name">Akshay Kirti</span>
+                                                        <span class="font-bd name">Vikas Kumar Keshri</span>
+                                                    </p>
+                    </div>
+                </div>
+
+                                <div class="blogListing__Box">
+                    <div class="blogListing__Box--Img rounded-lg overflow-hidden  position-relative">
+                        <img data-lazy="https://www.yash.com/wp-content/uploads/2025/10/cloud_Logistic-298x181.png" class="img-fluid"
+                            alt="">
+                        
+                        <div class="commonTag commonTag--blue position-absolute">
+                            SAP , SAP Cloud                        </div>
+                        
+                    </div>
+                    <div class="blogListing__Box--info">
+                        <h3 class="font-bd"><a href="https://www.yash.com/blog/getting-more-out-of-logistics-by-leveraging-sap-business-data-cloud/"
+                                class="linkSecondary">Getting More Out of Logistics by Leveraging SAP Business Data Cloud</a></h3>
+                        <p>
+                            <!--span class="font-sm date"> </span-->
+                                                        <span class="font-bd name">Lakshman Rao Arthimalla</span>
+                                                        <span class="font-bd name">Nick Felix</span>
+                                                    </p>
+                    </div>
+                </div>
+
+                                <div class="blogListing__Box">
+                    <div class="blogListing__Box--Img rounded-lg overflow-hidden  position-relative">
+                        <img data-lazy="https://www.yash.com/wp-content/uploads/2025/10/cloud_Computing-298x181.png" class="img-fluid"
+                            alt="">
+                        
+                        <div class="commonTag commonTag--blue position-absolute">
+                            SAP , SAP Cloud , SAP Cloud ALM                        </div>
+                        
+                    </div>
+                    <div class="blogListing__Box--info">
+                        <h3 class="font-bd"><a href="https://www.yash.com/blog/strengthening-business-process-reliability-with-job-and-automation-monitoring-in-sap-cloud-alm/"
+                                class="linkSecondary">Strengthening Business Process Reliability with Job and Automation Monitoring in SAP Cloud ALM</a></h3>
+                        <p>
+                            <!--span class="font-sm date"> </span-->
+                                                        <span class="font-bd name">Rakesh Singaram</span>
+                                                    </p>
+                    </div>
+                </div>
+
+                                <div class="blogListing__Box">
+                    <div class="blogListing__Box--Img rounded-lg overflow-hidden  position-relative">
+                        <img data-lazy="https://www.yash.com/wp-content/uploads/2025/10/data_Exchange-298x181.png" class="img-fluid"
+                            alt="">
+                        
+                        <div class="commonTag commonTag--blue position-absolute">
+                            Data Integration , SAP , SAP Cloud ALM                        </div>
+                        
+                    </div>
+                    <div class="blogListing__Box--info">
+                        <h3 class="font-bd"><a href="https://www.yash.com/blog/ensuring-reliable-data-exchange-with-integration-and-exception-monitoring-in-sap-cloud-alm/"
+                                class="linkSecondary">Ensuring Reliable Data Exchange with Integration and Exception Monitoring in SAP Cloud ALM</a></h3>
+                        <p>
+                            <!--span class="font-sm date"> </span-->
+                                                        <span class="font-bd name">Rakesh Singaram</span>
+                                                    </p>
+                    </div>
+                </div>
+
+                
+            </div>
+        </div>
+    </section>
+        </div>
+</main>
+
+<!-- footer -->
+<footer class="footer bgBlack position-relative" id="footer">
+    <!-- Subscribe Newsletter Section - S -->
+    <div class="sub-top-fotter">
+        <i class="bi bi-envelope-paper"></i>
+        <div class="container">
+            <div class="row d-flex align-items-center">
+
+                <div class="col-md-9">
+                    <span class="footer__title font-hv" style="font-size: 2rem;padding-top: 1rem;font-weight: 500;color: #fff;padding-bottom: 2rem;">Stay connected to get the best of YASH Technologies in your inbox</span>
+                </div>
+                <div class="col-md-3">
+                    <a href="https://www.yash.com/subscribe/" class="learn-more-btn learn-more-border lm-amber">
+                        <div class="circle"> </div>
+                        <p class="btn-text">Subscribe</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Subscribe Newsletter Section - E -->
+    <div class="footer__top">
+        <div class="container">
+            <div class="row d-flex">
+                <!--div class="col-lg-4">
+                                <h4 class="footer__title theme-color font-hv">Home</h4>
+                                                                
+                            </div-->
+                <div class="col-lg-12 ">
+                    <div class="quickLinkDiv">
+                        <span class="footer__title">Quick Links:</span>
+                        <ul id="menu-quicklinks" class="list-unstyled footer__nav"><li id="menu-item-18146" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-18146"><a href="https://www.yash.com/coe/sap/">SAP</a></li>
+<li id="menu-item-16620" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-16620"><a href="https://www.yash.com/services/digitalization/">Digitalization</a></li>
+<li id="menu-item-18147" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-18147"><a href="https://www.yash.com/services/modernization/">Modernization</a></li>
+<li id="menu-item-18145" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-18145"><a href="https://www.yash.com/services/intelligence-services/">Intelligence Services</a></li>
+<li id="menu-item-19430" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-19430"><a href="https://www.yash.com/services/application-maintenance-and-support/">NextGen AMS</a></li>
+<li id="menu-item-18148" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-18148"><a href="https://www.yash.com/services/infrastructure-management-services/">Cloud &#038; Infrastructure Management Services</a></li>
+<li id="menu-item-24359" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-24359"><a href="https://www.yash.com/services/cyber-security-services/">Cyber Security Services</a></li>
+<li id="menu-item-16697" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-16697"><a href="https://www.yash.com/coe/iot-and-embedded-systems/">IoT</a></li>
+</ul>                    </div>
+                </div>
+            </div>
+            <div class="row d-flex ">
+                <div class="col-lg-12 ">
+                    <div class="sbsidiery">
+                        <span class="footer__title">Subsidiaries:</span>
+                        <ul id="menu-subsidiaries" class="list-unstyled footer__nav"><li id="menu-item-16623" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16623"><a href="https://www.aaseya.com/">Aaseya IT Services</a></li>
+<li id="menu-item-16624" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16624"><a href="https://www.codiant.com/">Codiant Technologies</a></li>
+<li id="menu-item-16626" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16626"><a href="http://www.intellents.com/">Intellents</a></li>
+</ul>                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12 ">
+                    <div class="footerLg">
+                        <picture>
+                            <source srcset="https://www.yash.com/wp-content/themes/html5blank-stable/images/yash-footer-logo-new.webp" type="image/webp">
+                            <source srcset="https://www.yash.com/wp-content/themes/html5blank-stable/images/yash-footer-logo-new.svg" type="image/svg">
+                            <img src="https://www.yash.com/wp-content/themes/html5blank-stable/images/yash-footer-logo-new.svg" alt="Yash-Technologies" class="img-fluid footer__logo" width="170" height="103" loading="lazy">
+                        </picture>
+                        <div class="footerImages">
+                            <div>
+                                <!-- <img src="https://www.yash.com/wp-content/themes/html5blank-stable/images/cmmidev-5.png"  alt="CMMIDEV-5" class="img-fluid" loading="lazy"> -->
+                                <picture>
+                                    <source srcset="https://www.yash.com/wp-content/themes/html5blank-stable/images/footerAdonLogo.webp" type="image/webp">
+                                    <source srcset="https://www.yash.com/wp-content/themes/html5blank-stable/images/footerAdonLogo.png" type="image/png">
+                                    <img src="https://www.yash.com/wp-content/themes/html5blank-stable/images/footerAdonLogo.png" alt="CMMIDEV-5" style="height:auto!important" class="img-fluid" loading="lazy">
+                                </picture>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+
+        </div>
+    </div>
+    <div class="footer__copyRight">
+        <div class="container">
+            <div class="d-sm-flex align-items-center justify-content-between">
+                <div class="txt">
+                    <ul id="menu-footersubmenu" class="text-white"><li id="menu-item-16630" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16630"><a href="/about-us/csr/">CSR<span>/</span></a></li>
+<li id="menu-item-19288" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-19288"><a href="https://www.yash.com/site-map/">Site Map<span>/</span></a></li>
+<li id="menu-item-16632" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16632"><a href="/legal/">Legal<span>/</span></a></li>
+<li id="menu-item-16633" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16633"><a href="/privacy-policy/">Privacy policy<span>/</span></a></li>
+<li id="menu-item-35847" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-35847"><a href="https://www.yash.com/cookie-policy/">Cookie Policy<span>/</span></a></li>
+<li id="menu-item-16634" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-16634"><a href="/payment-policy/">Payment policy<span>/</span></a></li>
+<li id="menu-item-24223" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-24223"><a target="_blank" href="https://www.yash.com/Pdfs/Modern-Slavery-Statement.pdf">Modern Slavery Act Policy<span>/</span></a></li>
+</ul>
+                     <div class="mb-0 text-white">			<div class="textwidget"><p>Copyright © 2025. YASH Technologies. All Rights Reserved.</p>
+</div>
+		</div>
+                </div>
+                <ul id="menu-footersocial" class="list-inline footer__socialMedia"><li id="menu-item-16627" class="list-inline-item menu-item menu-item-type-custom menu-item-object-custom menu-item-16627"><a target="_blank" href="https://www.facebook.com/YASHCorporate"><i class="fa fa-facebook" aria-hidden="true"></i></a></li>
+<li id="menu-item-16628" class="list-inline-item menu-item menu-item-type-custom menu-item-object-custom menu-item-16628"><a target="_blank" href="https://twitter.com/YASH_Tech"><i class="fa fa-twitter" aria-hidden="true"></i></a></li>
+<li id="menu-item-16629" class="list-inline-item menu-item menu-item-type-custom menu-item-object-custom menu-item-16629"><a target="_blank" href="https://www.linkedin.com/company/yash-technologies/"><i class="fa fa-linkedin" aria-hidden="true"></i></a></li>
+<li id="menu-item-21798" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-21798"><a target="_blank" href="https://www.youtube.com/user/yashtechnologies/"><i class="fa fa-youtube-play" aria-hidden="true"></i></a></li>
+<li id="menu-item-23314" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-23314"><a target="_blank" href="https://www.instagram.com/yash_technologies/"><i class="fa fa-instagram" aria-hidden="true"></i></a></li>
+<li id="menu-item-25843" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-25843"><a href="https://in.pinterest.com/yashcorporate/"><i class="fa fa-pinterest-p" aria-hidden="true"></i></a></li>
+</ul>
+                </ul>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<div class="modal fade" id="requestInformationModal" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="requestInformationLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered commonModal commonModal--requestInformation">
+        <div class="modal-content">
+            <div class="modal-body">
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+                <div class="commonTitle" id="rfiFrthnxMsg" style="display:none;" style="font-size: 19px;">
+                    <!-- <span class="commonTag text-uppercase">I would love to...</span> -->
+                    <h2 class="commonTitle__heading">
+                        <div id="text-3" class="widget_text">
+                            <div class="textwidget">
+
+                                <p style="font-size: 30px;text-align: center;color: #008e53;margin-bottom: 25px;line-height: 1.5;">Thank You for submitting your information.</p>
+
+                                <p style="font-size: 16px;text-align: center;margin-bottom: 12px;">Your request has been forwarded to concerned group.</p>
+
+                                <p style="font-size: 16px;text-align: center;margin-bottom: 12px;">For any assistance mail us to <a href="mailto:info@yash.com">info@yash.com</a></p>
+                            </div>
+                        </div>
+                    </h2>
+                </div>
+                <div class="commonTitle" id="rfiFrTitle">
+                    <!-- <span class="commonTag text-uppercase">I would love to...</span> -->
+                    <h2 class="commonTitle__heading">
+                        <div id="text-3" class="widget_text">			<div class="textwidget"><p>We would love to talk and turn your ideas into something memorable</p>
+</div>
+		</div></h2>
+                </div>
+                                
+<div class="wpcf7 no-js" id="wpcf7-f17248-o1" lang="en-US" dir="ltr" data-wpcf7-id="17248">
+<div class="screen-reader-response"><p role="status" aria-live="polite" aria-atomic="true"></p> <ul></ul></div>
+<form action="/blog/enabling-proactive-business-process-monitoring-in-sap-cloud-alm/#wpcf7-f17248-o1" method="post" class="wpcf7-form init wpcf7-acceptance-as-validation" id="popupfrm-17248" aria-label="Contact form" novalidate="novalidate" data-status="init">
+<fieldset class="hidden-fields-container"><input type="hidden" name="_wpcf7" value="17248" /><input type="hidden" name="_wpcf7_version" value="6.1.4" /><input type="hidden" name="_wpcf7_locale" value="en_US" /><input type="hidden" name="_wpcf7_unit_tag" value="wpcf7-f17248-o1" /><input type="hidden" name="_wpcf7_container_post" value="0" /><input type="hidden" name="_wpcf7_posted_data_hash" value="" />
+</fieldset>
+<input class="wpcf7-form-control wpcf7-hidden utm_source" id="utm_source" value="RFI-Popup-form-submit" type="hidden" name="utm_source" />
+<input class="wpcf7-form-control wpcf7-hidden utm_medium" id="utm_medium" value="RFI-Popup-form" type="hidden" name="utm_medium" />
+<input class="wpcf7-form-control wpcf7-hidden utm_campaign" id="utm_campaign" value="RFI-Popup-form" type="hidden" name="utm_campaign" />
+<div class="row">
+	<div class="col-sm-6">
+		<div class="form-group focusField">
+			<p><span class="wpcf7-form-control-wrap" data-name="firstname"><input size="40" maxlength="100" class="wpcf7-form-control wpcf7-text wpcf7-validates-as-required form-control" aria-required="true" aria-invalid="false" placeholder="Name" value="" type="text" name="firstname" /></span>
+			</p>
+		</div>
+	</div>
+	<div class="col-sm-6">
+		<div class="form-group focusField">
+			<p><span class="wpcf7-form-control-wrap" data-name="email"><input size="40" maxlength="100" class="wpcf7-form-control wpcf7-email wpcf7-validates-as-required wpcf7-text wpcf7-validates-as-email form-control" aria-required="true" aria-invalid="false" placeholder="Email" value="" type="email" name="email" /></span>
+			</p>
+		</div>
+	</div>
+	<div class="col-sm-6">
+		<div class="form-group focusField">
+			<p><span class="wpcf7-form-control-wrap" data-name="phone"><input size="40" maxlength="20" class="wpcf7-form-control wpcf7-tel wpcf7-validates-as-required wpcf7-text wpcf7-validates-as-tel form-control" aria-required="true" aria-invalid="false" placeholder="Phone" value="" type="tel" name="phone" /></span>
+			</p>
+		</div>
+	</div>
+	<div class="col-sm-6">
+		<div class="form-group focusField">
+			<p><span class="wpcf7-form-control-wrap" data-name="company"><input size="40" maxlength="100" class="wpcf7-form-control wpcf7-text wpcf7-validates-as-required form-control" aria-required="true" aria-invalid="false" placeholder="Company" value="" type="text" name="company" /></span>
+			</p>
+		</div>
+	</div>
+</div>
+<div class="form-group focusField">
+	<p><span class="wpcf7-form-control-wrap" data-name="describefewwords"><input size="40" maxlength="250" class="wpcf7-form-control wpcf7-text wpcf7-validates-as-required form-control" aria-required="true" aria-invalid="false" placeholder="Describe in few words..." value="" type="text" name="describefewwords" /></span>
+	</p>
+</div>
+<div class="form-group focusField accptfieldpopUp">
+	<p><span class="wpcf7-form-control-wrap" data-name="acceptance1"><span class="wpcf7-form-control wpcf7-acceptance"><span class="wpcf7-list-item"><input type="checkbox" name="acceptance1" value="1" aria-invalid="false" /></span></span></span>
+	</p>
+	<p>I confirm, I have read and agree to <a href="https://www.yash.com/privacy-policy/" target="_blank" class="policy-link" style="text-decoration:underline;"> YASH’s Privacy Policy</a> and consent to sharing my information.
+	</p>
+</div>
+<div class="form-group focusField accptfieldpopUp">
+	<p><span class="wpcf7-form-control-wrap" data-name="yashUpdates"><span class="wpcf7-form-control wpcf7-checkbox"><span class="wpcf7-list-item first last"><input type="checkbox" name="yashUpdates[]" value="I would like to receive updates from YASH." /><span class="wpcf7-list-item-label">I would like to receive updates from YASH.</span></span></span></span>
+	</p>
+</div>
+<div class="form-group captchaField ">
+	<p><div id="cf7sr-694e94dbcf84e" class="cf7sr-g-recaptcha" data-theme="light" data-type="image" data-size="normal" data-sitekey="6LcveH4UAAAAAKDkF0JCwvUXDh5OHPAanDgCXr-F"></div><span class="wpcf7-form-control-wrap cf7sr-recaptcha" data-name="cf7sr-recaptcha"><input type="hidden" name="cf7sr-recaptcha" value="" class="wpcf7-form-control"></span>
+	</p>
+	<p class="mb-0 mt-2">Please check the box above to proceed
+	</p>
+</div>
+<p><input class="wpcf7-form-control wpcf7-submit has-spinner btn btn-primary ripple-effect" type="submit" value="SEND" />
+</p><div class="wpcf7-response-output" aria-hidden="true"></div>
+</form>
+</div>
+                            </div>
+        </div>
+    </div>
+</div>
+<!-- script -->
+<script type="text/javascript" defer="" async="" src="https://static.addtoany.com/menu/page.js" id="addtoany-core-js" integrity="sha512-1sZPaAStmNYB6jCAi2MAhpjpwZmJLaK1h+Yfq7SjXei63/YbAlNCNNjKGtCZRYSUM6GdyjzbUhXWcuv8F4LFZA==" crossorigin="anonymous"></script>
+<!-- <script src="https://www.linkedin.com/autofill/js/autofill.js" type="text/javascript" integrity="sha512-1sZPaAStmNYB6jCAi2MAhpjpwZmJLaK1h+Yfq7SjXei63/YbAlNCNNjKGtCZRYSUM6GdyjzbUhXWcuv8F4LFZA==" crossorigin="anonymous" defer="" async=""> -->
+<script src="https://www.yash.com/wp-content/themes/html5blank-stable/js/linkedin-autofill.js" type="text/javascript" defer async></script>
+<script src='https://www.yash.com/wp-content/themes/html5blank-stable/js/aos.js?ver=1.0.0' type='text/javascript' id='aosjs-js'></script>
+<script src="https://www.yash.com/wp-content/themes/html5blank-stable/js/slick.min.js" type='text/javascript'></script>
+<script src="https://www.yash.com/wp-content/themes/html5blank-stable/js/progressively.min.js" type='text/javascript'></script>
+<script type="speculationrules">
+{"prefetch":[{"source":"document","where":{"and":[{"href_matches":"/*"},{"not":{"href_matches":["/wp-*.php","/wp-admin/*","/wp-content/uploads/*","/wp-content/*","/wp-content/plugins/*","/wp-content/themes/html5blank-stable/*","/*\\?(.+)"]}},{"not":{"selector_matches":"a[rel~=\"nofollow\"]"}},{"not":{"selector_matches":".no-prefetch, .no-prefetch a"}}]},"eagerness":"conservative"}]}
+</script>
+        <script type="text/javascript">
+            var widgetIds = [];
+            var cf7srLoadCallback = function() {
+                var cf7srWidgets = document.querySelectorAll('.cf7sr-g-recaptcha');
+                for (var i = 0; i < cf7srWidgets.length; ++i) {
+                    var cf7srWidget = cf7srWidgets[i];
+                    var widgetId = grecaptcha.render(cf7srWidget.id, {
+                        'sitekey' : "6LcveH4UAAAAAKDkF0JCwvUXDh5OHPAanDgCXr-F"                    });
+                    widgetIds.push(widgetId);
+                }
+            };
+            (function($) {
+                $('.wpcf7').on('wpcf7invalid wpcf7mailsent invalid.wpcf7 mailsent.wpcf7', function() {
+                    for (var i = 0; i < widgetIds.length; i++) {
+                        grecaptcha.reset(widgetIds[i]);
+                    }
+                });
+            })(jQuery);
+        </script>
+        <script src="https://www.google.com/recaptcha/api.js?onload=cf7srLoadCallback&#038;render=explicit" async defer></script>
+        <script type="text/javascript" src="https://www.yash.com/wp-includes/js/comment-reply.min.js" id="comment-reply-js" async="async" data-wp-strategy="async" fetchpriority="low"></script>
+<script type="text/javascript" src="https://www.yash.com/wp-includes/js/dist/hooks.min.js?ver=dd5603f07f9220ed27f1" id="wp-hooks-js"></script>
+<script type="text/javascript" src="https://www.yash.com/wp-includes/js/dist/i18n.min.js?ver=c26c3dc7bed366793375" id="wp-i18n-js"></script>
+<script type="text/javascript" id="wp-i18n-js-after">
+/* <![CDATA[ */
+wp.i18n.setLocaleData( { 'text direction\u0004ltr': [ 'ltr' ] } );
+//# sourceURL=wp-i18n-js-after
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://www.yash.com/wp-content/plugins/contact-form-7/includes/swv/js/index.js?ver=6.1.4" id="swv-js"></script>
+<script type="text/javascript" id="contact-form-7-js-before">
+/* <![CDATA[ */
+var wpcf7 = {
+    "api": {
+        "root": "https:\/\/www.yash.com\/wp-json\/",
+        "namespace": "contact-form-7\/v1"
+    }
+};
+//# sourceURL=contact-form-7-js-before
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://www.yash.com/wp-content/plugins/contact-form-7/includes/js/index.js?ver=6.1.4" id="contact-form-7-js"></script>
+<script type="text/javascript" id="prevent-xss-vulnerability-js-extra">
+/* <![CDATA[ */
+var selfXss = {"message":""};
+//# sourceURL=prevent-xss-vulnerability-js-extra
+/* ]]> */
+</script>
+<script type="text/javascript" src="https://www.yash.com/wp-content/plugins/prevent-xss-vulnerability/assets/js/script-2.1.0.min.js?ver=1" id="prevent-xss-vulnerability-js"></script>
+<script>
+    jQuery("#promoBanner_search").slick({
+        dots: true,
+        centerMode: true,
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        centerPadding: '0',
+        lazyLoad: 'ondemand',
+        autoplay: true,
+        responsive: [{
+                breakpoint: 992,
+                settings: {
+                    centerMode: false,
+                    slidesToShow: 1,
+                    slidesToScroll: 2,
+                }
+            },
+            {
+                breakpoint: 576,
+                settings: {
+                    slidesToShow: 1,
+                    centerMode: false,
+                    slidesToScroll: 1,
+                    // adaptiveHeight: true
+                }
+            }
+        ]
+    });
+    document.addEventListener('wpcf7mailsent', function(event) {
+        if ('12063' == event.detail.contactFormId) { // Sends sumissions on form to the thank you page
+            window.location = 'https://www.yash.com/rfi-thanks/';
+        } else if ('25589' == event.detail.contactFormId) { // Sends sumissions on form to the thank you page
+
+            var url_string = window.location.href;
+            var dUrl = new URL(url_string);
+            var pdfName = dUrl.searchParams.get("pdfname");
+            window.location = 'https://www.yash.com/pdf-thanks/?pdfname=' + pdfName;
+        } else if ('17248' == event.detail.contactFormId) {
+            ga('send', {
+                'hitType': 'event',
+                'eventCategory': 'RFI Slider Form',
+                'eventAction': 'SubmitQuery',
+                'eventLabel': 'RFI Slider Form Submission',
+                'eventValue': 1
+            })
+        }
+    }, false);
+
+    function openRightMenu() {
+        jQuery("#rightMenu").addClass("in");
+        jQuery('body').addClass('overflow-hidden');
+    }
+
+    function closeRightMenu() {
+        jQuery("#rightMenu").removeClass("in");
+        jQuery('body').removeClass('overflow-hidden');
+    }
+
+    function requestInformation() {
+        jQuery('#requestInformationModal').modal('show');
+    }
+    //ripple-effect for button
+    jQuery('.ripple-effect, .ripple-effect-dark').on('click', function(e) {
+        var rippleDiv = jQuery('<span class="ripple-overlay">'),
+            rippleOffset = jQuery(this).offset(),
+            rippleY = e.pageY - rippleOffset.top,
+            rippleX = e.pageX - rippleOffset.left;
+        rippleDiv.css({
+            top: rippleY - (rippleDiv.height() / 2),
+            left: rippleX - (rippleDiv.width() / 2),
+        }).appendTo(jQuery(this));
+        window.setTimeout(function() {
+            rippleDiv.remove();
+        }, 800);
+    });
+    jQuery('#toggle-menu').click(function() {
+        jQuery(this).toggleClass('open');
+        if (jQuery(window).width() < 767) {
+            jQuery('body').toggleClass('modal-open');
+        }
+    });
+    // images blur on when page load
+    function loadprogressive() {
+        progressively.init({
+            delay: 0,
+            throttle: 50,
+            onLoadComplete: function() {}
+        });
+    }
+    jQuery(document).ready(function() {
+        loadprogressive()
+    });
+
+    /*
+    jQuery(window).scroll(function() {
+        var scroll = jQuery(window).scrollTop();
+
+        if (scroll >= 160) {
+            jQuery("header").addClass("stickyTop");
+        } else {
+            jQuery("header").removeClass("stickyTop");
+        }
+    });
+    */
+    jQuery(document).ready(function() {
+        if (jQuery(window).width() <= 991) {
+            jQuery('.navbar-nav .nav-item .icon-dropArrow').click(
+                function() {
+                    jQuery(this).children('.navSubmenu').addClass('show')
+                },
+                function() {
+                    jQuery(this).children('.navSubmenu').removeClass('show')
+                }
+            )
+            jQuery('.navbar-nav .nav-item .submenu').slideDown();
+
+
+
+            jQuery('#customHeader .Submenu .icon-dropArrow').click(function() {
+                if (jQuery(this).parent('.Submenu').hasClass('show')) {
+                    jQuery(this).parent('.Submenu').removeClass('show');
+                    jQuery(this).siblings('.navSubmenu').hide();
+                    jQuery('#closeMenu').removeClass('active')
+                } else {
+                    jQuery('#customHeader .Submenu').removeClass('show');
+                    jQuery('#customHeader .Submenu .navSubmenu').hide();
+                    jQuery(this).parent('.Submenu').addClass('show');
+                    jQuery(this).siblings('.navSubmenu').show();
+                    jQuery('#closeMenu').addClass('active')
+                }
+            });
+
+            jQuery('.menuOverlay').click(function() {
+                jQuery('#customHeader .Submenu').removeClass('show');
+                jQuery('#customHeader .Submenu .navSubmenu').hide();
+                jQuery('#closeMenu').removeClass('active');
+            });
+            jQuery('#closeMenu').click(function() {
+                jQuery(this).removeClass('active');
+                jQuery('#customHeader .Submenu').removeClass('show');
+                jQuery('#customHeader .Submenu .navSubmenu').hide();
+            });
+        }
+    });
+    jQuery('#requestInformationModal .close').on('click', function() {
+        console.log("cicked");
+        jQuery('span.wpcf7-not-valid-tip').html('');
+        jQuery('.wpcf7-response-output').html('');
+        jQuery('.wpcf7-response-output').css('border-color', '#fff');
+
+    });
+    document.addEventListener('wpcf7submit', function(event) {
+        var getlengthval = jQuery('span.wpcf7-not-valid-tip').length;
+        console.log("span.wpcf7-not-valid-tip--> " + getlengthval);
+        if (getlengthval >= 0) {} else {
+            //console.log("getLength < 1 ");
+
+            jQuery('#rfiFrTitle').hide();
+            jQuery('#popupfrm-17248').hide();
+            jQuery('#rfiFrthnxMsg').show();
+            //jQuery('#requestInformationModal').modal('hide');
+            /*     jQuery(":input", form).each(function() {
+                     var type = this.type;
+                     var tag = this.tagName.toLowerCase();
+                     if (type == 'text') {
+                         this.value = "";
+                     }
+                     jQuery('span.wpcf7-not-valid-tip').html('');
+                 });*/
+        }
+    }, false);
+    AOS.init({
+        easing: 'ease-out-back',
+        offset: 100,
+        disable: 'mobile',
+        //once:true,   
+    });
+
+    if (!!window.MSInputMethodContext && !!document.documentMode) {
+        const script = document.createElement('script');
+        script.src =
+            'https://cdnjs.cloudflare.com/ajax/libs/jquery.lazy/1.7.11/jquery.lazy.min.js';
+        document.body.appendChild(script);
+        jQuery(function() {
+            jQuery('.lazy').lazy();
+        });
+        jQuery("#insightsFeaturedSlider h4").text(function(index, currentText) {
+            var maxLength = 62;
+            if (currentText.length >= maxLength) {
+                return currentText.substr(0, maxLength) + "...";
+            } else {
+                return currentText
+            }
+        });
+        jQuery("#insightsFeaturedSlider p").text(function(index, currentText) {
+            var maxLength = 135;
+            if (currentText.length >= maxLength) {
+                return currentText.substr(0, maxLength) + "...";
+            } else {
+                return currentText
+            }
+        });
+    } else {
+        document.addEventListener("DOMContentLoaded", function() {
+            var lazyloadImages;
+
+            if ("IntersectionObserver" in window) {
+                lazyloadImages = document.querySelectorAll(".lazy");
+                var imageObserver = new IntersectionObserver(function(entries, observer) {
+                    entries.forEach(function(entry) {
+                        if (entry.isIntersecting) {
+                            var image = entry.target;
+                            image.src = image.dataset.src;
+                            image.classList.remove("lazy");
+                            imageObserver.unobserve(image);
+                        }
+                    });
+                });
+
+                lazyloadImages.forEach(function(image) {
+                    imageObserver.observe(image);
+                });
+            } else {
+                var lazyloadThrottleTimeout;
+                lazyloadImages = document.querySelectorAll(".lazy");
+
+                function lazyload() {
+                    if (lazyloadThrottleTimeout) {
+                        clearTimeout(lazyloadThrottleTimeout);
+                    }
+
+                    lazyloadThrottleTimeout = setTimeout(function() {
+                        var scrollTop = window.pageYOffset;
+
+                        lazyloadImages.forEach(function(img) {
+                            if (img.offsetTop < (window.innerHeight + scrollTop)) {
+                                img.src = img.dataset.src;
+                                img.classList.remove('lazy');
+                            }
+                        });
+                        if (lazyloadImages.length == 0) {
+                            document.removeEventListener("scroll", lazyload);
+                            window.removeEventListener("resize", lazyload);
+                            window.removeEventListener("orientationChange", lazyload);
+                        }
+                    }, 20);
+                }
+
+                document.addEventListener("scroll", lazyload);
+                window.addEventListener("resize", lazyload);
+                window.addEventListener("orientationChange", lazyload);
+            }
+        })
+    }
+</script>
+
+<!--script src="https://code.jquery.com/jquery-1.12.4.js"></script-->
+
+<!-- jQuery UI library -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/themes/smoothness/jquery-ui.css" integrity="sha256-+bdRwc0NKw+Rhi25h/7Z3aSHWLFeb0LKZ3lrRfSyFwI=" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.14.1/jquery-ui.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+<script>
+    jQuery(function() {
+        jQuery("#ytSearch_box").autocomplete({
+            source: "//" + location.hostname + "/searchAutoSuggest.php",
+            select: function(event, ui) {
+                var reportname = ui.item.value;
+                this.value = reportname;
+                jQuery("#ytSearchForm").submit();
+            }
+
+            //minLength: 2
+        });
+        jQuery("#ytSearch_box1").autocomplete({
+            source: "//" + location.hostname + "/searchAutoSuggest.php",
+            select: function(event, ui) {
+                var reportname1 = ui.item.value
+                //alert(this.value);
+                //alert(ui.item.value);
+                this.value = reportname1;
+                //alert(this.value); 			
+                jQuery("#ytSearchForm1").submit();
+            }
+
+            //minLength: 2
+        });
+
+        jQuery('#ytSearchForm').on("submit", function() {
+            var TCode = document.getElementById('ytSearch_box').value;
+            // validateSearchString(TCode);
+            // var newTCode = TCode.replace(/[&\/\\#, +()$~%.'":*?@^<>{}]/g, '');
+            // window.location = "https://www.yash.com/?s="+newTCode;
+            window.location = "https://www.yash.com/?s=" + TCode;
+        });
+
+        jQuery('#ytSearchForm1').on("submit", function() {
+            var TCode1 = document.getElementById('ytSearch_box1').value;
+            // validateSearchString(TCode1);
+            // var newTCode = TCode1.replace(/[&\/\\#, +()$~%.'":*?@^<>{}]/g, '');
+            // window.location = "https://www.yash.com/?s="+newTCode;
+            window.location = "https://www.yash.com/?s=" + TCode1;
+        });
+    });
+
+    function validateSearchString(TCode) {
+
+        if (/[^a-zA-Z0-9\- _\/]/.test(TCode)) {
+            alert('Input is not alphanumeric');
+            return false;
+        }
+
+        return true;
+    }
+</script>
+
+<script type="text/javascript">
+    (function(i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        i[r] = i[r] || function() {
+            (i[r].q = i[r].q || []).push(arguments)
+        }, i[r].l = 1 * new Date();
+        a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0];
+        a.setAttribute('defer', '');
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
+
+    ga('create', 'UA-5902091-1', 'yash.com');
+    ga('set', 'dimension1', "yash");
+    ga('send', 'pageview');
+
+    function downloadJSAtOnload() {
+        var element = document.createElement("script");
+        element.src = "//js.hs-scripts.com/5278309.js";
+        document.body.appendChild(element);
+    }
+    if (window.addEventListener)
+        window.addEventListener("load", downloadJSAtOnload, false);
+    else if (window.attachEvent)
+        window.attachEvent("onload", downloadJSAtOnload);
+    else window.onload = downloadJSAtOnload;
+</script>
+
+
+<!--Start of Tawk.to Script-->
+<script type="text/javascript">
+    var Tawk_API = Tawk_API || {},
+        Tawk_LoadStart = new Date();
+    (function() {
+        var s1 = document.createElement("script"),
+            s0 = document.getElementsByTagName("script")[0];
+        s1.async = true;
+        s1.src = 'https://embed.tawk.to/6930126ce40960197cefc2b5/1jbhsfuic';
+        s1.charset = 'UTF-8';
+        s1.setAttribute('crossorigin', '*');
+        s0.parentNode.insertBefore(s1, s0);
+    })();
+</script>
+<!--End of Tawk.to Script-->
+
+
+<script>
+    // (function() {
+    //     window.Tawk_API = window.Tawk_API || {};
+    //     window.Tawk_API.onLoad = function(){
+    //         window.Tawk_API.maximize();
+    //     };
+    // })();
+
+    function setUtmFields(params) {
+        var utmSource = params.get('utm_source');
+        if (utmSource) {
+            jQuery('.utm_source').val(utmSource);
+        }
+        var utmMedium = params.get('utm_medium');
+        if (utmMedium) {
+            jQuery('.utm_medium').val(utmMedium);
+        }
+        var utmCampaign = params.get('utm_campaign');
+        if (utmCampaign) {
+            jQuery('.utm_campaign').val(utmCampaign);
+        }
+    }
+
+    (function() {
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('utm_source') || urlParams.has('utm_medium') || urlParams.has('utm_campaign')) {
+            setUtmFields(urlParams);
+        } else if (document.referrer) {
+            try {
+                var refUrl = new URL(document.referrer);
+                var refParams = new URLSearchParams(refUrl.search);
+                setUtmFields(refParams);
+            } catch (e) {
+                // fail silently
+            }
+        }
+    })();
+</script>
+</body>
+
+</html><script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js'>
+</script>
+
+<script>
+/*jQuery(document).ready(function(){
+	if (jQuery('#SubscribeModal')[0]){
+		jQuery(".close").click(function(){
+			document.cookie = "PrivaryMsg=read; path=/";
+			jQuery(".cookie_popup").addClass("hide_cookie");
+		});
+		jQuery("#SubscribeModal").hide();
+		jQuery("#SubscribeModal").delay(1000).fadeIn(100);
+	}
+});*/
+</script>
+<script>
+jQuery(document).ready(function($) {
+    $('#commentform').validate({
+        rules: {
+            author: {
+                required: true,
+                minlength: 2
+            },
+            email: {
+                required: true,
+                email: true
+            },
+            comment: {
+                required: true,
+                minlength: 20
+            }
+        },
+
+        messages: {
+            author: "Please provide a name",
+            email: "Please enter a valid email address.",
+            comment: "Please fill the required field"
+        },
+
+        errorElement: "div",
+        errorPlacement: function(error, element) {
+            element.after(error);
+        }
+
+    });
+});
+jQuery("#yashPerspectivesSlider").slick({
+    dots: false,
+    infinite: false,
+    slidesToShow: 4,
+    slidesToScroll: 4,
+    lazyLoad: 'ondemand',
+    responsive: [{
+            breakpoint: 1200,
+            settings: {
+                slidesToShow: 3,
+                slidesToScroll: 3,
+            }
+        },
+        {
+            breakpoint: 992,
+            settings: {
+                slidesToShow: 2,
+                slidesToScroll: 2,
+            }
+        },
+        {
+            breakpoint: 479,
+            settings: {
+                slidesToShow: 1,
+                slidesToScroll: 1,
+                adaptiveHeight: true
+            }
+        }
+    ]
+});
+/** add class to breadcrumb **/
+jQuery('ol.breadcrumb.commonBreadcrumb.commonBreadcrumb--gray.bg-transparent.p-0').removeClass(
+'commonBreadcrumb--gray');
+jQuery('ol.breadcrumb.commonBreadcrumb.commonBreadcrumb--gray.bg-transparent.p-0').addClass('bg-transparent');
+</script>

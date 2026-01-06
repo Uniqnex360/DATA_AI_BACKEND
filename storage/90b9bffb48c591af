@@ -1,0 +1,5541 @@
+
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8"/>
+    <title>Schlage Encode Plus™ Smart WiFi Deadbolt | Wifi smart lock</title>
+    
+    <meta name="description" content="The Schlage Encode™ Plus Smart WiFi Deadbolt pairs with Apple Home Keys and HomeKit to control your wifi smart lock with your iPhone and Apple Watch."/>
+    <meta name="template" content="generic-page"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    
+
+    
+    
+<script defer="defer" type="text/javascript" src="/.rum/@adobe/helix-rum-js@%5E2/dist/rum-standalone.js"></script>
+<link rel="canonical" href="/en/home/smart-locks/encode-plus.html"/>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+
+
+    
+    <script src="/etc.clientlibs/allegion-core/clientlibs/vendor/jquery.lc-1f6a19312fe1d64ccdc341cb6be135ba-lc.min.js"></script>
+
+
+    
+    <link rel="stylesheet" href="/etc.clientlibs/us-residential/clientlibs/clientlib-dependencies.lc-222657793af2fc81adc9693a6b10215f-lc.min.css" type="text/css">
+<script src="/etc.clientlibs/us-residential/clientlibs/clientlib-dependencies.lc-fb3975fadafb71a19ad170fdf9f9da6d-lc.min.js"></script>
+
+
+	
+    <link rel="stylesheet" href="/etc.clientlibs/nexus/clientlibs/clientlib-base.lc-3c3f5dd55b9ba40f3a512eeabe9e111c-lc.min.css" type="text/css">
+<script src="/etc.clientlibs/core/wcm/components/commons/site/clientlibs/container.lc-0a6aff292f5cc42142779cde92054524-lc.min.js"></script>
+<script src="/etc.clientlibs/clientlibs/granite/jquery/granite/csrf.lc-652a558c3774088b61b0530c184710d1-lc.min.js"></script>
+<script src="/etc.clientlibs/nexus/clientlibs/clientlib-base.lc-4967765add8a922492a7528ec0884938-lc.min.js"></script>
+
+
+    
+    
+
+    
+    <link rel="stylesheet" href="/etc.clientlibs/nexus/clientlibs/themes/residential-theme.lc-1a5658891d70921d5f7fc1fad0c44b12-lc.min.css" type="text/css">
+<script src="/etc.clientlibs/nexus/clientlibs/themes/residential-theme.lc-d3143b1585f451b627d293b61ad5db90-lc.min.js"></script>
+
+
+    
+    <link rel="stylesheet" href="/etc.clientlibs/us-residential/clientlibs/clientlib-schlage-accessibility.lc-cd799bac302e18b1365e388227ca0490-lc.min.css" type="text/css">
+<script src="/etc.clientlibs/us-residential/clientlibs/clientlib-schlage-accessibility.lc-83e8ce8ee8535db0c8192eed70de31f9-lc.min.js"></script>
+
+
+    
+    <script src="/etc.clientlibs/us-residential/clientlibs/kit-fontawesome.lc-6ad5f011c9ba1710973f024b82e50a78-lc.min.js"></script>
+
+
+
+
+
+<meta property="og:title" content="Schlage Encode Plus™ Smart WiFi Deadbolt | Wifi smart lock"/>
+<meta property="og:description" content="The Schlage Encode™ Plus Smart WiFi Deadbolt pairs with Apple Home Keys and HomeKit to control your wifi smart lock with your iPhone and Apple Watch."/>
+<meta property="og:image" content="/content/dam/sch-us/redesign/schlage/smart-locks/hero-encode-plus.png"/>
+<meta name="twitter:image" value="/content/dam/sch-us/redesign/schlage/smart-locks/hero-encode-plus.png"/>
+
+
+<link rel='shortcut icon' type='image/x-icon' href='/content/dam/sch-us/redesign/icons-logos/favicon.ico'/>
+
+<!-- <sly data-sly-test.valuebv="null">
+    <sly data-sly-test="false">
+        <script async type="text/javascript" src="https://apps.bazaarvoice.com/deployments/schlage/main_site/staging/en_US/bv.js"></script>
+</sly>
+</sly>
+<sly data-sly-test.valueps="null">
+    <sly data-sly-test="false">
+    <meta name="ps-key" content="1647-65b4202d9b8e3864309a784a">
+    <meta name="ps-language" content="en ">
+    <meta name="ps-country" content="us ">
+    <script async type="text/javascript" src="//cdn.pricespider.com/1/lib/ps-widget.js"></script>
+</sly> -->
+
+    <meta name="ps-key" content="1647-65b4202d9b8e3864309a784a"/>
+    <meta name="ps-language" content="en"/>
+    <meta name="ps-country" content="us"/>
+    <script async type="text/javascript" src="//cdn.pricespider.com/1/lib/ps-widget.js"></script>
+    <script type="text/javascript" src="//cdn.pricespider.com/1/1647/ps-utid.js" async></script>
+
+
+
+    
+    
+    
+
+    
+
+    
+    
+    <link rel="stylesheet" href="/etc.clientlibs/us-residential/clientlibs/clientlib-favourites.lc-4dcc3fe66c314e43a8c6c9fad33f89c6-lc.min.css" type="text/css">
+
+
+    
+    
+    <script async src="/etc.clientlibs/core/wcm/components/commons/datalayer/v2/clientlibs/core.wcm.components.commons.datalayer.v2.lc-1e0136bad0acfb78be509234578e44f9-lc.min.js"></script>
+
+
+    
+    <script async src="/etc.clientlibs/core/wcm/components/commons/datalayer/acdl/core.wcm.components.commons.datalayer.acdl.lc-bf921af342fd2c40139671dbf0920a1f-lc.min.js"></script>
+
+
+
+    
+    <link href="/resources/images/favicon.png" rel="icon" type="image/png">
+    
+</head>
+    <body class="page basicpage" id="page-5b7bb13b44" data-cmp-link-accessibility-enabled data-cmp-link-accessibility-text="opens in a new tab" data-cmp-data-layer-enabled data-cmp-data-layer-name="adobeDataLayer">
+        <script>
+          var dataLayerName = 'adobeDataLayer' || 'adobeDataLayer';
+          window[dataLayerName] = window[dataLayerName] || [];
+          window[dataLayerName].push({
+              page: JSON.parse("{\x22page\u002D5b7bb13b44\x22:{\x22@type\x22:\x22us\u002Dresidential\/components\/structure\/page\x22,\x22repo:modifyDate\x22:\x222025\u002D10\u002D24T18:52:44Z\x22,\x22dc:title\x22:\x22Schlage Encode Plus™ Smart WiFi Deadbolt | Wifi smart lock\x22,\x22dc:description\x22:\x22The Schlage Encode™ Plus Smart WiFi Deadbolt pairs with Apple Home Keys and HomeKit to control your wifi smart lock with your iPhone and Apple Watch.\x22,\x22xdm:template\x22:\x22\/conf\/schlage\/settings\/wcm\/templates\/generic\u002Dpage\x22,\x22xdm:language\x22:\x22en\x22,\x22xdm:tags\x22:[],\x22repo:path\x22:\x22\/content\/schlage\/language\u002Dmasters\/en\/home\/smart\u002Dlocks\/encode\u002Dplus.html\x22}}"),
+              event:'cmp:show',
+              eventInfo: {
+                  path: 'page.page\u002D5b7bb13b44'
+              }
+          });
+        </script>
+        
+        
+            
+
+<div class="cmp-page__skiptomaincontent">
+    <a class="cmp-page__skiptomaincontent-link" href="#root-main">Skip to main content</a>
+</div>
+
+    <link rel="stylesheet" href="/etc.clientlibs/core/wcm/components/page/v2/page/clientlibs/site/skiptomaincontent.lc-696ce9a06faa733b225ffb8c05f16db9-lc.min.css" type="text/css">
+
+
+
+            
+<div class="root container responsivegrid">
+
+    
+    
+    
+    <div id="container-08c47cd4a4" class="cmp-container">
+        
+        <div class="experiencefragment">
+<div id="experiencefragment-c99e1596a7" class="cmp-experiencefragment cmp-experiencefragment--header">
+
+
+    
+    <div id="main-header" class="cmp-container">
+        
+
+
+<div class="aem-Grid aem-Grid--12 aem-Grid--default--12 ">
+    
+    <div class="listlinks aem-GridColumn aem-GridColumn--default--12"><!--Edit Mode Place Holder Text-->
+
+
+<ul class="clearfix" role="list" style="margin-bottom:0;">
+    
+
+    
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home.html"> Français </a>
+                
+            </li>
+        
+    
+
+    
+</ul>
+</div>
+<div class="header aem-GridColumn aem-GridColumn--default--12">
+
+
+   
+      
+    
+<link rel="stylesheet" href="/etc.clientlibs/us-residential/components/structure/header/clientlib.lc-82d3290928aac498ce48b2a683ed3a95-lc.min.css" type="text/css">
+
+
+
+   
+
+
+
+<div class="header-component fixed-top d-none">
+   <nav class="navbar navbar-expand-md navbar-light">
+      <div class="container-fluid">
+         
+
+   	
+	   
+			<a href="/en/home.html" class="navbar-brand" aria-label="Home"><img src="/content/dam/sch-us/redesign/schlage/logos/schlage-logo-noTag.svg" alt="Schlage Logo" title="Schlage Logo" height="35px" width="117px"/></a>
+
+         <ul class="navbar-nav flex-grow-1 flex-row d-flex d-md-none justify-content-end">
+            <li class="nav-item">
+               <a class="text-reset me-3 btn-favorites-icon" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="Add favorites here as you shop!" href="/en/home/favorites.html" data-mdb-toggle="dropdown" aria-expanded="false">
+                  <img src="/content/dam/sch-us/redesign/icons-logos/icon-favorites.png" alt="heart icon for favourites page" loading="lazy" aria-hidden="true"/>
+               </a>
+               <div class="add-favorites-popup"><span class="fav-product-name">product-name
+               was added to favorites</span><span class="add-favorites-close">x</span></div>
+            </li>
+            <li class="nav-item dropdown">
+               
+
+   
+    
+<link rel="stylesheet" href="/etc.clientlibs/us-residential/components/structure/header/search/clientlibs.lc-4edef1a68d6016d127c64e0fae7b71c9-lc.min.css" type="text/css">
+
+
+
+
+
+<a class="d-flex align-items-center hidden-arrow btn-search-icon" data-bs-toggle="collapse" data-bs-target="#collapseSearch" aria-expanded="false" aria-controls="collapseSearch" id="navbarDropdownMenuSearch" href="/en/home/smart-locks.html" aria-label="click here to search">
+   <span>
+   <i class="fa fa-search" aria-label="search icon"></i>
+   </span>
+</a>
+
+
+
+
+   
+    
+<script src="/etc.clientlibs/us-residential/components/structure/header/search/clientlibs.lc-b415998758f8a93c69bd93e98316b255-lc.min.js"></script>
+
+
+
+
+            </li>
+         </ul>
+         <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#main_nav" aria-expanded="false" aria-label="Toggle navigation menu">
+            <span class="navbar-toggler-icon"></span>
+         </button>
+         <div class="navbar-collapse justify-content-end collapse" id="main_nav">
+            <ul class="navbar-nav">
+               
+
+
+
+
+	
+
+	<li class="nav-item" id="Products"> <a class="nav-link" aria-label="Products" aria-haspopup="true" aria-expanded="true" href="#">Products<span class="arrow"> <i class="fa-solid fa-angle-down" style="color: #838383;"></i></span></a> 
+
+
+<div class="xfpage page basicpage">
+
+
+    
+    <div id="main-header" class="cmp-container">
+        
+
+
+<div class="aem-Grid aem-Grid--12 aem-Grid--default--12 ">
+    
+    <div class="megamenucontainer parbase megamenu-container__mid-wider-sec aem-GridColumn aem-GridColumn--default--12">
+
+
+
+
+
+
+
+
+   
+      
+    
+<link rel="stylesheet" href="/etc.clientlibs/us-residential/components/content/megamenucontainer/clientlib.lc-bc40fcec45bd0d720492e9ac951adb26-lc.min.css" type="text/css">
+
+
+
+   
+
+
+
+<div class="megamenu__sub-container">
+<div class="container">
+
+
+
+
+
+
+
+
+
+
+
+   <div class="row">
+
+	  <div class="card-container__column--first">
+	  
+      <div>
+
+    
+    
+    
+    <div id="container-b29444c53f" class="cmp-container">
+        
+        <div class="card parbase">
+
+
+
+
+
+
+<div class="megamenu__tile-card-section  ">
+   
+   <a href="/en/home/products.html" class="card-link" role="link" aria-label="Products">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu-all-products.png" alt="Close up of hand turning deadbolt." tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>All Products</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+<link rel="stylesheet" href="/etc.clientlibs/us-residential/components/content/card/clientlibpcp.lc-195fe763a13d6dab5c6b7d0c76d8ed58-lc.min.css" type="text/css">
+<script src="/etc.clientlibs/us-residential/components/content/card/clientlibpcp.lc-510b0617e474e2196cd3ce6d3067ebb8-lc.min.js"></script>
+
+
+
+   	  
+	
+</div>
+</div>
+
+        
+    </div>
+
+</div>
+	  </div>
+
+	  <div class="card-container__column--second">
+	  
+      <div>
+
+    
+    
+    
+    <div id="container-7673048b29" class="cmp-container">
+        
+        <div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/products/knobs.html" class="card-link" role="link" aria-label="Knobs">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_knob.png" alt="Featured image of Schlage Door knobs page" tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Door Knobs</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/products/levers.html" class="card-link" role="link" aria-label="Levers">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_lever.png" alt="Featured image of Schlage door levers page" tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Door Levers</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/products/deadbolt.html" class="card-link" role="link" aria-label="Deadbolts">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_deadbolt.png" alt="Feature image of Schlage deadbolts page." tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Deadbolts</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/products/handlesets.html" class="card-link" role="link" aria-label="Handlesets">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_handleset.png" alt="Featured image of Schlage door handlesets page" tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Handlesets</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/products/smart-deadbolts-levers.html" class="card-link" role="link" aria-label="Smart Deadbolts &amp; Levers">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_smart.png" alt="Feature image of Schlage smart levers page" tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Smart Locks</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/products/electronic-locks.html" class="card-link" role="link" aria-label="Electronic Locks">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_electronic.png" alt="Featured image of Schlage electronic locks page" tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Electronic Locks</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="button a-button-bg--secondary button-size--medium d-block d-lg-none text-center">
+<a id="button-f517270a4c" class="cmp-button" data-cmp-clickable data-cmp-data-layer="{&#34;button-f517270a4c&#34;:{&#34;@type&#34;:&#34;nexus/components/button&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-27T22:16:19Z&#34;,&#34;dc:title&#34;:&#34;All Products&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/products.html&#34;}}" href="/en/home/products.html">
+    
+    
+
+    <span class="cmp-button__text">All Products</span>
+</a>
+</div>
+
+        
+    </div>
+
+</div>
+	  </div>	
+
+      <div class="card-container__column--third">
+	  
+      <div>
+
+    
+    
+    
+    <div id="container-3322ea608c" class="cmp-container">
+        
+        <div class="title megamenu__link-title">
+<div data-cmp-data-layer="{&#34;title-c28db2aa4e&#34;:{&#34;@type&#34;:&#34;nexus/components/title&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-27T22:18:01Z&#34;,&#34;dc:title&#34;:&#34;QUICK LINKS&#34;}}" id="title-c28db2aa4e" class="cmp-title">
+    <h3 class="cmp-title__text">QUICK LINKS</h3>
+</div>
+
+    
+
+</div>
+<div class="list">
+<ul id="list-f17053844c" data-cmp-data-layer="{&#34;list-f17053844c&#34;:{&#34;@type&#34;:&#34;nexus/components/list&#34;,&#34;repo:modifyDate&#34;:&#34;2025-09-02T21:23:42Z&#34;}}" class="cmp-list">
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-f17053844c-item-0ba9ee4bdd&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2025-06-16T10:26:45Z&#34;,&#34;dc:title&#34;:&#34;Pin &amp; Tumbler Studio&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/pin-and-tumbler-studio.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/pin-and-tumbler-studio.html">
+        <span class="cmp-list__item-title">Pin &amp; Tumbler Studio</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-f17053844c-item-3960cd55e5&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-06-19T12:43:13Z&#34;,&#34;dc:title&#34;:&#34;Schlage Custom&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/style/custom.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/style/custom.html">
+        <span class="cmp-list__item-title">Schlage Custom</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-f17053844c-item-cef577a4e9&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2025-09-02T17:36:59Z&#34;,&#34;dc:title&#34;:&#34;Keyed Entry Combo packs&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/products/keyed-combos.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/products/keyed-combos.html">
+        <span class="cmp-list__item-title">Keyed Entry Combo packs</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-f17053844c-item-0a513d07dd&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-11-07T05:56:20Z&#34;,&#34;dc:title&#34;:&#34;Hardware &amp; Accessories&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/products/hardware-accessories.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/products/hardware-accessories.html">
+        <span class="cmp-list__item-title">Hardware &amp; Accessories</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-f17053844c-item-ae676d5cc1&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-30T17:58:27Z&#34;,&#34;dc:title&#34;:&#34;Manuals &amp; Guides&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/support/installation-manuals-templates.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/support/installation-manuals-templates.html">
+        <span class="cmp-list__item-title">Manuals &amp; Guides</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-f17053844c-item-9b3ee2510b&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-30T18:21:40Z&#34;,&#34;dc:title&#34;:&#34;Video Tutorials&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/support/install-videos.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/support/install-videos.html">
+        <span class="cmp-list__item-title">Video Tutorials</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-f17053844c-item-c7ce41ad68&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-11-07T05:56:19Z&#34;,&#34;dc:title&#34;:&#34;Understanding Security Grades&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/products/functions-grades.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/products/functions-grades.html">
+        <span class="cmp-list__item-title">Understanding Security Grades</span>
+        
+    </a>
+    
+</li>
+    
+</ul>
+
+    
+
+</div>
+
+        
+    </div>
+
+</div>
+	  </div>
+
+   </div>
+
+
+
+
+
+
+</div>
+
+</div>
+
+
+
+
+   
+      
+    
+<script src="/etc.clientlibs/us-residential/components/content/megamenucontainer/clientlib.lc-2a7802980a7c61d685eabda29ebb02b5-lc.min.js"></script>
+
+
+
+   </div>
+
+    
+</div>
+
+    </div>
+
+    
+
+</div>
+
+</li>
+
+
+	
+
+	<li class="nav-item" id="Smart Locks"> <a class="nav-link" aria-label="Smart Locks" aria-haspopup="true" aria-expanded="true" href="#">Smart Locks<span class="arrow"> <i class="fa-solid fa-angle-down" style="color: #838383;"></i></span></a> 
+
+
+<div class="xfpage page basicpage">
+
+
+    
+    <div id="main-header" class="cmp-container">
+        
+
+
+<div class="aem-Grid aem-Grid--12 aem-Grid--default--12 ">
+    
+    <div class="megamenucontainer parbase megamenu-container__mid-wider-sec aem-GridColumn aem-GridColumn--default--12">
+
+
+
+
+
+
+
+
+   
+      
+    
+
+
+
+   
+
+
+
+<div class="megamenu__sub-container">
+<div class="container">
+
+
+
+
+
+
+
+
+
+
+
+   <div class="row">
+
+	  <div class="card-container__column--first">
+	  
+      <div>
+
+    
+    
+    
+    <div id="container-71b775b081" class="cmp-container">
+        
+        <div class="card parbase">
+
+
+
+
+
+
+<div class="megamenu__tile-card-section  ">
+   
+   <a href="/en/home/smart-locks.html" class="card-link" role="link" aria-label="Smart Locks">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu-all-smartlocks.png" alt="Featured image of Schlage Smart Locks page" tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>All Smart Locks</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+
+        
+    </div>
+
+</div>
+	  </div>
+
+	  <div class="card-container__column--second">
+	  
+      <div>
+
+    
+    
+    
+    <div id="less-pad" class="cmp-container">
+        
+        <div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/smart-locks/encode-plus.html" class="card-link" role="link" aria-label="Schlage Encode Plus™ lock">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_encodeplus.png" alt="Featured image of Schlage encode plus touchpad door lock" tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Schlage Encode Plus<sup>TM</sup></p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/smart-locks/encode.html" class="card-link" role="link" aria-label="Schlage Encode™ lock">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_encode.png" alt="Featured image of Schlage encode touchpad door lock" tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Schlage Encode<sup>TM</sup></p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/smart-locks/encode-lever.html" class="card-link" role="link" aria-label="Schlage Encode™ lever">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_encodelever.png" alt="Featured image of schlage encode lever door lock" tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Schlage Encode Lever</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/smart-locks/arrive.html" class="card-link" role="link" aria-label="Schlage Arrive™ lock">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_arrive.png" alt="Feature image of schlage arrive smart lock." tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Schlage Arrive<sup>TM</sup></p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/smart-locks/connect-zwave.html" class="card-link" role="link" aria-label="Schlage Connect">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_connect.png" alt="Feature image of schlage connect door lock." tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Schlage Connect<sup>TM</sup></p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="button a-button-bg--secondary button-size--medium d-block d-lg-none text-center">
+<a id="button-002d0e59d9" class="cmp-button" data-cmp-clickable data-cmp-data-layer="{&#34;button-002d0e59d9&#34;:{&#34;@type&#34;:&#34;nexus/components/button&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-27T22:11:46Z&#34;,&#34;dc:title&#34;:&#34;All Smart Locks&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/smart-locks.html&#34;}}" href="/en/home/smart-locks.html">
+    
+    
+
+    <span class="cmp-button__text">All Smart Locks</span>
+</a>
+</div>
+
+        
+    </div>
+
+</div>
+	  </div>	
+
+      <div class="card-container__column--third">
+	  
+      <div>
+
+    
+    
+    
+    <div id="container-7eb872341b" class="cmp-container">
+        
+        <div class="title megamenu__link-title">
+<div data-cmp-data-layer="{&#34;title-020f3c405c&#34;:{&#34;@type&#34;:&#34;nexus/components/title&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-27T22:12:39Z&#34;,&#34;dc:title&#34;:&#34;QUICK LINKS&#34;}}" id="title-020f3c405c" class="cmp-title">
+    <h3 class="cmp-title__text">QUICK LINKS</h3>
+</div>
+
+    
+
+</div>
+<div class="list">
+<ul id="list-6f429619a7" data-cmp-data-layer="{&#34;list-6f429619a7&#34;:{&#34;@type&#34;:&#34;nexus/components/list&#34;,&#34;repo:modifyDate&#34;:&#34;2024-06-02T21:23:57Z&#34;}}" class="cmp-list">
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-6f429619a7-item-6b3ddf29c3&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-06-19T12:44:05Z&#34;,&#34;dc:title&#34;:&#34;Get Help Deciding&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/smart-locks/get-help-deciding.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/smart-locks/get-help-deciding.html">
+        <span class="cmp-list__item-title">Get Help Deciding</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-6f429619a7-item-55fab3e624&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-06-20T17:20:21Z&#34;,&#34;dc:title&#34;:&#34;Schlage Smart Locks Works With&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/smart-locks/works-with.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/smart-locks/works-with.html">
+        <span class="cmp-list__item-title">Schlage Smart Locks Works With</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-6f429619a7-item-009d234bdb&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-31T15:28:15Z&#34;,&#34;dc:title&#34;:&#34;Schlage Home App&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/smart-locks/schlage-app.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/smart-locks/schlage-app.html">
+        <span class="cmp-list__item-title">Schlage Home App</span>
+        
+    </a>
+    
+</li>
+    
+</ul>
+
+    
+
+</div>
+<div class="html-component">
+
+
+
+
+
+
+
+
+    	<style type="text/css">
+		#less-pad .card-body {padding: 12px 5px;}
+	</style>
+
+</div>
+
+        
+    </div>
+
+</div>
+	  </div>
+
+   </div>
+
+
+
+
+
+
+</div>
+
+</div>
+
+
+
+
+   
+      
+    
+
+
+
+   </div>
+
+    
+</div>
+
+    </div>
+
+    
+
+</div>
+
+</li>
+
+
+	
+
+	<li class="nav-item" id="Style"> <a class="nav-link" aria-label="Style" aria-haspopup="true" aria-expanded="true" href="#">Style<span class="arrow"> <i class="fa-solid fa-angle-down" style="color: #838383;"></i></span></a> 
+
+
+<div class="xfpage page basicpage">
+
+
+    
+    <div id="main-header" class="cmp-container">
+        
+
+
+<div class="aem-Grid aem-Grid--12 aem-Grid--default--12 ">
+    
+    <div class="megamenucontainer parbase megamenu-container__equal-width aem-GridColumn aem-GridColumn--default--12">
+
+
+
+
+
+
+
+
+   
+      
+    
+
+
+
+   
+
+
+
+<div class="megamenu__sub-container">
+<div class="container">
+
+
+
+
+
+
+
+
+
+
+
+   <div class="row">
+
+	  <div class="card-container__column--first">
+	  
+      <div>
+
+    
+    
+    
+    <div id="container-6a26109f82" class="cmp-container">
+        
+        <div class="card parbase">
+
+
+
+
+
+
+<div class="megamenu__tile-card-section  ">
+   
+   <a href="/en/home/style.html" class="card-link" role="link" aria-label="Style">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu-all-style.png" alt="Modern living room with rich brown door and a satin brass door lever. " tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Style Overview</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+
+        
+    </div>
+
+</div>
+	  </div>
+
+	  <div class="card-container__column--second">
+	  
+      <div>
+
+    
+    
+    
+    <div id="container-25373e27cd" class="cmp-container">
+        
+        <div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/style/contemporary.html" class="card-link" role="link" aria-label="Contemporary">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_style-contemp.png" alt="Contemporary home office with stylish door lever. " tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Contemporary</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/style/transitional.html" class="card-link" role="link" aria-label="Transitional">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_style-transition.png" alt="Close up of bedroom door with satin brass door knob." tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Transitional</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/home/style/traditional.html" class="card-link" role="link" aria-label="Traditional">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_style-traditional.png" alt="Close up of bedroom door featuring a traditional style door knob. " tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Traditional</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="mb-4 small-card d-flex align-items-stretch  ">
+   
+   <a href="/en/blog.html" class="card-link" role="link" aria-label="Blog">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/mega-menu_style-blog.png" alt="Front door with handleset in the foreground and a mother and her daughter in the background." tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>Schlage Blog</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="button a-button-bg--secondary button-size--medium d-block d-lg-none text-center">
+<a id="button-bf9f544c7d" class="cmp-button" aria-label="Visit the style page" data-cmp-clickable data-cmp-data-layer="{&#34;button-bf9f544c7d&#34;:{&#34;@type&#34;:&#34;nexus/components/button&#34;,&#34;repo:modifyDate&#34;:&#34;2024-11-05T19:55:20Z&#34;,&#34;dc:title&#34;:&#34;Style Overview&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/style.html&#34;}}" href="/en/home/style.html">
+    
+    
+
+    <span class="cmp-button__text">Style Overview</span>
+</a>
+</div>
+
+        
+    </div>
+
+</div>
+	  </div>	
+
+      <div class="card-container__column--third">
+	  
+      <div>
+
+    
+    
+    
+    <div id="container-e8daed4d15" class="cmp-container">
+        
+        <div class="title megamenu__link-title">
+<div data-cmp-data-layer="{&#34;title-3dffb83afe&#34;:{&#34;@type&#34;:&#34;nexus/components/title&#34;,&#34;repo:modifyDate&#34;:&#34;2023-11-09T07:15:26Z&#34;,&#34;dc:title&#34;:&#34;GET INSPIRED&#34;}}" id="title-3dffb83afe" class="cmp-title">
+    <h3 class="cmp-title__text">GET INSPIRED</h3>
+</div>
+
+    
+
+</div>
+<div class="html-component">
+
+
+
+
+
+
+
+
+    	<style>
+		.blog p.card-title {text-align: left !important;}
+	</style>
+
+</div>
+<div class="blog parbase">
+
+
+
+
+
+
+
+	<div class="row">
+		
+		<a class="card card-blog-post" href="/en/blog/design-and-trends/5-ways-to-customize-your-home.html" aria-label="5 Ways to Customize your Home for a Unique Look ">
+				<div class="row"> 
+					<div class="col-5 col-lg-6">
+						<img src="/content/dam/sch-us/p-and-t/playful-living-room-with-velvet-furniture-and-abstract-wallpaper.jpg" alt="5 Ways to Customize your Home for a Unique Look" class="img-fluid" tabindex="0"/>
+					</div>
+					<div class="col-7 col-lg-6 p-lg-0">
+						<div class="card-body p-0">
+							<p class="card-title" tabindex="0"><strong>5 Ways to Customize your Home for a Unique Look</strong></p>
+							<p class="card-text" tabindex="0">5 of our favorite ways to transform your home into something truly unique; get creative, embrace innovation and maximize your home’s aesthetic with these tips!</p>
+							<!-- <a  class="card-link d-none">SEE MORE</a> -->
+						</div>
+					</div>
+				</div>
+		</a>
+	</div>
+
+
+	<div class="row">
+		
+		<a class="card card-blog-post" href="/en/blog/pin-and-tumbler/pin-and-tumbler-studio.html" aria-label="Inside the Studio: Inspiration Behind the Mosaic Trim Collections">
+				<div class="row"> 
+					<div class="col-5 col-lg-6">
+						<img src="/content/dam/sch-us/p-and-t/studio-learn-more.jpg" alt="Inside the Studio: Inspiration Behind the Mosaic Trim Collections" class="img-fluid" tabindex="0"/>
+					</div>
+					<div class="col-7 col-lg-6 p-lg-0">
+						<div class="card-body p-0">
+							<p class="card-title" tabindex="0"><strong>Inside the Studio: Inspiration Behind the Mosaic Trim Collections</strong></p>
+							<p class="card-text" tabindex="0">Discover the creativity and innovation behind Pin &amp; Tumbler Studio&#39;s Mosaic Trim Collections. Express your personal style with customizable door hardware.</p>
+							<!-- <a  class="card-link d-none">SEE MORE</a> -->
+						</div>
+					</div>
+				</div>
+		</a>
+	</div>
+
+
+
+
+</div>
+
+        
+    </div>
+
+</div>
+	  </div>
+
+   </div>
+
+
+
+
+
+
+</div>
+
+</div>
+
+
+
+
+   
+      
+    
+
+
+
+   </div>
+
+    
+</div>
+
+    </div>
+
+    
+
+</div>
+
+</li>
+
+
+	
+
+	<li class="nav-item" id="Support"> <a class="nav-link" aria-label="Support" aria-haspopup="true" aria-expanded="true" href="#">Support<span class="arrow"> <i class="fa-solid fa-angle-down" style="color: #838383;"></i></span></a> 
+
+
+<div class="xfpage page basicpage">
+
+
+    
+    <div id="main-header" class="cmp-container">
+        
+
+
+<div class="aem-Grid aem-Grid--12 aem-Grid--default--12 ">
+    
+    <div class="megamenucontainer parbase megamenu-container__equal-width aem-GridColumn aem-GridColumn--default--12">
+
+
+
+
+
+
+
+
+   
+      
+    
+
+
+
+   
+
+
+
+<div class="megamenu__sub-container">
+<div class="container">
+
+
+
+
+
+
+
+
+
+
+
+   <div class="row">
+
+	  <div class="card-container__column--first">
+	  
+      <div>
+
+    
+    
+    
+    <div id="container-5d7d604e4a" class="cmp-container">
+        
+        <div class="card parbase">
+
+
+
+
+
+
+<div class="megamenu__tile-card-section  ">
+   
+   <a href="/en/home/support.html" class="card-link" role="link" aria-label="Support">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/mega-menu/menu-image-all-support.png" alt="woman installing a smart lock" tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            <div class="card-title text-center" tabindex="0"><p>All Support</p>
+</div>
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+
+        
+    </div>
+
+</div>
+	  </div>
+
+	  <div class="card-container__column--second">
+	  
+      <div>
+
+    
+    
+    
+    <div id="container-0043c256b5" class="cmp-container">
+        
+        <div class="title megamenu__link-title">
+<div data-cmp-data-layer="{&#34;title-23672250f4&#34;:{&#34;@type&#34;:&#34;nexus/components/title&#34;,&#34;repo:modifyDate&#34;:&#34;2023-11-16T09:53:38Z&#34;,&#34;dc:title&#34;:&#34;HOW-TO-CENTER&#34;}}" id="title-23672250f4" class="cmp-title">
+    <h6 class="cmp-title__text">HOW-TO-CENTER</h6>
+</div>
+
+    
+
+</div>
+<div class="list">
+<ul id="list-02c839a265" data-cmp-data-layer="{&#34;list-02c839a265&#34;:{&#34;@type&#34;:&#34;nexus/components/list&#34;,&#34;repo:modifyDate&#34;:&#34;2025-09-12T19:58:29Z&#34;}}" class="cmp-list">
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-02c839a265-item-bc30dc2368&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2025-09-12T19:55:25Z&#34;,&#34;dc:title&#34;:&#34;How to Program your Schlage Lock&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/support/programming-guides.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/support/programming-guides.html">
+        <span class="cmp-list__item-title">How to Program your Schlage Lock</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-02c839a265-item-ae676d5cc1&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-30T17:58:27Z&#34;,&#34;dc:title&#34;:&#34;Manuals &amp; Guides&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/support/installation-manuals-templates.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/support/installation-manuals-templates.html">
+        <span class="cmp-list__item-title">Manuals &amp; Guides</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-02c839a265-item-9b3ee2510b&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-30T18:21:40Z&#34;,&#34;dc:title&#34;:&#34;Video Tutorials&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/support/install-videos.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/support/install-videos.html">
+        <span class="cmp-list__item-title">Video Tutorials</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-02c839a265-item-84f4cb41f3&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-06-19T12:43:14Z&#34;,&#34;dc:title&#34;:&#34;FAQs&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/support/faqs.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/support/faqs.html">
+        <span class="cmp-list__item-title">FAQs</span>
+        
+    </a>
+    
+</li>
+    
+</ul>
+
+    
+
+</div>
+
+        
+    </div>
+
+</div>
+	  </div>	
+
+      <div class="card-container__column--third">
+	  
+      <div>
+
+    
+    
+    
+    <div id="container-8dd036e69d" class="cmp-container">
+        
+        <div class="title megamenu__link-title">
+<div data-cmp-data-layer="{&#34;title-1710bc1627&#34;:{&#34;@type&#34;:&#34;nexus/components/title&#34;,&#34;repo:modifyDate&#34;:&#34;2023-11-08T11:04:34Z&#34;,&#34;dc:title&#34;:&#34;RESOURCES&#34;}}" id="title-1710bc1627" class="cmp-title">
+    <h3 class="cmp-title__text">RESOURCES</h3>
+</div>
+
+    
+
+</div>
+<div class="list">
+<ul id="list-6b8e76fda1" data-cmp-data-layer="{&#34;list-6b8e76fda1&#34;:{&#34;@type&#34;:&#34;nexus/components/list&#34;,&#34;repo:modifyDate&#34;:&#34;2025-10-28T13:08:34Z&#34;}}" class="cmp-list">
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-6b8e76fda1-item-a21d97a82a&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-06-14T09:43:09Z&#34;,&#34;dc:title&#34;:&#34;Product registration&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/support/product-registration.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/support/product-registration.html">
+        <span class="cmp-list__item-title">Product registration</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-6b8e76fda1-item-dc29143212&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-06-19T12:43:15Z&#34;,&#34;dc:title&#34;:&#34;Warranty Policy&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/support/warranty.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/support/warranty.html">
+        <span class="cmp-list__item-title">Warranty Policy</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-6b8e76fda1-item-6ad7d0c032&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-11-25T15:56:00Z&#34;,&#34;dc:title&#34;:&#34;Warranty Claim Request&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/warrantyclaim.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/warrantyclaim.html">
+        <span class="cmp-list__item-title">Warranty Claim Request</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-6b8e76fda1-item-c7ce41ad68&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-11-07T05:56:19Z&#34;,&#34;dc:title&#34;:&#34;Understanding Security Grades&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/products/functions-grades.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/products/functions-grades.html">
+        <span class="cmp-list__item-title">Understanding Security Grades</span>
+        
+    </a>
+    
+</li>
+    
+
+    <li class="cmp-list__item" data-cmp-data-layer="{&#34;list-6b8e76fda1-item-52978fbdef&#34;:{&#34;@type&#34;:&#34;nexus/components/list/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-06-19T12:43:12Z&#34;,&#34;dc:title&#34;:&#34;Contact Schlage Residential &#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/contact-us.html&#34;}}">
+    <a class="cmp-list__item-link" data-cmp-clickable href="/en/home/contact-us.html">
+        <span class="cmp-list__item-title">Contact Schlage Residential </span>
+        
+    </a>
+    
+</li>
+    
+</ul>
+
+    
+
+</div>
+<div class="button a-button-bg--secondary button-size--medium d-block d-lg-none text-center">
+<a id="button-4f82ab9318" class="cmp-button" data-cmp-clickable data-cmp-data-layer="{&#34;button-4f82ab9318&#34;:{&#34;@type&#34;:&#34;nexus/components/button&#34;,&#34;repo:modifyDate&#34;:&#34;2024-11-05T20:12:16Z&#34;,&#34;dc:title&#34;:&#34;All Support&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/support.html&#34;}}" href="/en/home/support.html">
+    
+    
+
+    <span class="cmp-button__text">All Support</span>
+</a>
+</div>
+
+        
+    </div>
+
+</div>
+	  </div>
+
+   </div>
+
+
+
+
+
+
+</div>
+
+</div>
+
+
+
+
+   
+      
+    
+
+
+
+   </div>
+
+    
+</div>
+
+    </div>
+
+    
+
+</div>
+
+</li>
+
+
+	<li class="nav-item" id="Trade Pros"> <a class="nav-link" href="/en/home/trade-professionals.html" target="_self" role="button" title="Trade Pros">Trade Pros</a> </li>
+
+	
+
+
+	<li class="nav-item" id="Pin &amp; Tumbler"> <a class="nav-link" href="/en/home/pin-and-tumbler-studio.html" target="_self" role="button" title="Pin &amp; Tumbler">Pin &amp; Tumbler</a> </li>
+
+	
+
+            </ul>
+         </div>
+         <ul class="navbar-nav flex-row d-none align-items-center d-md-flex">
+            <li class="nav-item btn-gradient-2">
+               
+<a id="btn-gradient-2" class="cmp-button" data-cmp-clickable data-cmp-data-layer="{&#34;btn-gradient-2&#34;:{&#34;@type&#34;:&#34;nexus/components/button&#34;,&#34;repo:modifyDate&#34;:&#34;2024-04-29T07:24:03Z&#34;,&#34;dc:title&#34;:&#34;Where To Buy&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/where-to-buy.html&#34;}}" href="/en/home/where-to-buy.html">
+    
+    
+
+    <span class="cmp-button__text">Where To Buy</span>
+</a>
+
+            </li>
+            <li class="nav-item">
+               <a class="text-reset me-3 btn-favorites-icon" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="Add favorites here as you shop!" href="/en/home/favorites.html" role="link" data-mdb-toggle="dropdown" aria-expanded="false">
+                  <img src="/content/dam/sch-us/redesign/icons-logos/icon-favorites.png" alt="favorites icon" loading="lazy" aria-hidden="true"/>
+               </a>
+               <div class="add-favorites-popup"><span class="fav-product-name">product-name
+               was added to favorites</span><span class="add-favorites-close">x</span></div>
+            </li>
+            <li class="nav-item dropdown">
+               
+
+   
+    
+
+
+
+
+
+<a class="d-flex align-items-center hidden-arrow btn-search-icon" data-bs-toggle="collapse" data-bs-target="#collapseSearch" aria-expanded="false" aria-controls="collapseSearch" id="navbarDropdownMenuSearch" href="/en/home/smart-locks.html" aria-label="click here to search">
+   <span>
+   <i class="fa fa-search" aria-label="search icon"></i>
+   </span>
+</a>
+
+
+
+
+   
+    
+
+
+
+
+            </li>
+         </ul>
+      </div>
+      <!-- container-fluid.// -->
+   </nav>
+   <div class="greyed-out-bg d-none">
+      <form role="search" id="search-form" action="/en/home/search.html" class="search search-full inb-demo-form" data-search="" data-instant="true" autocomplete="off" accept-charset="UTF-8" method="get">
+         <i class="fa fa-search" style="color: #FFFFFF;" aria-hidden="true"></i>
+         <input type="search" name="query" id="query" class="inb-demo__input search-query" value="" placeholder="Search and press enter" autocomplete="off" aria-label="Search"/>
+         <button type="submit" name="commit" value="Search" class="inb-demo-button"> Press enter to search
+         </button>
+      </form>
+   </div>
+</div>
+
+   
+      
+    
+<script src="/etc.clientlibs/us-residential/components/structure/header/clientlib.lc-312943909035a356eaba92910beba333-lc.min.js"></script>
+
+
+
+   
+
+</div>
+<div class="html-component aem-GridColumn aem-GridColumn--default--12">
+
+
+
+
+
+
+
+
+    <style>
+.table-component table tbody tr td:first-child , .cmp-finish__card .cmp-finish__card-title{
+    font-weight: normal !important;
+}
+.listlinks{
+    padding: .5rem 22rem 0 0 !important;
+}
+.taglinks ul li,.taglinks ul li a{
+color:#0072bc !important;
+}
+
+</style>
+<script>
+$( document ).ready(function() {
+if(window.innerWidth < 768){
+$('.aplus__carousel .cmp-carousel .cmp-carousel__content').each(function () {let       max_height = 0;
+  $(this).find('.cmp-carousel__item' ).each(function (){
+  let current_height = $(this).innerHeight();
+  
+  if (current_height > max_height) {
+    max_height = current_height;
+  }
+}); 
+ $(this).css('height', max_height+100); 
+}) 
+}
+const URL = window.location.href;
+const caURL = "schlage-ca";
+const header = $('.cmp-experiencefragment--header .listlinks ');
+if(URL.search(caURL) == -1){
+header.css('display', 'none');
+}
+});
+</script>
+
+</div>
+
+    
+</div>
+
+    </div>
+
+    
+
+</div>
+
+    
+</div>
+<div class="container responsivegrid">
+
+    
+    <div id="container-1946485db2" class="cmp-container">
+        
+
+
+<div class="aem-Grid aem-Grid--12 aem-Grid--default--12 ">
+    
+    <div class="container responsivegrid aem-GridColumn aem-GridColumn--default--12">
+
+    
+    <div id="container-276551d7d3" class="cmp-container">
+        
+
+
+<div class="aem-Grid aem-Grid--12 aem-Grid--default--12 ">
+    
+    <div class="breadcrumb aem-GridColumn aem-GridColumn--default--12">
+<nav id="breadcrumb-9314697008" class="cmp-breadcrumb" aria-label="Breadcrumb" data-cmp-data-layer="{&#34;breadcrumb-9314697008&#34;:{&#34;@type&#34;:&#34;nexus/components/breadcrumb&#34;,&#34;repo:modifyDate&#34;:&#34;2024-06-02T16:14:19Z&#34;}}" role="navigation">
+    <ol class="cmp-breadcrumb__list" itemscope itemtype="http://schema.org/BreadcrumbList">
+        
+        <li class="cmp-breadcrumb__item" data-cmp-data-layer="{&#34;breadcrumb-9314697008-item-3adec0164d&#34;:{&#34;@type&#34;:&#34;nexus/components/breadcrumb/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-02T08:51:09Z&#34;,&#34;dc:title&#34;:&#34;Home&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home.html&#34;}}" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+            <a class="cmp-breadcrumb__item-link" itemprop="item" data-cmp-clickable href="/en/home.html">
+                <span itemprop="name">Home</span>
+            </a>
+            <meta itemprop="position" content="1"/>
+        </li>
+    
+        
+        <li class="cmp-breadcrumb__item" data-cmp-data-layer="{&#34;breadcrumb-9314697008-item-ad31097e8c&#34;:{&#34;@type&#34;:&#34;nexus/components/breadcrumb/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-06-02T16:11:57Z&#34;,&#34;dc:title&#34;:&#34;Smart Locks&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/smart-locks.html&#34;}}" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+            <a class="cmp-breadcrumb__item-link" itemprop="item" data-cmp-clickable href="/en/home/smart-locks.html">
+                <span itemprop="name">Smart Locks</span>
+            </a>
+            <meta itemprop="position" content="2"/>
+        </li>
+    
+        
+        <li class="cmp-breadcrumb__item cmp-breadcrumb__item--active" aria-current="page" data-cmp-data-layer="{&#34;breadcrumb-9314697008-item-5b7bb13b44&#34;:{&#34;@type&#34;:&#34;nexus/components/breadcrumb/item&#34;,&#34;repo:modifyDate&#34;:&#34;2024-06-02T16:11:55Z&#34;,&#34;dc:title&#34;:&#34;Schlage Encode Plus™ lock&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/smart-locks/encode-plus.html&#34;}}" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+            
+                <span itemprop="name">Schlage Encode Plus™ lock</span>
+            
+            <meta itemprop="position" content="3"/>
+        </li>
+    </ol>
+</nav>
+
+    
+
+</div>
+<div class="container responsivegrid aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="container-697f325ce8" class="cmp-container">
+        
+        <div class="html-component">
+
+
+
+
+
+
+
+
+    	<!-- ADA colors -->
+<style>
+	p.h1-subtitle {
+		color: #0072bc;
+		margin: 0;
+		text-transform: uppercase;
+	}
+
+	#shop-now {
+		margin-top: 75px;
+	}
+
+	#smartlocks-hero {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		aspect-ratio: 1088 / 605;
+		width: 100%;
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/view-all-hero-static.png");
+		text-align: center;
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: center;
+	}
+
+	#smartlocks-page-photo01,
+	#smartlocks-page-photo02 {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		aspect-ratio: 1088 / 605;
+		width: 100%;
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/view-all-smart-home-setup-image.png");
+		text-align: center;
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: center;
+		text-align: left;
+	}
+
+	#smartlocks-page-photo02 {
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/view-all-installation-image.png");
+	}
+
+
+
+	#encodeplus-page-photo01,
+	#encodeplus-page-photo02,
+	#encodeplus-page-photo03,
+	#connect-page-photo02,
+	#connect-page-photo03,
+	#connect-page-photo04,
+	#lever-page-photo01,
+	#lever-page-photo02,
+	#lever-page-photo03,
+	#encode-page-photo01,
+	#encode-page-photo02,
+	#encode-page-photo03 {
+		display: flex;
+		justify-content: left;
+		align-items: center;
+		aspect-ratio: 1088 / 605;
+		width: 100%;
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/AppleWatchUnlock.png");
+		text-align: center;
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: center;
+		text-align: left;
+		padding-left: 14%;
+	}
+
+	#encodeplus-page-photo01 {
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/AppleWatchUnlock.png");
+	}
+
+	#encodeplus-page-photo02 {
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/imgUnlock.png");
+	}
+
+	#encodeplus-page-photo03 {
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/view-all-smart-home-setup-image.png");
+	}
+
+	#connect-page-photo02 {
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/connect-photo02.png");
+	}
+
+	#connect-page-photo03 {
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/connect-photo03.png");
+	}
+
+	#connect-page-photo04 {
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/connect-photo04.png");
+	}
+
+	#lever-page-photo01 {
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/encode-lever-photo01.png");
+	}
+
+	#lever-page-photo02 {
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/encode-lever-photo02.png");
+	}
+
+	#lever-page-photo03 {
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/encode-lever-photo03.png");
+	}
+
+	#encode-page-photo01 {
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/encode-photo01.png");
+	}
+
+	#encode-page-photo02 {
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/encode-photo02.png");
+	}
+
+	#encode-page-photo03 {
+		background-image: url("/content/dam/sch-us/redesign/schlage/smart-locks/encode-photo03.png");
+	}
+
+	#smartlocks-hero,
+	#smartlocks-page-photo01,
+	#smartlocks-page-photo02,
+	#encodeplus-page-photo01,
+	#encodeplus-page-photo02,
+	#encodeplus-page-photo03,
+	#encodeplus-page-photo01,
+	#encodeplus-page-photo02,
+	#encodeplus-page-photo03,
+	#connect-page-photo02,
+	#connect-page-photo03,
+	#connect-page-photo04,
+	#lever-page-photo01,
+	#lever-page-photo02,
+	#lever-page-photo03,
+	#encode-page-photo01,
+	#encode-page-photo02,
+	#encode-page-photo03 {
+		height: inherit;
+		aspect-ratio: 1088 / 605;
+	}
+
+	p.body-large {
+		font-size: 1.5rem;
+		line-height: 140%;
+	}
+
+	p.body-large.callout {
+		font-size: 1.75rem;
+	}
+
+	p.body-large-left {
+		text-align: left;
+		font-size: 1.5rem;
+		line-height: 140%;
+	}
+
+
+	p.centered-callout {
+		text-align: center;
+		font-size: 35px;
+		line-height: 1.4em;
+	}
+
+	h2 {
+		text-wrap: balance;
+	}
+
+	h2.slide-title {
+		color: #ffffff;
+		font-family: "Stag Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+		font-size: calc(1.375rem + 1.5vw);
+		line-height: 1.2;
+	}
+
+	h3.small-headline {
+		text-align: left;
+		font-size: 2.8rem;
+		line-height: 140%;
+		font-family: 'stag-book', Helvetica, Arial, sans-serif;
+		font-weight: 100;
+		margin-bottom: 20px;
+	}
+
+	.title-container h2 {
+		font-family: 'Avenir Light' !important;
+		font-weight: 100;
+		padding-left: 0 !important;
+	}
+
+	.special-emphasis {
+		font-weight: normal;
+		font-style: italic;
+	}
+
+	div.grey-two-column {
+		background-color: #F5F5F5;
+	}
+
+	.tall-column {
+		width: 78%;
+		padding-left: 16%;
+		padding-top: 10%;
+		padding-bottom: 10%;
+	}
+
+	.tall-column-with-photo {
+		width: 81%;
+		padding-left: 16%;
+		padding-top: 30px;
+	}
+
+	p.copy-under-photo-column {
+		padding-top: 32px;
+		padding-left: 12px;
+		padding-bottom: 60px;
+	}
+
+	div#two-column-left-padding {
+		padding-left: 80px;
+		padding-bottom: 50px;
+	}
+
+	div#two-column-no-padding {
+		padding-left: 0px;
+		padding-bottom: 0px;
+		margin-top: 100px;
+		display: flex;
+		align-items: end;
+	}
+
+	div#middle-text-grey-background {
+		margin-top: -30px;
+		padding-bottom: 5px;
+		padding-top: 30px;
+		margin-bottom: 40px;
+	}
+
+	.dark-grey-with-radius {
+		background-color: #DEDEDE;
+		width: 1170px;
+		margin-left: auto;
+		margin-right: auto;
+		margin-bottom: 60px;
+		border-radius: 20px;
+		padding: 60px;
+	}
+
+	h4.centered-small-title {
+		font-size: 1.5rem;
+		line-height: 140%;
+		text-align: center;
+	}
+
+	div#centered-medium-title>h2 {
+		font-family: 'stag-book', Helvetica, Arial, sans-serif;
+		font-weight: 100;
+		font-size: 2.8rem;
+		margin-bottom: 60px;
+		margin-top: 120px;
+		text-align: center;
+	}
+
+	div#centered-medium-blue-title>h2 {
+		font-family: 'stag-book', Helvetica, Arial, sans-serif;
+		font-weight: 100;
+		font-size: 2.8rem;
+		margin-bottom: 60px;
+		margin-top: 120px;
+		text-align: center;
+		color: #0072bc;
+	}
+
+	h2.centered-medium-blue-title {
+		font-family: 'stag-book', Helvetica, Arial, sans-serif;
+		font-weight: 100;
+		font-size: 44px;
+		line-height: 140%;
+		text-align: center;
+		color: #0072bc;
+	}
+
+	h2.centered-medium-title {
+		font-family: 'stag-book', Helvetica, Arial, sans-serif;
+		font-weight: 100;
+		font-size: 2.8rem;
+		margin-top: 120px;
+		text-align: center;
+		padding-top: 80px;
+		padding-bottom: 30px;
+	}
+
+	div#grey-centered-box-with-button {
+		text-align: center;
+		padding: 40px;
+	}
+
+	div#grey-centered-box-with-button p {
+		font-size: 1.5rem;
+		margin-bottom: 40px;
+	}
+
+	div#grey-centered-box-with-button .a-button-bg--secondary {
+		height: 46px;
+	}
+
+	div#grey-centered-box-with-button .button-size--medium .cmp-button {
+		font-family: 'avenir-book';
+	}
+
+	#tall-smartlock-cards .card {
+		width: 314px;
+		height: 710px;
+		margin: 10px;
+	}
+
+	#tall-smartlock-cards .card__img-container,
+	#tall-smartlock-cards .card-body {
+		background-color: #F5F5F5;
+		text-align: center;
+		border-radius: 5px;
+	}
+
+	#tall-smartlock-cards img {
+		width: 100%;
+	}
+
+	.works-with-logos {
+		width: 78%;
+		margin-top: 13px;
+		font-size: 1.5rem;
+	}
+
+	.cmp-products__container .cmp-products .cmp-products__card.tall-smart-cards {
+		width: 310px;
+		min-width: 310px;
+		height: 710px;
+		margin: 15px 10px;
+		background-color: #f5f5f5;
+		text-align: center;
+	}
+
+	.cmp-products__container .cmp-products .cmp-products__card .cmp-products__card--main-image {
+		width: 100% !important;
+	}
+
+	.cmp-products__card .cmp-products__card--details {
+		padding: 8px 15px 8px;
+	}
+
+	h1.hero-title {
+		font-family: 'Stag-light', Helvetica, Arial, sans-serif;
+		text-align: center;
+		color: #0072bc;
+		font-size: 2.8rem;
+	}
+
+	span.title-bold {
+		font-weight: bold;
+		font-family: 'Stag-Semibolditalic';
+	}
+
+	span.title-emphasis {
+		font-family: 'Stag-book';
+		font-style: oblique;
+	}
+
+	h4.hero-subtitle {
+		text-align: center;
+		color: #0072bc;
+		font-size: 23px;
+	}
+
+	#MainTitle {
+		padding: 15px;
+	}
+
+	#MainTitle img.cmp-image__image {
+		margin-left: auto;
+		margin-right: auto;
+		max-width: 483px;
+	}
+
+	div#grey-back-title {
+		margin-top: 140px;
+		padding-top: 80px;
+		padding-bottom: 40px;
+	}
+
+	div#two-column-screenshot {
+		margin-bottom: 80px;
+	}
+	
+	#two-column-screenshot img {max-width: 400px;}
+
+	#two-col-app-img {
+		width: 80%;
+	}
+
+	#works-with-logos .card__img-container {
+		background-color: #F5F5F5;
+		height: 214px;
+		align-items: center;
+		border-radius: 6px;
+	}
+
+	#works-with-logos img.card__img--top {
+		width: unset;
+		height: fit-content;
+		max-width: 100%;
+	}
+
+	#works-with-logos .card-body {
+		display: none;
+	}
+
+	div#single-button-bottom-margin {
+		margin: 20px auto 80px;
+	}
+
+	#hero-image-centered img.cmp-image__image {
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+#hero-img img {
+width:100%;
+}
+
+	.cmp-image__image {
+		width: 100%;
+	}
+
+	#productHero {
+		width: 70%;
+		margin: auto;
+	}
+
+	.new.newpar.section {
+		display: none;
+	}
+
+	.cmp-button__text {
+		font-family: 'avenir-book'
+	}
+
+	a {
+		color: #000;
+	}
+
+	.cmp-smart-locks-card .megamenu__tile-card-section {
+		box-shadow: none;
+	}
+
+
+	
+.windowed-vid {
+margin-left: -10%;
+    margin-right: -10%;
+    max-width: 120%;
+    width: 120%;
+    transition: 2s;
+    clip-path: xywh(0 0 100% 100%);   
+}
+
+.windowed-vid.active {
+clip-path: xywh(7.5% 8% 85% 85% round 40px 40px);
+}
+
+.windowed-vid.active video {
+filter: brightness(.8);
+transition: 2s;
+}
+
+
+
+.windowed-vid {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+.windowed-vid .slide-title {
+    position: absolute;
+    color: #ffffff;
+    font-family: "Stag Web", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: calc(1.375rem + 1.5vw) !important;
+    line-height: 1.2 !important;
+    left: 20%;
+opacity: 0;
+margin-top: -100px;
+transition: 1s;
+
+}
+
+.windowed-vid.show-title .slide-title {
+opacity: 1;
+margin-top: 0;
+transition: 1s;
+z-index: 1;
+}
+
+.windowed-vid .slide-title  .special-emphasis {
+    font-weight: normal;
+    font-style: italic;
+}
+.windowed-vid video {
+    width: 100%;
+}
+
+#animateImage img {
+transform: translateX(184px) translateY(60px) scale(1.2) rotate(-8deg);
+transition: 2s ease-in-out;
+}
+#animateImage img.in-view {
+transform: translateX(0px) translateY(0px) scale(1) rotate(0deg);
+transition: 2s ease-in-out;
+}
+
+	@media only screen and (max-width: 1400px) {
+
+		h3.small-headline {
+			font-size: 2.0rem;
+		}
+
+		p.body-large-left {
+			font-size: 1.12rem;
+		}
+	}
+
+	
+	@media (max-width: 991px) {
+		#works-with-logos {
+			gap: 20px;
+			flex-wrap: wrap;
+		}
+
+		div#two-column-screenshot {
+			margin-bottom: 30px;
+			padding-bottom: 30px;
+		}
+
+		#works-with-logos:before {
+			display: none;
+		}
+
+		#works-with-logos .card {
+			flex-basis: 47% !important;
+			min-width: unset !important;
+			margin: 0;
+			padding: 0;
+		}
+
+		#works-with-logos .card .card__img-container {
+			height: auto;
+			aspect-ratio: 1 / 1;
+		}
+
+		p.body-large,
+		p.body-large-left {
+			text-align: left;
+		}
+
+		.title-container h2 {
+			text-align: left !important;
+		}
+	}
+
+	@media only screen and (max-width: 767px) {
+
+		#smartlocks-hero,
+		#smartlocks-page-photo01,
+		#smartlocks-page-photo02,
+		#encodeplus-page-photo01,
+		#encodeplus-page-photo02,
+		#encodeplus-page-photo03,
+		encodeplus-page-photo01,
+		#encodeplus-page-photo02,
+		#encodeplus-page-photo03,
+		#connect-page-photo02,
+		#connect-page-photo03,
+		#connect-page-photo04,
+		#lever-page-photo01,
+		#lever-page-photo02,
+		#lever-page-photo03,
+		#encode-page-photo01,
+		#encode-page-photo02,
+		#encode-page-photo03 {
+			padding: 15px;
+		}
+
+		#two-col-app-img {
+			margin: auto;
+		}
+#hero-img {
+margin-top: 20px;
+}
+	
+
+		div#two-column-no-padding {
+			margin-top: 50px;
+		}
+
+		div#grey-back-title {
+			margin-top: 75px;
+			padding: 25px 15px 15px;
+		}
+
+		div#single-button-bottom-margin {
+			margin-bottom: 100px;
+		}
+
+		p.copy-under-photo-column {
+			color: #000 !important;
+			font-size: 1.12rem !important;
+			line-height: 140% !important;
+			padding: 15px;
+		}
+
+		.tall-column {
+			width: inherit;
+			padding-left: inherit;
+			padding-bottom: 0;
+		}
+
+		h3.small-headline {
+			text-align: center;
+			font-size: 2.0rem;
+		}
+.windowed-vid .slide-title {
+left: 13%;
+        max-width: 74%;
+}
+.windowed-vid.active {
+clip-path: xywh(7.5% 8% 85% 85% round 16px 16px);
+}
+		p.body-large {
+			text-align: center;
+			font-size: 1.12rem;
+			line-height: 140%;
+		}
+
+		p.body-large.callout {
+			font-size: 1.5rem;
+		}
+
+		p.body-large-left {
+			text-align: center;
+			font-size: 1.12rem;
+			line-height: 140%;
+		}
+
+		.tall-column-with-photo {
+			padding-left: 0;
+			width: 100%;
+		}
+
+		.tall-column-with-photo img {
+			width: 100%;
+		}
+
+		div#two-column-screenshot {
+			flex-direction: column-reverse;
+		}
+
+		div#centered-medium-title>h2 {
+			font-size: 2rem;
+			margin: 60px auto;
+			padding: 0 15px;
+		}
+
+		.display-large {
+			font-size: 2rem;
+			line-height: 120%;
+		}
+
+		h2.centered-medium-blue-title {
+			font-size: 2rem;
+			line-height: 120%;
+		}
+
+		div#grey-centered-box-with-button {
+			padding: 40px 10px;
+		}
+
+		div#grey-centered-box-with-button p {
+			font-size: 1.25rem;
+		}
+
+
+		#comparison-chart-header .selector {
+			padding: 20px 46px 20px 20px !important;
+		}
+
+		#comparison-chart-header .option-box {
+			right: -57% !important;
+		}
+
+
+		#comparison-chart-header .col1 .option-box {
+			right: auto !important;
+			left: 3px;
+		}
+
+		#comparison-chart-header .col2 .option-box {
+			right: 2px !important;
+		}
+
+		div#two-column-left-padding {
+			padding-left: 0;
+		}
+
+		#productHero {
+			width: 100%;
+		}
+
+	}
+	
+	@media (min-width: 992px) {
+    .cmp-text-with-right-img .text {
+        padding-right: 0;
+    }
+}
+</style>
+
+</div>
+<div class="html-component">
+
+
+
+
+
+
+
+
+    <script>
+const mediaQuery = window.matchMedia("(max-width: 768px)");
+      let frameCount = 56;
+      let urls = new Array(frameCount).fill().map((o, i) => `/content/dam/sch-us/redesign/schlage/smart-locks/encode-plus-sequence-2/Encode_PLUS_Header_Products_Desktop_${(i).toString().padStart(5, '0')}.jpg`);
+
+if (mediaQuery.matches) {
+ urls = new Array(frameCount).fill().map((o, i) => `/content/dam/sch-us/redesign/schlage/smart-locks/encode-plus-sequence-mobile-2/Encode_PLUS_Header_Products_Mobile_${(i).toString().padStart(5, '0')}.jpg`);
+
+$("#imagesequence").attr("src","/content/dam/sch-us/redesign/schlage/smart-locks/encode-plus-sequence-mobile-2/Encode_PLUS_Header_Products_Mobile_00000.jpg");
+
+}
+
+function preloadImages(imagePaths) {
+  const promises = imagePaths.map(path => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = path;
+    });
+  });
+
+  return Promise.all(promises);
+}
+
+preloadImages(urls)
+  .then(images => {
+    // Images are preloaded and ready to use
+    console.log("Images preloaded:", images);
+  })
+  .catch(error => {
+    console.error("Error preloading images:", error);
+  });
+
+
+      const options = {
+        threshold: 0.55,
+      };
+
+      let observer = new IntersectionObserver(([entry]) => {
+          console.log("OBSERVER TRIGGERED 1");
+
+          if (
+            entry &&
+            entry.isIntersecting &&
+            entry.intersectionRatio >= options.threshold
+          ) {
+            
+            target = 'imagesequence';
+            images = urls;
+            fps =  14;
+            let currentFrame = 0;
+            const img = document.getElementById(target);
+
+            const intervalID = setInterval(() => {
+              img.src = images[currentFrame];
+              currentFrame++;           
+              if (currentFrame >= images.length) {
+                clearInterval(intervalID);
+              }
+              //currentFrame = (currentFrame + 1) % images.length; 
+            }, 1000 / fps);
+            observer.unobserve(document.getElementById("imagesequence"));
+          }
+        }, options);
+
+
+        setTimeout(function(){
+          observer.observe(document.getElementById("imagesequence"));
+        },(1000));
+
+
+
+
+
+
+
+
+
+
+let observer2 = new IntersectionObserver((entries) => {
+
+        entries.forEach((entry) => {
+          if (
+            entry &&
+            entry.isIntersecting &&
+            entry.intersectionRatio >= options.threshold
+          ) {           
+
+            entry.target.classList.add("active");
+        setTimeout(function(){
+            entry.target.classList.add("show-title");
+},(2500));
+
+            observer2.unobserve(entry.target);
+          }
+        });
+      }, options);
+          
+        setTimeout(function(){
+          let elements = document.querySelectorAll(".windowed-vid");
+          for (let element of elements) {
+            observer2.observe(element);
+          }
+
+        },(1000));
+
+
+
+</script>
+
+<script>
+function playVideos() {
+$(".video-autoplay-loop").each(function() {
+    this.play();
+  });
+
+        }
+
+        function pauseVideos() {
+$(".video-autoplay-loop").each(function() {
+    this.pause();
+  });
+        }
+
+
+document.addEventListener("DOMContentLoaded", () => {
+
+	// Use Intersection Observer to determine if objects are within the viewport
+	const observer = new IntersectionObserver(entries => {
+	  entries.forEach(entry => {
+		if (entry.isIntersecting) {
+		  entry.target.classList.add('in-view');
+		  return;
+		}
+		entry.target.classList.remove('in-view');
+	  });
+	});
+
+	// Get all the elements with the .animate class applied
+	const allAnimatedElements = document.querySelectorAll('#animateImage img');
+
+	// Add the observer to each of those elements
+	allAnimatedElements.forEach((element) => observer.observe(element));
+
+}); 
+
+</script>
+<style>
+.videos-toggler {
+margin: auto;
+    display: flex;
+    justify-content: center;
+    gap: 2em;
+    color: #0072bc;
+}
+</style>
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="MainTitle" class="cmp-container">
+        
+        <div class="text">
+<div data-cmp-data-layer="{&#34;text-3429153aec&#34;:{&#34;@type&#34;:&#34;nexus/components/text&#34;,&#34;repo:modifyDate&#34;:&#34;2024-06-13T17:00:25Z&#34;,&#34;xdm:text&#34;:&#34;&lt;h1 class=\&#34;blue display-large\&#34; style=\&#34;text-align: center;\&#34;>Schlage &lt;b>Encode &lt;i>Plus&lt;/i>&lt;/b>™&lt;/h1>\r\n&lt;p class=\&#34;h1-subtitle\&#34; style=\&#34;text-align: center;\&#34;>Smart WiFi Deadbolt&lt;/p>\r\n&#34;}}" id="text-3429153aec" class="cmp-text">
+    <h1 class="blue display-large" style="	text-align: center;
+">Schlage <b>Encode <i>Plus</i></b>™</h1>
+<p class="h1-subtitle" style="	text-align: center;
+">Smart WiFi Deadbolt</p>
+
+</div>
+
+    
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="hero-img" class="cmp-container">
+        
+        <div class="html-component">
+
+
+
+
+
+
+<img id="imagesequence" src="/content/dam/sch-us/redesign/schlage/smart-locks/encode-plus-sequence-2/Encode_PLUS_Header_Products_Desktop_00000.jpg" alt="Schlage Encode Plus Header - Images of Product Examples"/>
+
+
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid container-bottom-padding-25 container_max-width aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="hero-text" class="cmp-container">
+        
+        <div class="text">
+<div data-cmp-data-layer="{&#34;text-2de67bdeb1&#34;:{&#34;@type&#34;:&#34;nexus/components/text&#34;,&#34;repo:modifyDate&#34;:&#34;2024-06-02T18:49:56Z&#34;,&#34;xdm:text&#34;:&#34;&lt;p class=\&#34;body-large\&#34;>Simple and secure access with Apple&lt;sup>®&lt;/sup> home keys. Easily lock and unlock your door using your Apple Watch&lt;sup>®&lt;/sup>, iPhone&lt;sup>®&lt;/sup> and home keys, plus seamlessly manage codes and more with the complete Schlage&lt;sup>®&lt;/sup> Home experience, right at your fingertips.&lt;/p>\r\n&#34;}}" id="text-2de67bdeb1" class="cmp-text">
+    <p class="body-large">Simple and secure access with Apple<sup>®</sup> home keys. Easily lock and unlock your door using your Apple Watch<sup>®</sup>, iPhone<sup>®</sup> and home keys, plus seamlessly manage codes and more with the complete Schlage<sup>®</sup> Home experience, right at your fingertips.</p>
+
+</div>
+
+    
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid container_max-width aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="windowed-video1" class="cmp-container">
+        
+        <div class="html-component">
+
+
+
+
+
+
+
+
+    <div id="trust-hero-vid" class="windowed-vid">
+<h2 class="slide-title">Tap to unlock with your<br><span class="special-emphasis">iPhone</span> or<span class="special-emphasis"> Apple Watch</span>.</h2>
+<video autoplay="" muted="" loop="" playsinline="" poster="https://www.schlage.com/content/dam/sch-us/page-images/ContentLanding/Schlage_Durability_VidHead_2_poster.jpg" class="video-autoplay-loop">
+<source src="/content/dam/sch-us/redesign/schlage/smart-locks/TapToUnlockWithYourIphoneAppleWatch.mp4" type="video/mp4" media="(min-width: 767px)">
+<source src="/content/dam/sch-us/redesign/schlage/smart-locks/encode-plus-videos/TapToUnlockWithYourIphoneAppleWatch_mobile_1.mp4" type="video/mp4">
+</video>
+</div>
+<div class="videos-toggler">
+<div class="toggle-videos-pause" role="button" onclick="pauseVideos()" aria-label="Pause All Videos">Pause All Videos</div>
+<div class="toggle-videos-play" role="button" onclick="playVideos()" aria-label="Pause All Videos">Play All Videos</div>
+</div>
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid container_max-width aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="shop-now" class="cmp-container">
+        
+        <div class="text">
+<div data-cmp-data-layer="{&#34;text-66cafe14dd&#34;:{&#34;@type&#34;:&#34;nexus/components/text&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-22T15:22:26Z&#34;,&#34;xdm:text&#34;:&#34;&lt;div class=\&#34;title-container\&#34;>&lt;h2>Shop Encode Plus&lt;/h2>\r\n&lt;/div>\r\n&#34;}}" id="text-66cafe14dd" class="cmp-text">
+    <div class="title-container"><h2>Shop Encode Plus</h2>
+</div>
+
+</div>
+
+    
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid col-6 container_max-width aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="shop-encode" class="cmp-container">
+        
+        <div class="teaser button-align-middle teaser-content--below">
+<div id="teaser-90408dcbbf" class="cmp-teaser" data-cmp-data-layer="{&#34;teaser-90408dcbbf&#34;:{&#34;@type&#34;:&#34;nexus/components/teaser&#34;,&#34;repo:modifyDate&#34;:&#34;2025-01-06T20:29:59Z&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/products/product-listing.html?tag=schlage-americas:product/smartLocks/encodePlusDeadbolt&#34;}}">
+    
+        <div class="cmp-teaser__content">
+            
+    
+
+            
+    
+
+            
+    
+
+            
+    <div class="cmp-teaser__action-container">
+        
+    <a class="cmp-teaser__action-link" id="teaser-90408dcbbf-cta-687c970269" data-cmp-data-layer="{&#34;teaser-90408dcbbf-cta-687c970269&#34;:{&#34;@type&#34;:&#34;nexus/components/teaser/cta&#34;,&#34;dc:title&#34;:&#34;See More&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/products/product-listing.html?tag=schlage-americas:product/smartLocks/encodePlusDeadbolt&#34;}}" data-cmp-clickable href="/en/home/products/product-listing.html?tag=schlage-americas:product/smartLocks/encodePlusDeadbolt" aria-label="Shop All Encode Plus smart locks.">See More</a>
+
+    </div>
+
+        </div>
+        
+    <div class="cmp-teaser__image">
+<div data-cmp-is="image" data-cmp-src="/adobe/dynamicmedia/deliver/dm-aid--9189a19b-e502-4750-b919-4bc24b96a9f3/section-image-smart-locks.png?preferwebp=true&amp;width={width}&amp;quality=100" data-asset-id="9189a19b-e502-4750-b919-4bc24b96a9f3" data-cmp-filereference="/content/dam/sch-us/redesign/schlage/home-page/Section-Image-Smart-Locks.png" id="teaser-90408dcbbf-image" data-cmp-data-layer="{&#34;teaser-90408dcbbf-image&#34;:{&#34;@type&#34;:&#34;nexus/components/image&#34;,&#34;repo:modifyDate&#34;:&#34;2025-01-06T20:29:59Z&#34;,&#34;image&#34;:{&#34;repo:id&#34;:&#34;9189a19b-e502-4750-b919-4bc24b96a9f3&#34;,&#34;repo:modifyDate&#34;:&#34;2024-01-30T14:02:55Z&#34;,&#34;@type&#34;:&#34;image/png&#34;,&#34;repo:path&#34;:&#34;/content/dam/sch-us/redesign/schlage/home-page/Section-Image-Smart-Locks.png&#34;,&#34;xdm:tags&#34;:[&#34;properties:orientation/square&#34;],&#34;xdm:smartTags&#34;:{&#34;cleaning&#34;:0.79,&#34;woman&#34;:1.0,&#34;courier&#34;:0.817,&#34;passenger&#34;:0.752,&#34;person&#34;:1.0,&#34;patient&#34;:0.854,&#34;commercial photography&#34;:0.911,&#34;client&#34;:0.864,&#34;locker&#34;:0.77}}}}" data-cmp-hook-image="imageV3" class="cmp-image" itemscope itemtype="http://schema.org/ImageObject">
+    
+        <img src="/adobe/dynamicmedia/deliver/dm-aid--9189a19b-e502-4750-b919-4bc24b96a9f3/section-image-smart-locks.png?preferwebp=true&quality=100" loading="lazy" class="cmp-image__image" itemprop="contentUrl" width="520" height="438" alt="Woman using her Apple Watch to unlock her Encode Plus smart lock."/>
+    
+    
+    
+</div>
+
+    
+
+</div>
+
+    
+</div>
+
+    
+
+</div>
+<div class="carousel-cards">
+   
+   
+      
+    
+<link rel="stylesheet" href="/etc.clientlibs/us-residential/components/content/carousel-cards/clientlib.lc-2c59272cc978ca8345b91ffed636cb67-lc.min.css" type="text/css">
+<script src="/etc.clientlibs/us-residential/components/content/carousel-cards/clientlib.lc-75aad5033519610572d8a1bafc35305e-lc.min.js"></script>
+
+
+
+   
+ 
+<div class="container">
+   <section class="cmp-products__container ">
+   
+      <div class="cmp-products">    
+         
+            <div class="cmp-products__card ">
+               
+               <a class="cmp-products__card--main-image" href="/en/home/products/BE499WBCENFFF.html" aria-label="Schlage Encode Plus™ Smart WiFi Deadbolt">
+               <img alt="Schlage Encode Plus™ Smart WiFi Deadbolt" class="img-responsive selected-image" src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CEN619_EXT_SL.jpg.thumb.1280.1280.png"/></img>
+               
+               </img>
+               
+               </img>
+               
+               </img>
+               </a>
+               <div class="cmp-products__card--details">
+                  <div class="cmp-products__card-favorite-icon">
+                     <div class="favorite-icon" data-product-name="Schlage Encode Plus™ Smart WiFi Deadbolt" data-product-id="BE499WBCENFFF" loading="lazy" title="Favourite Icon for BE499WBCENFFF" role="button" tabindex="0"></div>
+                  </div>
+                  <div class="cmp-products__card--title-sec">
+                     <a href="/en/home/products/BE499WBCENFFF.html" class="cmp-products__card--title-nav" aria-label="Schlage Encode Plus™ Smart WiFi Deadbolt - Century TRIM">
+                        <h2 class="collectionLabel" tabindex="0">
+                           Schlage Encode Plus™ Smart WiFi Deadbolt
+                        </h2>
+                        <p class="collectionDescription" tabindex="0">Century TRIM</p>
+                     </a>
+                     <div class="cmp-products__card--price-detail d-lg-none" role="presentation">
+                        <p class="cmp-products__card--price-text" tabindex="0">From $<span>329</span></p>
+                     </div>
+                  </div>
+                  <div class="cmp-products__card--price-sec">
+                     <div class="cmp-products__card--price-detail d-none d-lg-block">
+                        <p class="cmp-products__card--price-text" tabindex="0">From $<span>329</span></p>
+                     </div>
+                     <div class="cmp-products__card--thumbnails">
+                        <div class="cmp-products__card-color--indicator">
+                           <div id="carouselExampleControls" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                              <div class="carousel-inner">
+                               
+                                 <div class="carousel-item active">
+                                   
+                                    <img alt="icon for Satin Nickel finish" class="slider-thumb-list thumbnail-image " src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/619_Satin%20Nickel_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CEN619_EXT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 
+                                   
+                                    <img alt="icon for Matte Black finish" class="slider-thumb-list thumbnail-image active" src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/622_Matte%20Black_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CEN622_EXT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 
+                                   
+                                    <img alt="icon for Bright Chrome finish" class="slider-thumb-list thumbnail-image " src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/625_Bright%20Chrome_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CEN625_EXT_UNLT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 
+                                   
+                                    <img alt="icon for Aged Bronze finish" class="slider-thumb-list thumbnail-image " src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/716_Aged%20Bronze_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CEN716_EXT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 </div>
+                              </div>
+                              <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
+                              <span class="carousel-control-prev-icon" aria-hidden="true" title="Previous Button"></span>
+                              <span class="visually-hidden">Previous</span>
+                              </button>
+                              <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="next" title="Next Button">
+                              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                              <span class="visually-hidden">Next</span>
+                              </button>
+                           </div>
+                        </div>
+                        <!-- <div class="right-control hidden">
+                           <button type="button" class="thumbnail-control" data-count="10">+4</button>
+                           </div> -->
+                     </div>
+                  </div>
+               </div>
+               <!-- color indicator count  -->
+               <div class="thumbnailCount hidden" data-thumbscount="8"></div>
+            </div>
+         
+            <div class="cmp-products__card ">
+               
+               <a class="cmp-products__card--main-image" href="/en/home/products/BE499WBCENFFF.html" aria-label="Schlage Encode Plus™ Smart WiFi Deadbolt">
+               <img alt="Schlage Encode Plus™ Smart WiFi Deadbolt" class="img-responsive selected-image" src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CEN619_EXT_SL.jpg.thumb.1280.1280.png"/></img>
+               
+               </img>
+               
+               </img>
+               
+               </img>
+               </a>
+               <div class="cmp-products__card--details">
+                  <div class="cmp-products__card-favorite-icon">
+                     <div class="favorite-icon" data-product-name="Schlage Encode Plus™ Smart WiFi Deadbolt" data-product-id="BE499WBCENFFF" loading="lazy" title="Favourite Icon for BE499WBCENFFF" role="button" tabindex="0"></div>
+                  </div>
+                  <div class="cmp-products__card--title-sec">
+                     <a href="/en/home/products/BE499WBCENFFF.html" class="cmp-products__card--title-nav" aria-label="Schlage Encode Plus™ Smart WiFi Deadbolt - Century TRIM">
+                        <h2 class="collectionLabel" tabindex="0">
+                           Schlage Encode Plus™ Smart WiFi Deadbolt
+                        </h2>
+                        <p class="collectionDescription" tabindex="0">Century TRIM</p>
+                     </a>
+                     <div class="cmp-products__card--price-detail d-lg-none" role="presentation">
+                        <p class="cmp-products__card--price-text" tabindex="0">From $<span>329</span></p>
+                     </div>
+                  </div>
+                  <div class="cmp-products__card--price-sec">
+                     <div class="cmp-products__card--price-detail d-none d-lg-block">
+                        <p class="cmp-products__card--price-text" tabindex="0">From $<span>329</span></p>
+                     </div>
+                     <div class="cmp-products__card--thumbnails">
+                        <div class="cmp-products__card-color--indicator">
+                           <div id="carouselExampleControls" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                              <div class="carousel-inner">
+                               
+                                 <div class="carousel-item active">
+                                   
+                                    <img alt="icon for Satin Nickel finish" class="slider-thumb-list thumbnail-image active" src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/619_Satin%20Nickel_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CEN619_EXT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 
+                                   
+                                    <img alt="icon for Matte Black finish" class="slider-thumb-list thumbnail-image " src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/622_Matte%20Black_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CEN622_EXT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 
+                                   
+                                    <img alt="icon for Bright Chrome finish" class="slider-thumb-list thumbnail-image " src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/625_Bright%20Chrome_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CEN625_EXT_UNLT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 
+                                   
+                                    <img alt="icon for Aged Bronze finish" class="slider-thumb-list thumbnail-image " src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/716_Aged%20Bronze_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CEN716_EXT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 </div>
+                              </div>
+                              <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
+                              <span class="carousel-control-prev-icon" aria-hidden="true" title="Previous Button"></span>
+                              <span class="visually-hidden">Previous</span>
+                              </button>
+                              <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="next" title="Next Button">
+                              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                              <span class="visually-hidden">Next</span>
+                              </button>
+                           </div>
+                        </div>
+                        <!-- <div class="right-control hidden">
+                           <button type="button" class="thumbnail-control" data-count="10">+4</button>
+                           </div> -->
+                     </div>
+                  </div>
+               </div>
+               <!-- color indicator count  -->
+               <div class="thumbnailCount hidden" data-thumbscount="8"></div>
+            </div>
+         
+            <div class="cmp-products__card ">
+               
+               <a class="cmp-products__card--main-image" href="/en/home/products/BE499WBCAMFFF.html" aria-label="Schlage Encode Plus™ Smart WiFi Deadbolt">
+               <img alt="Schlage Encode Plus™ Smart WiFi Deadbolt" class="img-responsive selected-image" src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CAM619_EXT_SL.jpg.thumb.1280.1280.png"/></img>
+               
+               </img>
+               
+               </img>
+               </a>
+               <div class="cmp-products__card--details">
+                  <div class="cmp-products__card-favorite-icon">
+                     <div class="favorite-icon" data-product-name="Schlage Encode Plus™ Smart WiFi Deadbolt" data-product-id="BE499WBCAMFFF" loading="lazy" title="Favourite Icon for BE499WBCAMFFF" role="button" tabindex="0"></div>
+                  </div>
+                  <div class="cmp-products__card--title-sec">
+                     <a href="/en/home/products/BE499WBCAMFFF.html" class="cmp-products__card--title-nav" aria-label="Schlage Encode Plus™ Smart WiFi Deadbolt - Camelot TRIM">
+                        <h2 class="collectionLabel" tabindex="0">
+                           Schlage Encode Plus™ Smart WiFi Deadbolt
+                        </h2>
+                        <p class="collectionDescription" tabindex="0">Camelot TRIM</p>
+                     </a>
+                     <div class="cmp-products__card--price-detail d-lg-none" role="presentation">
+                        <p class="cmp-products__card--price-text" tabindex="0">From $<span>329</span></p>
+                     </div>
+                  </div>
+                  <div class="cmp-products__card--price-sec">
+                     <div class="cmp-products__card--price-detail d-none d-lg-block">
+                        <p class="cmp-products__card--price-text" tabindex="0">From $<span>329</span></p>
+                     </div>
+                     <div class="cmp-products__card--thumbnails">
+                        <div class="cmp-products__card-color--indicator">
+                           <div id="carouselExampleControls" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                              <div class="carousel-inner">
+                               
+                                 <div class="carousel-item active">
+                                   
+                                    <img alt="icon for Satin Nickel finish" class="slider-thumb-list thumbnail-image " src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/619_Satin%20Nickel_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CAM619_EXT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 
+                                   
+                                    <img alt="icon for Matte Black finish" class="slider-thumb-list thumbnail-image " src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/622_Matte%20Black_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CAM622_EXT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 
+                                   
+                                    <img alt="icon for Aged Bronze finish" class="slider-thumb-list thumbnail-image active" src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/716_Aged%20Bronze_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CAM716_EXT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 </div>
+                              </div>
+                              <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
+                              <span class="carousel-control-prev-icon" aria-hidden="true" title="Previous Button"></span>
+                              <span class="visually-hidden">Previous</span>
+                              </button>
+                              <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="next" title="Next Button">
+                              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                              <span class="visually-hidden">Next</span>
+                              </button>
+                           </div>
+                        </div>
+                        <!-- <div class="right-control hidden">
+                           <button type="button" class="thumbnail-control" data-count="10">+4</button>
+                           </div> -->
+                     </div>
+                  </div>
+               </div>
+               <!-- color indicator count  -->
+               <div class="thumbnailCount hidden" data-thumbscount="8"></div>
+            </div>
+         
+            <div class="cmp-products__card ">
+               
+               <a class="cmp-products__card--main-image" href="/en/home/products/BE499WBCAMFFF.html" aria-label="Schlage Encode Plus™ Smart WiFi Deadbolt">
+               <img alt="Schlage Encode Plus™ Smart WiFi Deadbolt" class="img-responsive selected-image" src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CAM619_EXT_SL.jpg.thumb.1280.1280.png"/></img>
+               
+               </img>
+               
+               </img>
+               </a>
+               <div class="cmp-products__card--details">
+                  <div class="cmp-products__card-favorite-icon">
+                     <div class="favorite-icon" data-product-name="Schlage Encode Plus™ Smart WiFi Deadbolt" data-product-id="BE499WBCAMFFF" loading="lazy" title="Favourite Icon for BE499WBCAMFFF" role="button" tabindex="0"></div>
+                  </div>
+                  <div class="cmp-products__card--title-sec">
+                     <a href="/en/home/products/BE499WBCAMFFF.html" class="cmp-products__card--title-nav" aria-label="Schlage Encode Plus™ Smart WiFi Deadbolt - Camelot TRIM">
+                        <h2 class="collectionLabel" tabindex="0">
+                           Schlage Encode Plus™ Smart WiFi Deadbolt
+                        </h2>
+                        <p class="collectionDescription" tabindex="0">Camelot TRIM</p>
+                     </a>
+                     <div class="cmp-products__card--price-detail d-lg-none" role="presentation">
+                        <p class="cmp-products__card--price-text" tabindex="0">From $<span>329</span></p>
+                     </div>
+                  </div>
+                  <div class="cmp-products__card--price-sec">
+                     <div class="cmp-products__card--price-detail d-none d-lg-block">
+                        <p class="cmp-products__card--price-text" tabindex="0">From $<span>329</span></p>
+                     </div>
+                     <div class="cmp-products__card--thumbnails">
+                        <div class="cmp-products__card-color--indicator">
+                           <div id="carouselExampleControls" class="carousel slide" data-bs-ride="carousel" data-bs-interval="false">
+                              <div class="carousel-inner">
+                               
+                                 <div class="carousel-item active">
+                                   
+                                    <img alt="icon for Satin Nickel finish" class="slider-thumb-list thumbnail-image active" src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/619_Satin%20Nickel_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CAM619_EXT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 
+                                   
+                                    <img alt="icon for Matte Black finish" class="slider-thumb-list thumbnail-image " src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/622_Matte%20Black_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CAM622_EXT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 
+                                   
+                                    <img alt="icon for Aged Bronze finish" class="slider-thumb-list thumbnail-image " src="/content/dam/us-res-mktg/Product-imagery/Schlage/Finishes/716_Aged%20Bronze_RD.jpg.thumb.48.48.png" data-src="/content/dam/us-res-mktg/Product-imagery/Schlage/electronic-locks/encode-db-plus/BE499_CAM716_EXT_SL.jpg.thumb.1280.1280.png" tabindex="0"/>
+                                 </div>
+                              </div>
+                              <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
+                              <span class="carousel-control-prev-icon" aria-hidden="true" title="Previous Button"></span>
+                              <span class="visually-hidden">Previous</span>
+                              </button>
+                              <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="next" title="Next Button">
+                              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                              <span class="visually-hidden">Next</span>
+                              </button>
+                           </div>
+                        </div>
+                        <!-- <div class="right-control hidden">
+                           <button type="button" class="thumbnail-control" data-count="10">+4</button>
+                           </div> -->
+                     </div>
+                  </div>
+               </div>
+               <!-- color indicator count  -->
+               <div class="thumbnailCount hidden" data-thumbscount="8"></div>
+            </div>
+         
+      </div>
+      <div class="cmp-product__arrows">
+         <div class="cmp-product__arrows--prev" title="previous button" role="button" tabindex="0">
+            <span class="cmp-product__arrow-image--prev">
+            </span>
+         </div>
+         <div class="cmp-product__arrows--next" title="next button" role="button" tabindex="0">
+            <span class="cmp-product__arrow-image--next">
+            </span>
+         </div>
+      </div>
+   </section>
+</div>
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid col-6 container-column--5--7 container-full-width--bg container-bg--grey container-mobile--order-change aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="two-column-no-padding" class="cmp-container">
+        
+        <div class="image">
+<div data-cmp-is="image" data-cmp-src="/en/home/smart-locks/encode-plus/_jcr_content/root/container/container/container_1370019614_313341560/image.coreimg{.width}.png/1736193626250/imglockencodeplus.png" id="animateImage" data-cmp-data-layer="{&#34;animateImage&#34;:{&#34;@type&#34;:&#34;nexus/components/image&#34;,&#34;repo:modifyDate&#34;:&#34;2025-01-06T20:00:26Z&#34;}}" data-cmp-hook-image="imageV3" class="cmp-image" itemscope itemtype="http://schema.org/ImageObject">
+    
+        <img src="/en/home/smart-locks/encode-plus/_jcr_content/root/container/container/container_1370019614_313341560/image.coreimg.png/1736193626250/imglockencodeplus.png" class="cmp-image__image" itemprop="contentUrl" alt="Smarter Safer and More Stylish Keypad door lock"/>
+    
+    
+    
+</div>
+
+    
+
+</div>
+<div class="text">
+<div data-cmp-data-layer="{&#34;text-2e24bf002d&#34;:{&#34;@type&#34;:&#34;nexus/components/text&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-16T17:47:28Z&#34;,&#34;xdm:text&#34;:&#34;&lt;div class=\&#34;tall-column\&#34;>&lt;h3 class=\&#34;small-headline\&#34;>Smarter. Safer.&lt;br>\r\nMore Stylish.&lt;/h3>\r\n&lt;p class=\&#34;body-large-left\&#34;>At Schlage, we are dedicated to every detail – from finishes that withstand the elements to physical strength and cybersecurity, we match style with quality. Backed by a best-in-class BHMA rating in&amp;nbsp;security, durability and finish, the Encode Plus Deadbolt is the smarter way to protect what matters&amp;nbsp;most.&lt;/p>\r\n&lt;/div>\r\n&#34;}}" id="text-2e24bf002d" class="cmp-text">
+    <div class="tall-column"><h3 class="small-headline">Smarter. Safer.<br />
+More Stylish.</h3>
+<p class="body-large-left">At Schlage, we are dedicated to every detail – from finishes that withstand the elements to physical strength and cybersecurity, we match style with quality. Backed by a best-in-class BHMA rating in security, durability and finish, the Encode Plus Deadbolt is the smarter way to protect what matters most.</p>
+</div>
+
+</div>
+
+    
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="no-gap" class="cmp-container">
+        
+        <div class="title">
+<div data-cmp-data-layer="{&#34;centered-medium-title&#34;:{&#34;@type&#34;:&#34;nexus/components/title&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-16T17:55:58Z&#34;,&#34;dc:title&#34;:&#34;Easy and secure home access.&#34;}}" id="centered-medium-title" class="cmp-title">
+    <h2 class="cmp-title__text">Easy and secure home access.</h2>
+</div>
+
+    
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid container_max-width aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="codes" class="cmp-container">
+        
+        <div class="html-component">
+
+
+
+
+
+
+
+
+    <div id="unique-codes-vid" class="windowed-vid">
+<h2 class="slide-title">Assign <b><i>unique codes</i></b> for<br>trusted guests and family.</h2>
+<video autoplay="" muted="" loop="" playsinline="" poster="https://www.schlage.com/content/dam/sch-us/page-images/ContentLanding/Schlage_Durability_VidHead_2_poster.jpg" class="video-autoplay-loop">
+<source src="/content/dam/sch-us/redesign/schlage/smart-locks/AssignUniqueCodes.mp4" type="video/mp4" media="(min-width: 600px)">
+<source src="/content/dam/sch-us/redesign/schlage/smart-locks/encode-plus-videos/AssignUniqueCodes_mobile_1.mp4" type="video/mp4">
+</video>
+</div>
+<div class="videos-toggler">
+<div class="toggle-videos-pause" role="button" onclick="pauseVideos()" aria-label="Pause All Videos">Pause All Videos</div>
+<div class="toggle-videos-play" role="button" onclick="playVideos()" aria-label="Pause All Videos">Play All Videos</div>
+</div>
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid container-full-width--bg container-bg--grey aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="grey-back-title" class="cmp-container">
+        
+        <div class="text">
+<div data-cmp-data-layer="{&#34;text-631c0d5400&#34;:{&#34;@type&#34;:&#34;nexus/components/text&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-21T17:05:48Z&#34;,&#34;xdm:text&#34;:&#34;&lt;h2 class=\&#34;display-large\&#34; style=\&#34;text-align: center;\&#34;>Ultimate control and access from &lt;b>&lt;i>anywhere&lt;/i>&lt;/b> .&lt;/h2>\r\n&#34;}}" id="text-631c0d5400" class="cmp-text">
+    <h2 class="display-large" style="	text-align: center;
+">Ultimate control and access from <b><i>anywhere</i></b> .</h2>
+
+</div>
+
+    
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid col-6 container-column--7--5 cmp-text-with-right-img container-bottom-padding-25 container-full-width--bg container-bg--grey container-mobile--order-change aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="two-column-screenshot" class="cmp-container">
+        
+        <div class="html-component">
+
+
+
+
+
+
+
+
+    <div class="tall-column-with-photo">
+<video class="video-autoplay-loop" style="border-radius: 20px;max-width:536px;width:100%;margin-bottom:20px;"id="AccessAnywhereVid" autoplay=""  muted="" loop="" playsinline="" poster="/content/dam/sch-us/redesign/schlage/smart-locks/AccessAnywhere-poster.png">
+          <source src="/content/dam/sch-us/redesign/schlage/smart-locks/UltimateControl_AccessFrom_Anywhere.mp4" type="video/mp4" media="(min-width: 600px)">
+          <source src="/content/dam/sch-us/redesign/schlage/smart-locks/encode-plus-videos/UltimateControlAccessFromAnywhere_mobile_1.mp4" type="video/mp4">
+        </video> 
+<div class="videos-toggler">
+<div class="toggle-videos-pause" role="button" onclick="pauseVideos()" aria-label="Pause All Videos">Pause All Videos</div>
+<div class="toggle-videos-play" role="button" onclick="playVideos()" aria-label="Pause All Videos">Play All Videos</div>
+</div>
+<div class="text"><p class="copy-under-photo-column">Within the <a href="/en/home/smart-locks/schlage-app.html">Schlage Home app</a>, check the status of your lock, lock and unlock remotely, and control who has access and when with unique access codes. Customizable settings make it easy to personalize your&nbsp;lock to fit your lifestyle.</p>
+</div>
+</div>
+
+</div>
+<div class="image">
+
+    
+    
+<link rel="stylesheet" href="/etc.clientlibs/core/wcm/components/image/v2/image/clientlibs/site.lc-b104a4a85c21511ada13e2c6e7552d37-lc.min.css" type="text/css">
+<script src="/etc.clientlibs/core/wcm/components/image/v2/image/clientlibs/site.lc-229bd0100d6215b69b6a5534e4889492-lc.min.js"></script>
+
+
+
+
+<div data-cmp-is="image" data-cmp-src="/en/home/smart-locks/encode-plus/_jcr_content/root/container/container/container_1370019614_481092162/image_2075985749.coreimg{.width}.png/1761331963992/static-view2025.png" data-asset="/content/dam/sch-us/redesign/schlage/smart-locks/Static-View2025.png" data-asset-id="b250753f-27ea-4db4-b2ca-bdb72ec8834d" data-title="Schlage Home App lock status view." class="cmp-image" itemscope itemtype="http://schema.org/ImageObject">
+    
+        
+            
+
+            
+            
+            <img src="/content/dam/sch-us/redesign/schlage/smart-locks/Static-View2025.png" class="cmp-image__image" itemprop="contentUrl" data-cmp-hook-image="image" alt="Schlage Home App lock status view."/>
+            
+
+
+            
+
+    
+    
+    
+</div>
+
+    
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid container_max-width aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="container-a09011ecbb" class="cmp-container">
+        
+        <div class="html-component">
+
+
+
+
+
+
+
+
+    <div id="unique-codes-vid" class="windowed-vid">
+<h2 class="slide-title">Manage your doors with<br><span class="special-emphasis"> voice control.</span></h2>
+<video autoplay="" muted="" loop="" playsinline="" poster="https://www.schlage.com/content/dam/sch-us/page-images/ContentLanding/Schlage_Durability_VidHead_2_poster.jpg"  class="video-autoplay-loop">
+<source src="/content/dam/sch-us/redesign/schlage/smart-locks/ManageYourDoorsWithVoiceControl.mp4" type="video/mp4" media="(min-width: 600px)">
+<source src="/content/dam/sch-us/redesign/schlage/smart-locks/encode-plus-videos/ManageYourDoorsWithVoiceControl_Mobile.mp4" type="video/mp4">
+</video>
+</div>
+<div class="videos-toggler">
+<div class="toggle-videos-pause" role="button" onclick="pauseVideos()" aria-label="Pause All Videos">Pause All Videos</div>
+<div class="toggle-videos-play" role="button" onclick="playVideos()" aria-label="Pause All Videos">Play All Videos</div>
+</div>
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid container_max-width aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="container-93f57ef094" class="cmp-container">
+        
+        <div class="text">
+<div data-cmp-data-layer="{&#34;text-f35f88efc0&#34;:{&#34;@type&#34;:&#34;nexus/components/text&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-30T22:18:59Z&#34;,&#34;xdm:text&#34;:&#34;&lt;p class=\&#34;body-large  callout\&#34; style=\&#34;padding: 40.0px; text-align: center;\&#34;>Pairs seamlessly with Alexa, Siri&lt;sup> ®&lt;/sup> or Google Assistant.&lt;/p>\r\n&#34;}}" id="text-f35f88efc0" class="cmp-text">
+    <p class="body-large  callout" style="	padding: 40.0px;
+	text-align: center;
+">Pairs seamlessly with Alexa, Siri<sup> ®</sup> or Google Assistant.</p>
+
+</div>
+
+    
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid container-padding-medium-top-bottom aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="container-6429d24c9d" class="cmp-container">
+        
+        <div class="text">
+<div data-cmp-data-layer="{&#34;text-26c6c24a0d&#34;:{&#34;@type&#34;:&#34;nexus/components/text&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-21T17:04:51Z&#34;,&#34;xdm:text&#34;:&#34;&lt;h2 class=\&#34;display-large\&#34; style=\&#34;text-align: center;\&#34;>An easier &lt;b>&lt;i>smart home&lt;/i>&lt;/b> setup starts with Schlage.&lt;/h2>\r\n&#34;}}" id="text-26c6c24a0d" class="cmp-text">
+    <h2 class="display-large" style="	text-align: center;
+">An easier <b><i>smart home</i></b> setup starts with Schlage.</h2>
+
+</div>
+
+    
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid col-3 cmp-smart-locks-card container-bottom-padding-25 container_max-width aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="works-with-logos" class="cmp-container">
+        
+        <div class="card parbase">
+
+
+
+
+
+
+<div class="megamenu__tile-card-section  ">
+   
+   <a href="/en/home/smart-locks/schlage-encode-plus-works-with.html" class="card-link" role="link" aria-label="View Schlage Encode Plus integrations.">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/smart-locks/logoSchlageHome.png" alt="Schlage Home App logo." tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="megamenu__tile-card-section  ">
+   
+   <a href="/en/home/smart-locks/schlage-encode-plus-works-with.html" class="card-link" role="link" aria-label="View Schlage Encode Plus integrations.">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/smart-locks/logoApple.png" alt="Logo of Works with Apple Home" tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="megamenu__tile-card-section  ">
+   
+   <a href="/en/home/smart-locks/schlage-encode-plus-works-with.html" class="card-link" role="link" aria-label="View Schlage Encode Plus integrations.">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/smart-locks/logoAirbnb.png" alt="Logo of  works with Airbnb" tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+<div class="card parbase">
+
+
+
+
+
+
+<div class="megamenu__tile-card-section  ">
+   
+   <a href="/en/home/smart-locks/schlage-encode-plus-works-with.html" class="card-link" role="link" aria-label="View Schlage Encode Plus integrations.">
+      <div class="card">
+         <img class="card__img--top" src="/content/dam/sch-us/redesign/schlage/smart-locks/logoAlexa.png" alt="Logo of  Alexa" tabindex="0"/>
+		
+		
+         <div class="card-body" role="presentation" tabindex="0">
+            
+            
+            
+         </div>
+		 
+      </div>
+   </a>
+   
+       
+  	 
+     	 
+    
+
+
+
+   	  
+	
+</div>
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="single-button-bottom-margin" class="cmp-container">
+        
+        <div class="button a-button-bg--secondary button-size--medium text-center">
+<a id="button-73895a2f2a" class="cmp-button" aria-label="View Schlage Encode Plus integrations." data-cmp-clickable data-cmp-data-layer="{&#34;button-73895a2f2a&#34;:{&#34;@type&#34;:&#34;nexus/components/button&#34;,&#34;repo:modifyDate&#34;:&#34;2025-01-06T20:27:08Z&#34;,&#34;dc:title&#34;:&#34;Learn More&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/smart-locks/schlage-encode-plus-works-with.html&#34;}}" href="/en/home/smart-locks/schlage-encode-plus-works-with.html">
+    
+    
+
+    <span class="cmp-button__text">Learn More</span>
+</a>
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid container_max-width aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="comparison-container" class="cmp-container">
+        
+        <div class="html-component">
+
+
+
+
+
+
+
+
+    		<style>
+            #comparison-chart {
+                margin-top: 60px;
+            }
+            .comparison-chart-row {
+                display: flex;
+                flex-direction: row;     
+border-bottom: 1px solid rgba(91,91,91,0.4);   
+            }
+        
+            .comparison-chart-row .label-col {
+                padding: 20px 0;
+                flex-basis: 19%;
+                background-color: #E5E5E5;
+                font-size: 16px;
+                font-weight: 800;
+                padding-left: 24px;
+                min-width: 272px;
+font-family: avenir-heavy;
+    font-weight: 100;
+    line-height: 130%;
+            }
+        
+#comparison-chart-header.comparison-chart-row, .comparison-chart-row.features-row {
+border-bottom: none;
+background-color:transparent;
+}
+
+.comparison-chart-row.features-row .label-col {
+background-color: transparent;
+}
+
+#comparison-chart-header.comparison-chart-row .label-col {
+background-color: transparent;
+display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-top: 0;
+}
+
+#comparison-chart-header.comparison-chart-row .label-col .title{
+font-family: 'stag-book';
+    font-size: 36px;
+    font-weight: 400;
+    line-height: 120%;
+    margin-bottom: 10px;
+}
+
+#comparison-chart-header.comparison-chart-row .label-col .note{
+font-size: 18px;
+font-family: avenir-book,"Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+
+.comparison-chart-row .label-col .features-label{
+color: #0072bc;
+font-family: avenir-light;
+font-size: 24px;
+font-style: normal;
+font-weight: 350;
+line-height: normal;
+background-color: transparent;
+}
+
+.comparison-chart-row .col-group {
+width:100%;
+display:flex;
+min-height: 52px;
+column-gap: 10px;
+}
+
+            .comparison-chart-row .col1, .comparison-chart-row .col2, .comparison-chart-row .col3 {
+                flex-basis: 33%;
+                text-align: center;
+                vertical-align: middle;
+            }
+        
+            .comparison-chart-row .col1 img, .comparison-chart-row .col2 img, .comparison-chart-row .col3 img {
+                position: relative;
+            }
+
+            .comparison-chart-row .col1 .product-option img, .comparison-chart-row .col2 .product-option img, .comparison-chart-row .col3 .product-option img {
+                top: 0;
+                max-width: 76px;
+                transform: none;
+            }
+
+            .indicator-cell img {
+                display: none;
+                top: 50%;
+                transform: scale(.5) translateY(-100%);
+            }
+            .indicator-cell.active img {
+                display: inline-block;
+            }
+
+            #comparison-chart-header .selector {                
+                border: solid 1px #B9B9B9;
+                max-width: 266px;
+                margin: auto;
+                padding: 20px 46px 20px 40px;
+                border-radius: 6px;
+                position: relative;
+                text-align: left;
+font-family: avenir-black;
+    font-size: 13px;
+    line-height: 14px;
+min-height: 70px;
+            }
+
+            #comparison-chart-header .selector:after {
+                background-image: url(/content/dam/sch-us/redesign/schlage/smart-locks/icon-angle-down.png);
+                position: absolute;
+                background-size: 16.7px 9.7px;
+                content: '';
+                height: 9.7px;
+                width: 16.7px;
+                top: calc(50% - 7px);
+                background-repeat: no-repeat;
+                right: 12px;
+            }
+
+
+
+            #comparison-chart-header .col1, #comparison-chart-header .col2, #comparison-chart-header .col3 {
+                position: relative;
+            }
+
+            #comparison-chart-header .option-box {
+                text-align: left;
+                position: absolute;
+                display: none;
+                background-color: #E5E5E5;
+                right: 3px;
+                z-index: 3;
+                width: 283px;
+                border-radius: 12px;
+                background: #f1f1f1;
+                box-shadow: 0px 0px 32px 0px rgba(0, 0, 0, 0.20);
+                padding: 10px 0;
+            }
+            #comparison-chart-header .option-box.active {
+                display: block;
+            }
+
+            .product-option {
+                display: flex;
+                align-items: center;
+                column-gap: 20px;
+                padding: 10px;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.30);
+                font-size: 14px;
+                font-weight: 900;
+                line-height: normal
+            }
+            .product-option .msrp {
+                color: rgba(129, 130, 132, 1);
+                font-weight: 800;
+                font-size: 13px;
+                margin-top: 9px;
+            }
+            .product-option.disabled {
+                opacity: .5;
+                pointer-events: none;
+            }
+
+            .product-option:last-child {
+                border: none;
+            }
+
+            .product-choice .choice-price, .product-choice .choice-link {
+                visibility: hidden;
+            }
+            .product-choice .choice-price {
+font-weight: bold;
+            }
+
+            .product-choice.active .choice-price, .product-choice.active .choice-link {
+                visibility: visible;
+            }
+.choice-link {
+padding-top: 20px;
+padding-bottom: 20px;
+}
+.choice-link .cmp-button {
+border-color: #0072bc;
+color: #0072bc;
+}
+.choice-link .cmp-button:hover {
+background-color: #0072bc;
+color: #fff;
+}
+
+
+.mobileonly {
+display:none;
+}
+
+@media only screen and (max-width: 800px) {
+
+.mobileonly {
+display:inline;
+}
+.desktoponly {
+display:none;
+}
+
+.comparison-chart-row {
+flex-direction: column;
+border-bottom: none;
+}
+.comparison-chart-row .label-col {
+text-align: center;
+}
+
+#comparison-chart-header .col3, .comparison-chart-row .col3 {
+                display:none;
+            }
+#comparison-chart-header .col1, .comparison-chart-row .col1,#comparison-chart-header .col2, .comparison-chart-row .col2 {
+                flex-basis: 50%;
+            }
+
+
+}
+
+
+
+
+
+        </style> 
+<style>
+@media only screen and (max-width: 480px) {
+    #comparison-container.cmp-container {
+        max-width: unset;
+    }
+    #comparison-container.cmp-container #comparison-chart-header {
+        padding: 0 20px;
+    }
+}
+</style>
+    <script>
+        var prodConfig = {
+            products: [
+                {
+                    option: "1",
+                    label: "Schlage Encode Plus<br/> Smart Wifi Deadbolt",
+                    image: "/content/dam/sch-us/redesign/schlage/smart-locks/encodeplus_drop.png",
+                    imagelabel: "Schlage Encode Plus Smart Wifi Deadbolt",
+                    price: "$330 MSRP",
+                    url: "/content/schlage/language-masters/en/home/products/product-listing.html?tag=schlage-americas:product/smartLocks/encodePlusDeadbolt",
+                    features: ["home-app","built-in-wifi","remote-access", "voice-control", "apple-home-keys", "battery-powered", "easy-install","warranty-electronics","warranty-mechanical","built-in-alarm","time-delayed-locking","aaa-certified-deadbolt","encrypted-connection"],
+                    column: 0
+                },
+                {
+                    option: "2",
+                    label: "Schlage Encode<br/> Smart Wifi Deadbolt",
+                    image: "/content/dam/sch-us/redesign/schlage/smart-locks/encode_drop.png",
+                    imagelabel: "Schlage Encode Smart Wifi Deadbolt",
+                    price: "$300 MSRP",
+                    url: "/content/schlage/language-masters/en/home/products/product-listing.html?tag=schlage-americas:product/smartLocks/encodeDeadbolt",
+                    features: ["home-app","built-in-wifi","remote-access", "voice-control", "battery-powered", "easy-install", "warranty-electronics","warranty-mechanical","built-in-alarm","time-delayed-locking","aaa-certified-deadbolt","encrypted-connection"],
+                    column: 0
+                },
+                {
+                    option: "3",
+                    label: "Schlage Encode<br/> Smart Wifi Lever",
+                    image: "/content/dam/sch-us/redesign/schlage/smart-locks/encodelever_drop.png",
+                    imagelabel: "Schlage Encode Smart Wifi Lever",
+                    price: "$310 MSRP",
+                    url: "/content/schlage/language-masters/en/home/products/product-listing.html?tag=schlage-americas:product/smartLocks/encodeLock",
+                    features: ["home-app","built-in-wifi","remote-access", "voice-control", "battery-powered", "easy-install", "warranty-electronics","warranty-mechanical","built-in-alarm","time-delayed-locking","single-bore","aaa-certified-deadbolt","encrypted-connection"],
+                    column: 0
+                },
+				{
+                    option: "4",
+                    label: "Schlage Arrive<br/> Smart Wifi Deadbolt",
+                    image: "/content/dam/sch-us/redesign/schlage/smart-locks/arrive_drop.png",
+                    imagelabel: "Schlage Arrive Smart Wifi Deadbolt",
+                    price: "$199 MSRP",
+                    url: "/content/schlage/language-masters/en/home/products/product-listing.html?tag=schlage-americas:product/smartLocks/arriveDeadbolt",
+                    features: ["home-app","built-in-wifi","remote-access", "voice-control", "battery-powered", "easy-install", "warranty-electronics","warranty-mechanical","time-delayed-locking","aaa-certified-deadbolt","encrypted-connection"],
+                    column: 0
+                },
+                {
+                    option: "5",
+                    label: "Schlage Connect<br/> Smart Deadbolt",
+                    image: "/content/dam/sch-us/redesign/schlage/smart-locks/connect_drop.png",
+                    imagelabel: "Schlage Connect Smart Deadbolt",
+                    price: "$241 MSRP",
+                    url: "/content/schlage/language-masters/en/home/products/product-listing.html?tag=schlage-americas:product/smartLocks/connectDeadbolt",
+                    features: ["remote-access", "voice-control", "battery-powered", "easy-install", "warranty-electronics","warranty-mechanical","built-in-alarm","time-delayed-locking","aaa-certified-deadbolt","encrypted-connection","z-wave-plus","smart-hub-required"],
+                    column: 0
+                }
+            ]
+        };
+
+        jQuery(function($){
+            /**************************** */
+            
+
+            function markColumn(row, column, features) {
+                if(features.includes($(row).attr('data-name'))) {
+                    $(row).find('.col' + column ).addClass('active');
+                }
+            }
+
+            // reset a column to blank
+            function clearDots( column ) {
+                $('.col' + column  + '.indicator-cell').removeClass('active');
+            }
+
+            // populate all the option boxes
+            $('.option-box').html('<div class="product-option" data-choice="1"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/encodeplus_drop.png" alt="Schlage Encode Plus Smart Wifi Deadbolt Thumbnail"/><div> Schlage Encode Plus<br/> Smart Wifi Deadbolt<div class="msrp">$330 MSRP</div></div></div><div class="product-option" data-choice="2"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/encode_drop.png" alt="Schlage Encode Smart Wifi Deadbolt"/><div>Schlage Encode<br/> Smart Wifi Deadbolt<div class="msrp">$300 MSRP</div></div></div><div class="product-option" data-choice="3"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/encodelever_drop.png" alt="Schlage Encode Smart Wifi Lever Thumbnail"/><div>Schlage Encode<br/> Smart Wifi Lever<div class="msrp">$310 MSRP</div></div></div><div class="product-option" data-choice="4"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/arrive_drop.png" alt="Schlage Arrive Smart Wifi Deadbolt"/><div>Schlage Arrive<br/> Smart Wifi Deadbolt<div class="msrp">$199 MSRP</div></div></div><div class="product-option" data-choice="5"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/connect_drop.png" alt="Schlage Connect Smart Deadbolt Thumbnail"/><div>Schlage Connect<br/> Smart Deadbolt<div class="msrp">$241 MSRP</div></div></div>');
+
+
+            // auto click an option in column 1 to set default
+            $(document).ready(function(){
+                $('#comparison-chart-header .col1 .product-option[data-choice="1"]').trigger('click'); 
+            });
+
+            // populate column based on choice
+            $('#comparison-chart-header .product-option').click(function() {
+                var column = $(this).parent().attr("data-column");
+                var choice = $(this).attr("data-choice");
+               
+                var watcher = "";
+                // remove this column from another choice if it is already used
+                for(i in prodConfig.products) {
+                    var product = prodConfig.products[i];
+                    if(product.column === column) {
+                        if(product.option  === choice) {
+                            product.column = choice;
+                          //  alert(product);
+                        } else {
+                            product.column = 0;
+                          //  alert(product);
+                        }
+                    } else {
+                        //alert(product.column);
+                        //alert(choice)
+                        if(product.option  === choice) {
+                            product.column = column;
+                           // alert(product);
+                        }
+                    }
+                    watcher = watcher + product.option + " , " + product.column + " | "
+                }
+
+                // mark the chosen option with this column number
+
+                // loop through all the options and disable them if used
+                $('.product-option').removeClass('disabled');
+                for(i in prodConfig.products) {
+                    var product = prodConfig.products[i];
+                    if(product.column !== 0 ) {
+                        $('.product-option[data-choice="' + product.option + '"]').addClass('disabled');
+                    }
+                    
+                }
+                
+
+                var choiceData = prodConfig.products.find(product => product.option === choice);
+
+                clearDots(column);
+
+                $('.comparison-chart-row').each(function(){
+                    markColumn(this, column, choiceData.features);
+                });
+
+                $('.col' + column + ' .product-choice').addClass('active');
+                $('.col' + column + ' .product-choice .choice-image').attr('src',choiceData.image);                
+                $('.col' + column + ' .product-choice .choice-price').text(choiceData.price);
+                $('.col' + column + ' .product-choice .choice-link a').attr('href',choiceData.url);
+                $('.col' + column + ' .product-choice .choice-link a').attr('aria-label','View ' +  choiceData.imagelabel+ ' Styles');
+                $('.col' + column + ' .product-choice .choice-image').attr('alt',choiceData.imagelabel); 
+
+                $('.col' + column + ' .selector').html(choiceData.label);
+                
+                $('.option-box').removeClass('active');
+            });
+
+            // open/close options box for a column
+            $('#comparison-chart-header .selector').click(function() {
+                var isActive = $(this).parent().find('.option-box').hasClass('active');                
+                $('.option-box').removeClass('active');
+                if(!isActive) { 
+                    $(this).parent().find('.option-box').toggleClass('active');
+                }                
+            });
+
+		});
+
+
+    </script>
+
+<!-- 09/2024 QA updates -->
+<style>
+
+    #comparison-chart-header .selector {
+        font-family: 'Avenir Medium';
+
+
+        padding: 17px 34px 17px 12px !important;
+        display: flex;
+        align-items: center;
+    }
+
+.choice-link .cmp-button {
+border-width: 1px;
+padding: .5625em 1.5em .6875em 1.5em
+}
+
+@media only screen and (max-width: 800px) {
+.root {
+overflow: visible;
+}
+#comparison-chart-header.comparison-chart-row {
+    top: 10px;
+    position: sticky;
+    background: white;
+    z-index: 1;
+}
+}
+
+@media only screen and (max-width: 767px) {
+#comparison-chart-header.comparison-chart-row {
+    top: -128px;
+}
+    #comparison-chart-header.comparison-chart-row .label-col {
+        text-align: left;
+    }
+    
+    .comparison-chart-row .label-col .title{
+        margin-bottom:19px; 
+    }
+}
+</style>
+
+</div>
+<div class="html-component">
+
+
+
+
+
+
+
+
+    <div id="comparison-chart">
+    <div id="comparison-chart-header" class="comparison-chart-row">
+        <div class="label-col"><div><div class="title">Which smart lock is right for me?</div><div class="note">(Choose <span class="desktoponly">up to 3</span><span class="mobileonly">2</span>)</div></div></div>
+        <div class="col-group">
+            <div class="col1">
+                <div class="selector">
+                    Select Smart Lock
+                </div>
+                <div class="option-box" data-column="1">                        
+                </div>
+                <div class="product-choice">
+                    <img src="/content/dam/sch-us/redesign/schlage/smart-locks/blank-choice.png" class="choice-image" alt="Choose a lock to compare"/>                        
+                    <div class="choice-price">$330 MSRP</div>
+                    <div class="choice-link"><a class="cmp-button" href="">View Styles</a></div>
+                </div>
+            </div>
+            <div class="col2">
+                <div class="selector">
+                    Select Smart Lock
+                </div>
+                <div class="option-box" data-column="2">
+                </div>                    
+                <div class="product-choice">
+                    <img src="/content/dam/sch-us/redesign/schlage/smart-locks/blank-choice.png" class="choice-image" alt="Choose a lock to compare"/>                        
+                    <div class="choice-price">$330 MSRP</div>
+                    <div class="choice-link"><a class="cmp-button" href="">View Styles</a></div>
+                </div>
+            </div>
+            <div class="col3">
+                <div class="selector">
+                    Select Smart Lock
+                </div>
+                <div class="option-box" data-column="3">
+                </div>                    
+                <div class="product-choice">
+                    <img src="/content/dam/sch-us/redesign/schlage/smart-locks/blank-choice.png" class="choice-image" alt="Choose a lock to compare"/>                        
+                    <div class="choice-price">$330 MSRP</div>
+                    <div class="choice-link"><a class="cmp-button" href="">View Styles</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<div class="comparison-chart-row features-row" >
+        <div class="label-col"><div class="features-label">Product Features</div></div>
+    </div>
+
+    <div class="comparison-chart-row " data-name="home-app">
+        <div class="label-col">Works with Schlage Home App:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is compatible with the Schlage Home App"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is compatible with the Schlage Home App"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is compatible with the Schlage Home App"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="built-in-wifi">
+        <div class="label-col">Built-in WiFi:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has built in WiFi"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has built in WiFi"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has built in WiFi"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="remote-access">
+        <div class="label-col">Remote Access:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock can be controlled remotely"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock can be controlled remotely"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock can be controlled remotely"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="voice-control">
+        <div class="label-col">Voice Control:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock can be controlled with voice commands"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock can be controlled with voice commands"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock can be controlled with voice commands"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="apple-home-keys">
+        <div class="label-col">Apple<sup>™</sup> Home Keys:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is compatible with Apple Home Keys"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is compatible with Apple Home Keys"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is compatible with Apple Home Keys"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="battery-powered">
+        <div class="label-col">Battery Powered:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is battery powered"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is battery powered"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is battery powered"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="easy-install">
+        <div class="label-col">Easy Install:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is easy to install"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is easy to install"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is easy to install"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="warranty-electronics">
+        <div class="label-col">Limited 3-year Warranty (Electronic):</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has a 3 year electronic warranty"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has a 3 year electronic warranty"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has a 3 year electronic warranty"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="warranty-mechanical">
+        <div class="label-col">Limited Lifetime Warranty (Mechanical/Finish):</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has a limited lifetime mechanical/finish warranty"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has a limited lifetime mechanical/finish warranty"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has a limited lifetime mechanical/finish warranty"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="built-in-alarm">
+        <div class="label-col">Built-in Alarm:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has a built-in alarm"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has a built-in alarm"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has a built-in alarm"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="time-delayed-locking">
+        <div class="label-col">Time Delayed Locking:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has time delayed locking"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has time delayed locking"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has time delayed locking"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="single-bore">
+        <div class="label-col">Installs on Single Bore Doors:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock installs on single bore doors"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock installs on single bore doors"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock installs on single bore doors"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="aaa-certified-deadbolt">
+        <div class="label-col">AAA Certified Deadbolt:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is AAA certified"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is AAA certified"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock is AAA certified"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="encrypted-connection">
+        <div class="label-col">Encrypted Connection:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has an encrypted connection"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has an encrypted connection"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has an encrypted connection"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="z-wave-plus">
+        <div class="label-col">Z Wave Plus:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has Z Wave Plus technology"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has Z Wave Plus technology"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock has Z Wave Plus technology"></div>
+        </div>
+    </div>
+    <div class="comparison-chart-row " data-name="smart-hub-required">
+        <div class="label-col">Smart Hub Required:</div>
+        <div class="col-group">
+            <div class="col1 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock requires a Smart Hub"> </div>
+            <div class="col2 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock requires a Smart Hub"></div>
+            <div class="col3 indicator-cell"><img src="/content/dam/sch-us/redesign/schlage/smart-locks/dot.png" alt="Blue dot indicating this smart lock requires a Smart Hub"></div>
+        </div>
+    </div>            
+</div>
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid container-padding-medium-top-bottom container_max-width container-bg--blue aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="grey-centered-box-with-button" class="cmp-container">
+        
+        <div class="text">
+<div data-cmp-data-layer="{&#34;text-790b3d580b&#34;:{&#34;@type&#34;:&#34;nexus/components/text&#34;,&#34;repo:modifyDate&#34;:&#34;2025-09-05T17:25:06Z&#34;,&#34;xdm:text&#34;:&#34;&lt;h2 class=\&#34;centered-medium-blue-title\&#34;>Still need help?&lt;/h2>\r\n&lt;p>Use our Smart Lock Selector to find the best &lt;a href=\&#34;/content/schlage/language-masters/en/home/smart-locks.html\&#34; target=\&#34;_self\&#34;>smart lock&lt;/a> for you.&lt;/p>\r\n&#34;}}" id="text-790b3d580b" class="cmp-text">
+    <h2 class="centered-medium-blue-title">Still need help?</h2>
+<p>Use our Smart Lock Selector to find the best <a href="/en/home/smart-locks.html" target="_self" rel="noopener noreferrer">smart lock</a> for you.</p>
+
+</div>
+
+    
+
+</div>
+<div class="button a-button-bg--primary button-size--large text-center">
+<a id="button-d67d966f9a" class="cmp-button" aria-label="Get Help Deciding" data-cmp-clickable data-cmp-data-layer="{&#34;button-d67d966f9a&#34;:{&#34;@type&#34;:&#34;nexus/components/button&#34;,&#34;repo:modifyDate&#34;:&#34;2025-09-05T17:25:37Z&#34;,&#34;dc:title&#34;:&#34;Get Help Deciding&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/smart-locks/get-help-deciding.html&#34;}}" href="/en/home/smart-locks/get-help-deciding.html">
+    
+    
+
+    <span class="cmp-button__text">Get Help Deciding</span>
+</a>
+</div>
+
+        
+    </div>
+
+</div>
+
+    
+</div>
+
+    </div>
+
+    
+</div>
+
+    
+</div>
+
+    </div>
+
+    
+</div>
+<div class="experiencefragment">
+<div id="experiencefragment-6308aacbff" class="cmp-experiencefragment cmp-experiencefragment--footer">
+
+
+    
+    <div id="main-footer" class="cmp-container">
+        
+
+
+<div class="aem-Grid aem-Grid--12 aem-Grid--default--12 ">
+    
+    <div class="container responsivegrid aem-GridColumn aem-GridColumn--default--12">
+
+    
+    
+    
+    <div id="prefooter" class="cmp-container" style="background-color:#f5f5f5;">
+        
+        <div class="container responsivegrid">
+
+    
+    
+    
+    <div id="container-a1b61eb65b" class="cmp-container">
+        
+        <div class="text">
+<div data-cmp-data-layer="{&#34;text-afc4e1b766&#34;:{&#34;@type&#34;:&#34;nexus/components/text&#34;,&#34;repo:modifyDate&#34;:&#34;2025-12-05T12:50:04Z&#34;,&#34;xdm:text&#34;:&#34;&lt;h2>Unlock the latest&lt;/h2>\r\n&lt;p>Never miss a beat - get product updates, promotions, style trends and security tips sent right to your inbox. You may unsubscribe at any time by following the instructions in our privacy statement.&lt;/p>\r\n&#34;}}" id="text-afc4e1b766" class="cmp-text">
+    <h2>Unlock the latest</h2>
+<p>Never miss a beat - get product updates, promotions, style trends and security tips sent right to your inbox. You may unsubscribe at any time by following the instructions in our privacy statement.</p>
+
+</div>
+
+    
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="container responsivegrid">
+
+    
+    
+    
+    <div id="container-5eac644230" class="cmp-container">
+        
+        <div class="html-component">
+
+
+
+
+
+
+
+
+    <script src="//lp.allegion.com/js/forms2/js/forms2.min.js"></script> <form id="mktoForm_2429"></form> <script>MktoForms2.loadForm("//lp.allegion.com", "718-RFD-040", 2429);</script>
+
+</div>
+<div class="html-component">
+
+
+
+
+
+
+
+
+    <style>
+.container:has(>#prefooter){
+max-width:unset !important;
+background:#f5f5f5;
+}
+#prefooter{
+padding: 50px 12px;
+margin:0 auto;
+h2{
+color:#0072bc;
+}
+@media(max-width:767px){
+>.container.responsivegrid:first-child{
+border-bottom: 3px solid #c4c4c4;
+padding-bottom: 10px;
+ margin-bottom: 10px;
+}
+}
+@media(min-width:768px){
+display:flex;
+max-width: 1320px;
+>.container.responsivegrid{
+width:50%;
+}
+>.container.responsivegrid:first-child{
+>.cmp-container{
+padding-right:30px;
+}
+}
+>.container.responsivegrid:last-child{
+border-left: 3px solid #c4c4c4;
+>.cmp-container{
+padding-left:30px;
+}
+}
+}
+
+
+
+}
+</style>
+
+</div>
+
+        
+    </div>
+
+</div>
+
+        
+    </div>
+
+</div>
+<div class="footer aem-GridColumn aem-GridColumn--default--12">
+
+   
+      
+    
+<link rel="stylesheet" href="/etc.clientlibs/us-residential/components/structure/footer/footer/clientlib.lc-59faf90b91944aab1f2588eb8eb99726-lc.min.css" type="text/css">
+<script src="/etc.clientlibs/us-residential/components/structure/footer/footer/clientlib.lc-49108b84855827f501e9b48913969bab-lc.min.js"></script>
+
+
+
+   
+
+<div class="cmp-back-to-top" tabindex="0" role="button" title="back to top">
+    <img src="/content/dam/sch-us/redesign/icons-logos/btn-scroll-to-top.png" alt="Back to top logo"/>
+    <p>Back to top</p>
+ </div>
+<footer class="footer-14398">
+   <div class="footer-component" style="background-color:#003767;">
+      <div class="container">
+         
+
+
+<!–/* Desktop Navigation */–>
+<div class="row d-none d-lg-flex">
+   <div class="col-md-2">
+      <h5 class='title' role="presentation">
+      <a href="/en/home/products.html" aria-label="All Products">All Products</a>
+      <h5>
+      
+      <!-- Footer Navigation Item list -->    
+      <ul class="list-unstyled links" id="product-list">
+         <!--Edit Mode Place Holder Text-->
+
+
+<ul class="clearfix" role="list" style="margin-bottom:0;">
+    
+
+    
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/deadbolt.html" aria-label="Visit the deadbolts category page">Deadbolts </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/knobs.html" aria-label="Visit the door knobs category page">Door Knobs </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/levers.html" aria-label="Visit the door levers category page">Door Levers </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/electronic-locks.html" aria-label="Visit the electronic category page">Electronic Locks </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/handlesets.html" aria-label="Visit the handlesets category page">Handlesets </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/keyed-combos.html" aria-label="View all Schlage Keyed Entry Combo packs">Keyed Entry Combo packs </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/smart-deadbolts-levers.html" aria-label="Visit the smart locks category page">Smart Locks </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/pin-and-tumbler-studio.html" aria-label="Pin &amp; Tumbler Studio">Pin &amp; Tumbler Studio </a>
+                
+            </li>
+        
+    
+
+    
+</ul>
+
+      </ul>
+   </div>
+<div class="col-md-2">
+      <h5 class='title' role="presentation">
+      <a href="/en/home/smart-locks.html" aria-label="All Smart Locks">All Smart Locks</a>
+      <h5>
+      
+      <!-- Footer Navigation Item list -->    
+      <ul class="list-unstyled links" id="product-list">
+         <!--Edit Mode Place Holder Text-->
+
+
+<ul class="clearfix" role="list" style="margin-bottom:0;">
+    
+
+    
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/encode-plus.html" aria-label="Visit the Schlage Encode Plus page">Schlage Encode Plus </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/encode.html" aria-label="Visit the Schlage Encode page">Schlage Encode </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/encode-lever.html" aria-label="Visit the Schlage Encode Lever page">Schlage Encode Lever </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/arrive.html" aria-label="Schlage Arrive page">Schlage Arrive </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/connect-zwave.html" aria-label="Visit the Schlage Connect page">Schlage Connect </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/works-with.html" aria-label="View smart lock integrations">Schlage Smart Locks Works With </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/schlage-app.html" aria-label="Visit the Schlage Home App page">Schlage Home App </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/get-help-deciding.html" aria-label="Take the Get Help Deciding quiz">Get Help Deciding </a>
+                
+            </li>
+        
+    
+
+    
+</ul>
+
+      </ul>
+   </div>
+<div class="col-md-2">
+      <h5 class='title' role="presentation">
+      <a href="/en/home/style.html" aria-label="Style Overview">Style Overview</a>
+      <h5>
+      
+      <!-- Footer Navigation Item list -->    
+      <ul class="list-unstyled links" id="product-list">
+         <!--Edit Mode Place Holder Text-->
+
+
+<ul class="clearfix" role="list" style="margin-bottom:0;">
+    
+
+    
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/style/contemporary.html" aria-label="Visit the contemporary style page">Contemporary </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/style/traditional.html" aria-label="Visit the traditional style page">Traditional </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/style/transitional.html" aria-label="Visit the transitional style page">Transitional </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/blog.html" aria-label="Visit the Schlage blog">Design &amp; Inspiration </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/style/custom.html" aria-label="Visit the Schlage Custom page">Schlage Custom </a>
+                
+            </li>
+        
+    
+
+    
+</ul>
+
+      </ul>
+   </div>
+<div class="col-md-2">
+      <h5 class='title' role="presentation">
+      <a href="/en/home/support.html" aria-label="All Support">All Support</a>
+      <h5>
+      
+      <!-- Footer Navigation Item list -->    
+      <ul class="list-unstyled links" id="product-list">
+         <!--Edit Mode Place Holder Text-->
+
+
+<ul class="clearfix" role="list" style="margin-bottom:0;">
+    
+
+    
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/support/programming-guides.html" aria-label="How to Program your Schlage Lock">How to Program your Schlage Lock </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/support/installation-manuals-templates.html" aria-label="View a list of Schlage installation guides">Manuals &amp; Guides </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/support/install-videos.html" aria-label="Visit the video tutorials collection">Video Tutorials </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/support/faqs.html" aria-label="View frequently asked questions">FAQs </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/support/warranty.html" aria-label="View Schlage&#39;s warranties">Warranty </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/contact-us.html" aria-label="View Schlage&#39;s contact information">Contact Schlage Residential </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/functions-grades.html" aria-label="Read about security grades for door hardware">Understanding Security Grades </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/support/product-registration.html" aria-label="Register your Schlage product">Product Registration </a>
+                
+            </li>
+        
+    
+
+    
+</ul>
+
+      </ul>
+   </div>
+<div class="col-md-2">
+      <h5 class='title' role="presentation">
+      <a href="/en/home/about-us.html" aria-label="About Us">About Us</a>
+      <h5>
+      
+      <!-- Footer Navigation Item list -->    
+      <ul class="list-unstyled links" id="product-list">
+         <!--Edit Mode Place Holder Text-->
+
+
+<ul class="clearfix" role="list" style="margin-bottom:0;">
+    
+
+    
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/blog.html" aria-label="Blog">Blog </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/about-us/news-and-events.html" aria-label="Schlage News">News &amp; Events </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/about-us/media-coverage.html" aria-label="Media Coverage">Media Coverage </a>
+                
+            </li>
+        
+    
+
+    
+</ul>
+
+      </ul>
+   </div>
+<div class="col-md-2">
+      <h5 class='title' role="presentation">
+      <a href="/en/home/trade-professionals.html" aria-label="Trade Pros">Trade Pros</a>
+      <h5>
+      <div class="footer-a-button text-nowrap">
+         
+<a id="button-0e8a352998" class="cmp-button" data-cmp-clickable data-cmp-data-layer="{&#34;button-0e8a352998&#34;:{&#34;@type&#34;:&#34;nexus/components/button&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-27T21:53:13Z&#34;,&#34;dc:title&#34;:&#34;Where To Buy&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/where-to-buy.html&#34;}}" href="/en/home/where-to-buy.html">
+    
+    
+
+    <span class="cmp-button__text">Where To Buy</span>
+</a>
+
+      </div>
+      <!-- Footer Navigation Item list -->    
+      
+   </div>
+
+</div>
+
+<!–/* Mobile Navigation */–>
+<div class="row  d-lg-none accordion" id="accordionFooter">
+   <div class="col-lg-3 accordion-item">
+      <h6 class="accordion-header title" data-bs-toggle="collapse" data-bs-target="#collapse_1" aria-expanded="false" aria-controls="collapse_1" role="presentation"> 
+         <a href="/en/home/products.html" aria-label="All Products">All Products</a>
+         <span class="accordian-arrow"></span>
+
+       </h6>
+      
+      <!-- Footer Navigation Item list --> 
+      <ul id="collapse_1" class=" list-unstyled links accordion-collapse collapse" data-bs-parent="#accordionFooter">
+         <!--Edit Mode Place Holder Text-->
+
+
+<ul class="clearfix" role="list" style="margin-bottom:0;">
+    
+
+    
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/deadbolt.html" aria-label="Visit the deadbolts category page">Deadbolts </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/knobs.html" aria-label="Visit the door knobs category page">Door Knobs </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/levers.html" aria-label="Visit the door levers category page">Door Levers </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/electronic-locks.html" aria-label="Visit the electronic category page">Electronic Locks </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/handlesets.html" aria-label="Visit the handlesets category page">Handlesets </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/keyed-combos.html" aria-label="View all Schlage Keyed Entry Combo packs">Keyed Entry Combo packs </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/smart-deadbolts-levers.html" aria-label="Visit the smart locks category page">Smart Locks </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/pin-and-tumbler-studio.html" aria-label="Pin &amp; Tumbler Studio">Pin &amp; Tumbler Studio </a>
+                
+            </li>
+        
+    
+
+    
+</ul>
+
+      </ul>
+   </div>
+<div class="col-lg-3 accordion-item">
+      <h6 class="accordion-header title" data-bs-toggle="collapse" data-bs-target="#collapse_2" aria-expanded="false" aria-controls="collapse_2" role="presentation"> 
+         <a href="/en/home/smart-locks.html" aria-label="All Smart Locks">All Smart Locks</a>
+         <span class="accordian-arrow"></span>
+
+       </h6>
+      
+      <!-- Footer Navigation Item list --> 
+      <ul id="collapse_2" class=" list-unstyled links accordion-collapse collapse" data-bs-parent="#accordionFooter">
+         <!--Edit Mode Place Holder Text-->
+
+
+<ul class="clearfix" role="list" style="margin-bottom:0;">
+    
+
+    
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/encode-plus.html" aria-label="Visit the Schlage Encode Plus page">Schlage Encode Plus </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/encode.html" aria-label="Visit the Schlage Encode page">Schlage Encode </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/encode-lever.html" aria-label="Visit the Schlage Encode Lever page">Schlage Encode Lever </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/arrive.html" aria-label="Schlage Arrive page">Schlage Arrive </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/connect-zwave.html" aria-label="Visit the Schlage Connect page">Schlage Connect </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/works-with.html" aria-label="View smart lock integrations">Schlage Smart Locks Works With </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/schlage-app.html" aria-label="Visit the Schlage Home App page">Schlage Home App </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/smart-locks/get-help-deciding.html" aria-label="Take the Get Help Deciding quiz">Get Help Deciding </a>
+                
+            </li>
+        
+    
+
+    
+</ul>
+
+      </ul>
+   </div>
+<div class="col-lg-3 accordion-item">
+      <h6 class="accordion-header title" data-bs-toggle="collapse" data-bs-target="#collapse_3" aria-expanded="false" aria-controls="collapse_3" role="presentation"> 
+         <a href="/en/home/style.html" aria-label="Style Overview">Style Overview</a>
+         <span class="accordian-arrow"></span>
+
+       </h6>
+      
+      <!-- Footer Navigation Item list --> 
+      <ul id="collapse_3" class=" list-unstyled links accordion-collapse collapse" data-bs-parent="#accordionFooter">
+         <!--Edit Mode Place Holder Text-->
+
+
+<ul class="clearfix" role="list" style="margin-bottom:0;">
+    
+
+    
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/style/contemporary.html" aria-label="Visit the contemporary style page">Contemporary </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/style/traditional.html" aria-label="Visit the traditional style page">Traditional </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/style/transitional.html" aria-label="Visit the transitional style page">Transitional </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/blog.html" aria-label="Visit the Schlage blog">Design &amp; Inspiration </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/style/custom.html" aria-label="Visit the Schlage Custom page">Schlage Custom </a>
+                
+            </li>
+        
+    
+
+    
+</ul>
+
+      </ul>
+   </div>
+<div class="col-lg-3 accordion-item">
+      <h6 class="accordion-header title" data-bs-toggle="collapse" data-bs-target="#collapse_4" aria-expanded="false" aria-controls="collapse_4" role="presentation"> 
+         <a href="/en/home/support.html" aria-label="All Support">All Support</a>
+         <span class="accordian-arrow"></span>
+
+       </h6>
+      
+      <!-- Footer Navigation Item list --> 
+      <ul id="collapse_4" class=" list-unstyled links accordion-collapse collapse" data-bs-parent="#accordionFooter">
+         <!--Edit Mode Place Holder Text-->
+
+
+<ul class="clearfix" role="list" style="margin-bottom:0;">
+    
+
+    
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/support/programming-guides.html" aria-label="How to Program your Schlage Lock">How to Program your Schlage Lock </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/support/installation-manuals-templates.html" aria-label="View a list of Schlage installation guides">Manuals &amp; Guides </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/support/install-videos.html" aria-label="Visit the video tutorials collection">Video Tutorials </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/support/faqs.html" aria-label="View frequently asked questions">FAQs </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/support/warranty.html" aria-label="View Schlage&#39;s warranties">Warranty </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/contact-us.html" aria-label="View Schlage&#39;s contact information">Contact Schlage Residential </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/products/functions-grades.html" aria-label="Read about security grades for door hardware">Understanding Security Grades </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/support/product-registration.html" aria-label="Register your Schlage product">Product Registration </a>
+                
+            </li>
+        
+    
+
+    
+</ul>
+
+      </ul>
+   </div>
+<div class="col-lg-3 accordion-item">
+      <h6 class="accordion-header title" data-bs-toggle="collapse" data-bs-target="#collapse_5" aria-expanded="false" aria-controls="collapse_5" role="presentation"> 
+         <a href="/en/home/about-us.html" aria-label="About Us">About Us</a>
+         <span class="accordian-arrow"></span>
+
+       </h6>
+      
+      <!-- Footer Navigation Item list --> 
+      <ul id="collapse_5" class=" list-unstyled links accordion-collapse collapse" data-bs-parent="#accordionFooter">
+         <!--Edit Mode Place Holder Text-->
+
+
+<ul class="clearfix" role="list" style="margin-bottom:0;">
+    
+
+    
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/blog.html" aria-label="Blog">Blog </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/about-us/news-and-events.html" aria-label="Schlage News">News &amp; Events </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/about-us/media-coverage.html" aria-label="Media Coverage">Media Coverage </a>
+                
+            </li>
+        
+    
+
+    
+</ul>
+
+      </ul>
+   </div>
+<div class="col-lg-3 accordion-item">
+      <h6 class="accordion-header title" data-bs-toggle="collapse" data-bs-target="#collapse_6" aria-expanded="false" aria-controls="collapse_6" role="presentation"> 
+         <a href="/en/home/trade-professionals.html" aria-label="Trade Pros">Trade Pros</a>
+         <span class="accordian-arrow"></span>
+
+       </h6>
+      <div class="footer-a-button mt-40">
+         
+<a id="button-0e8a352998" class="cmp-button" data-cmp-clickable data-cmp-data-layer="{&#34;button-0e8a352998&#34;:{&#34;@type&#34;:&#34;nexus/components/button&#34;,&#34;repo:modifyDate&#34;:&#34;2024-05-27T21:53:13Z&#34;,&#34;dc:title&#34;:&#34;Where To Buy&#34;,&#34;xdm:linkURL&#34;:&#34;/en/home/where-to-buy.html&#34;}}" href="/en/home/where-to-buy.html">
+    
+    
+
+    <span class="cmp-button__text">Where To Buy</span>
+</a>
+
+      </div>
+      <!-- Footer Navigation Item list --> 
+      
+   </div>
+
+</div>
+
+         <div class="row d-none d-lg-block">
+            
+<div id="separator-b7263eb4f9" class="cmp-separator">
+    <hr class="cmp-separator__horizontal-rule"/>
+</div>
+         </div>
+         <div class="row">
+            <div class="col-lg-4  mb-4 text-center  text-lg-start order-lg-1 order-2 footer-policy--links">
+               <ul class="list-unstyled links footer-policy-link">
+                  
+                  <!--Edit Mode Place Holder Text-->
+
+
+<ul class="clearfix" role="list" style="margin-bottom:0;">
+    
+
+    
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/terms-and-policies.html">Terms of Use </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/privacy-policy.html">Privacy Statement </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="/en/home/cookie-policy.html">Cookie Policy </a>
+                
+            </li>
+        
+            <li class="navigation-item" role="listitem">
+                
+                    <a href="https://www.allegion.com/corp/en/footer/security/vulnerability-report.html" aria-label="Vulnerability Disclosure">Vulnerability Disclosure </a>
+                
+            </li>
+        
+    
+
+    
+</ul>
+
+               </ul>
+               <p class="text avenir-book" tabindex="0">Schlage<sup>®</sup> is an Allegion<sup>TM</sup>  company. <br />
+© 2025 Schlage, All Rights Reserved </p>
+            </div>
+            <div class="col-lg-4 mb-4 order-lg-2 order-1 text-center social-icons">
+               
+               <!--Edit Mode Place Holder Text-->
+
+
+<ul class="clearfix" role="list" style="margin-bottom:0;">
+    
+
+    
+
+    
+
+        
+        
+            
+                <li class="navigation-item" role="listitem" target="_blank">
+                    
+                        <a href="https://www.facebook.com/SchlageLocks" target="_blank">                                                        
+                            
+                                <img src="/content/dam/sch-us/redesign/schlage/social-icons/icon-facebook%20(1).svg" alt="Visit Schlage on Facebook" class="cq-dd-image"/>
+                            
+                            
+                                 <span></span></a>
+                    
+                </li>
+            
+                <li class="navigation-item" role="listitem" target="_blank">
+                    
+                        <a href="https://www.instagram.com/schlagelocks" target="_blank">                                                        
+                            
+                                <img src="/content/dam/sch-us/redesign/schlage/social-icons/icon-instagram.svg" alt="Visit Schlage on Instagram" class="cq-dd-image"/>
+                            
+                            
+                                 <span></span></a>
+                    
+                </li>
+            
+                <li class="navigation-item" role="listitem" target="_blank">
+                    
+                        <a href="http://www.pinterest.com/schlagelocks/" target="_blank">                                                        
+                            
+                                <img src="/content/dam/sch-us/redesign/schlage/social-icons/icon-pinterest.svg" alt="Visit Schlage on Pinterest" class="cq-dd-image"/>
+                            
+                            
+                                 <span></span></a>
+                    
+                </li>
+            
+                <li class="navigation-item" role="listitem" target="_blank">
+                    
+                        <a href="https://www.tiktok.com/@schlagelocks" target="_blank">                                                        
+                            
+                                <img src="/content/dam/sch-us/redesign/schlage/social-icons/icon-tiktok.svg" alt="Visit Schlage on TikTok" class="cq-dd-image"/>
+                            
+                            
+                                 <span></span></a>
+                    
+                </li>
+            
+                <li class="navigation-item" role="listitem" target="_blank">
+                    
+                        <a href="https://twitter.com/Schlage_Locks" target="_blank">                                                        
+                            
+                                <img src="/content/dam/sch-us/redesign/schlage/social-icons/icon-twitter-x.svg" alt="Visit Schlage on Twitter" class="cq-dd-image"/>
+                            
+                            
+                                 <span></span></a>
+                    
+                </li>
+            
+                <li class="navigation-item" role="listitem" target="_blank">
+                    
+                        <a href="https://www.youtube.com/SchlageLocks" target="_blank">                                                        
+                            
+                                <img src="/content/dam/sch-us/redesign/schlage/social-icons/icon-youtube.svg" alt="Visit Schlage&#39;s YouTube channel" class="cq-dd-image"/>
+                            
+                            
+                                 <span></span></a>
+                    
+                </li>
+            
+        
+
+    
+</ul>
+
+            </div>
+            <div class="col-lg-4 mb-4 order-lg-3 order-3 text-center">
+               
+               
+
+   	<a href="https://www.allegion.com/corp/en/index.html" target="_blank" aria-label="Open in new tab"><img src="/content/dam/sch-us/redesign/schlage/logos/allegion-family-logo-wh.png" alt="Allegion Logo" title="Allegion Logo" class="cq-dd-image allegion-logo"/></a>
+
+
+               
+                                                   
+            </div>
+         </div>
+      </div>
+   </div>
+</footer>
+</div>
+<div class="html-component aem-GridColumn aem-GridColumn--default--12">
+
+
+
+
+
+
+
+
+    <script>
+$(document).ready(function () {
+    const url = new URL(window.location.href);
+    const formSuccess = url.searchParams.get('formSuccess');
+    const formName = url.searchParams.get('formName');
+
+    if (formSuccess === 'true' && formName) {
+        window.adobeDataLayer = window.adobeDataLayer || [];
+        window.adobeDataLayer.push({
+            event: "cmp:formsubmit",
+            component: {
+                formName: formName
+            }
+        });
+    }
+    url.searchParams.delete('formSuccess');
+    url.searchParams.delete('formName');
+    window.history.replaceState({}, document.title, url.toString());
+})
+</script>
+
+</div>
+
+    
+</div>
+
+    </div>
+
+    
+
+</div>
+
+    
+</div>
+
+        
+    </div>
+
+</div>
+
+
+            
+    
+    <script src="/etc.clientlibs/us-residential/clientlibs/clientlib-favourites.lc-968ad2d43941f2f608e6dd9bdf68e8d2-lc.min.js"></script>
+
+
+    
+
+    
+    <link rel="stylesheet" href="/etc.clientlibs/us-residential/clientlibs/shopify-buy.lc-9f0782a5941c72f5eb080af5410edbc6-lc.min.css" type="text/css">
+<script src="/etc.clientlibs/us-residential/clientlibs/shopify-buy.lc-76d7d3b83c74c28efe133bdd93b8a2f3-lc.min.js"></script>
+
+
+
+
+
+<div id="shopify-access-controls" data-shop-domain="shop.schlage.com" data-shop-token="45799c841a1dd38773da03b21aa4662d"></div>
+<script src="https://sdks.shopifycdn.com/buy-button/3.0.1/buybutton.js" onload="initShopify()"></script>
+
+
+
+    
+
+
+<script src="
+https://assets.adobedtm.com/9839cfb33960/4823346c4e15/launch-b074d8356ccf.min.js" async></script>
+<script src='https://www.google.com/recaptcha/api.js'></script>
+
+
+
+    
+    <script async type="text/javascript" src="https://apps.bazaarvoice.com/deployments/schlage/main_site/production/en_US/bv.js"></script>
+    <script>
+        var CRL8_SITENAME = 'schlage-vev4pu';
+        !function () {
+            var e = window.crl8 = window.crl8 || {}, n = !1, i = [];
+            e.ready = function (e) {
+                n ? e() : i.push(e)
+            }, e.pixel = e.pixel || function () {
+                e.pixel.q.push(arguments)
+            }, e.pixel.q = e.pixel.q || [];
+            var t = window.document, o = t.createElement("script"),
+                c = e.debug || -1 !== t.location.search.indexOf("crl8-debug=true") ? "js" : "min.js";
+            o.async = !0, o.src = t.location.protocol + "//edge.curalate.com/sites/" + CRL8_SITENAME + "/site/latest/site." + c, o.onload = function () {
+                n = !0, i.forEach(function (e) {
+                    e()
+                })
+            };
+            var r = t.getElementsByTagName("script")[0];
+            r.parentNode.insertBefore(o, r.nextSibling)
+        }();</script>
+
+
+
+    
+
+    
+
+    
+    
+    
+
+        
+    </body>
+</html>

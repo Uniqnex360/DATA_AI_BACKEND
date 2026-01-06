@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en-us"><head>
+    <title>Smart Plugs | Kasa Smart </title>
+    
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="With Kasa Smart plugs have complete control of connected appliances from anywhere with the Kasa Smart app or use simple voice commands and your favorite voice assistant.">
+    <meta name="author" content="KasaSmart.com">
+    <meta name="keywords" content="smart plugs, wifi plugs, kasa plugs, kasa smart plugs, kasa smart wifi plugs, wi-fi plugs, tplink smart plugs, tplink wifi plugs, power strips, smart power strips">
+
+    <link rel="canonical" href="https://www.kasasmart.com/us/products/smart-plugs" />
+
+    <meta property="og:url" content="https://www.kasasmart.com/us/products/smart-plugs" />
+    <meta property="og:title" content="Smart Plugs &#8211; Kasa Smart"/>
+
+    <meta name="theme-color" content="#48cad5"/>
+
+    <link rel="shortcut icon" type="image/x-icon" href="/assets/images/favicon.png"/>
+
+    
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.9.0/slick.min.css"/>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.9.0/slick-theme.min.css" />
+    
+    
+    <link rel="stylesheet" href="/assets/cookie/style.css">
+
+    <link rel="stylesheet" href="/css/master.css?v=0.0.2">
+
+</head>
+<body>
+<header>
+<nav class="navbar desktop has-shadow" aria-label="main navigation">
+    <div class="container mobile-multilevel">
+        <!-- Desktop navbar -->
+        <div class="navbar-brand desktop-navbar">
+            <a class="navbar-item" href="/">
+                <img src="/assets/images/logo.png" alt="Kasa Smart Logo">
+            </a>
+        </div>
+        <div class="navbar-menu desktop-navbar">
+            <div class="navbar-start navbar-section">
+
+                
+                    
+                        <div class="navbar-item is-paddingless is-tab is-hoverable is-mega is-active"
+                             onclick="location.href='/us/products'" data-index="1">
+                            <a class="navbar-item" href="/us/products">
+                                PRODUCTS
+                            </a>
+
+                            <section class="navbar-dropdown is-hidden-mobile desktop-menu">
+                                <div class="container">
+                                    <div class="columns subnav">
+
+                                                                                    <a class="column subnav-item" href="/us/products/security-cameras">
+                                                <div class="card">
+                                                                                                        <div class="card-image">
+                                                        <figure class="image">
+                                                            <img src="https://images.prismic.io/kasasmart/68473017-749f-45e7-9bc8-bfe8ca472b6a_01.png?auto=compress,format&rect=0,0,1000,1000&w=500&h=500"
+                                                                 alt="Security Cameras">
+                                                        </figure>
+                                                    </div>
+                                                    <div class="card-content">
+                                                        <div class="content">
+                                                            Security Cameras
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                                                                    <a class="column subnav-item" href="/us/products/smart-switches">
+                                                <div class="card">
+                                                                                                        <div class="card-image">
+                                                        <figure class="image">
+                                                            <img src="https://images.prismic.io/kasasmart/e7ffa2da5fd73f32826a4ed71676f4dfc1a5f595_hs220-product-image.png?auto=compress,format"
+                                                                 alt="Light Switches">
+                                                        </figure>
+                                                    </div>
+                                                    <div class="card-content">
+                                                        <div class="content">
+                                                            Light Switches
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                                                                    <a class="column subnav-item" href="/us/products/smart-lighting">
+                                                <div class="card">
+                                                                                                        <div class="card-image">
+                                                        <figure class="image">
+                                                            <img src="https://images.prismic.io/kasasmart/c89cf7f6-73f3-415f-b1cb-94ba1dc4a6aa_KL130V2.0_Setup+image_01.png?auto=compress,format&rect=0,0,1000,1000&w=500&h=500"
+                                                                 alt="Lighting">
+                                                        </figure>
+                                                    </div>
+                                                    <div class="card-content">
+                                                        <div class="content">
+                                                            Lighting
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                                                                    <a class="column subnav-item" href="/us/products/smart-plugs">
+                                                <div class="card">
+                                                                                                        <div class="card-image">
+                                                        <figure class="image">
+                                                            <img src="https://images.prismic.io/kasasmart/7240bd17998f7c2a3610cf63b464d07530b329a1_kp400-gallery-image-1.png?auto=compress,format"
+                                                                 alt="Plugs">
+                                                        </figure>
+                                                    </div>
+                                                    <div class="card-content">
+                                                        <div class="content">
+                                                            Plugs
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                                                            </div>
+                                </div>
+                            </section>
+                        </div>
+
+                    
+                
+                                            <a class="navbar-item is-tab " href="/us/kasacare">
+                            PLANS
+                        </a>
+                    
+                
+                                            <a class="navbar-item is-tab " href="https://www.tp-link.com/us/support/">
+                            SUPPORT
+                        </a>
+                    
+                            </div>
+
+            <div class="navbar-end">
+                <div class="navbar-item search search-desktop">
+                    <input type="text" class="input-search-desktop" name="search" placeholder="Search">
+                </div>
+            </div>
+
+        </div>
+    </div>
+</nav>
+<nav class="navbar mobile has-shadow" aria-label="main navigation">
+    <div class="container mobile-multilevel">
+
+        <!-- Mobile navbar -->
+        <div class="navbar-brand mobile-navbar">
+            <a class="navbar-item logo" href="/">
+                <img src="/assets/images/logo.png" alt="TP-Link | KasaSmart.com">
+            </a>
+            <div class="back-btn">
+                <a>
+                    <img src="/assets/images/arrow-left-head.svg" alt="Back">
+                </a>
+            </div>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+        <div class="navbar-menu mobile-navbar">
+            <div class="navbar-item search search-mobile">
+                <input type="text" name="search" placeholder="Search">
+            </div>
+            <div class="navbar-start navbar-section">
+                
+                                            <a class="navbar-item" data-next="PRODUCTS">
+                            products
+                            <img class="right-arrow" src="/assets/images/arrow-right-parent.svg" alt="More Info">
+                        </a>
+                                    
+                                            <a class="navbar-item" href="/us/kasacare">
+                            plans
+                        </a>
+                                    
+                                            <a class="navbar-item" href="https://www.tp-link.com/us/support/">
+                            support
+                        </a>
+                                                </div>
+                                                <div class="mobile-menu navbar-section level-2" data-link-group="PRODUCTS">
+                        <div class="container">
+                            <a class="menu-title" href="/us/products">
+                                products
+                            </a>
+                            <div class="menu-items">
+                                                                    <a class="menu-item" href="/us/products/security-cameras">
+                                        Security Cameras
+                                        <img class="right-arrow" src="/assets/images/arrow-right-parent.svg" alt="More Info">
+                                    </a>
+                                                                    <a class="menu-item" href="/us/products/smart-switches">
+                                        Light Switches
+                                        <img class="right-arrow" src="/assets/images/arrow-right-parent.svg" alt="More Info">
+                                    </a>
+                                                                    <a class="menu-item" href="/us/products/smart-lighting">
+                                        Lighting
+                                        <img class="right-arrow" src="/assets/images/arrow-right-parent.svg" alt="More Info">
+                                    </a>
+                                                                    <a class="menu-item" href="/us/products/smart-plugs">
+                                        Plugs
+                                        <img class="right-arrow" src="/assets/images/arrow-right-parent.svg" alt="More Info">
+                                    </a>
+                                                            </div>
+                        </div>
+                    </div>
+                                                                                    
+        </div>
+    </div>
+</nav>
+</header>
+
+<script type="text/javascript">
+                                                                                                        </script>
+<main id="site-main">
+        <section
+        class="hero banner size-medium type-medium style-medium">
+            <picture>
+            <source srcset="https://images.prismic.io/kasasmart/76b278450e9ab415373f3fc456b7b3641d0c4586_plug-banner-02-cam.png?auto=compress,format" media="screen and (max-width: 768px)">
+            <source srcset="https://images.prismic.io/kasasmart/e65f838ddc57209a79f18248b0e57de798c60e61_plug-banner-02-cam.png?auto=compress,format" media="screen and (min-width: 768px)">
+            <img src="https://images.prismic.io/kasasmart/e65f838ddc57209a79f18248b0e57de798c60e61_plug-banner-02-cam.png?auto=compress,format" alt="HS105 Wi-Fi Smart Plug">
+        </picture>
+        <div class="container">
+        <div class="hero-body">
+            <div class="hero-content">
+                                                            <h1 class="title">Control Your Home from Anywhere</h1>
+                                                                                        <div class="description">
+                                                    <p>Access and manage devices with your smartphone</p>
+                                            </div>
+                                            </div>
+        </div>
+    </div>
+</section>    <section class="section media-text-lockup type-media-left style-default">
+    <div class="container">
+        <div class="media-text-lockup-content">
+            <div class="columns">
+                <div class="column is-half media">
+                                            <picture>
+                            <source srcset="https://images.prismic.io/kasasmart/d052445b-7e05-4b2b-883c-8482675b7f31_EP10_US_1.0_1pack_1.jpg?auto=compress,format&rect=0,0,1000,1000&w=1000&h=1000" media="(min-width: 768px)">
+                            <source srcset="https://images.prismic.io/kasasmart/d052445b-7e05-4b2b-883c-8482675b7f31_EP10_US_1.0_1pack_1.jpg?auto=compress,format&rect=0,0,1000,1000&w=750&h=750" media="screen and (max-width: 768px)">
+                            <img src="https://images.prismic.io/kasasmart/d052445b-7e05-4b2b-883c-8482675b7f31_EP10_US_1.0_1pack_1.jpg?auto=compress,format&rect=0,0,1000,1000&w=1000&h=1000" alt="Kasa Smart Wi-Fi Plug Mini is the best way to control any appliance from anywhere.">
+                        </picture>
+                                    </div>
+                <div class="column is-half text">
+                                            <p class="eyebrow">FEATURED PRODUCT</p>
+                                                                <h2 class="title">Kasa Smart Wi-Fi Plug Mini</h2>
+                                                                <div class="description">
+                                                            <p>Kasa Smart Wi-Fi Plug Mini is the best way to control any appliance from anywhere.</p>
+                                                    </div>
+                                                            <div class="field is-grouped">
+                                                    <div class="control">
+                                <a class="button is-primary" href="/us/products/smart-plugs/kasa-smart-plug-mini-ep10">Learn More</a>
+                            </div>
+                                                                    </div>
+                                    </div>
+            </div>
+        </div>
+    </div>
+</section>    <div class="product-tiles type-default style-dark">
+        <div class="product-filters">
+        <div class="container">
+            <div class="tabs">
+                <ul>
+                    <li data-tag="all" class="is-active"><button>All</button></li>
+                                            <li data-tag="Matter"><button>Matter</button></li>
+                                            <li data-tag="indoor plugs"><button>indoor plugs</button></li>
+                                            <li data-tag="outdoor plugs"><button>outdoor plugs</button></li>
+                                            <li data-tag="power outlets"><button>power outlets</button></li>
+                                            <li data-tag="power strips"><button>power strips</button></li>
+                                    </ul>
+            </div>
+        </div>
+    </div>
+        <div class="section">
+        <div class="container">
+                        
+            <div class="columns">
+                                                            <div class="column product-tile" data-tags='["Matter","indoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-plug-slim-energy-monitoring-kp125m">
+                                                                                                          <div class="snipe">
+                                          New
+                                      </div>
+                                                                                                    <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/b683f135-c4b9-40c0-bdb7-6378f2b4d1e9_KP125M_Setup+Images_2302_01.jpg?auto=compress,format&rect=0,0,1000,1000&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/b683f135-c4b9-40c0-bdb7-6378f2b4d1e9_KP125M_Setup+Images_2302_01.jpg?auto=compress,format&rect=0,0,1000,1000&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/b683f135-c4b9-40c0-bdb7-6378f2b4d1e9_KP125M_Setup+Images_2302_01.jpg?auto=compress,format&rect=0,0,1000,1000&w=520&h=520" alt="Kasa Smart Wi-Fi Plug Slim with Energy Monitoring">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">KP125M</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Plug Slim with Energy Monitoring</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["outdoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/smart-wifi-outdoor-plug-ep40a">
+                                                                                                          <div class="snipe">
+                                          New
+                                      </div>
+                                                                                                    <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/Zi7_L93JpQ5PTOsq_EP40A_US_1.0_ProductImage.jpg?auto=format%2Ccompress&rect=0%2C0%2C1000%2C1000&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/Zi7_L93JpQ5PTOsq_EP40A_US_1.0_ProductImage.jpg?auto=format%2Ccompress&rect=0%2C0%2C1000%2C1000&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/Zi7_L93JpQ5PTOsq_EP40A_US_1.0_ProductImage.jpg?auto=format%2Ccompress&rect=0%2C0%2C1000%2C1000&w=520&h=520" alt="Kasa Smart Wi-Fi Outdoor Plug">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">EP40A</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Outdoor Plug</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["indoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-plug-slim-energy-monitoring-ep25">
+                                                                                                          <div class="snipe">
+                                          New
+                                      </div>
+                                                                                                    <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/2564bf38-6632-4b2e-9cf1-fbe38bb5db12_EP25.png?auto=compress,format&rect=0,0,590,590&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/2564bf38-6632-4b2e-9cf1-fbe38bb5db12_EP25.png?auto=compress,format&rect=0,0,590,590&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/2564bf38-6632-4b2e-9cf1-fbe38bb5db12_EP25.png?auto=compress,format&rect=0,0,590,590&w=520&h=520" alt="Kasa Smart Wi-Fi Plug Slim with Energy Monitoring">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">EP25</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Plug Slim with Energy Monitoring</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["outdoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/product-kp405">
+                                                                                                          <div class="snipe">
+                                          New
+                                      </div>
+                                                                                                    <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/Zi7_193JpQ5PTOss_KP405_US_1.20_SetupImages_00.jpg?auto=format%2Ccompress&rect=0%2C0%2C1000%2C1000&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/Zi7_193JpQ5PTOss_KP405_US_1.20_SetupImages_00.jpg?auto=format%2Ccompress&rect=0%2C0%2C1000%2C1000&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/Zi7_193JpQ5PTOss_KP405_US_1.20_SetupImages_00.jpg?auto=format%2Ccompress&rect=0%2C0%2C1000%2C1000&w=520&h=520" alt="Kasa Smart  Wi-Fi Outdoor Plug-In Dimmer">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">KP405</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart  Wi-Fi Outdoor Plug-In Dimmer</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["indoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-plug-mini-ep10">
+                                                                                                          <div class="snipe">
+                                          New
+                                      </div>
+                                                                                                    <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/d052445b-7e05-4b2b-883c-8482675b7f31_EP10_US_1.0_1pack_1.jpg?auto=compress,format&rect=0,0,1000,1000&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/d052445b-7e05-4b2b-883c-8482675b7f31_EP10_US_1.0_1pack_1.jpg?auto=compress,format&rect=0,0,1000,1000&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/d052445b-7e05-4b2b-883c-8482675b7f31_EP10_US_1.0_1pack_1.jpg?auto=compress,format&rect=0,0,1000,1000&w=520&h=520" alt="Kasa Smart Wi-Fi Plug Mini">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">EP10</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Plug Mini</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["indoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-plug-slim-energy-monitoring-kp125">
+                                                                                                          <div class="snipe">
+                                          New
+                                      </div>
+                                                                                                    <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/7271fc92-8354-40c1-9a6f-589317071429_KP125.png?auto=compress,format&rect=0,0,590,590&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/7271fc92-8354-40c1-9a6f-589317071429_KP125.png?auto=compress,format&rect=0,0,590,590&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/7271fc92-8354-40c1-9a6f-589317071429_KP125.png?auto=compress,format&rect=0,0,590,590&w=520&h=520" alt="Kasa Smart Wi-Fi Plug Slim with Energy Monitoring">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">KP125</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Plug Slim with Energy Monitoring</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["outdoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-wi-fi-outdoor-plug">
+                                                                <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/Zi8AvN3JpQ5PTOs__EP40_US_1.0-Productimage.jpg?auto=format%2Ccompress&rect=0%2C0%2C2000%2C2000&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/Zi8AvN3JpQ5PTOs__EP40_US_1.0-Productimage.jpg?auto=format%2Ccompress&rect=0%2C0%2C2000%2C2000&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/Zi8AvN3JpQ5PTOs__EP40_US_1.0-Productimage.jpg?auto=format%2Ccompress&rect=0%2C0%2C2000%2C2000&w=520&h=520" alt="Kasa Smart Wi-Fi Outdoor Plug">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">EP40</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Outdoor Plug</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["indoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-wifi-mini-plug-hs103">
+                                                                <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/e17c9424-0bc8-4a10-a156-3767915dc55f_HS105.png?auto=compress,format&rect=0,0,3000,3000&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/e17c9424-0bc8-4a10-a156-3767915dc55f_HS105.png?auto=compress,format&rect=0,0,3000,3000&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/e17c9424-0bc8-4a10-a156-3767915dc55f_HS105.png?auto=compress,format&rect=0,0,3000,3000&w=520&h=520" alt="Kasa Smart Wi-Fi Plug Mini">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">HS103</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Plug Mini</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["outdoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-outdoor-plug-kp401">
+                                                                <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/Zi8E793JpQ5PTOtS_21_KP401_01_1500x1500.png?auto=format%2Ccompress&rect=0%2C0%2C1500%2C1500&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/Zi8E793JpQ5PTOtS_21_KP401_01_1500x1500.png?auto=format%2Ccompress&rect=0%2C0%2C1500%2C1500&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/Zi8E793JpQ5PTOtS_21_KP401_01_1500x1500.png?auto=format%2Ccompress&rect=0%2C0%2C1500%2C1500&w=520&h=520" alt="Kasa Smart Wi-Fi Outdoor Plug">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">KP401</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Outdoor Plug</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["power strips"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-wi-fi-power-strip-hs300">
+                                                                <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/4ffb8e9d-0728-49c3-ab62-46d69317c377_kasasmart_HS300V2_product-image_01.png?auto=compress,format&rect=0,0,3000,3000&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/4ffb8e9d-0728-49c3-ab62-46d69317c377_kasasmart_HS300V2_product-image_01.png?auto=compress,format&rect=0,0,3000,3000&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/4ffb8e9d-0728-49c3-ab62-46d69317c377_kasasmart_HS300V2_product-image_01.png?auto=compress,format&rect=0,0,3000,3000&w=520&h=520" alt="Kasa Smart Wi-Fi Power Strip, 6-Outlets">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">HS300</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Power Strip, 6-Outlets</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["power strips"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-wi-fi-power-strip-kp303">
+                                                                <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/9f880cc19580fe350c8623e1a9e82efe246e8996_kp303.png?auto=compress,format" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/089b54de4835f2ab87346928148c6e1bfadca096_kp303.png?auto=compress,format" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/9f880cc19580fe350c8623e1a9e82efe246e8996_kp303.png?auto=compress,format" alt="Kasa Smart Wi-Fi Power Strip, 3-Outlets">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">KP303</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Power Strip, 3-Outlets</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["outdoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-wifi-outdoor-plug-kp400">
+                                                                <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/Zi8DDt3JpQ5PTOtK_KP400_ProductImage.jpg?auto=format%2Ccompress&rect=0%2C0%2C2000%2C2000&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/Zi8DDt3JpQ5PTOtK_KP400_ProductImage.jpg?auto=format%2Ccompress&rect=0%2C0%2C2000%2C2000&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/Zi8DDt3JpQ5PTOtK_KP400_ProductImage.jpg?auto=format%2Ccompress&rect=0%2C0%2C2000%2C2000&w=520&h=520" alt="Kasa Smart Wi-Fi Outdoor Plug">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">KP400</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Outdoor Plug</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["power outlets"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-wifi-power-outlet-kp200">
+                                                                <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/15cba8915fc348458a64ae483f0852868a2df6f6_kp200-product-image.png?auto=compress,format" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/250d6d84e4ab7e41ba1d46be8a0d639130ce36f8_kp200-product-image.png?auto=compress,format" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/15cba8915fc348458a64ae483f0852868a2df6f6_kp200-product-image.png?auto=compress,format" alt="Kasa Smart Wi-Fi Power Outlet, 2-Sockets">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">KP200</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Power Outlet, 2-Sockets</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["indoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-plug-slim-energy-monitoring-kp115">
+                                                                <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/f0a6fad8-3e3b-4616-8812-92f367903725_KP115-setup+image-01.jpg?auto=compress,format&rect=0,0,1000,1000&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/f0a6fad8-3e3b-4616-8812-92f367903725_KP115-setup+image-01.jpg?auto=compress,format&rect=0,0,1000,1000&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/f0a6fad8-3e3b-4616-8812-92f367903725_KP115-setup+image-01.jpg?auto=compress,format&rect=0,0,1000,1000&w=520&h=520" alt="Kasa Smart Wi-Fi Plug Slim with Energy Monitoring">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">KP115</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Plug Slim with Energy Monitoring</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["indoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-wifi-plug-mini">
+                                                                <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/3eae05a479087a41deb98e98a4721d08dae3904c_hs105us-product-image.png?auto=compress,format" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/7da8dec9f40d3b86e08a967b09b3d6bd6ffe6b50_hs105us-product-image.png?auto=compress,format" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/3eae05a479087a41deb98e98a4721d08dae3904c_hs105us-product-image.png?auto=compress,format" alt="Kasa Smart Wi-Fi Plug Mini">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">HS105</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Plug Mini</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='[]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-wifi-plug-mini-hs103">
+                                                                <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/e17c9424-0bc8-4a10-a156-3767915dc55f_HS105.png?auto=compress,format&rect=0,0,3000,3000&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/e17c9424-0bc8-4a10-a156-3767915dc55f_HS105.png?auto=compress,format&rect=0,0,3000,3000&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/e17c9424-0bc8-4a10-a156-3767915dc55f_HS105.png?auto=compress,format&rect=0,0,3000,3000&w=520&h=520" alt="Kasa Smart Wi-Fi Plug Mini">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">HS103</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Plug Mini</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["outdoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/smart-wifi-outdoor-plug-ep40m">
+                                                                                                          <div class="snipe">
+                                          New
+                                      </div>
+                                                                                                    <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/2dba97f2-47bd-4680-831f-f67e8752e701_EP40M_US_1.0_1.jpg?auto=compress,format&rect=0,0,1000,1000&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/2dba97f2-47bd-4680-831f-f67e8752e701_EP40M_US_1.0_1.jpg?auto=compress,format&rect=0,0,1000,1000&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/2dba97f2-47bd-4680-831f-f67e8752e701_EP40M_US_1.0_1.jpg?auto=compress,format&rect=0,0,1000,1000&w=520&h=520" alt="Kasa Smart Wi-Fi Outdoor Plug">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">EP40M</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Outdoor Plug</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["indoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/hs103p3">
+                                                                <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/4ae5c183-bd6c-4ab2-bcd1-3a3c501e3f81_HS103P3+Image_Final_01.png?auto=format,compress&rect=0,0,1000,1000&w=520&h=520" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/4ae5c183-bd6c-4ab2-bcd1-3a3c501e3f81_HS103P3+Image_Final_01.png?auto=format,compress&rect=0,0,1000,1000&w=240&h=240" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/4ae5c183-bd6c-4ab2-bcd1-3a3c501e3f81_HS103P3+Image_Final_01.png?auto=format,compress&rect=0,0,1000,1000&w=520&h=520" alt="Kasa Smart Wi-Fi Plug Mini">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">HS103P3</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Plug Mini</div>
+                                </div>
+                            </a>
+                        </div>
+                                            <div class="column product-tile" data-tags='["indoor plugs"]'>
+                            <a class="card" href="/us/products/smart-plugs/kasa-smart-wifi-plug-hs100">
+                                                                                                          <div class="snipe">
+                                          End of Life
+                                      </div>
+                                                                                                    <div class="card-image">
+                                                                            <picture>
+                                            <source srcset="https://images.prismic.io/kasasmart/3072772834fc4af2ab67c6c8735f4dfe44b5b439_hs100us-product-image.png?auto=compress,format" media="(min-width: 1281px)">
+                                            <source srcset="https://images.prismic.io/kasasmart/8b843a1129d1845daf3c9533b74f52b0716015f7_hs100us-product-image.png?auto=compress,format" media="(min-width: 369px)">
+                                            <img src="https://images.prismic.io/kasasmart/3072772834fc4af2ab67c6c8735f4dfe44b5b439_hs100us-product-image.png?auto=compress,format" alt="Kasa Smart Wi-Fi Plug">
+                                        </picture>
+                                                                    </div>
+                                <div class="card-content">
+                                                                            <div class="category">HS100</div>
+                                                                        <div class="bar"></div>
+                                    <div class="prod-name">Kasa Smart Wi-Fi Plug</div>
+                                </div>
+                            </a>
+                        </div>
+                                                </div>
+        </div>
+    </div>
+</div>
+</main>
+
+
+<script type="text/x-template" id="product-details-template">
+    <section class="product-details" ref="component">
+        <div v-if="product.options && product.options.length > 1" class="product-options">
+            <div class="container">
+                <div class="options">
+                    <div class="option" v-bind:class="isSelected(option)" :key="option.id"
+                         v-for="(option, index) in product.options"
+                         @mouseenter="preview(option)"
+                         @mouseleave="rollbackPreview()"
+                         @click="selectOption(option)">
+                        <img :src="option.cover.mobile.url">
+                        <p class="option-title">{{option.title}}</p>
+                        <p class="option-sku">({{option.sku}})</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="product-option-details">
+            <div class="container">
+                <div class="section" v-if="product">
+                    <div class="columns" v-if="mediaGallery">
+                        <div class="column is-6 media-gallery">
+                            <div class="carousel-slider" v-if="product" v-bind:class="isCarouselInitialized()">
+                                <ul class="slider-for">
+                                    <li v-for="(item, index) in mediaGallery.items" :key="index">
+                                        <img :alt="item.image.desktop.title" :src="item.image.desktop.url"/>
+                                    </li>
+                                </ul>
+                                <ul class="slider-nav" v-if="mediaGallery.items.length > 1">
+                                    <li v-for="(item, index) in mediaGallery.items" :key="index">
+                                        <img :alt="item.image.desktop.title" :src="item.image.desktop.url"/>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="column is-6 product-overview">
+                            <div class="product-overview-content">
+                                <div class="product-header">
+                                    <h1 class="title">{{getTitle()}}</h1>
+                                    <p>{{getSubtitle()}}</p>
+                                </div>
+                                <div class="blurb" v-if="product.blurb">
+                                    <p v-for="(text, index) in product.blurb" :key="index">
+                                        {{text}}
+                                    </p>
+                                </div>
+                                <div class="description" v-if="product.description">
+                                    <p v-for="(item, index) in product.description">
+                                        {{item}}
+                                    </p>
+                                </div>
+
+                                <div class="column field is-grouped buttons"
+                                     v-if="product.readyForSale && selectedOption">
+                                    <!--div class="control">
+                                        <a class="button is-primary" target="_blank"
+                                           :href="selectedOption.purchaseLink.link">BUY
+                                            NOW</a>
+                                    </div-->
+                                    <div class="control">
+                                        <a class="button" target="_blank"
+                                           :href="product.support.support.link">SUPPORT</a>
+                                    </div>
+                                </div>
+                                <div class="field email-capture" v-if="!product.readyForSale">
+                                    <div class="title">Sign Up for Updates</div>
+                                    <form class="field has-addons" id="subscribe-product-updates">
+                                        <div class="control">
+                                            <input type="text" class="input email-address" name="email"
+                                                   placeholder="Email Address"
+                                                   :data-topic="product.productInterestTopic" autocomplete="off">
+                                        </div>
+                                        <div class="control">
+                                            <input type="submit" class="button is-primary sign-up" value="SIGN UP">
+                                        </div>
+                                    </form>
+                                    <p class="help">This email is invalid</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</script>
+
+<script type="text/x-template" id="product-package-template">
+    <section class="package-contents" v-if="productPackage">
+        <div class="container">
+            <div class="package-contents-content">
+                <div class="package-cover">
+                    <img :src="productPackage.cover.desktop.url" :alt="productPackage.cover.desktop.title"/>
+                </div>
+                <div class="package-description">
+                    <h2 class="title">What's Included</h2>
+                    <ul>
+                        <li v-for="(item, index) in productPackage.items" :key="index">
+                            <div class="line-item">
+                                {{item}}
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+</script>
+
+
+<script>
+    window.prismic = {
+        endpoint: 'https://kasasmart.cdn.prismic.io/api'
+    };
+</script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.21/vue.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.9.0/slick.min.js"></script>
+<script src="//static.cdn.prismic.io/prismic.min.js"></script>
+<script src="/assets/js/app.js?v=0.0.2"></script>
+<script src="/assets/js/scaleFont.js"></script>
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="columns">
+                <div class="column is-half footer-left">
+                    <div class="columns is-mobile footer-links">
+                        <div class="column">
+                            <ul class="is-inline-block">
+                                <li class="group-title">
+                                    COMPANY
+                                </li>
+                                <li>
+                                    <a href="https://www.tp-link.com/us/support/">Support</a>
+                                </li>
+                                <li>
+                                    <a href="/about">About Us</a>
+                                </li>
+                                <li>
+                                    <a href="/us/blog">Blog</a>
+                                </li>
+                                <li>
+                                    <a href="/careers">Careers</a>
+                                </li>
+                                <li>
+                                    <a href="/us/press">Press</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="column">
+                            <ul>
+                                <li class="group-title">LEGAL</li>
+                                <li>
+                                    <a href="https://privacy.tp-link.com/web/official/terms-of-use?region=US">Terms Of Use</a>
+                                </li>
+                                <li>
+                                    <a href="https://privacy.tp-link.com/web/official/privacy-policy?region=US">Privacy Policy</a>
+                                </li>
+                                <li>
+                                    <a href="https://privacy.tp-link.com/web/official/your-california-privacy-rights?region=US">California Privacy Rights</a>
+                                  </li>
+                                    <li>
+                                      <a class="ga-click show-cookie-dialog" aria-label="Cookie Settings" data-vars-event-category="Footer-Menu_cookie-settings" data-vars-event-label="" tabindex="0" role="button">Your Privacy Choices</a>
+                                    </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-half footer-right">
+                    <div class="level">
+                        <div class="level-left">
+
+                        </div>
+                        <div class="level-right">
+                            <div class="columns">
+                                <div class="column newsletter-signup email-capture" id="newsletter-signup">
+                                    <span class="join-kasa-text">JOIN THE KASA SMART COMMUNITY</span>
+                                    <form class="field has-addons" id="subscribe-newsletter">
+                                        <div class="control">
+                                            <input type="text" class="input email-address" name="email" placeholder="Email Address" autocomplete="off">
+                                        </div>
+                                        <div class="control">
+                                            <input type="submit" class="button is-primary sign-up" value="SIGN UP">
+                                        </div>
+                                    </form>
+                                    <p class="help">This email is invalid</p>
+                                </div>
+                                <div class="column">
+                                    <div class="follow-us">FOLLOW US</div>
+                                    <ul class="is-inline-flex social-icons">
+                                        <li><a target="_blank" rel="noopener" title="Kasa Smart Facebook" href="https://www.facebook.com/TPLINKUS"><img src="/assets/images/social-facebook.svg" alt="Kasa Smart Facebook"></a></li>
+                                        <li><a target="_blank" rel="noopener" title="Kasa Smart YouTube" href="https://www.youtube.com/user/TPLINKTECH"><img src="/assets/images/social-youtube.svg" alt="Kasa Smart YouTube"></a></li>
+                                        <li><a target="_blank" rel="noopener" title="Kasa Smart LinkedIn" href="https://www.linkedin.com/company/9407053/ "><img src="/assets/images/social-linkedin.svg" alt="Kasa Smart LinkedIn"></a></li>
+                                        <li><a target="_blank" rel="noopener" title="KasaSmart Twitter" href="https://twitter.com/TPLINKUS"><img src="/assets/images/social-twitter.svg" alt="Kasa Smart Twitter"></a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="level country-select">
+            <div class="level-left">
+                <div class="select">
+                    <select disabled>
+                        <option>United States</option>
+                    </select>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="copyright">
+                    Copyright &copy; 2025 TP-Link Systems Inc. All rights reserved.
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+<link href="/assets/ada/chunk-vendors.236a616a.css" rel="stylesheet">
+<link href="/assets/ada/index.168d365c.css" rel="stylesheet">
+<script src="/assets/ada/chunk-vendors.4c9b48af.js"></script>
+<script src="/assets/ada/ada.min.4da6ae39.js"></script>
+<script>
+    ada.default({});
+</script>
+<div style="display:none">
+  <div class="tp-cookie-dialog-tpl">
+    <div class="tp-cookie-title">
+      <p class="tp-cookie-title-bold">Your Privacy Choices</p>
+      <p>As explained further in our website Privacy Policy, we allow certain advertising partners to collect information from our website through cookies and similar technologies to deliver ads which are more relevant to you, and assist us with advertising-related analytics (e.g., measuring ad performance, optimizing our ad campaigns). This may be considered "selling" or "sharing"/disclosure of personal data for "targeted advertising" as defined by certain U.S. state laws. To opt out of these activities, press "Opt Out" below. If the toggle below for "Targeted Advertising and 'Sale' Cookies" is to the left, you are already opted out and you can close these preferences.</p>
+      <p>Please note that your choice will apply only to your current device/browser. You must indicate your choice on each device and browser you use to access our website. If you clear your cookies or your browser is set to do so, you must opt out again.</p>
+    </div>
+    <div class="tp-cookie-item" data-name="kasa_privacy_base">
+      <i class="checkbox checked forbid"></i>
+      <div class="checkbox-text">
+        <p class="tp-cookie-item-title">Necessary Cookies</p>
+        <div class="tp-cookie-item-desc">
+          <p>These cookies are necessary for the website to function and cannot be switched off.</p>
+        </div>
+        <div class="tp-cookie-item-detail">
+          <div class="tp-cookie-item-list">
+            <p class="tp-cookie-item-list-title">kasasmart.com</p>
+            <p class="tp-cookie-item-list-detail">kasa_privacy_base, kasa_privacy_marketing, kasa_privacy_banner</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tp-cookie-item" data-name="kasa_privacy_marketing">
+      <i class="checkbox clickable"></i>
+      <div class="checkbox-text">
+        <p class="tp-cookie-item-title">Targeted Advertising and "Sale" Cookies</p>
+        <div class="tp-cookie-item-desc">
+          <p>These cookies allow targeted ads or the "sale" of personal data (toggle to the left to opt out).</p>
+          <p>Analytics cookies enable us to analyze your activities on our and other websites in order to improve and adapt the functionality of our website and our ad campaigns.</p>
+          <p>Advertising cookies can be set through our website by our advertising partners in order to create a profile of your interests and to show you relevant advertisements on other websites.</p>
+        </div>
+        <div class="tp-cookie-item-detail">
+          <div class="tp-cookie-item-list">
+            <p class="tp-cookie-item-list-title">Google Analytics</p>
+            <p class="tp-cookie-item-list-detail">_ga_&lt;container-id&gt;, _ga</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tp-cookie-submit" style="text-align:right">
+      <button class="tp-cookie-btn tp-cookie-opt-out">Opt Out</button>
+      <button class="tp-cookie-btn tp-cookie-accept-all active">Accept All Cookies</button>
+      <button class="tp-cookie-btn tp-cookie-save active">Save Settings</button>
+    </div>
+  </div>
+  <div class="tp-cookie-banner-tpl">
+    <div class="tp-cookie-banner">
+      <div class="tp-cookie-banner-container">
+        <div class="tp-cookie-banner-box">
+          <p>Welcome to Our Website! If you stay on our site, we and our third-party partners use cookies, pixels, and other tracking technologies to better understand how you use our site, provide and improve our services, and personalize your experience and ads based on your interests. Learn more in <a class="show-cookie-dialog">your privacy choices</a>.</p>
+          <button class="tp-cookie-btn tp-cookie-accept-all">Okay</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/assets/cookie/script.js"></script>
+</body>
+</html>

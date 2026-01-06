@@ -1,0 +1,834 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head id="ctl00_Head1"><title>
+	Johnson Level 9550-2400 24" Magnetic Heavy Duty Aluminum Box Level
+ | Johnson Level & Tool Mfg Company
+</title><meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta content="24&quot; Magnetic Heavy Duty Aluminum Box Level" name="description" />
+<meta content="Level; Levels; Box Level; Aluminum Level; Magnetic; Magnetic Level; Heavy Duty Level" name="keywords" />
+<link rel="alternate" hreflang="es" href="http://www.johnsonlevel.es/" />
+<!-- Default safety Net Favicon No Sizes Attribute --><link rel="apple-touch-icon" href="/Fav60.png" />
+<!-- non-retina iPhone pre iOS 7 --><link rel="apple-touch-icon" href="/Fav60.png" sizes="57x57" />
+<!-- non-retina iPad pre iOS 7 --><link rel="apple-touch-icon" href="/Fav76.png" sizes="72x72" />
+<!-- non-retina iPad iOS 7 --><link rel="apple-touch-icon" href="/Fav76.png" sizes="76x76" />
+<!-- retina iPhone pre iOS 7 --><link rel="apple-touch-icon" href="/Fav120.png" sizes="114x114" />
+<!-- retina iPhone iOS 7 --><link rel="apple-touch-icon" href="/Fav120.png" sizes="120x120" />
+<!-- retina iPad pre iOS 7 --><link rel="apple-touch-icon" href="/Fav144.png" sizes="144x144" />
+<!-- retina iPad iOS 7 --><link rel="apple-touch-icon" href="/Fav152.png" sizes="152x152" />
+<!-- Win8 tile --><meta name="msapplication-TileImage" content="/Fav144.png" /><meta name="msapplication-TileColor" content="#000000" /><meta name="application-name" content="name" />
+<!-- IE11 tiles --><meta name="msapplication-square70x70logo" content="/Fav76.png" /><meta name="msapplication-square150x150logo" content="/TileSquare.png" /><meta name="msapplication-wide310x150logo" content="/TileWide.png" /><meta name="msapplication-square310x310logo" content="/TileLarge.png" />
+<!-- Standard Favicon --><link rel="shortcut icon" type="image/ico" href="/favicon.ico" /><link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,600|Oswald:400,300,700" rel="stylesheet" type="text/css" /><link type="text/css" rel="stylesheet" href="/Content/css/main.css?version=202401295" />
+<!--[if IE 7]>
+<link rel="stylesheet" type="text/css" href="/Content/css/IE7.css" />
+<![endif]-->
+<!--[if IE 8]>
+<link rel="stylesheet" type="text/css" href="/Content/css/ie8.css" />
+<![endif]-->
+<link rel="stylesheet" type="text/css" href="/Content/homeBtns/slick/slick.css" /><link rel="stylesheet" type="text/css" href="/Content/homeBtns/slick/slick-theme.css" />
+
+<!-- Lightbox CSS --><script type="text/javascript" src="/Scripts/jquery-1.8.1.js"></script>
+<script src="/Scripts/jquery-ui/jquery-ui-1.10.4.js" type="text/javascript"></script>
+<script src="/Scripts/jquery.jcarousel.min.js" type="text/javascript"></script>
+<script type="text/javascript" src="/Scripts/Zoom/jquery.zoom.js"></script>
+<script type="text/javascript" src="/Scripts/js/modalEffects.js"></script>
+<script type="text/javascript" src="/Scripts/swfobject2.js"></script>
+<script src="/Scripts/mobileStickNav.js" type="text/javascript"></script>
+
+<script type="text/javascript" src="/Scripts/homepageVideoSelection.js"></script>
+<script type="text/javascript" src="/Scripts/SiteScripts.js?v=202207155"></script>
+<script type="text/javascript" src="/Handlers/EmailSubscribe.js"></script>
+<script type="text/javascript" src="/Scripts/GoogleAnalyticsTracking.js"></script>
+<!--Placeholder to add additional "head" content from views-->
+	<script type="text/javascript">
+		$(function () {
+			// ProductTabs
+			$("#ProdDetailsTab").click(function () {
+				$("#ProdFeaturesTab").removeClass("activePDNav");
+				$("#ProdFeaturesTab").removeClass("PDhighlightedAlready");
+				$(this).addClass("activePDNav");
+			});
+			$("#ProdFeaturesTab").click(function () {
+				$("#ProdDetailsTab").removeClass("activePDNav");
+				$(this).addClass("activePDNav");
+			});
+			$("#ProdDetailsTab").click(function () {
+				$("#prodWhyBuy").fadeIn(600);
+				$("#productcontenttext").fadeOut(600);
+			});
+			$("#ProdFeaturesTab").click(function () {
+				$("#prodWhyBuy").fadeOut(600);
+				$("#productcontenttext").fadeIn(600);
+			});
+			$("#tabsFront").tabs();
+
+			// Window Resize: Mobile
+			$(window).bind('resize', function () {
+				if ($(this).width() < 600) { document.getElementById('mobileDetails').style.display = 'block'; }
+				else if ($(this).width() > 601) { document.getElementById('mobileDetails').style.display = 'none'; }
+			}).resize();
+
+			// Window Resize: Tabs
+			$(window).bind('resize', function () {
+				if ($(this).width() < 600) { document.getElementById('tabsFront').style.display = 'none'; }
+				else if ($(this).width() > 601) { document.getElementById('tabsFront').style.display = 'block'; }
+			}).resize();
+		});
+	</script>
+
+	<style type="text/css">
+		.itemPr						{ float: left; padding-right: 15px; }
+		#PDPurchaseButtons .featProdInfo	{ width: 100%; }
+    </style>
+
+ <script type="text/ecmascript">
+     $(function () {
+         $("#mobileDetails").accordion({
+             collapsible: true,
+             heightStyle: "content"
+         });
+     });
+</script>
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-N7QBRFW3P7"></script>
+<script>
+	window.dataLayer = window.dataLayer || [];
+	function gtag() { dataLayer.push(arguments); }
+	gtag('js', new Date());
+	gtag('config', 'G-N7QBRFW3P7');
+</script>
+</head>
+<body class="ProductDetails ">
+<div class="md-modal md-effect-1 close" id="modal-1">
+<div class="quickViewHeader"><span class="QuickViewText">QUICK VIEW</span> <button class="md-close">Close</button></div>
+<div id="md-maincontent"></div>
+</div>
+<div class="md-overlay"></div>
+<div id="header">
+<div class="wrapper "><a id="JLlogo" href="/" title="Levels, Laser Levels and Measuring Tool Mfg Company Johnson Level"></a>
+<div id="headerRight">
+	<div id="espanol"><span class="languageSelected">English</span> / <a href="http://www.johnsonlevel.es/" title="Spanish language Johnson Level & Tool Manufacturing Company" target="levels">Español</a></div>
+	<div id="searchBoxWrap"><form id="searchForm" action="/Search" method="post">
+        <input class="SearchBoxBtn" type="image" title="Search" src="/Content/images/magnaGlass.png" alt="Search for levels, lasers and measuring tools" value="">
+        <input id="SearchBox" class="box" placeholder="What are you looking for?" type="text" name="SearchBox">
+</form></div>
+<div id="cartInfo">
+<div class="miniCart">
+  <script type="text/javascript">
+      $(document).ready(function () {
+          $('#PopulatedCartMini').css('display', 'none').css('visibility', 'hidden');
+      });
+  </script>
+<div id="cart-descript-mini" class="cart-descript-mini">
+    <span class="shoppingCartFullempty"><span class="empty"><span id="totalQtyMini">0</span></span></span>
+    </div>
+<!--END cart-descript-mini-->
+
+<div id="PopulatedCartMini" style="display:none; visibility:hidden;">
+<div class="myMenu">
+    <a id="checkoutarea" class="cart-descript-open" href="/find/ShoppingCart/Cart">
+        <span class="shoppingCartFull"><span id="totalQtyMiniFull"></span></span></a>
+       <div id="closeMe">
+        <div id="AppendToMe">
+		  
+      </div>
+		  <div id="mini-cart-total-row">
+			 <div class="aleft">
+				<span id="miniSubTotal" class="mini-cart-total">Total: <strong style="font-size:19px;"></strong></span>
+			 </div>
+			 <div class="aright">
+				<a class="checkout" href="/find/ShoppingCart/Cart">Checkout</a>
+			 </div>
+		  </div><!--END mini cart total row-->
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+<!-- TOP NAVIGATION -->
+<ul id="topNav">
+    <li><a title="Johnson Level and Tool Manufacturing Company Products" id="productsTopNavHover" onClick="return true">PRODUCTS</a>
+    <span class="bigDropDown">
+    <span class="topOrangeLine"></span>
+    <span id="categoryDDList"><ul id="prodNavList">
+        <li><a href="/C/5/Levels" title="Levels from Construction Tool Manufacturing Company" id="PnavLevels" class="hoverShowLink" onClick="return true">LEVELS</a><ul id="levelsSubDrop">
+            <span class="subCatNameDD">
+            <span class="SCNtext hoverShow firstSubNavTitle"><span class="largeSCT">DIGITAL</span>
+            <br />
+            LEVELS</span>
+            <span class="SCNtext" id="BoxSubTitleH"><span class="largeSCT">BOX</span>
+            <br />
+            LEVELS</span>
+            <span class="SCNtext" id="IbeamSubTitleH"><span class="largeSCT">I-BEAM</span>
+            <br />
+            LEVELS</span>
+            <span class="SCNtext" id="TorpedoSubTitleH"><span class="largeSCT">TORPEDO</span>
+            <br />
+            LEVELS</span>
+            <span class="SCNtext" id="WoodSubTitleH"><span class="largeSCT">BAMBOO</span>
+            <br />
+            LEVELS</span>
+            <span class="SCNtext" id="OpticalSubTitleH"><span class="largeSCT">OPTICAL</span>
+            <br />
+            LEVELS</span>
+            <span class="SCNtext" id="SpecialPurpSubTitleH"><span class="largeSCTshrink">SPECIAL PURPOSE</span>
+            <br />
+            LEVELS</span>
+            <span class="SCNtext" id="VialsSubTitleH">LEVEL<br /></span>
+            </span>
+            <li><a href="/C/11/DigitalElectronicLevels" title="Digital Levels from Johnson Level and Tool Mfg Company" class="firstSubNav hoverShowLinkSub">Digital &amp; Electronic Levels</a></li>
+            <li><a href="/C/20/BoxLevels" title="Box Levels from Johnson Level" class="hoverStop" id="BoxSubH">Box Levels</a></li>
+            <li><a href="/C/21/IBeamLevels" title="I Beam Levels from Top Construction Tool Mfg Company" class="hoverStop" id="IbeamSubH">I-Beam Levels</a></li>
+            <li><a href="/C/22/TorpedoLevels" title="Torpedo Levels Brought to You by Johnson Level" class="hoverStop" id="TorpedoSubH">Torpedo Levels</a></li>
+            <li><a href="/C/24/WoodLevelsandBambooLevels" title="Wood and Bamboo Levels from Johnson Level" class="hoverStop" id="WoodSubH">Bamboo Levels</a></li>
+            <li><a href="/C/16/OpticalInstruments" title="Optical Levels and Builders Levels from Construction Tool Mfg Company" class="hoverStop" id="OpticalSubH">Optical Levels</a></li>
+            <li><a href="/C/23/UtilitySpecialPurposeLevels" title="Special Purpose Levels from Circular Levels to Pocket Levels from Johnson Level and Tool" class="hoverStop" id="SpecialPurpSubH">Special Purpose Levels</a></li>
+           
+        </ul></li>
+        <li><a href="/C/4/LaserLevels" title="Laser Levels, From Rotary Laser Levels to Line Laser Levels, From Johnson Level and Tool" id="PnavLasers" class="hoverShowLink" onClick="return true">LASERS</a><ul id="lasersSubDrop"><span class="subCatNameDD">
+            <span class="SCNtext hoverShow firstSubNavTitle"><span class="largeSCT">ROTARY</span>
+            <br />
+            LASER LEVELS</span>
+            <span class="SCNtext" id="DotSubTitleH"><span class="largeSCT">DOT</span>
+            <br />
+            LASER LEVELS</span>
+            <span class="SCNtext" id="LineSubTitleH"><span class="largeSCT">LINE</span>
+            <br />
+            LASER LEVELS</span>
+            <span class="SCNtext" id="IndustrialSubTitleH">INDUSTRIAL
+            <br />
+            <span class="largeSCT">ALIGNMENT</span></span>
+            <span class="SCNtext" id="TorpedoLaserSubTitleH"><span class="largeSCT">TORPEDO</span>
+            <br />
+            LASER LEVELS</span>
+            <span class="SCNtext" id="TripodSubTitleH"><span class="largeSCTshrink">TRIPODS, DETECTORS &amp; ACC.</span></span>
+            </span>
+            <li><a href="/C/17/RotaryLaserLevels" title="Rotary Laser Levels from Top Construction Tool Manufacturer" class="firstSubNav hoverShowLinkSub">Rotary Laser Levels</a></li>
+            <li><a href="/C/12/DotLaserLevels" title="Dot Laser Levels from Johnson Level" class="hoverStop" id="DotSubH">Dot Laser Levels</a></li>
+            <li><a href="/C/15/LineLaserLevels" title="Line Laser Levels from Johnson Level and Tool Mfg Company" class="hoverStop" id="LineSubH">Line Laser Levels</a></li>
+            <li><a href="/C/13/IndustrialLasers" title="Browse Industrial Alignment Laser Levels" class="hoverStop" id="IndustrialSubH">Industrial Alignment</a></li>
+            <li><a href="/C/18/TorpedoLaserLevels" title="Torpedo Laser Levels from Johnson Level" class="hoverStop" id="TorpedoLaserSubH">Torpedo Laser Levels</a></li>
+            <li><a href="/C/19/TripodsDetectorsAccessories" title="Construction Tool Accessories Including Laser Detectors, Laser Level Tripods and Grade Rods" class="hoverStop doubleLineDD" id="TripodSubH">Tripods, Detectors &amp; Laser Accessories</a></li>
+        </ul></li>
+        <li><a href="/C/7/ConstructionMeasuringTool" title="Construction Measuring Tools From Laser Distance Measuring to Long Tape" id="PnavMeasuring" class="hoverShowLink" onClick="return true">MEASURING</a><ul id="measuringSubDrop">
+            <span class="subCatNameDD">
+            <span class="SCNtext hoverShow firstSubNavTitle"><span class="largeSCTshrink">LASER DISTANCE</span>
+            <br />
+            MEASURING</span>
+            <span class="SCNtext" id="DigitalMeasureSubTitleH"><span class="largeSCT">DIGITAL</span>
+            <br />
+            MEASURING</span>
+            <span class="SCNtext" id="TapeSubTitleH"><span class="largeSCT">TAPE</span>
+            <br />
+            MEASURES</span>
+            <span class="SCNtext" id="LongTapeSubTitleH"><span class="largeSCT">LONG TAPE</span>
+            <br />
+            MEASURES</span>
+            <span class="SCNtext" id="WheelsSubTitleH">MEASURING
+            <br />
+            <span class="largeSCT">WHEELS</span></span>
+            <span class="SCNtextAdjust" id="StraightEdgeSubTitleH"><span class="largeSCTshrink">STRAIGHT EDGES</span>
+            <br />
+            &amp; CUTTING GUIDES</span>
+            </span>
+            <li><a href="/C/14/LaserDistanceMeasuring" title="Laser Distance Measuring Tools from Johnson Level" class="firstSubNav hoverShowLinkSub">Laser Distance Measuring</a></li>
+            <li><a href="/C/253/DigitalMeasuring" title="Digital Measuring Equipment for Construction Professionals and Other Use" class="hoverStop" id="DigitalMeasureSubH">Digital Measuring</a></li>
+            <li><a href="/C/42/TapeMeasures" title="Tape Measures Tools from Johnson Level" class="hoverStop" id="TapeSubH">Tape Measures</a></li>
+            <li><a href="/C/43/LongTapes" title="Long Tape Measures from Construction Tool Mfg Company" class="hoverStop" id="LongTapeSubH">Long Tape Measures</a></li>
+            <li><a href="/C/30/MeasuringWheels" title="Measuring Wheels from Top Construction Measuring Tools Manufacturer " class="hoverStop" id="WheelsSubH">Measuring Wheels</a></li>
+            <li><a href="/C/31/StraightEdgesCuttingGuides" title="Straight Edges and Cutting Guides from Johnson Level" class="hoverStop doubleLineDD" id="StraightEdgeSubH">Straight Edges &amp; Cutting
+            <br />
+            Guides</a></li>
+        </ul></li>
+        <li><a href="/C/9/ConstructionSquares" title="Construction Squares  and Protractors" id="PnavSquares" class="hoverShowLink" onClick="return true">SQUARES</a><ul id="squaresSubDrop">
+            <span class="subCatNameDD">
+            <span class="SCNtext hoverShow firstSubNavTitle"><span class="largeSCT">FRAMING</span>
+            <br />
+            SQUARES</span>
+            <span class="SCNtext" id="RafterSubTitleH"><span class="largeSCTMedium">RAFTER</span> SQUARES
+            <br />
+            &amp; <span class="largeSCTMedium">PROTRACTORS</span></span>
+            <span class="SCNtext" id="CombinationSubTitleH"><span class="largeSCTMedium">COMBINATION</span>
+            <br />
+            SQUARES</span>
+            <span class="SCNtext" id="TsquareSubTitleH"><span class="largeSCT">T-SQUARES</span></span>
+            <span class="SCNtext" id="SPsquareSubTitleH"><span class="largeSCTshrink">SPECIAL PURPOSE</span>
+            <br />
+            SQUARES</span>
+            </span>
+            <li><a href="/C/34/FramingSquares" title="Framing Squares from Top Construction Tool Manufacturing Company" class="firstSubNav hoverShowLinkSub">Framing Squares</a></li>
+            <li><a href="/C/35/RafterSquaresProtractors" title="Rafter Squares and Protractors from Johnson Level" class="hoverStop" id="RafterSubH">Rafter Squares &amp; Protractors</a></li>
+            <li><a href="/C/33/CombinationSquares" title="Combination Squares from Top Construction Tool Company" class="hoverStop" id="CombinationSubH">Combination Squares</a></li>
+            <li><a href="/C/37/TSquares" title="T-Squares and Construction Tools from Johnson Level" class="hoverStop" id="TsquareSubH">T-Squares</a></li>
+            <li><a href="/C/36/SpecialPurposeSquares" title="Special Purpose Squares for Construction and Building" class="hoverStop" id="SPsquareSubH">Special Purpose Squares</a></li>
+        </ul></li>        
+        <li><a href="/C/6/MarkingToolsJobSiteSafety" title="Construction Marking and Carpenter Marking Tools" id="PnavMarking" class="hoverShowLink" onClick="return true">MARKING</a><ul id="markingSubDrop">
+            <span class="subCatNameDD">
+            <span class="SCNtext hoverShow firstSubNavTitle"><span class="largeSCT">CARPENTER</span>
+            <br />
+            <span class="largeSCTtiny">PENCILS &amp; CRAYONS</span></span>
+            <span class="SCNtext" id="BarricadeSubTitleH"><span class="largeSCTMedium">FLAGGING</span> &amp;
+            <br />
+            BARRICADE TAPE</span>
+            <span class="SCNtext" id="FlagsSubTitleH"><span class="largeSCTMediumHybrid">STAKE
+            <br />
+            FLAGS</span></span>
+            <span class="SCNtext" id="PlumbSubTitleH"><span class="largeSCTMediumHybrid">PLUMB
+            <br />
+            BOBS</span></span>
+            </span>
+            <li><a href="/C/25/CarpenterPencilsCrayons" title="Carpenter Pencils and Crayons from Construction Marking Tool Mfg Company" class="firstSubNav hoverShowLinkSub">Carpenter Pencils &amp; Crayons</a></li>
+            <li><a href="/C/27/FlaggingBarricade" title="Flagging and Barricade Tape and Construction Safety Marking Equipment " class="hoverStop" id="barricadeSubH">Barricade Tape & Stake Flags</a></li>
+            <!--<li><a href="/C/29/StakeFlags" title="Stake Flags and Construction Safety Marking Equipment" class="hoverStop" id="flagsSubH">Stake Flags</a></li>-->
+            <li><a href="/C/38/PlumbBobs" title="Plumb Bobs and Marking Tools from Johnson Level" class="hoverStop" id="plumbSubH">Plumb Bobs</a></li>
+        </ul></li>
+
+        <li><a href="/C/271/SpecialtyTools" title="" id="PnavSpecialtyTools" class="hoverShowLink" onClick="return true">SPECIALTY TOOLS</a></li>
+
+    </ul></span>
+
+        <span style="display: none;" id="categoryDDImgHolder">
+            <!--Levels-->
+            <img id="digitalDDimg" class="firstSubNavImg" src="/Content/images/DDimages/digitalDDimg.png" alt="48in Waterproof Electronic Digital Level" title="48in Waterproof Electronic Digital Level from Johnson Level" />
+            <img id="boxDDimg" src="/Content/images/DDimages/boxDDimg_new.png" alt="JobSite Aluminum Box Beam Levels with SurroundView" title="Box Beam Levels with SurroundView from Johnson Level" />
+            <img id="iBeamDDimg" src="/Content/images/DDimages/iBeamDDimg_new.png" alt="Magnetic BIG J Aluminum Levels" title="Magnetic Aluminum Levels from Johnson Level and Tool  Mfg Company" />
+            <img id="torpedoDDimg" src="/Content/images/DDimages/torpedoDDimg_new.png" alt="10in Glo View Magnetic Torpedo Level" title="Torpedo Levels from Johnson Level and Tool Mfg Company" />
+            <img id="woodDDimg" src="/Content/images/DDimages/woodDDimg_new.png" alt="48in Eco-Tech Series Bamboo Levels" title="Bamboo Levels from Top Level Manufacturer" />
+            <img id="opticalDDimg" src="/Content/images/DDimages/opticalDDimg.png" alt="22X Builders's Transit Level" title="Optical Levels and Other Construction Tools" />
+            <img id="specialPurpDDimg" src="/Content/images/DDimages/specialPurpDDimg_new2.png" alt="Picture Perfect Level" title="Picture Perfect Level from Johnson Level and Tool" />
+            <img id="vialsDDimg" src="/Content/images/DDimages/vialsDDimg.png" alt="Acrylic Barrel Level Vials" title="Acrylic Barrel Level Vials and OEM Level Vials" />
+
+            <!--Lasers-->
+            <img id="rotaryDDimg" class="firstSubNavImg" src="/Content/images/DDimages/rotaryDDimg_new.png" alt="Self-Leveling Rotary Laser Level" title="Self Leveling Rotary Laser Levels from Johnson Level" />
+            <img id="dotDDimg" src="/Content/images/DDimages/dotDDimg_new2.png" alt="Self-Leveling 5 Beam Dot Laser Level" title="Dot Laser Levels and Top Quality Levels from Johnson Level" />
+            <img id="lineDDimg" src="/Content/images/DDimages/lineDDimg_new2.png" alt="Quad Line Self Leveling Cross Line Generator with Plumb Beam" title="Line Laser Level, Quad Line Self Levelling Cross Line Generator" />
+            <img id="industrialDDimg" src="/Content/images/DDimages/industrialDDimg_new2.png" alt="GreenBrite™ Magnetic Pulley Sheave Alignment Laser" title="Industrial Alignment Laser, GreenBrite Magnetic Pulley Sheave Alignment Laser" />
+            <img id="torpedoLaserDDimg" src="/Content/images/DDimages/torpedoLaserDDimg_new.png" alt="Three Beam Magnetic Torpedo Laser Level" title="Torpedo Laser Levels from Johnson Level: Three Beam Magnetic Laser Level" />
+            <img id="tripodDDimg" src="/Content/images/DDimages/tripodDDimg_new.png" alt="Heavy Duty Aluminum Laser Tripod" title="Heavy Duty Aluminum Laser Tripod from Level Accessories Manufacturing Company" />
+
+            <!--Measuring-->
+            <img id="laserDistanceDDimg" class="firstSubNavImg" src="/Content/images/DDimages/laserDistanceDDimg.png" alt="165ft Laser Distance Measure" title="Laser Distance Measuring Tools and Construction Measuring Tools" />
+            <img id="digitalmeasureDDimg" src="/Content/images/DDimages/digitalmeasureDDimg_new2.png" alt="Professional Magnetic Digital Angle Locator 3 Button with V-Groove and Level Vial" title="Digital Construction Measuring Tools and Equipment" />
+            <img id="tapeDDimg" src="/Content/images/DDimages/tapeDDimg_new.png" alt="BIG J™ Stainless Steel Case Power Tape 25ft" title="Construction Tape Measurer BIG J™ Stainless Steel Case Power Tape 25ft" />
+            <img id="longTapeDDimg" src="/Content/images/DDimages/longTapeDDimg.png" alt="Big J™ Geared Nylon Clad Steel Tape 200ft" title="Long Tape Measures Big J™ Geared Nylon Clad Steel Tape 200ft" />
+            <img id="wheelsDDimg" src="/Content/images/DDimages/wheelsDDimg_new.png" alt="3-Foot Circ. Structo-Cast Measuring Wheel" title="Measuring Wheels and Construction Measuring Tools" />
+            <img id="straightEdgeDDimg" src="/Content/images/DDimages/straightEdgeDDimg_new.png" alt="18in to 96in Heavy Duty Aluminum Straight Edges" title="Construction Straight Edge and Cutting Guides" />
+
+            <!--Squares-->
+            <img id="framingDDimg" class="firstSubNavImg" src="/Content/images/DDimages/framingDDimg_new.png" alt="8in x 12in Professional Easy-Read Steel Carpenter Square" title="8in x 12in Professional Easy-Read Steel Carpenter Square" />
+            <img id="rafterDDimg" src="/Content/images/DDimages/rafterDDimg_new2.png" alt="7in Johnny Square™ Professional Aluminum Rafter Square" title="7in Johnny Square™ Professional Aluminum Rafter Square" />
+            <img id="combinationDDimg" src="/Content/images/DDimages/comboDDimg_new.png" alt="Professional Metal Combination Square" title="Professional Metal Combination Square" />
+            <img id="tSquareDDimg" src="/Content/images/DDimages/tSquareDDimg_new.png" alt="48in Heavy Duty Professional Aluminum Drywall T Squares" title="48in Heavy Duty Professional Aluminum Drywall T Squares" />
+            <img id="SPsquareDDimg" src="/Content/images/DDimages/SPsquareDDimg_new.png" alt="10in Professional Carbonized Bamboo T-Bevel" title="Professional Carbonized Bamboo T-Bevel" />
+
+            <!--Marking-->
+            <img id="specialtyDDimg" class="firstSubNavImg" src="/Content/images/specialtyDDimg.png" alt="" title="" />
+
+            <img id="pencilsDDimg" class="firstSubNavImg" src="/Content/images/DDimages/pencilsDDimg.png" alt="Construction Marking Tools" title="Carpenter Marking Pencils and Crayons" />
+            <img id="barricadeDDimg" src="/Content/images/DDimages/barricadeDDimg.png" alt="Barricade Tape and Site Safety Marking" title="Barricade Tape and Construction Site Safety Marking Equipment" />
+            <!--<img id="flagsDDimg" src="/Content/images/DDimages/flagsDDimg.png" alt="Stake Flags and Marking Equipment" title="Stake Flags and Construction Safety Marking Equipment" />-->
+            <img id="plumbDDimg" src="/Content/images/DDimages/plumbDDimg.png" alt="Construction Plumb Bobs" title="Plumb Bobs for Construction and Carpentry Professionals" /></span>
+
+
+    <span style="display: none;" id="placeHolderImgDD"><img style="display: none;" id="getStartedPlaceholder" src="/Content/images/ddGetStarted.jpg" alt="Get started choosing your construction level, laser and other measuring tools" title="Choose your Johnson Level, Laser Level, or other Construction Measuring Tool" />
+	</span>
+</span></li>
+<li><a title="Johnson Level and Tool Manufacturing Company Support" id="supportTopNavHover" onClick="return true">SUPPORT</a>
+<span class="bigDropDownSupport">
+<span class="topOrangeLine"></span>
+	<ul id="supportDDList">
+    <li class="borderTopLI"><a id="SDDLManuals" href="/Manuals" title="">MANUALS</a></li>
+    <li class="borderTopLI"><a id="SDDLWarranty" href="/Warranty" title="Level and Construction Tool Warranty and Repair Information">WARRANTY &amp; REPAIR</a></li>
+    <li class="borderTopLI"><a id="SDDLRegister" href="/Register" title="Contact Johnson Level and Tool Manufacturing Company">PRODUCT REGISTRATION</a></li>
+	<li class="borderTopLI"><a id="SDDLContact" href="/Contact" title="Contact Johnson Level and Tool Manufacturing Company">CONTACT US</a></li>
+</ul>
+<span id="supportDDImgHolder">
+<img id="supportDDWarranty" alt="Warranty and Repair" src="/Content/images/warrantyAndRepairIcon.jpg" title="Johnson Level and Tool Manufacturing Company Warranty and Repairs" />
+<img id="supportDDRegistration" alt="Register a product" src="/Content/images/supportDDWarranty.jpg" title="Register a Johnson Level Tool Mfg Company Product" />
+<img id="supportDDcontact" alt="Contact Johnson Level" src="/Content/images/supportDDcontact.jpg" title="Contact Johnson Level and Tool Mfg Company" />
+<img id="supportDDmanuals" alt="Johnson Level Manuals" src="/Content/images/supportDDManuals.jpg" title="Find Johnson Level and Tool Mfg Company Manuals here" />
+</span>
+<div id="supportDDPhoneImg"></div>
+<span id="placeholderDDSupportImg"><img src="/Content/images/supportDDHolderImg.jpg" alt="Service or Support 888.9LEVELS" title="Call Johnson Level Service and support number 888.953.8357" /></span>
+</span></li>
+    <li><a title="Your Johnson Level and Tool Manufacturing Company Login" id="accountTopNavHover" onClick="return true">ACCOUNT</a>
+        <ul class="accountDD"><span class="topOrangeLine"></span>
+           
+            
+           
+
+<li class="reg"><a href="/Secure/login">Sign In</a></li>
+
+
+           
+        </ul>
+    </li>
+</ul>
+<!-- END TOP NAVIGATION -->
+<!-- MOBILE NAVIGATIONS --><div class="clear"></div>
+
+
+<div class="mobileAreas" id="mobileProduct">
+	<ul class="mobileNav" id="productNav">
+		<li><a onclick="return true">LEVELS</a>
+			<ul class="dropdown">
+				<li><a href="/C/11/DigitalElectronicLevels" title="Digital Levels from Johnson Level and Tool Mfg Company">Digital &amp; Electronic Levels</a></li>
+				<li><a href="/C/20/BoxLevels" title="Box Levels from Johnson Level">Box Levels</a></li>
+				<li><a href="/C/21/IBeamLevels" title="I Beam Levels from Top Construction Tool Mfg Company">I-Beam Levels</a></li>
+				<li><a href="/C/22/TorpedoLevels" title="Torpedo Levels Brought to You by Johnson Level">Torpedo Levels</a></li>
+				<li><a href="/C/24/WoodLevelsandBambooLevels" title="Wood and Bamboo Levels from Johnson Level">Bamboo Levels</a></li>
+				<li><a href="/C/16/OpticalInstruments" title="Optical Levels and Builders Levels from Construction Tool Mfg Company">Optical Levels</a></li>
+				<li><a href="/C/23/UtilitySpecialPurposeLevels" title="Special Purpose Levels from Circular Levels to Pocket Levels from Johnson Level and Tool">Special Purpose Levels</a></li>
+				<li><a href="/C/32/OEMVials" title="OEM Level Vials Including Acrylic Vials">Vials</a></li>
+			</ul>
+		</li>
+		<li><a onclick="return true">LASERS</a>
+			<ul class="dropdown">
+				<li><a href="/C/17/RotaryLaserLevels" title="Rotary Laser Levels from Top Construction Tool Manufacturer">Rotary Laser Levels</a></li>
+				<li><a href="/C/12/DotLaserLevels" title="Dot Laser Levels from Johnson Level">Dot Laser Levels</a></li>
+				<li><a href="/C/15/LineLaserLevels" title="Line Laser Levels from Johnson Level and Tool Mfg Company">Line Laser Levels</a></li>
+				<li><a href="/C/13/IndustrialLasers" title="Browse Industrial Alignment Laser Levels">Industrial Alignment</a></li>
+				<li><a href="/C/18/TorpedoLaserLevels" title="Torpedo Laser Levels from Johnson Level">Torpedo Laser Levels</a></li>
+				<li><a href="/C/19/TripodsDetectorsAccessories" title="Construction Tool Accessories Including Laser Detectors, Laser Level Tripods and Grade Rods">Tripods, Detectors & Laser Accessories</a></li>
+			</ul>
+		</li>
+		<li><a onclick="return true">MEASURING</a>
+			<ul class="dropdown">
+				<li><a href="/C/14/LaserDistanceMeasuring" title="Laser Distance Measuring Tools from Johnson Level">Laser Distance Measuring</a></li>
+				<li><a href="/C/253/DigitalMeasuring" title="Digital Measuring Equipment for Construction Professionals and Other Use">Digital Measuring</a></li>
+				<li><a href="/C/42/TapeMeasures" title="Tape Measures Tools from Johnson Level">Tape Measures</a></li>
+				<li><a href="/C/43/LongTapes" title="Long Tape Measures from Construction Tool Mfg Company">Long Tape Measures</a></li>
+				<li><a href="/C/30/MeasuringWheels" title="Measuring Wheels from Top Construction Measuring Tools Manufacturer">Measuring Wheels</a></li>
+				<li><a href="/C/31/StraightEdgesCuttingGuides" title="Straight Edges and Cutting Guides from Johnson Level">Straight Edges & Cutting Guides</a></li>
+			</ul>
+		</li>
+		<li><a onclick="return true">SQUARES</a>
+			<ul class="dropdown">
+				<li><a href="/C/34/FramingSquares" title="Framing Squares from Top Construction Tool Manufacturing Company">Framing Squares</a></li>
+				<li><a href="/C/35/RafterSquaresProtractors" title="Rafter Squares and Protractors from Johnson Level">Rafter Squares &amp; Protractors</a></li>
+				<li><a href="/C/33/CombinationSquares" title="Combination Squares from Top Construction Tool Company">Combination Squares</a></li>
+				<li><a href="/C/37/TSquares" title="T-Squares and Construction Tools from Johnson Level">T-Squares</a></li>
+				<li><a href="/C/36/SpecialPurposeSquares" title="Special Purpose Squares for Construction and Building">Special Purpose Squares</a></li>
+			</ul>
+		</li>
+		<li><a onclick="return true">MARKING</a>
+			<ul class="dropdown">
+				<li><a href="/C/25/CarpenterPencilsCrayons" title="Carpenter Pencils and Crayons from Construction Marking Tool Mfg Company">Carpenter Pencils &amp; Crayons</a></li>
+				<li><a href="/C/27/FlaggingBarricade" title="Flagging and Barricade Tape and Construction Safety Marking Equipment">Flagging & Barricade Tape</a></li>
+				<li><a href="/C/29/StakeFlags" title="Stake Flags and Construction Safety Marking Equipment">Stake Flags</a></li>
+				<li><a href="/C/38/PlumbBobs" title="Plumb Bobs and Marking Tools from Johnson Level">Plumb Bobs</a></li>
+			</ul>
+		</li>
+	</ul>
+</div>
+
+<div class="mobileAreas" id="mobileAccount">
+	<ul class="mobileNav" id="accountNav">
+		
+
+<li class="reg"><a href="/Secure/login">Sign In</a></li>
+
+
+		
+		<li><a href="/Warranty" title="Level and Construction Tool Warranty and Repair Information">WARRANTY AND REPAIR</a></li>
+		<li><a href="/Register" title="Contact Johnson Level and Tool Manufacturing Company">PRODUCT REGISTRATION</a></li>
+		<li><a href="/Contact" title="Contact Johnson Level and Tool Manufacturing Company">CONTACT US</a></li>
+	</ul>
+</div>
+<!-- END MOBILE NAVIGATIONS -->
+</div><!-- end headerRight -->
+    
+</div>
+<div class="clear"></div>
+</div>
+<div class="clear"></div>
+
+<div class="genCartBreadCrumb">
+	<div class="wrapper">
+		<div class="theCrumbs"><a href="/C/5/Levels">Levels</a></div>
+	</div>
+</div>
+
+
+<div id="bodyWrapper">
+<div class="wrapper">
+
+
+
+<div id="mainContent">
+
+<h1>
+    24" Magnetic Heavy Duty Aluminum Box Level</h1>
+											
+<script type="text/javascript">
+	var clickCount = 0;
+	var mouseoverCount = 0;
+	$(document).ready(function () {
+		$('.PDvideoBox').css('display', 'block');
+		calculateTotal();
+		$("#defaultSub").hide();
+		$("#javaSub").css('visibility', 'visible');
+		$("#prodMainImage").css('display', 'block');
+
+
+		});
+    </script>
+    <script type="text/javascript" src="/shared_Gen/jQuery/Lightbox/Lightbox.js"></script>
+    <script src="/Scripts/jquery.js" type="text/javascript" charset="utf-8"></script>
+    <link rel="stylesheet" href="/Content/css/prettyPhoto.css" type="text/css" media="screen"
+        charset="utf-8" />
+    <script src="/Scripts/jquery.prettyPhoto.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function () {
+            $("a[rel^='prettyPhoto']").prettyPhoto();
+            $("a[rel^='prettyPhoto']").prettyPhoto({ social_tools: false });
+        });
+    </script>
+
+
+
+    <div id="PDLeft">
+        <div id="PDModelNumber">
+            <span class="MNLabel">MODEL #:</span>&nbsp;&nbsp;9550-2400
+
+            <div style="clear: both;"></div>
+			
+
+        </div>
+	    <div id="PDBestSellerPop">
+            
+        </div>
+        <img id="logoUnderlinePD" src="/Content/homeBtns/logoUnderline.png" />
+        <div id="PDPurchaseButtons">
+            
+        </div>
+        <div id="PDProdInfoWrapper">
+            <input type="hidden" id="price" value="0.000000" />
+            <input type="hidden" id="RetPrice" value="0.000000" />
+            <input type="hidden" id="productID" name="productID" value="1841" />
+            
+        </div>
+        <div id="createPDFLink">
+            <form name="PdfMakerForm" id="PdfMakerForm" method="post" action="/Find/PdfMaker/GeneratePDF"
+            target="PDF">
+            <input type="hidden" name="ProductID" value="1841" />
+             <input type="hidden" name="PdfVersion" value="1" />
+		  <button id="createPDFbtn" type="submit">
+            </button>
+            </form>
+        </div>
+        <div style="clear: both;">
+        </div>
+        <div id="prodFeatures">
+        <p>The workhorse of our level line, Johnson's 9550 levels are versatile enough to tackle any job, from rough carpentry to finish carpentry. The levels feature heavy-duty aluminum frames for strength and durability, and push-button removable endcaps for flush work. Strong rare earth magnets hold the level securely in place on ferrous surfaces.</p>
+        <a id="madeinUSADiv" class="False" href="/C/222/MadeInUSA" title="American construction tools from Johnson Level made in the USA."></a>	
+        </div>
+    </div>
+    <div id="PDRight">
+        <div id="ProdImageHolder">
+            <span class='zoom' id='mainImage'><img alt="" class="productimg" id="prodMainImage" src="/Content/files/ProductImages/9550-2400 MAIN.jpg" style="max-height:400px;" title="" /></span><span class="clickabove heading">+ Hover over main image to zoom</span><div id="miniProductPhotoWrap"><div class='miniProductPhoto' onclick='ChangeMainImage(this);' mainImg='/Content/files/ProductImages/9550-2400 MAIN.jpg'><img alt='' title='' style='max-width: 60px; max-height:60px;' src='/Content/files/ProductImages/9550-2400 MAIN.jpg'/></div></div>
+            <div id="productVideos">
+                
+            </div>
+        </div>
+    </div>
+    
+
+
+	<div id="tabsFront">
+		<ul id="PDfullInfoList">
+<li><a href="#sectionDetails">Product Details</a></li><li><a href="#sectionSpecs">Specifications</a></li><li><a href="#sectionApplication">Application</a></li><li><a href="#sectionSupport">Support</a></li>
+	</ul>
+
+
+		<div id="tabsBoxHolderRight">
+
+				<div id="sectionDetails">
+
+						<ul>
+
+								<li><p>Rare earth magnets for secure attachment to ferrous metals</p></li>
+
+								<li><p>Removable anti-slip end caps with wall-grips</p></li>
+
+								<li><p>SurroundView&reg; enhances vial readability</p></li>
+
+								<li><p>Magnified curved center block vial</p></li>
+
+								<li><p>Machined gauging edges</p></li>
+
+								<li><p>Soft cushioned hand grips</p></li>
+
+								<li><p>Crystal clear vials never fog, leak, or crack</p></li>
+
+						</ul>
+
+				</div>
+
+			<div id="sectionSpecs">
+<table class="prodSpecTable"><tr class="prodSpecTableRow"><th class="prodSpecTableHeader">Accuracy:</th><td class="prodSpecTableValue"><p>0.029&deg;/0.5mm/m</p></td></tr><tr class="prodSpecTableRow"><th class="prodSpecTableHeader">Warranty:</th><td class="prodSpecTableValue"><p>Lifetime Accuracy Warranty</p></td></tr></table>	</div>
+            <div id="sectionApplication">
+                <p>The 9550 is strong, lightweight, and durable, making it suitable for any job from rough carpentry to finish work. It's strong magnets make it the ideal choice when working with steel studs or door frames. When working with wood studs or doorways, consider the non-magnetic 9850.&nbsp;</p></div>
+            
+            <div id="sectionSupport">
+                <p><strong>Johnson Level Rapid Response Center for Repair and Service</strong><br />Contact customer service at <a href="mailto:service@johnsonlevel.com">service@johnsonlevel.com</a> or call 888-953-8357 from M-F 7am-5pm CT.</p></div>
+            
+
+
+        </div>
+        
+    </div>
+    <div style="clear:both;"></div>
+    <div id="mobileDetails">
+        
+        <h3>
+            Product Details</h3>
+        <div>
+            <p>The workhorse of our level line, Johnson's 9550 levels are versatile enough to tackle any job, from rough carpentry to finish carpentry. The levels feature heavy-duty aluminum frames for strength and durability, and push-button removable endcaps for flush work. Strong rare earth magnets hold the level securely in place on ferrous surfaces.</p><br />
+            <br />
+            
+        </div>
+        
+		<h3>Specifications</h3>
+		<div>
+<table class="prodSpecTable"><tr class="prodSpecTableRow"><th class="prodSpecTableHeader">Accuracy:</th><td class="prodSpecTableValue"><p>0.029&deg;/0.5mm/m</p></td></tr><tr class="prodSpecTableRow"><th class="prodSpecTableHeader">Warranty:</th><td class="prodSpecTableValue"><p>Lifetime Accuracy Warranty</p></td></tr></table>
+		</div>
+
+<h3>
+            Application</h3>
+        <div>
+            <p>The 9550 is strong, lightweight, and durable, making it suitable for any job from rough carpentry to finish work. It's strong magnets make it the ideal choice when working with steel studs or door frames. When working with wood studs or doorways, consider the non-magnetic 9850.&nbsp;</p></div>
+        <h3>
+            Support</h3>
+        <div>
+            <p><strong>Johnson Level Rapid Response Center for Repair and Service</strong><br />Contact customer service at <a href="mailto:service@johnsonlevel.com">service@johnsonlevel.com</a> or call 888-953-8357 from M-F 7am-5pm CT.</p></div>
+        
+    </div>
+    <div id="PDrelatedProductsHolder">
+        
+<script type="text/javascript">
+    var clickCount = 0;
+    $(document).ready(function () {
+    	$(".defaultSub").hide();
+    	$(".javaSub").css('visibility', 'visible');
+    	$(".javaSub").mouseover(function () {
+    		$(this).css('cursor', 'pointer');
+    	});
+    	$('#mycarousel').jcarousel({
+    		scroll: 4, animation: 700, visible: 5, auto: 0, wrap: "both",
+    		initCallback: mycarousel_initCallback,
+    		itemVisibleInCallback: {
+    			onAfterAnimation: function (c, o, i, s) {
+    				i = (i - 1) % $('#mycarousel li').size();
+    				jQuery('.jcarousel-control a').removeClass('active').addClass('inactive');
+    				jQuery('.jcarousel-control a:eq(' + i + ')').removeClass('inactive').addClass('active');
+    			}
+    		},
+            itemFallbackDimension: 170
+    	});
+
+    	//$("#RelatedProductsFromVideoPScroller #mycarousel .scrollItem").css("width", "170px");
+
+    });
+
+	  function mycarousel_initCallback(carousel) {
+	  	jQuery('.jcarousel-control a').bind('click', function () {
+	  		carousel.scroll(jQuery.jcarousel.intval(jQuery(this).text()));
+	  		return false;
+	  	});
+
+	  	jQuery('#mycarousel-next').bind('click', function () {
+	  		carousel.next();
+	  		return false;
+	  	});
+
+	  	jQuery('#mycarousel-prev').bind('click', function () {
+	  		carousel.prev();
+	  		return false;
+	  	});
+
+	  	// Pause autoscrolling if the user moves with the cursor over the clip.
+	  	carousel.clip.hover(function () {
+	  		carousel.stopAuto();
+	  	}, function () {
+	  		carousel.startAuto();
+	  	});
+	  };
+    function submitToCart(prodID) {
+        clickCount++;
+        if (clickCount < 2) {
+            window.location = "/ShoppingCart/AddFeaturedProduct?ProductID=" + prodID;
+        }
+    }
+</script>
+
+    </div>
+    <div id="refurbModal" style="display: none;">
+    </div>
+</div>
+</div>
+</div><!--END body wrapper-->
+<div class="clear"></div>
+<div class="clear"></div>
+<!-- FOOTER -->
+<div id="footerWrapper">
+<div id="footer">
+<div id="footerTop">
+<div class="footerColumn"><img alt="Products" src="/Content/Icons/productFooterHeader2.jpg" title="Construction Tools Including Spirit Levels, Laser Levels, Construction Squares, Measuring Tools, and Marking Tools" /><ul class="column">                    
+    <li><a href="/C/5/Levels" title="Spirit Levels From Box Levels and Torpedo Levels to Digital and Optical Levels">Levels</a></li>
+    <li><a href="/C/4/LaserLevels" title="Laser Levels Including Rotary Laser Levels, Dot Laser Levels and Line Laser Levels ">Laser Levels</a></li>
+    <li><a href="/C/9/ConstructionSquares" title="Construction Squares Including Framing Squares, Combination Squares and T Squares">Construction Squares</a></li>
+    <li><a href="/C/7/ConstructionMeasuringTool" title="Construction Measuring Tools Including Long Tapes, Tape Measures, Laser Distance Measuring Tools and Straight Edges">Measuring Tools</a></li>
+    <li><a href="/C/6/MarkingToolsJobSiteSafety" title="Marking Tools From Plumb Bobs and Stake Flags to Barricade Tape and Carpenter Pencils">Marking</a></li>
+	<li><a href="/support/Resources" title="Johnson Level Catalogs and online Publications for contractors of all levels">Publications</a></li>
+</ul></div>
+<div class="footerColumn"><img alt="Support" src="/Content/Icons/supportFooterHeader2.jpg" title="Support for Construction Levels and Laser levels, Marking and Measuring Equipment from Johnson Level" /><ul class="column"> 
+    <li><a href="/C/52/ReplacementPartsforJohnso" title="">REPLACEMENT PARTS</a></li>
+    <li><a href="/Manuals" title="">MANUALS</a></li>
+    <li><a href="/Warranty" title="Laser Level and Construction Tool Manufacturer Warranty Registration">Warranty & Repair</a></li>
+    <li><a href="/Register" title="">Product Registration</a></li>
+    <li><a href="/support/ServiceCenters" title="Johnson Level Authorized Non-Warranty Repair Centers for Construction Tools from Laser Levels to Combination Squares">Service Centers</a></li>
+	<li><a href="/LevelPedia3" title="Levelpedia resource about levels and measuring tools with reviews, how to buy measuring tools, how to use laser levels and construction trade articles">Levelpedia</a></li>
+    <li><a href="/support/Inventors" title="Johnson Level Inventors Corner for Levels and Construction Tool Enhancement Suggestions">Inventors</a></li>
+    <li><a href="/Patents" title="Johnson Level and Part Numbers and Patents">Patents</a></li>
+</ul></div>
+<div class="footerColumn"><img alt="On The Web" src="/Content/Icons/onthewebFooterHeader2.jpg" title="Johnson Level spanish and measuring tool website resources" /><ul class="column">                    
+    <li><a href="http://www.johnsonlevel.es/" target="levels" title="Spanish Site for Laser Levels and Construction Tools from Johnson Level">JohnsonLevel.es</a></li>
+    
+    <li><a href="/Service" title="Johnson Level and Tool Service Login">Service Login</a></li>
+
+    <li><a href="/USAVials" title="Made in the USA Laser Levels and Construction Measuring Tools from Johnson Level">USA Vials</a></li>
+    <li><a href="/News" title="Level and tool news reviewing industry technology like lasers, rotary tools and construction equipment">News</a></li>
+    <li><a href="/ToolManufacturing/DiscontinuedManuals" title="">Discontinued Manuals</a></li>
+</ul></div>
+<div class="footerColumn"><img alt="Corporate" src="/Content/Icons/corporateFooterHeader2.jpg" title="Johnson Level and Tool Mfg Company Corporate Information" /><ul class="column">
+    <li><a href="/Contact" title="Contact Laser Level, Spirit Level and Construction Tool Manufacturing Company - Johnson Level">Contact Us</a></li>
+    <li><a href="/ToolManufacturing/Company" title="About Johnson Level and Tool Mfg Company">About Us</a></li>
+
+   
+    
+    
+
+    <li><a href="/ToolManufacturing/Affiliations" title="Laser Level and Tool Manufacturing Partners">Affiliations</a></li>
+    <li><a href="/ToolManufacturing/PrivacyPolicy" title="Johnson Level and Tool Mfg Company Privacy Policy and Terms of Use">Privacy & Use</a></li>
+    <li><a href="/hultaforsgroupnorthamerica" title="">Hultafors Group North America</a></li>
+</ul></div>
+<div class="footerColumn" id="socialColumn"><img alt="Connect" src="/Content/Icons/connectFooterHeader2.jpg" title="Connect With Johnson Level and Tool through Social Media" />
+<div id="espanolFooter"><span class="languageSelectedFooter">English</span> / <a href="http://www.johnsonlevel.es/" target="levels" title="Johnson Level en Español">Español</a></div>
+<ul style="margin:0; padding-left:30px; width:80%; float:left;">
+
+    <li>
+        <a class="Socialtop"  href="https://www.facebook.com/johnsonlevel" target="levels" title="Johnson Level and Tool Facebook Page">
+			<img alt="" src="/Content/images/Icons/fb.png" />
+        </a>
+    </li>
+
+    <li>
+		<a class="SocialtopML"  href="https://www.instagram.com/johnsonlevel/" target="levels" title="Made in USA Laser Levels and Construction Measuring Tools from Johnson Level">
+			<img alt="" src="/Content/images/Icons/insta.png" />
+		</a>
+    </li>
+    <li>
+		<a class="SocialtopML" target="_blank"  href="https://www.tiktok.com/@johnsonleveltool" title="">
+			<img alt="" src="/Content/images/Icons/tiktok.png" />
+		</a>
+    </li>
+    <li>
+		<a class="Socialtop"  href="https://www.linkedin.com/company/johnson-level-&-tool" target="levels" title="Johnson Level and Tool LinkedIn">
+			<img alt="" src="/Content/images/Icons/linkedin.png" />
+		</a>
+    </li>
+
+    <li>
+		<a class="SocialtopML" href="https://www.youtube.com/JobSiteTough" target="levels" title="Laser Level and Construction Tool YouTube Channel">
+			<img alt="" src="/Content/images/Icons/YT.png" />
+		</a>
+    </li>
+    
+    <li>
+		<a class="SocialtopML"  href="/C/267" title="">
+			<img alt="" src="/Content/images/Icons/award.png" />
+		</a>
+    </li>
+
+    
+
+
+   
+    
+    
+    
+    
+</ul>
+    
+
+</div>               
+</div>
+<div id="footerBottom"><ul class="footerContactInfo">
+    <li id="bumpFooterBack"><span class="softTextFooter">Copyright 2025 Johnson Level & Tool Mfg. Co., Inc. All rights reserved.</span></li>
+    <li id="bumpFooter"><span class="street-address">6333 W. Donges Bay Road</span></li>
+    <li><span class="locality">Mequon</span>, <span class="region">WI</span> <span class="postal-code">53092-4456</span></li>
+    <li>Tel: (888) 953-8357</li>
+    <li class="lastFax">Fax: (262) 242-0189</li>
+</ul></div>
+<div class="clear"></div>
+</div><!--END footer-->
+</div><!--END FooterWrapper-->
+<!-- FOOTER -->
+<div id="AddToCartMsg" style="display:none;"><span id="countOfItems"></span><span class="addText">Added to your cart</span>
+<span class="buttonWrapper"><a class="quickCartBtn" href="/find/ShoppingCart/Cart" title="Buy Johnson Level construction measuring tools and laser Products">CHECKOUT</a></span></div>
+
+<noscript>
+<div id="noScriptSiteWarning">JOHNSONLEVEL.COM REQUIRES JAVASCRIPT TO BE ENABLED. ENABLE JAVASCRIPT ON YOUR DEVICE TO FULLY USE THIS WEBSITE.</div>
+<style type="text/css">#videoBg2, #videoBg3{display:none;}</style>
+</noscript>
+
+
+<div class="video-lightbox js-video-lightbox">
+	<iframe loading="lazy" src="https://player.vimeo.com/video/906808174" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+	<span class="close js-close">X</span>
+</div>
+
+
+<div id="flashholder">
+<div id="BillandBob"></div>
+</div>
+	<script src="/Scripts/mt.js" type="text/javascript"></script>
+	<script type="text/javascript">
+	Mousetrap.bind('t o u g h', function () {
+		var flashvars = {};
+		var params = {};
+		params.wmode = "transparent";
+		swfobject.embedSWF("/Content/video/BillandBob.swf", "BillandBob", "270", "210", "8.0.0", '', flashvars, params); 
+	});
+	</script>
+
+
+	<script type="text/javascript" src="https://player.vimeo.com/api/player.js"></script>
+
+	<script type="text/javascript">
+		let iframe = $('.js-video-lightbox iframe');
+		let player = new Vimeo.Player(iframe);
+
+		$('.js-play-video').on('click', function () {
+			$('.js-video-lightbox').addClass('active');
+			player.play();
+		});
+
+		$('.js-video-lightbox').on('click', function (e) {
+			if (e.target !== e.currentTarget) return;
+			$(this).removeClass('active');
+			player.pause();
+		});
+
+		$('.js-close').on('click', function () {
+			$('.js-video-lightbox').removeClass('active');
+			player.pause();
+		});
+
+	</script>
+
+
+</body>
+</html>

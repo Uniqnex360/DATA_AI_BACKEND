@@ -1,0 +1,697 @@
+
+<!DOCTYPE html>
+<html lang="en" dir="ltr" prefix="content: http://purl.org/rss/1.0/modules/content/  dc: http://purl.org/dc/terms/  foaf: http://xmlns.com/foaf/0.1/  og: http://ogp.me/ns#  rdfs: http://www.w3.org/2000/01/rdf-schema#  schema: http://schema.org/  sioc: http://rdfs.org/sioc/ns#  sioct: http://rdfs.org/sioc/types#  skos: http://www.w3.org/2004/02/skos/core#  xsd: http://www.w3.org/2001/XMLSchema# " class="h-100">
+  <head>
+    <meta charset="utf-8" />
+<meta name="Generator" content="Drupal 9 (https://www.drupal.org)" />
+<meta name="MobileOptimized" content="width" />
+<meta name="HandheldFriendly" content="true" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="canonical" href="https://www.navcen.uscg.gov/emergency-position-indicating-radiobeacon" />
+<link rel="shortlink" href="https://www.navcen.uscg.gov/node/218" />
+
+    <title>Emergency Position Indicating Radiobeacon (EPIRB) | Navigation Center</title>
+    <link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/ajax-progress.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/align.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/autocomplete-loading.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/fieldgroup.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/container-inline.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/clearfix.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/details.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/hidden.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/item-list.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/js.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/nowrap.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/position-container.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/progress.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/reset-appearance.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/resize.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/sticky-header.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/system-status-counter.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/system-status-report-counters.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/system-status-report-general-info.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/tabledrag.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/tablesort.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/system/components/tree-child.module.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/core/assets/vendor/normalize-css/normalize.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/stable/css/core/normalize-fixes.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/action-links.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/breadcrumb.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/button.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/collapse-processed.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/container-inline.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/details.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/exposed-filters.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/field.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/form.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/icons.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/inline-form.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/item-list.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/link.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/links.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/menu.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/more-link.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/pager.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/tabledrag.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/tableselect.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/tablesort.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/textarea.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/ui-dialog.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/messages.css?swny5z" />
+<link rel="stylesheet" media="all" href="/core/themes/classy/css/components/node.css?swny5z" />
+<link rel="stylesheet" media="all" href="/themes/bootstrap4/css/style.css?swny5z" />
+<link rel="stylesheet" media="all" href="/themes/bootstrap4/css/custom.css?swny5z" />
+
+    
+  </head>
+  <body class="path-node page-node-type-page    bg- d-flex flex-column h-100">
+        <a href="#main-content" class="visually-hidden focusable skip-link">
+      Skip to main content
+    </a>
+    
+      <div class="dialog-off-canvas-main-canvas d-flex flex-column h-100" data-off-canvas-main-canvas>
+    
+
+<header>
+    
+
+  
+</header>
+
+<main role="main">
+  <a id="main-content" tabindex="-1"></a>
+    
+    
+  
+
+  <div class="container">
+            <div class="region region-breadcrumb">
+    <div id="block-siteheader-3" class="block block-block-content block-block-content096c52f0-f922-481b-80c8-8e450a429715">
+  
+    
+      
+            <div class="clearfix text-formatted field field--name-body field--type-text-with-summary field--label-hidden field__item"><div class="row" id="main_header">
+<div class="col-2" id="navcen_logo"><a href="/" rel="home" title="Home"><img alt="Home" class="img-fluid" src="/sites/default/files/images/navcen_logo5.png" /> </a></div>
+
+<div class="col-8">
+<div class="homepage_header_txt1">Navigation Center</div>
+
+<div class="homepage_header_txt2">United States Coast Guard</div>
+
+<div class="homepage_header_txt3">U.S. Department of Homeland Security</div>
+</div>
+
+<div class="col-2" id="dhs_logo"><img alt="DHS" class="img-fluid" src="/sites/default/files/images/dhs_logo.png" /></div>
+
+<div class="col-2" data-target="#main_menu_modal" data-toggle="modal" id="main_menu_pancake">☰</div>
+
+<div class="col-2" id="search_icon"><a href="/search/website"><svg class="bi bi-search" fill="currentColor" viewbox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"> <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"></path> </svg> </a></div>
+</div>
+</div>
+      
+  </div>
+<nav role="navigation" aria-labelledby="block-homepagemainmenu-menu" id="block-homepagemainmenu" class="block block-menu navigation menu--homepage-main-menu">
+            
+  <h5 class="visually-hidden" id="block-homepagemainmenu-menu">Nav Bar Menu - desktop</h5>
+  
+
+        
+        <ul class="nav navbar-nav">
+            <li class="nav-item">
+      <a href="/" class="nav-link" data-drupal-link-system-path="&lt;front&gt;">Home</a>
+          </li>
+          <li class="nav-item">
+      <a href="/search/website" class="nav-link" data-drupal-link-system-path="search/website">Search</a>
+          </li>
+          <li class="nav-item">
+      <a href="/navigation-rules-amalgamated" class="nav-link" data-drupal-link-system-path="node/584">Nav Rules</a>
+          </li>
+          <li class="nav-item">
+      <a href="/broadcast-notice-to-mariners" class="nav-link" data-drupal-link-system-path="node/1081">BNMs</a>
+          </li>
+          <li class="nav-item">
+      <a href="/msi" class="nav-link" data-drupal-link-system-path="node/57945">LNMs</a>
+          </li>
+          <li class="nav-item">
+      <a href="/global-positioning-system-overview" class="nav-link" data-drupal-link-system-path="node/168">GPS</a>
+          </li>
+          <li class="nav-item">
+      <a href="/maritime-telecommunications" class="nav-link" data-drupal-link-system-path="node/246">Comms</a>
+          </li>
+          <li class="nav-item">
+      <a href="/maritime-safety-information" class="nav-link" data-drupal-link-system-path="node/611">MSI</a>
+          </li>
+          <li class="nav-item">
+      <a href="/automatic-identification-system-overview" class="nav-link" data-drupal-link-system-path="node/82">AIS</a>
+          </li>
+          <li class="nav-item">
+      <a href="/international-ice-patrol" class="nav-link" data-drupal-link-system-path="node/31298">Ice Patrol</a>
+          </li>
+          <li class="nav-item">
+      <a href="/archives" class="nav-link" data-drupal-link-system-path="archives">Archives</a>
+          </li>
+          <li class="nav-item">
+      <a href="/chart" class="nav-link" data-drupal-link-system-path="node/43318">Space Ops</a>
+          </li>
+  </ul>
+  
+
+
+  </nav>
+<div id="block-breadcrumbs" class="block block-block-content block-block-content4a4429dd-59e9-49c9-9459-1a835b415207">
+  
+    
+      
+            <div class="clearfix text-formatted field field--name-body field--type-text-with-summary field--label-hidden field__item"><div class="row mb-2">
+<div class="col-11">
+<div id="breadcrumbs">
+<ul class="custom_breadcrumbs">
+	<li><a href="/">Home</a></li>
+</ul>
+</div>
+</div>
+
+<div class="col-1"><button class="btn btn-outline-info btn-sm p-0 pl-1 pr-1 float-right" id="printer_friendly_button" type="button">Print</button></div>
+</div>
+</div>
+      
+  </div>
+
+  </div>
+
+        <div class="row no-gutters">
+              <div class="order-2 order-lg-1 col-12 col-lg-3">
+            <div class="region region-sidebar-first">
+    <nav role="navigation" aria-labelledby="block-navcenmainmenu-menu" id="block-navcenmainmenu" class="block block-menu navigation menu--navcen-main-menu">
+            
+  <h5 class="visually-hidden" id="block-navcenmainmenu-menu">NAVCEN Main Menu - desktop</h5>
+  
+
+        
+        <ul class="nav navbar-nav">
+            <li class="nav-item">
+      <a href="/" class="nav-link" data-drupal-link-system-path="&lt;front&gt;">Home</a>
+          </li>
+          <li class="nav-item">
+      <a href="/search/website" class="nav-link" data-drupal-link-system-path="search/website">Search</a>
+          </li>
+          <li class="nav-item">
+      <a href="/resources" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/656">Resources</a>
+          </li>
+          <li class="nav-item">
+      <a href="/maritime-safety-information" class="nav-link dropdown-toggle active" data-drupal-link-system-path="node/611">Maritime Safety Information</a>
+                      <ul>
+            <li class="nav-item">
+      <a href="/msi" class="nav-link" data-drupal-link-system-path="node/57945">MSI Products App</a>
+          </li>
+          <li class="nav-item">
+      <a href="/broadcast-notice-to-mariners" class="nav-link" data-drupal-link-system-path="node/1081">Broadcast Notices to Mariners</a>
+          </li>
+          <li class="nav-item">
+      <a href="/local-notices-to-mariners-main" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/195">Local Notices to Mariners</a>
+          </li>
+          <li class="nav-item">
+      <a href="/light-lists" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/657">Light Lists</a>
+          </li>
+          <li class="nav-item">
+      <a href="/automatic-identification-system-overview" class="nav-link" data-drupal-link-system-path="node/82">Automatic Identification System (AIS)</a>
+          </li>
+          <li class="nav-item">
+      <a href="/maritime-telecommunications" class="nav-link dropdown-toggle active" data-drupal-link-system-path="node/246">Maritime Telecomms</a>
+                      <ul>
+            <li class="nav-item">
+      <a href="/uscg-telecommunications" class="nav-link" data-drupal-link-system-path="node/212">Telecommunications</a>
+          </li>
+          <li class="nav-item">
+      <a href="/global-maritime-distress-and-safety-system" class="nav-link dropdown-toggle active" data-drupal-link-system-path="node/160">GMDSS</a>
+                      <ul>
+            <li class="nav-item">
+      <a href="/task-force-background" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/224">Task Force</a>
+          </li>
+          <li class="nav-item">
+      <a href="/gmdss-areas-and-search-and-rescue" class="nav-link" data-drupal-link-system-path="node/216">SAR Areas</a>
+          </li>
+          <li class="nav-item">
+      <a href="/gmdss-systems" class="nav-link" data-drupal-link-system-path="node/223">Systems</a>
+          </li>
+          <li class="nav-item">
+      <a href="/gmdss-compliance-requirements" class="nav-link" data-drupal-link-system-path="node/220">Compliance Requirements</a>
+          </li>
+          <li class="nav-item">
+      <a href="/gmdss-reference-info" class="nav-link" data-drupal-link-system-path="node/222">Reference Info</a>
+          </li>
+          <li class="nav-item">
+      <a href="/navtex-maritime-safety-broadcasts" class="nav-link" data-drupal-link-system-path="node/228">NAVTEX Broadcast Info</a>
+          </li>
+          <li class="nav-item">
+      <a href="/emergency-position-indicating-radiobeacon" class="nav-link active is-active" data-drupal-link-system-path="node/218">EPIRB Information</a>
+          </li>
+          <li class="nav-item">
+      <a href="/instructions-for-canceling-false-distress-alert" class="nav-link" data-drupal-link-system-path="node/219">Cancelling A False Alert</a>
+          </li>
+          <li class="nav-item">
+      <a href="/mf-hf-channel-information" class="nav-link" data-drupal-link-system-path="node/238">MF &amp; HF Channel Information</a>
+          </li>
+          <li class="nav-item">
+      <a href="/gmdss-data-elements" class="nav-link" data-drupal-link-system-path="node/217">Comms Data Elements</a>
+          </li>
+          <li class="nav-item">
+      <a href="/gmdss-frequently-asked-questions" class="nav-link" data-drupal-link-system-path="node/221">GMDSS FAQs</a>
+          </li>
+  </ul>
+  
+          </li>
+          <li class="nav-item">
+      <a href="/rescue-21-distress-system-coverage" class="nav-link" data-drupal-link-system-path="node/214">Rescue 21 Distress System Coverage</a>
+          </li>
+          <li class="nav-item">
+      <a href="/digital-selective-calling" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/513">Digital Selective Calling</a>
+          </li>
+          <li class="nav-item">
+      <a href="/us-vhf-channel-information" class="nav-link" data-drupal-link-system-path="node/250">U.S. VHF Channel Frequencies</a>
+          </li>
+          <li class="nav-item">
+      <a href="/hf-distress-uscg-contact-frequencies" class="nav-link" data-drupal-link-system-path="node/211">HF Distress Frequencies</a>
+          </li>
+          <li class="nav-item">
+      <a href="/mf-hf-channel-information" class="nav-link" data-drupal-link-system-path="node/238">MF &amp; HF Channel Information</a>
+          </li>
+          <li class="nav-item">
+      <a href="/what-frequency-do-you-mean" class="nav-link" data-drupal-link-system-path="node/333">What frequency do you mean?</a>
+          </li>
+          <li class="nav-item">
+      <a href="/international-vhf-marine-radio-channels-freq" class="nav-link" data-drupal-link-system-path="node/209">Intl VHF Channels and Frequencies</a>
+          </li>
+          <li class="nav-item">
+      <a href="/international-maritime-organization-information" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/243">IMO Information</a>
+          </li>
+          <li class="nav-item">
+      <a href="/marine-safety-information-broadcasts" class="nav-link" data-drupal-link-system-path="node/227">Marine Safety Info Broadcasts</a>
+          </li>
+          <li class="nav-item">
+      <a href="/maritime-mobile-service-identity" class="nav-link" data-drupal-link-system-path="node/32376">MMSI</a>
+          </li>
+          <li class="nav-item">
+      <a href="/radio-information-for-boaters" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/210">Radio Info For Boaters</a>
+          </li>
+          <li class="nav-item">
+      <a href="/radio-watchkeeping-regulations" class="nav-link" data-drupal-link-system-path="node/252">Radio Watch Requirements</a>
+          </li>
+          <li class="nav-item">
+      <a href="/maritime-telecommunications-reference-information" class="nav-link" data-drupal-link-system-path="node/92">Reference Information</a>
+          </li>
+          <li class="nav-item">
+      <a href="/contact/contact-us" class="nav-link" data-drupal-link-system-path="contact/feedback">Contact Our Watch or SME</a>
+          </li>
+  </ul>
+  
+          </li>
+          <li class="nav-item">
+      <a href="/navigation-rules-amalgamated" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/584">Navigation Rules</a>
+          </li>
+          <li class="nav-item">
+      <a href="/bridge-notices" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/20095">Bridge Notices</a>
+          </li>
+          <li class="nav-item">
+      <a href="/vessel-traffic-services" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/327">Vessel Traffic Services</a>
+          </li>
+          <li class="nav-item">
+      <a href="/international-ice-patrol" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/31298">International Ice Patrol</a>
+          </li>
+          <li class="nav-item">
+      <a href="/local-variance-depository" class="nav-link" data-drupal-link-system-path="node/45937">Local Variance Depository</a>
+          </li>
+  </ul>
+  
+          </li>
+          <li class="nav-item">
+      <a href="/navigation-systems-and-services" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/600">Nav Systems and Services</a>
+          </li>
+          <li class="nav-item">
+      <a href="/waterways" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/23380">Waterways</a>
+          </li>
+          <li class="nav-item">
+      <a href="/report-a-problem" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/625">Contact Us/Report a Problem</a>
+          </li>
+  </ul>
+  
+
+
+  </nav>
+<nav role="navigation" aria-labelledby="block-navcenmainmenu-3-menu" id="block-navcenmainmenu-3" class="block block-menu navigation menu--navcen-main-menu">
+            
+  <h5 class="visually-hidden" id="block-navcenmainmenu-3-menu">NAVCEN Main Menu - mobile</h5>
+  
+
+        
+        <ul class="nav navbar-nav">
+            <li class="nav-item">
+      <a href="/" class="nav-link" data-drupal-link-system-path="&lt;front&gt;">Home</a>
+          </li>
+          <li class="nav-item">
+      <a href="/search/website" class="nav-link" data-drupal-link-system-path="search/website">Search</a>
+          </li>
+          <li class="nav-item">
+      <a href="/resources" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/656">Resources</a>
+          </li>
+          <li class="nav-item">
+      <a href="/maritime-safety-information" class="nav-link dropdown-toggle active" data-drupal-link-system-path="node/611">Maritime Safety Information</a>
+                      <ul>
+            <li class="nav-item">
+      <a href="/msi" class="nav-link" data-drupal-link-system-path="node/57945">MSI Products App</a>
+          </li>
+          <li class="nav-item">
+      <a href="/broadcast-notice-to-mariners" class="nav-link" data-drupal-link-system-path="node/1081">Broadcast Notices to Mariners</a>
+          </li>
+          <li class="nav-item">
+      <a href="/local-notices-to-mariners-main" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/195">Local Notices to Mariners</a>
+          </li>
+          <li class="nav-item">
+      <a href="/light-lists" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/657">Light Lists</a>
+          </li>
+          <li class="nav-item">
+      <a href="/automatic-identification-system-overview" class="nav-link" data-drupal-link-system-path="node/82">Automatic Identification System (AIS)</a>
+          </li>
+          <li class="nav-item">
+      <a href="/maritime-telecommunications" class="nav-link dropdown-toggle active" data-drupal-link-system-path="node/246">Maritime Telecomms</a>
+                      <ul>
+            <li class="nav-item">
+      <a href="/uscg-telecommunications" class="nav-link" data-drupal-link-system-path="node/212">Telecommunications</a>
+          </li>
+          <li class="nav-item">
+      <a href="/global-maritime-distress-and-safety-system" class="nav-link dropdown-toggle active" data-drupal-link-system-path="node/160">GMDSS</a>
+                      <ul>
+            <li class="nav-item">
+      <a href="/task-force-background" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/224">Task Force</a>
+          </li>
+          <li class="nav-item">
+      <a href="/gmdss-areas-and-search-and-rescue" class="nav-link" data-drupal-link-system-path="node/216">SAR Areas</a>
+          </li>
+          <li class="nav-item">
+      <a href="/gmdss-systems" class="nav-link" data-drupal-link-system-path="node/223">Systems</a>
+          </li>
+          <li class="nav-item">
+      <a href="/gmdss-compliance-requirements" class="nav-link" data-drupal-link-system-path="node/220">Compliance Requirements</a>
+          </li>
+          <li class="nav-item">
+      <a href="/gmdss-reference-info" class="nav-link" data-drupal-link-system-path="node/222">Reference Info</a>
+          </li>
+          <li class="nav-item">
+      <a href="/navtex-maritime-safety-broadcasts" class="nav-link" data-drupal-link-system-path="node/228">NAVTEX Broadcast Info</a>
+          </li>
+          <li class="nav-item">
+      <a href="/emergency-position-indicating-radiobeacon" class="nav-link active is-active" data-drupal-link-system-path="node/218">EPIRB Information</a>
+          </li>
+          <li class="nav-item">
+      <a href="/instructions-for-canceling-false-distress-alert" class="nav-link" data-drupal-link-system-path="node/219">Cancelling A False Alert</a>
+          </li>
+          <li class="nav-item">
+      <a href="/mf-hf-channel-information" class="nav-link" data-drupal-link-system-path="node/238">MF &amp; HF Channel Information</a>
+          </li>
+          <li class="nav-item">
+      <a href="/gmdss-data-elements" class="nav-link" data-drupal-link-system-path="node/217">Comms Data Elements</a>
+          </li>
+          <li class="nav-item">
+      <a href="/gmdss-frequently-asked-questions" class="nav-link" data-drupal-link-system-path="node/221">GMDSS FAQs</a>
+          </li>
+  </ul>
+  
+          </li>
+          <li class="nav-item">
+      <a href="/rescue-21-distress-system-coverage" class="nav-link" data-drupal-link-system-path="node/214">Rescue 21 Distress System Coverage</a>
+          </li>
+          <li class="nav-item">
+      <a href="/digital-selective-calling" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/513">Digital Selective Calling</a>
+          </li>
+          <li class="nav-item">
+      <a href="/us-vhf-channel-information" class="nav-link" data-drupal-link-system-path="node/250">U.S. VHF Channel Frequencies</a>
+          </li>
+          <li class="nav-item">
+      <a href="/hf-distress-uscg-contact-frequencies" class="nav-link" data-drupal-link-system-path="node/211">HF Distress Frequencies</a>
+          </li>
+          <li class="nav-item">
+      <a href="/mf-hf-channel-information" class="nav-link" data-drupal-link-system-path="node/238">MF &amp; HF Channel Information</a>
+          </li>
+          <li class="nav-item">
+      <a href="/what-frequency-do-you-mean" class="nav-link" data-drupal-link-system-path="node/333">What frequency do you mean?</a>
+          </li>
+          <li class="nav-item">
+      <a href="/international-vhf-marine-radio-channels-freq" class="nav-link" data-drupal-link-system-path="node/209">Intl VHF Channels and Frequencies</a>
+          </li>
+          <li class="nav-item">
+      <a href="/international-maritime-organization-information" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/243">IMO Information</a>
+          </li>
+          <li class="nav-item">
+      <a href="/marine-safety-information-broadcasts" class="nav-link" data-drupal-link-system-path="node/227">Marine Safety Info Broadcasts</a>
+          </li>
+          <li class="nav-item">
+      <a href="/maritime-mobile-service-identity" class="nav-link" data-drupal-link-system-path="node/32376">MMSI</a>
+          </li>
+          <li class="nav-item">
+      <a href="/radio-information-for-boaters" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/210">Radio Info For Boaters</a>
+          </li>
+          <li class="nav-item">
+      <a href="/radio-watchkeeping-regulations" class="nav-link" data-drupal-link-system-path="node/252">Radio Watch Requirements</a>
+          </li>
+          <li class="nav-item">
+      <a href="/maritime-telecommunications-reference-information" class="nav-link" data-drupal-link-system-path="node/92">Reference Information</a>
+          </li>
+          <li class="nav-item">
+      <a href="/contact/contact-us" class="nav-link" data-drupal-link-system-path="contact/feedback">Contact Our Watch or SME</a>
+          </li>
+  </ul>
+  
+          </li>
+          <li class="nav-item">
+      <a href="/navigation-rules-amalgamated" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/584">Navigation Rules</a>
+          </li>
+          <li class="nav-item">
+      <a href="/bridge-notices" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/20095">Bridge Notices</a>
+          </li>
+          <li class="nav-item">
+      <a href="/vessel-traffic-services" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/327">Vessel Traffic Services</a>
+          </li>
+          <li class="nav-item">
+      <a href="/international-ice-patrol" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/31298">International Ice Patrol</a>
+          </li>
+          <li class="nav-item">
+      <a href="/local-variance-depository" class="nav-link" data-drupal-link-system-path="node/45937">Local Variance Depository</a>
+          </li>
+  </ul>
+  
+          </li>
+          <li class="nav-item">
+      <a href="/navigation-systems-and-services" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/600">Nav Systems and Services</a>
+          </li>
+          <li class="nav-item">
+      <a href="/waterways" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/23380">Waterways</a>
+          </li>
+          <li class="nav-item">
+      <a href="/report-a-problem" class="nav-link dropdown-toggle" data-drupal-link-system-path="node/625">Contact Us/Report a Problem</a>
+          </li>
+  </ul>
+  
+
+
+  </nav>
+
+  </div>
+
+        </div>
+            <div class="order-1 order-lg-2 col-12 col-lg-9">
+          <div class="region region-content">
+    <div data-drupal-messages-fallback class="hidden"></div>
+<div id="block-bootstrap4-content" class="block block-system block-system-main-block">
+  
+      <h2><span property="schema:name" class="field field--name-title field--type-string field--label-hidden">Emergency Position Indicating Radiobeacon (EPIRB)</span>
+</h2>
+    
+      
+<article data-history-node-id="218" role="article" about="/emergency-position-indicating-radiobeacon" typeof="schema:WebPage" class="node node--type-page node--view-mode-full">
+
+  
+      <span property="schema:name" content="Emergency Position Indicating Radiobeacon (EPIRB)" class="rdf-meta hidden"></span>
+
+
+  
+  <div class="node__content">
+    
+            <div property="schema:text" class="clearfix text-formatted field field--name-body field--type-text-with-summary field--label-hidden field__item"><h4>Types of EPIRBs</h4>
+
+<p>Emergency position indicating radiobeacons (EPIRBs), devices which cost from $200 to about $1500, are designed to save your life if you get into trouble by alerting rescue authorities and indicating your location. EPIRB types are described below:</p>
+
+<h4>Category I</h4>
+
+<p>406/121.5 MHZ. Float-free, automatically activated EPIRB. Detectable by satellite anywhere in the world. Recognized by <a href="/global-maritime-distress-and-safety-system">GMDSS</a>.</p>
+
+<h4>Category II</h4>
+
+<p>406/121.5 MHZ. Similar to Category I, except is manually activated. Some models are also water activated.<br />
+<a href="http://www.ecfr.gov/cgi-bin/retrieveECFR?gp=&amp;SID=6047c36c1c08013e741ba47d2ad5d8ab&amp;mc=true&amp;n=pt46.6.161&amp;r=PART&amp;ty=HTML#sp46.6.161.161_1011">See 46 CFR §161.011 Emergency Position Indicating Radiobeacons</a>.</p>
+
+<h4>121.5/243 MHz EPIRBs</h4>
+
+<p>The International Cospas-Sarsat System ceased satellite processing of 121.5/243 MHz beacons on 1 February 2009.&nbsp; Although Emergency Locator Transmitters used by aircraft may still be used, alerts from these devices or from 121.5/243 MHz EPIRBs will no longer be acted upon unless independently confirmed by two independent non-satellite sources. These Class A, Class B, and Class S devices are no longer allowed to be manufactured, imported, used or sold within the United States. Please see <a href="https://www.ecfr.gov/current/title-47/chapter-I/subchapter-D/part-80/subpart-V/section-80.1053">47 CFR §80.1053 Prohibition on Class A, Class B, Class S, and INMARSAT-E EPIRBs</a>.</p>
+
+<h4>406 MHz EPIRBs</h4>
+
+<p>The 406 MHz EPIRB was designed to operate with satellites. The signal frequency (406 MHz) has been designated internationally for use only for distress. Other communications and interference, such as on 121.5 MHz, is not allowed on this frequency. Its signal allows a satellite local user terminal to accurately locate the EPIRB (much more accurately -- 2 to 5 km vice 25 km -- than 121.5/243 MHz devices), and identify the vessel (the signal is encoded with the vessel's identity) anywhere in the world (there is no range limitation). These devices are detectable not only by COSPAS-SARSAT satellites which are polar orbiting, but also by geostationary GOES weather satellites. EPIRBs detected by the GEOSTAR system, consisting of GOES and other geostationary satellites, send rescue authorities an instant alert, but without location information unless the EPIRB is equipped with an integral GPS receiver.&nbsp; EPIRBs detected by COSPAS-SARSAT (e.g. TIROS N) satellites provide rescue authorities location of distress, but location and sometimes alerting may be delayed as much as an hour or two. Although these EPIRBs also include a low power 121.5 MHz homing signal, homing on the more powerful 406 MHz frequency has proven to be a significant aid to search and rescue aircraft. These are the only&nbsp; EPIRB types which can be sold in the United States.<br />
+<br />
+A new type of 406 MHz EPIRB, having an integral GPS navigation receiver, became available in 1998.&nbsp; This EPIRB will send accurate location as well as identification information to rescue authorities immediately upon activation through both geostationary (GEOSAR) and polar orbiting satellites.&nbsp; These types of EPIRBs are the best you can buy.<br />
+<br />
+406 MHz emergency locating transmitters (ELTs) for aircraft are also available. 406 MHz personnel locating beacons (PLBs) are available.<br />
+<br />
+The Coast Guard recommends you purchase a 406 MHz EPIRB, preferably one with an integral GPS navigation receiver. A Cat I EPIRB should be purchased if it can be installed properly. An EPIRB can also be rented from multiple providers. It can save your life.<br />
+<br />
+Please see <a href="https://www.ecfr.gov/current/title-47/chapter-I/subchapter-D/part-80/subpart-V/section-80.1061">47 CFR §80.1061 Special requirements for 406.0-406.1 MHz EPIRB stations</a><a href="http://www.ecfr.gov/cgi-bin/text-idx?SID=4e7ea480b643d17b9826aa1d332a3cb4&amp;mc=true&amp;node=se47.5.80_11101&amp;rgn=div8"> </a>and <a href="http://www.ecfr.gov/cgi-bin/text-idx?SID=4e7ea480b643d17b9826aa1d332a3cb4&amp;mc=true&amp;node=se47.5.80_11101&amp;rgn=div8">47 CFR §80.1101 Performance standards</a>.</p>
+
+<h4>406 MHz GEOSAR System</h4>
+
+<p>The major advantage of the 406 MHz low earth orbit system is the provision of global Earth coverage using a limited number of polar-orbiting satellite.&nbsp; Coverage is not continuous, however, and it may take up to a couple of hours for an EPIRB alert to be received.&nbsp; To overcome this limitation, COSPAS-SARSAT has 406 MHz EPIRB repeaters aboard <a href="http://www.cospas-sarsat.int/en/18-frontpage-articles/603-what-is-a-cospas-sarsat-beacon">several geostationary satellites</a>.<br />
+<br />
+Note that GEOSAR cannot detect 121.5 MHz alerts, nor can it route unregistered 406 MHz alerts to a rescue authority.&nbsp; GEOSAR cannot calculate the location of any alert it receives, unless the beacon has an integral GPS receiver.</p>
+
+<h4><a href="http://www.cospas-sarsat.int/en/">The COSPAS-SARSAT System</a></h4>
+
+<p>COSPAS-SARSAT is an international satellite-based search and rescue system established by the U.S., Russia, Canada and France to locate emergency radio beacons transmitting on the frequencies 121.5, 243 and 406 MHZ.</p>
+
+<h4>COSPAS</h4>
+
+<p>Space System for Search of Distress Vessels (a Russian acronym)</p>
+
+<h4>SARSAT</h4>
+
+<p>Search and Rescue Satellite-Aided Tracking</p>
+
+<h4>Testing EPIRBs</h4>
+
+<p>406 MHz EPIRBs can be tested through its self-test function, which is an integral part of the device.&nbsp; 406 MHz EPIRBs can also be tested inside a container designed to prevent its reception by the satellite.&nbsp; Testing a 406 MHz EPIRB by allowing it to radiate outside such a container is illegal.</p>
+
+<h4>Battery Replacement</h4>
+
+<p>Batteries must be replaced by the date indicated on the EPIRB label using the model specified by the manufacturer. It should be replaced by a dealer approved by the manufacturer. If the replacement battery is not the proper type, the EPIRB will not operate for the duration specified in a distress.</p>
+
+<h4>Registration Of 406 MHz EPIRBs</h4>
+
+<p>Proper registration of your 406 MHz satellite emergency position-indicating radio beacon (EPIRB) is intended to save your life, and is mandated by Federal Communications Commission regulations. The Coast Guard is enforcing this FCC registration rule.<br />
+<br />
+Your life may be saved as a result of registered emergency information. This information can be very helpful in confirming that a distress situation exists, and in arranging appropriate rescue efforts. Also, GOES, a geostationary National Oceanic &amp; Atmospheric Administration weather satellite system can pick up and relay an EPIRB distress alert to the Coast Guard well before the international COSPAS-SARSAT satellite can provide location information. If the EPIRB is properly registered, the Coast Guard will be able to use the registration information to immediately begin action on the case. If the EPIRB is unregistered, a distress alert may take as much as two hours longer to reach the Coast Guard over the international satellite system. If an unregistered EPIRB transmission is abbreviated for any reason, the satellite will be unable to determine the EPIRB's location, and the Coast Guard will be unable to respond to the distress alert. Unregistered EPIRBs have needlessly cost the lives of several mariners since the satellite system became operational.</p>
+
+<h4>What Happens To Your Registration Form?</h4>
+
+<p>The registration sheet you fill out and send in is entered into the U.S. 406 Beacon Registration Database maintained by NOAA/NESDIS. If your EPIRB is activated, your registration information will be sent automatically to the appropriate USCG SAR Rescue Coordination Center (RCC) for response. One of the first things the RCC watchstanders do is attempt to contact the owner/operator at the phone number listed in the database to determine if the vessel is underway (thus ruling out the possibility of a false alarm due to accidental activation or EPIRB malfunction), the intended route of the vessel if underway, the number of people on board, etc., from a family member. If there is no answer at this number, or no information, the other numbers listed in the database will be called to attempt to get the information described above needed to assist the RCC in responding appropriately to the EPIRB alert.<br />
+<br />
+When RCC personnel contact the emergency phone numbers you provide, they will have all the information you have provided on the registration form. You should let these contacts know as much about your intended voyage as possible (i.e., intended route, stops, area you normally sail/fish/recreate, duration of trip, number of people going, etc.).&nbsp; The more information these contacts have, the better prepared our SAR personnel will be to react. The contacts can ask the RCC personnel contacting them to be kept informed of any developments, if they so desire.</p>
+
+<h4>Registration Regulations</h4>
+
+<p>You may be fined for false activation of an unregistered EPIRB. The U.S. Coast Guard routinely refers cases involving the non-distress activation of an EPIRB (e.g., as a hoax, through gross negligence, carelessness or improper storage and handling) to the Federal Communications Commission. The FCC will prosecute cases based upon evidence provided by the Coast Guard, and will issue warning letters or notices of apparent liability for fines up to $10,000.<br />
+<br />
+However, the Coast Guard has suspended forwarding non-distress activations of properly registered 406 MHz EPIRBs to the FCC, unless activation was due to hoax or gross negligence, since these search and rescue cases are less costly to prosecute.<br />
+<br />
+If you purchase a new or a used 406 MHz EPIRB, you <strong>MUST </strong>register it with NOAA. If you change your boat, your address, or your primary phone number, you <strong>MUST </strong>re-register your EPIRB with NOAA. If you sell your EPIRB, you <strong>MUST </strong>first change the status of their/your EPIRB to sold/transfered before the new owner can register it in their name. Additionally you should make sure the purchaser re-registers the EPIRB, or you may be called by the Coast Guard if it later becomes activated.<br />
+<br />
+An FCC ship station license is no longer required to purchase or carry an EPIRB.</p>
+
+<h4>How To Register</h4>
+
+<p>You may register by visiting the <a href="http://www.beaconregistration.noaa.gov/">SARSAT Beacon Registration page</a>.</p>
+
+<p><strong>There Is No Charge For This Service. It May Save Your Life.</strong></p>
+
+<p><strong>For additional information on the SARSAT and International Cospas-Sarsat system.</strong></p>
+
+<ul>
+	<li><a href="http://www.sarsat.noaa.gov/">NOAA SARSAT Homepage</a></li>
+	<li><a href="https://esc.gsfc.nasa.gov/projects/SAR">NASA SAR Mission Office</a></li>
+	<li><a href="http://www.cospas-sarsat.int/en/">International Cospas-Sarsat</a></li>
+	<li><a href="https://www.dco.uscg.mil/Our-Organization/Assistant-Commandant-for-Response-Policy-CG-5R/Office-of-Incident-Management-Preparedness-CG-5RI/US-Coast-Guard-Office-of-Search-and-Rescue-CG-SAR/">CG-SAR</a></li>
+</ul>
+
+<p>&nbsp;</p>
+</div>
+      
+  </div>
+
+</article>
+
+  </div>
+<div id="block-mainmenumodal" class="block block-block-content block-block-contenta21c6ca1-2e7f-44bc-afcd-1dae35f1312d">
+  
+    
+      
+            <div class="clearfix text-formatted field field--name-body field--type-text-with-summary field--label-hidden field__item"><div aria-hidden="true" aria-labelledby="ModalLabel" class="modal fade" id="main_menu_modal" role="dialog" tabindex="-1">
+<div class="modal-dialog" role="document">
+<div class="modal-content">
+<div class="modal-header"><button aria-label="Close" class="close" data-dismiss="modal" type="button"><span aria-hidden="true">×</span></button></div>
+
+<div class="modal-body" id="main_menu_modal_body">&nbsp;</div>
+</div>
+</div>
+</div>
+</div>
+      
+  </div>
+
+  </div>
+
+      </div>
+          </div>
+  </div>
+
+</main>
+
+<footer class="mt-auto   footer-dark text-light bg-secondary">
+  <div class="container">
+      <div class="region region-footer">
+    <div id="block-googleanalytics" class="block block-block-content block-block-contentb5b8ab30-b855-4914-a9ec-f249ede359ad">
+  
+    
+      
+            <div class="clearfix text-formatted field field--name-body field--type-text-with-summary field--label-hidden field__item"><style type="text/css">
+footer {display: none;}
+</style>
+<!-- Google Analytics -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1N0LDYLV91"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-1N0LDYLV91');
+</script>
+<!-- DAP Analytics -->
+<script async="" type="text/javascript" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=DHS" id="_fed_an_ua_tag"></script>
+<!-- Google Tag Manager -->
+<script>
+var googleTMInsert1 = document.createElement('script');
+googleTMInsert1.textContent = "(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-M5F3FWR');";
+document.head.appendChild(googleTMInsert1);
+
+var googleTMInsert2 = document.createElement('noscript');
+var googleTMInsert3 = document.createElement('iframe');
+googleTMInsert3.src = "https://www.googletagmanager.com/ns.html?id=GTM-M5F3FWR";
+googleTMInsert3.style.display = "none";
+googleTMInsert3.style.visibility = "hidden";
+googleTMInsert3.style.height = 0;
+googleTMInsert3.style.width = 0;
+googleTMInsert2.appendChild(googleTMInsert3);
+document.body.prepend(googleTMInsert2);
+</script></div>
+      
+  </div>
+
+  </div>
+
+  </div>
+</footer>
+
+  </div>
+
+    
+    <script src="/core/assets/vendor/jquery/jquery.min.js?v=3.6.0"></script>
+<script src="/themes/bootstrap4/dist/bootstrap/4.6.2/dist/js/bootstrap.bundle.js?v=4.6.2"></script>
+<script src="/themes/bootstrap4/js/custom.js?v=4.6.2"></script>
+<script src="/themes/bootstrap4/js/flatpickr.js?v=4.6.2"></script>
+
+  </body>
+</html>

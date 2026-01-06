@@ -1,0 +1,1140 @@
+ <!DOCTYPE html>
+<html lang="en-us" dir="ltr" prefix="og: http://ogp.me/ns# article: http://ogp.me/ns/article# book: http://ogp.me/ns/book# profile: http://ogp.me/ns/profile# video: http://ogp.me/ns/video# product: http://ogp.me/ns/product# content: http://purl.org/rss/1.0/modules/content/ dc: http://purl.org/dc/terms/ foaf: http://xmlns.com/foaf/0.1/ rdfs: http://www.w3.org/2000/01/rdf-schema# sioc: http://rdfs.org/sioc/ns# sioct: http://rdfs.org/sioc/types# skos: http://www.w3.org/2004/02/skos/core# xsd: http://www.w3.org/2001/XMLSchema# schema: http://schema.org/">
+<head>
+  <link href='https://fonts.googleapis.com/css?family=Noto Sans' rel='stylesheet'>
+  <link rel="profile" href="https://www.w3.org/1999/xhtml/vocab" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>.async-hide { opacity: 0 !important} </style>
+  <script>(function(a,s,y,n,c,h,i,d,e){s.className+=' '+y;h.start=1*new Date;
+      h.end=i=function(){s.className=s.className.replace(RegExp(' ?'+y),'')};
+      (a[n]=a[n]||[]).hide=h;setTimeout(function(){i();h.end=null},c);h.timeout=c;
+    })(window,document.documentElement,'async-hide','dataLayer',4000,
+      {'GTM-NKP4M62':true});</script>
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-NKP4M62');</script>
+  <!-- End Google Tag Manager -->
+  <!--[if IE]><![endif]-->
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="shortcut icon" href="https://www.flukenetworks.com/sites/default/files/favicon_3.ico" type="image/vnd.microsoft.icon" />
+<meta name="ps-key" content="1805-58b8e43945e86b24009d412a" />
+<script>
+if (location.host == 'www.flukenetworks.com.cn') {  
+	var _hmt = _hmt || [];
+	(function() {
+		var hm = document.createElement("script");
+		hm.src = "https://hm.baidu.com/hm.js?416c31bfd6bf3d7bf39ae68431b89a26";
+		var s = document.getElementsByTagName("script")[0];
+		s.parentNode.insertBefore(hm, s);
+	})();
+
+//	document.oncontextmenu = function() {return false;}
+//	document.onselectstart = function() {return false;}
+}
+</script><script>
+if (location.host == 'www.flukenetworks.com.cn') {
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  
+
+hm.src = "https://hm.baidu.com/hm.js?8df3a0b817c90f3f645f0776e5c9b552";
+  var s = 
+
+document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+}
+</script><meta name="generator" content="Drupal 7 (https://www.drupal.org)" />
+<link rel="canonical" href="https://www.flukenetworks.com/content/datasheet-intellitone-pro-toner-and-probe-series" />
+<meta property="og:site_name" content="Fluke Networks" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://www.flukenetworks.com/content/datasheet-intellitone-pro-toner-and-probe-series" />
+<meta property="og:title" content="IntelliTone™ Pro 200 LAN Toner and Probe Series" />
+<meta property="og:updated_time" content="2019-10-01T09:35:49-07:00" />
+<meta property="article:published_time" content="2014-09-09T13:43:05-07:00" />
+<meta property="article:modified_time" content="2019-10-01T09:35:49-07:00" />
+<link rel="alternate" hreflang="x-default" href="https://www.flukenetworks.com/content/datasheet-intellitone-pro-toner-and-probe-series" />
+<meta name="msvalidate.01" content="80CDC8FF61D5429BCB36AD17EECF5B84" />
+<meta name="google-site-verification" content="7Kl9W7RgCrqmY7uW-iOnaiQ8-1pjBuShBH5xi2_8s_c" />
+  <title>IntelliTone™ Pro 200 LAN Toner and Probe Series | Fluke Networks</title>
+  <link type="text/css" rel="stylesheet" href="/sites/default/files/advagg_css/css__uxrWcSDlpJ2Hr-lKXKPTVovZ3WkVT1sAkPzTmasX_mQ__lCj_q69CuUXTkdPMW2jVLwxkE25RYFDDVoTD6rcfTOs__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.css" media="all" />
+<link type="text/css" rel="stylesheet" href="/sites/default/files/advagg_css/css__NTCeQ3FKrwpqECmG1f6XLl1L43AgTnzfXxCaeIfpBjc__D_EUHDAfEQdxcLiSDY7hREUWkG1Ge56_h2z3Er8V188__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.css" media="all" />
+<link type="text/css" rel="stylesheet" href="/sites/default/files/advagg_css/css__HgNdwEhVU4K04Kjz4K1iP8a2cILck94aADlKUeMbcAk__CvYZho3J58CG0v5SNof_8s6hnpzs0mWIT6S9RS0tfnE__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.css" media="all" />
+<link type="text/css" rel="stylesheet" href="/sites/default/files/advagg_css/css__pF-SYcCFNvKBm9T23I3Z-9Iv-SeQCeIek-AxBw88BsY__Tvw0gJ0aKDyHk4aGWhFpNdXctT3_9f6HznX2lfIxJpo__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.css" media="all" />
+<link type="text/css" rel="stylesheet" href="/sites/default/files/advagg_css/css__wYDvsKp-t9MwBaHQHNFTNPENK3RhxmgF_CnxSTadNN4__WylIptPcNcXfb5FVOMoixnDc6_lrEoWDLbJvHTgKOio__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.css" media="all" />
+<link type="text/css" rel="stylesheet" href="/sites/default/files/advagg_css/css__3bVtPexonRWE_Xm_k42LVZRDDLKQvHvh6uPfm3IzlnI__8CwZMmEnzs5MEIgoFXU2Vlbf-NWH20t53XVWG-bElhw__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.css" media="all" />
+<link type="text/css" rel="stylesheet" href="/sites/default/files/advagg_css/css__B9Fj2IARdNQdiTFtwzG49RhzStnLE6BZTBM3rqGjtn4__RSFJO28QGwQZ77gYb0rkbyRZ_mgSyTnYakqaCtV1vcw__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.css" media="all" />
+<link type="text/css" rel="stylesheet" href="/sites/default/files/advagg_css/css__s0rNz9wqBCB9vW-MPYTNqk8lr33MreTdYtkjgM0WHrY__dFVPT8GiBe3za4k-oElBKyaL6nQKaBXBTnom8Evs4t8__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.css" media="all" />
+  <!-- HTML5 element support for IE6-8 -->
+  <!--[if lt IE 9]>
+    <script src="https://cdn.jsdelivr.net/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script type="text/javascript" src="/sites/default/files/advagg_js/js__nrcQAaZMGUPNzjrGgCkDsRAXVrWfQ7B0kba7gHOA1Q0__6WgEo0vsiyuQSTJtji-aze0uTp2YYgLWCo8W4bmpWcQ__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.js"></script>
+<script type="text/javascript" src="/sites/default/files/advagg_js/js__ZyeOaiFuDejQQbhUV7yg7atYZnj4WLfH77o0scv4068__o1ocvEYCCVzh-T8XcEDrn8z9TCo1F5mN4rJogFGuecE__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.js"></script>
+<script type="text/javascript" src="/sites/default/files/advagg_js/js__YT6D1B_BKxvm6JCH_t9sZNI5L6yITa_DlU5QcSlOkAU__OXobH7d1IP1o3WABlniIrU_-pcJacVSIPUv9bpD-6pQ__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.js"></script>
+<script type="text/javascript" src="/sites/default/files/advagg_js/js__I8ucyAWCjh7YgbmjTe1fz-sgXQEXudL9f5ugDxSZgQA__wbqJ_T9OnHqmZnu0GAz-3x9pg4ZQ1sZsh92BK0Wb82c__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.js"></script>
+<script type="text/javascript" src="/sites/default/files/advagg_js/js__0mS4fSPfXsGzAu4qKJFz1lzPKL9wr0RivgIgNgvk8j0__dRPEMzYE8LXiV2va20EbSkmNp1WQCb1NtGUFFvIJjMw__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.js"></script>
+<script type="text/javascript" defer="defer" src="https://cdn.optimizely.com/js/25147980274.js"></script>
+<script type="text/javascript" src="/sites/default/files/advagg_js/js__GHkj6HzThsoPUScOAMoZDLSBp9WJg2bhLo8RwlFFQvg__w4sCyWT-a3Myfhn4mGAqGk-dOpHr4vCe7m9TKyQ02ms__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.js"></script>
+<script type="text/javascript">
+<!--//--><![CDATA[//><!--
+jQuery.extend(Drupal.settings, {"basePath":"\/","pathPrefix":"","setHasJsCookie":0,"ajaxPageState":{"theme":"fnet_bootstrap_subtheme","theme_token":"w0KX-OUfoyEusnOfMAiPthki-k59E5w0WBGulSV-5_M","css":{"modules\/system\/system.base.css":1,"sites\/all\/modules\/contrib\/date\/date_api\/date.css":1,"sites\/all\/modules\/contrib\/date\/date_popup\/themes\/datepicker.1.7.css":1,"modules\/field\/theme\/field.css":1,"sites\/all\/modules\/contrib\/logintoboggan\/logintoboggan.css":1,"modules\/node\/node.css":1,"sites\/all\/modules\/custom\/product_assets\/product_assets.css":1,"sites\/all\/modules\/custom\/product_distributor\/css\/admin_toolbar_top_position_fix.css":1,"sites\/all\/modules\/custom\/product_distributor\/css\/distributor_form.css":1,"sites\/all\/modules\/custom\/product_distributor\/css\/distributor_group_form.css":1,"sites\/all\/modules\/custom\/product_distributor\/css\/product_form.css":1,"sites\/all\/modules\/custom\/product_distributor\/css\/tabs.css":1,"sites\/all\/modules\/custom\/product_distributor\/css\/wheretobuy_page.css":1,"sites\/all\/modules\/custom\/product_distributor\/css\/wtb_countries_form.css":1,"sites\/all\/modules\/contrib\/views\/css\/views.css":1,"sites\/all\/modules\/contrib\/ckeditor\/css\/ckeditor.css":1,"sites\/all\/modules\/contrib\/ctools\/css\/ctools.css":1,"sites\/all\/modules\/custom\/digital_asset\/digital_asset.css":1,"sites\/all\/modules\/custom\/ems\/styles\/event.css":1,"sites\/all\/modules\/custom\/ems\/styles\/event_occurrence.css":1,"sites\/all\/libraries\/fancybox\/source\/jquery.fancybox.css":1,"sites\/all\/modules\/custom\/doc_links\/doc_links.css":1,"sites\/all\/modules\/contrib\/responsive_dropdown_menus\/theme\/responsive-dropdown-menus.css":1,"sites\/all\/themes\/fnet_bootstrap_subtheme\/css\/fnet_bootstrap_subtheme-admin.css":1,"sites\/all\/modules\/custom\/fnet_header_footer\/css\/fnet_header_footer.css":1,"sites\/all\/libraries\/fontawesome\/css\/font-awesome.css":1,"sites\/all\/themes\/fnet_bootstrap_subtheme\/css\/font-awesome.min.css":1,"sites\/all\/themes\/fnet_bootstrap_subtheme\/css\/style.css":1,"sites\/all\/themes\/fnet_bootstrap_subtheme\/css\/select2.min.css":1},"js":{"sites\/all\/modules\/contrib\/eloqua_tracking\/js\/tracking.js":1,"sites\/all\/themes\/bootstrap\/js\/bootstrap.js":1,"sites\/all\/modules\/contrib\/jquery_update\/replace\/jquery\/3.1\/jquery.min.js":1,"misc\/jquery-extend-3.4.0.js":1,"misc\/jquery-html-prefilter-3.5.0-backport.js":1,"misc\/jquery.once.js":1,"misc\/drupal.js":1,"misc\/form-single-submit.js":1,"sites\/all\/modules\/contrib\/fancybox\/fancybox.js":1,"sites\/all\/libraries\/fancybox\/source\/jquery.fancybox.pack.js":1,"sites\/all\/libraries\/fancybox\/lib\/jquery.mousewheel.pack.js":1,"sites\/all\/modules\/contrib\/responsive_dropdown_menus\/theme\/responsive-dropdown-menus.js":1,"https:\/\/cdn.optimizely.com\/js\/25147980274.js":1,"sites\/all\/themes\/fnet_bootstrap_subtheme\/js\/bootstrap.min.js":1,"sites\/all\/themes\/fnet_bootstrap_subtheme\/js\/jquery.validate.min.js":1,"sites\/all\/themes\/fnet_bootstrap_subtheme\/js\/select2.min.js":1,"sites\/all\/themes\/fnet_bootstrap_subtheme\/js\/main.js":1,"sites\/all\/themes\/fnet_bootstrap_subtheme\/js\/language_switcher.js":1}},"fancybox":{"selectors":[".fnet_fancybox"]},"urlIsAjaxTrusted":{"\/site-search":true},"better_exposed_filters":{"views":{"events":{"displays":{"event_occurrence_block":{"filters":[]}}},"event_map":{"displays":{"block":{"filters":[]}}},"blog_articles":{"displays":{"block_1":{"filters":[]},"block_2":{"filters":[]}}},"News":{"displays":{"block_1":{"filters":[]}}},"edoc_related_products":{"displays":{"block":{"filters":[]}}}}},"_elqQ":[["elqSetSiteId","1182545284"],["elqTrackPageView","https:\/\/www.flukenetworks.com\/content\/datasheet-intellitone-pro-toner-and-probe-series"]],"responsive_dropdown_menus":{"menu-group-33":"Asia-Pacific","devel":"Development","menu-group-34":"EMEA","features":"Features","menu-footer-links":"Footer Links","menu-footer-secondary-links":"Footer Secondary Links","menu-industrialautomation":"Industrial Automation","menu-group-35":"Latin America","linkwarelive":"LinkWare Live Main Menu","main-menu":"Main menu","management":"Management","navigation":"Navigation","menu-group-36":"North America","menu-other-companies":"Other Companies","extranet":"Sales Insider","menu-menu-social-media":"Social Media Footer Links","menu-social-media":"Social Media Footer Links","user-menu":"User menu"},"bootstrap":{"anchorsFix":"0","anchorsSmoothScrolling":"0","formHasError":1,"popoverEnabled":1,"popoverOptions":{"animation":1,"html":0,"placement":"right","selector":"","trigger":"click","triggerAutoclose":1,"title":"","content":"","delay":0,"container":"body"},"tooltipEnabled":1,"tooltipOptions":{"animation":1,"html":0,"placement":"auto left","selector":"","trigger":"hover focus","delay":0,"container":"body"}}});
+//--><!]]>
+</script>
+</head>
+<body class="html not-front not-logged-in no-sidebars page-node page-node- page-node-266033 node-type-edoc-new region-us language-en i18n-en-us">
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NKP4M62"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+  <div id="skip-link">
+    <a href="#main-content" class="element-invisible element-focusable">Skip to main content</a>
+  </div>
+    
+<script>
+  function OneLinkSwitch(sHostname) {
+    document.location.href = document.location.protocol + "//" + sHostname +
+      document.location.pathname + document.location.search;
+  }
+</script>
+
+
+  <section id="topHeading">
+    <div class="container ">
+      <div class="row">
+        <!-- LOGO -->
+                          <div class="col-md-4 col-sm-5 col-xs-6 leftTop">
+                        <a href="/" title="Home">
+              <img src="https://www.flukenetworks.com/sites/default/files/fnet_logo_0_0_0.png" alt="Home"
+                   class="img-responsive logo">
+            </a>
+          </div>
+                    <div class="col-md-8 col-sm-7 col-xs-6 rightTop hidden-xs">
+
+            <!-- Top Header Menu -->
+            <ul class="keyPoints "><li class=""><a class="titleHead searchTxt" data-placement="bottom"><button class="svg-button"><svg id="search-icon-svg" class="img-responsive icons" data-name="search-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+  <title>search-icon-white</title>
+  <path class="search-icon" d="M21.38121,18.97518H20.12589l-.41844-.41844a10.94488,10.94488,0,0,0-1.0461-15.48227A11.14471,11.14471,0,0,0,11.12943.35461h0A11.078,11.078,0,0,0,.25,11.234h0A10.93825,10.93825,0,0,0,11.12943,22.11348h0a9.78038,9.78038,0,0,0,7.11348-2.71986l.41844.41844V21.2766l8.578,8.36879L29.75,27.13475Zm-10.25178,0A7.681,7.681,0,0,1,3.59752,11.234h0a7.681,7.681,0,0,1,7.74113-7.53191h0a7.681,7.681,0,0,1,7.53192,7.74113A7.54917,7.54917,0,0,1,11.12943,18.97518Z"/>
+</svg>
+</button></a></li><li class=""><a class="titleHead countryChg" data-placement="bottom"><button class="svg-button"><svg id="globe-icon-svg" class="img-responsive icons" data-name="globe-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+  <title>world-icon-white</title>
+  <path class="globe-icon" d="M7.72887,25.38733a11.52323,11.52323,0,0,0-1.662,1.24647A16.23409,16.23409,0,0,0,10.22183,28.919a8.56914,8.56914,0,0,1-2.07746-2.70071c-.20775-.41549-.4155-.62324-.4155-.831ZM5.85916,3.3662a11.52362,11.52362,0,0,1,1.662,1.24648c.20774-.4155.41549-.62324.41549-.831A13.3373,13.3373,0,0,1,10.01408,1.081,16.23383,16.23383,0,0,0,5.85916,3.3662ZM8.76761,5.23592c.41549.20774.62324.20774.831.41549a17.67034,17.67034,0,0,0,4.57042.831V.25C12.2993.66549,10.63732,2.11972,9.39085,4.40493c-.20775.41549-.20775.62324-.62324.831ZM15.831,6.48239a16.18168,16.18168,0,0,0,4.36267-.831c.4155-.20775.62324-.20775.831-.41549,0-.20775-.20775-.4155-.41549-.831A8.16846,8.16846,0,0,0,15.831.25V6.48239Zm6.44014-1.86971a11.524,11.524,0,0,0,1.662-1.24648A16.23389,16.23389,0,0,0,19.77817,1.081a7.90522,7.90522,0,0,1,1.86972,2.7007c.20774.20775.62324.62324.62324.831Zm2.90845-.20775a13.97433,13.97433,0,0,1-2.28521,1.45423,26.86307,26.86307,0,0,1,1.662,8.30985H29.75a14.44309,14.44309,0,0,0-4.15493-9.55633.64339.64339,0,0,0-.41549-.20775ZM21.64789,6.48239c-.41549.20775-.62324.4155-1.03873.62324a13.96577,13.96577,0,0,1-4.98592.831V14.169h7.47887a22.97952,22.97952,0,0,0-1.45422-7.68662ZM14.169,7.93662A14.28018,14.28018,0,0,1,9.1831,6.89789a1.575,1.575,0,0,1-.831-.4155A22.01313,22.01313,0,0,0,6.89789,14.169h7.47887L14.169,7.93662ZM7.10563,5.85916A8.57876,8.57876,0,0,1,4.82042,4.40493a.64341.64341,0,0,0-.41549.20775A14.44309,14.44309,0,0,0,.25,14.169H5.44366a21.17146,21.17146,0,0,1,1.662-8.30985ZM4.82042,25.59507a13.97357,13.97357,0,0,1,2.28521-1.45422,26.8632,26.8632,0,0,1-1.662-8.30986H.25a14.44313,14.44313,0,0,0,4.15493,9.55634c.20775,0,.41549,0,.41549.20774Zm3.53169-2.28521c.20775-.20775.62324-.20775,1.03874-.41549a14.2802,14.2802,0,0,1,4.98591-1.03874V15.62324H6.89789a22.01309,22.01309,0,0,0,1.45422,7.68662ZM15.831,21.85563a21.32917,21.32917,0,0,1,4.98591,1.03874c.41549.20774.62324.20774.831.41549a22.01313,22.01313,0,0,0,1.45422-7.68662H15.62324l.20775,6.23239Zm7.06338,2.07747c.831.41549,1.45422,1.03873,2.28521,1.45422l.20775-.20774a13.52548,13.52548,0,0,0,4.15492-9.55634H24.34859a21.16351,21.16351,0,0,1-1.45422,8.30986Zm1.24648,2.7007a11.5232,11.5232,0,0,1-1.662-1.24648c-.20774.4155-.41549.62324-.41549.831a30.38981,30.38981,0,0,1-1.86972,2.7007,38.58819,38.58819,0,0,0,3.94719-2.28521Zm-3.1162-1.86971c-.41549-.20775-.62324-.20775-.831-.4155a16.30868,16.30868,0,0,0-4.57042-1.03873v6.02465c1.86972-.4155,3.53169-1.86972,4.98592-4.15493.20774,0,.20774-.20775.41549-.41549ZM14.169,23.30986a18.14553,18.14553,0,0,0-4.57042,1.03873c-.41549.20775-.62324.20775-.831.4155.20774.41549.41549.62324.41549.831A7.9463,7.9463,0,0,0,14.169,29.75V23.30986Z"/>
+</svg>
+</button></a></li><li class="OneLinkHide_zh"><a class="titleHead MyAccountChg" data-placement="bottom"><button class="svg-button"><svg id="sign-in-icon-svg" class="img-responsive icons" data-name="sign-in-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+  <title>account-icon-white</title>
+  <path class="sign-in-icon" d="M14.89613,15A7.40588,7.40588,0,0,0,22.375,7.72887,7.72458,7.72458,0,0,0,14.89613.25,7.5441,7.5441,0,0,0,7.41725,7.52113h0A7.44778,7.44778,0,0,0,14.89613,15Zm0,3.73944c-4.98592,0-14.54226,2.28521-14.54226,7.27112V29.75H29.64613V26.01056C29.43838,21.02465,19.67429,18.73944,14.89613,18.73944Z"/>
+</svg>
+</button></a>
+
+            <div class="fluke-account" id="fluke-account-mobile-switcher" style="display: none;">
+              <div id="fluke-account-mobile">
+                <ul>
+                  <!-- en -->
+                  <li class="OneLinkHide"><a href="https://www.fluke.com/en/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkHide"><a href="https://www.fluke.com/en/my-account" target="_blank">Sign in </a></li>
+                  <!-- fr -->
+                  <li class="OneLinkTxShow_fr"><a href="https://www.fluke.com/fr/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkTxShow_fr"><a href="https://www.fluke.com/fr/my-account" target="_blank">Sign in </a></li>
+                  <!-- de -->
+                  <li class="OneLinkTxShow_de"><a href="https://www.fluke.com/de-de/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkTxShow_de"><a href="https://www.fluke.com/de-de/my-account" target="_blank">Sign in </a></li>
+                  <!-- es -->
+                  <li class="OneLinkTxShow_es"><a href="https://www.fluke.com/es-es/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkTxShow_es"><a href="https://www.fluke.com/es-es/my-account" target="_blank">Sign in </a></li>
+                  <!-- ja -->
+                  <li class="OneLinkTxShow_ja"><a href="https://www.fluke.com/ja-jp/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkTxShow_ja"><a href="https://www.fluke.com/ja-jp/my-account" target="_blank">Sign in </a></li>
+                  <!-- pt -->
+                  <li class="OneLinkTxShow_pt"><a href="https://www.fluke.com/pt-pt/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkTxShow_pt"><a href="https://www.fluke.com/pt-pt/my-account" target="_blank">Sign in </a></li>
+                  <!-- ko-kr -->
+                  <li class="OneLinkTxShow_ko"><a href="https://www.fluke.com/ko-kr/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkTxShow_ko"><a href="https://www.fluke.com/ko-kr/my-account" target="_blank">Sign in </a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="fluke-account" id="fluke-account-desktop" style="display: none;">
+              <ul>
+                <!-- en -->
+                <li class="OneLinkHide"><a href="https://www.fluke.com/en/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkHide"><a href="https://www.fluke.com/en/my-account" target="_blank">Sign in </a></li>
+                <!-- fr -->
+                <li class="OneLinkTxShow_fr"><a href="https://www.fluke.com/fr/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkTxShow_fr"><a href="https://www.fluke.com/fr/my-account" target="_blank">Sign in </a></li>
+                <!-- de -->
+                <li class="OneLinkTxShow_de"><a href="https://www.fluke.com/de-de/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkTxShow_de"><a href="https://www.fluke.com/de-de/my-account" target="_blank">Sign in </a></li>
+                <!-- es -->
+                <li class="OneLinkTxShow_es"><a href="https://www.fluke.com/es-es/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkTxShow_es"><a href="https://www.fluke.com/es-es/my-account" target="_blank">Sign in </a></li>
+                <!-- ja -->
+                <li class="OneLinkTxShow_ja"><a href="https://www.fluke.com/ja-jp/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkTxShow_ja"><a href="https://www.fluke.com/ja-jp/my-account" target="_blank">Sign in </a></li>
+                <!-- pt -->
+                <li class="OneLinkTxShow_pt"><a href="https://www.fluke.com/pt-pt/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkTxShow_pt"><a href="https://www.fluke.com/pt-pt/my-account" target="_blank">Sign in </a></li>
+                <!-- ko-kr -->
+                <li class="OneLinkTxShow_ko"><a href="https://www.fluke.com/ko-kr/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkTxShow_ko"><a href="https://www.fluke.com/ko-kr/my-account" target="_blank">Sign in </a></li>
+              </ul>
+            </div>
+          </li><li class="OneLinkTxShow_zh "><a class="titleHead MyAccountChg" href ="/content/my-account" data-link ="/user/login" data-placement="bottom"><button class="svg-button"><svg id="sign-in-icon-svg" class="img-responsive icons" data-name="sign-in-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+  <title>account-icon-white</title>
+  <path class="sign-in-icon" d="M14.89613,15A7.40588,7.40588,0,0,0,22.375,7.72887,7.72458,7.72458,0,0,0,14.89613.25,7.5441,7.5441,0,0,0,7.41725,7.52113h0A7.44778,7.44778,0,0,0,14.89613,15Zm0,3.73944c-4.98592,0-14.54226,2.28521-14.54226,7.27112V29.75H29.64613V26.01056C29.43838,21.02465,19.67429,18.73944,14.89613,18.73944Z"/>
+</svg>
+</button></a></li><li id="quote_cta" class=""><a class="quote_cta" href="/request/get-quote" data-placement="bottom">Get Quote</a></li></ul>                        <div class="other-company-list">
+              <div class="menu-block-wrapper menu-block-1 menu-name-menu-other-companies parent-mlid-0 menu-level-1">
+  <ul class="menu nav"><li class="first last expanded menu-mlid-26345 dropdown"><a href="/" class="arrow_append_cls disabled-link dropdown-toggle" data-toggle="dropdown">Other Fluke companies <span class="caret"></span></a><ul class="dropdown-menu"><li class="first collapsed menu-mlid-26346"><a href="/" id="other-companies" class="subMenuTitle">OTHER FLUKE COMPANIES</a></li>
+<li class="leaf menu-mlid-26347"><a href="https://www.fluke.com/en-us" target="_blank">Fluke</a></li>
+<li class="leaf menu-mlid-26348"><a href="https://flukecal.com/" target="_blank">Fluke Calibration</a></li>
+<li class="leaf menu-mlid-26349"><a href="https://www.flukebiomedical.com" target="_blank">Fluke Biomedical</a></li>
+<li class="leaf menu-mlid-26350"><a href="https://www.flukeprocessinstruments.com/en-us" target="_blank">Fluke Process Instruments</a></li>
+<li class="leaf menu-mlid-26351"><a href="https://www.accelix.com/" target="_blank">Accelix</a></li>
+<li class="leaf menu-mlid-26352"><a href="http://www.amprobe.com/" target="_blank">Amprobe</a></li>
+<li class="leaf menu-mlid-26353"><a href="https://www.beha-amprobe.com/" target="_blank">Beha-Amprobe</a></li>
+<li class="leaf menu-mlid-26354"><a href="https://www.comarkinstruments.net/" target="_blank">Comark</a></li>
+<li class="leaf menu-mlid-26355"><a href="https://www.landauer.com" target="_blank">Landauer</a></li>
+<li class="leaf menu-mlid-26356"><a href="https://www.pruftechnik.com/" target="_blank">Pruftechnik</a></li>
+<li class="last leaf menu-mlid-26357"><a href="https://www.raysafe.com/" target="_blank">RaySafe</a></li>
+</ul></li>
+</ul></div>
+            </div>
+                        <div class="row OneLinkKeepLinks country-selector-wrapper" id="desktop-switcher" style="display: none;">
+              <div class="switcher-heading">
+                <h4>CHANGE COUNTRY / LANGUAGE</h4>
+                <i class="fa fa-times-thin fa-2x" aria-hidden="true" id="lang-switcher-close"></i>
+              </div>
+              <div class="col-xs-3 paddingZero"> <!-- required for floating -->
+                <!-- Nav tabs -->
+                <ul>
+                  <li class="fnet-regions reg-americas region-active">
+                    <a href="#">Americas<i class="fa fa-angle-right icon6" aria-hidden="true"></i></a>
+                    <ul class="fnet-lang-menu">
+                      <li>
+                        <div class="country-name col-md-4"> United States </div>
+                        <div class="languages-list col-md-8">
+                          <a id="en-us" onclick="setcnlangcookie(this);" data-region="us" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">English</a>
+                        </div>
+                      </li>
+                      <li>
+                        <div class="country-name col-md-4"> Canada </div>
+                        <div class="languages-list col-md-8">
+                          <a id="en-ca" onclick="setcnlangcookie(this);" data-region="ca" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">English </a>
+                          <a id="fr-ca" onclick="setcnlangcookie(this);" data-region="ca" data-lang="fr" href="javascript:OneLinkSwitch('fr.flukenetworks.com')"> French</a>
+                        </div>
+                      </li>
+                      <li>
+                        <div class="country-name col-md-4"> Latin America </div>
+                        <div class="languages-list col-md-8">
+                          <a id="en-ln" onclick="setcnlangcookie(this);" data-region="ln" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')"> English </a>
+                          <a id="es-ln" onclick="setcnlangcookie(this);" data-region="ln" data-lang="es" href="javascript:OneLinkSwitch('es.flukenetworks.com')"> Spanish </a>
+                          <a id="pt-br" onclick="setcnlangcookie(this);" data-region="br" data-lang="pt" href="javascript:OneLinkSwitch('pt.flukenetworks.com')"> Portuguese</a>
+                        </div>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="fnet-regions reg-europe">
+                    <a href="#">Europe<i class="fa fa-angle-right icon6" aria-hidden="true"></i></a>
+                    <ul class="fnet-lang-menu">
+                      <li><a id="en-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">English</li>
+                      <li><a id="fr-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="fr" href="javascript:OneLinkSwitch('fr.flukenetworks.com')">French</a></li>
+                      <li><a id="de-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="de" href="javascript:OneLinkSwitch('de.flukenetworks.com')">German</a></li>
+                      <li><a id="es-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="es" href="javascript:OneLinkSwitch('es.flukenetworks.com')">Spanish</a></li>
+                      <li><a id="pt-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="pt" href="javascript:OneLinkSwitch('pt.flukenetworks.com')">Portuguese</a></li>
+                    </ul>
+                  </li>
+                  <li class="fnet-regions reg-apac">
+                    <a href="#">Asia-Pacific<i class="fa fa-angle-right icon6" aria-hidden="true"></i></a>
+                    <ul class="fnet-lang-menu">
+                      <li><a id="en-su" onclick="setcnlangcookie(this);" data-region="su" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">SE Asia</a></li>
+                      <li><a id="en-au" onclick="setcnlangcookie(this);" data-region="au" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">Oceania</a></li>
+                      <li><a id="en-in" onclick="setcnlangcookie(this);" data-region="in" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">India</a></li>
+                      <li><a id="cn-zh" onclick="setcnlangcookie(this);" data-region="cn" data-lang="cn" href="javascript:OneLinkSwitch('www.flukenetworks.com.cn')">China</a></li>
+                      <li><a id="ko-kr" onclick="setcnlangcookie(this);" data-region="ko" data-lang="ko" href="javascript:OneLinkSwitch('ko.flukenetworks.com')">Korea</a></li>
+                      <li><a id="jp-ja" onclick="setcnlangcookie(this);" data-region="jp" data-lang="jp" href="javascript:OneLinkSwitch('jp.flukenetworks.com')">Japan</a></li>
+                    </ul>
+                  </li>
+                  <li class="fnet-regions reg-mea">
+                    <a href="#">Middle East & Africa<i class="fa fa-angle-right icon6" aria-hidden="true"></i></a>
+                    <ul class="fnet-lang-menu">
+                      <li><a id="en-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">English</li>
+                      <li><a id="fr-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="fr" href="javascript:OneLinkSwitch('fr.flukenetworks.com')">French</a></li>
+                    </ul>
+                  </li>
+                  <li class="fnet-regions reg-ru">
+                    <a href="#">Russia<i class="fa fa-angle-right icon6" aria-hidden="true"></i></a>
+                    <ul class="fnet-lang-menu">
+                      <li><a id="ru-ru" onclick="setcnlangcookie(this);" data-region="ru" data-lang="ru" href="javascript:OneLinkSwitch('ru.flukenetworks.com')">Russia</a></li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="container-fluid fullBorder">
+      </div>
+      <div class="container">
+        <div class="row">
+          <nav role="navigation" class="navbar navbar-default mainmenu">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                              <button type="button" id="ChangeToggle" class="navbar-toggle collapsed"
+                        data-toggle="slide-collapse" data-target="#slide-navbar-collapse"
+                        aria-expanded="false">
+                  <div id="navbar-hamburger">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                  </div>
+                  <div id="navbar-close" class="hidden">
+                    <i class="fa fa-times" aria-hidden="true"></i>
+                  </div>
+                </button>
+                          </div>
+            <!-- Collection of nav links and other content for toggling -->
+                          <div id="slide-navbar-collapse" class="navbar-collapse">
+                <ul class="keyPoints headerTwo">
+                                    <li class=""><a class="titleHead searchTxt" data-placement="bottom"><button class="svg-button"><svg id="search-icon-svg" class="img-responsive icons" data-name="search-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+  <title>search-icon-white</title>
+  <path class="search-icon" d="M21.38121,18.97518H20.12589l-.41844-.41844a10.94488,10.94488,0,0,0-1.0461-15.48227A11.14471,11.14471,0,0,0,11.12943.35461h0A11.078,11.078,0,0,0,.25,11.234h0A10.93825,10.93825,0,0,0,11.12943,22.11348h0a9.78038,9.78038,0,0,0,7.11348-2.71986l.41844.41844V21.2766l8.578,8.36879L29.75,27.13475Zm-10.25178,0A7.681,7.681,0,0,1,3.59752,11.234h0a7.681,7.681,0,0,1,7.74113-7.53191h0a7.681,7.681,0,0,1,7.53192,7.74113A7.54917,7.54917,0,0,1,11.12943,18.97518Z"/>
+</svg>
+</button></a></li><li class=""><a class="titleHead countryChg" data-placement="bottom"><button class="svg-button"><svg id="globe-icon-svg" class="img-responsive icons" data-name="globe-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+  <title>world-icon-white</title>
+  <path class="globe-icon" d="M7.72887,25.38733a11.52323,11.52323,0,0,0-1.662,1.24647A16.23409,16.23409,0,0,0,10.22183,28.919a8.56914,8.56914,0,0,1-2.07746-2.70071c-.20775-.41549-.4155-.62324-.4155-.831ZM5.85916,3.3662a11.52362,11.52362,0,0,1,1.662,1.24648c.20774-.4155.41549-.62324.41549-.831A13.3373,13.3373,0,0,1,10.01408,1.081,16.23383,16.23383,0,0,0,5.85916,3.3662ZM8.76761,5.23592c.41549.20774.62324.20774.831.41549a17.67034,17.67034,0,0,0,4.57042.831V.25C12.2993.66549,10.63732,2.11972,9.39085,4.40493c-.20775.41549-.20775.62324-.62324.831ZM15.831,6.48239a16.18168,16.18168,0,0,0,4.36267-.831c.4155-.20775.62324-.20775.831-.41549,0-.20775-.20775-.4155-.41549-.831A8.16846,8.16846,0,0,0,15.831.25V6.48239Zm6.44014-1.86971a11.524,11.524,0,0,0,1.662-1.24648A16.23389,16.23389,0,0,0,19.77817,1.081a7.90522,7.90522,0,0,1,1.86972,2.7007c.20774.20775.62324.62324.62324.831Zm2.90845-.20775a13.97433,13.97433,0,0,1-2.28521,1.45423,26.86307,26.86307,0,0,1,1.662,8.30985H29.75a14.44309,14.44309,0,0,0-4.15493-9.55633.64339.64339,0,0,0-.41549-.20775ZM21.64789,6.48239c-.41549.20775-.62324.4155-1.03873.62324a13.96577,13.96577,0,0,1-4.98592.831V14.169h7.47887a22.97952,22.97952,0,0,0-1.45422-7.68662ZM14.169,7.93662A14.28018,14.28018,0,0,1,9.1831,6.89789a1.575,1.575,0,0,1-.831-.4155A22.01313,22.01313,0,0,0,6.89789,14.169h7.47887L14.169,7.93662ZM7.10563,5.85916A8.57876,8.57876,0,0,1,4.82042,4.40493a.64341.64341,0,0,0-.41549.20775A14.44309,14.44309,0,0,0,.25,14.169H5.44366a21.17146,21.17146,0,0,1,1.662-8.30985ZM4.82042,25.59507a13.97357,13.97357,0,0,1,2.28521-1.45422,26.8632,26.8632,0,0,1-1.662-8.30986H.25a14.44313,14.44313,0,0,0,4.15493,9.55634c.20775,0,.41549,0,.41549.20774Zm3.53169-2.28521c.20775-.20775.62324-.20775,1.03874-.41549a14.2802,14.2802,0,0,1,4.98591-1.03874V15.62324H6.89789a22.01309,22.01309,0,0,0,1.45422,7.68662ZM15.831,21.85563a21.32917,21.32917,0,0,1,4.98591,1.03874c.41549.20774.62324.20774.831.41549a22.01313,22.01313,0,0,0,1.45422-7.68662H15.62324l.20775,6.23239Zm7.06338,2.07747c.831.41549,1.45422,1.03873,2.28521,1.45422l.20775-.20774a13.52548,13.52548,0,0,0,4.15492-9.55634H24.34859a21.16351,21.16351,0,0,1-1.45422,8.30986Zm1.24648,2.7007a11.5232,11.5232,0,0,1-1.662-1.24648c-.20774.4155-.41549.62324-.41549.831a30.38981,30.38981,0,0,1-1.86972,2.7007,38.58819,38.58819,0,0,0,3.94719-2.28521Zm-3.1162-1.86971c-.41549-.20775-.62324-.20775-.831-.4155a16.30868,16.30868,0,0,0-4.57042-1.03873v6.02465c1.86972-.4155,3.53169-1.86972,4.98592-4.15493.20774,0,.20774-.20775.41549-.41549ZM14.169,23.30986a18.14553,18.14553,0,0,0-4.57042,1.03873c-.41549.20775-.62324.20775-.831.4155.20774.41549.41549.62324.41549.831A7.9463,7.9463,0,0,0,14.169,29.75V23.30986Z"/>
+</svg>
+</button></a></li><li class="OneLinkHide_zh"><a class="titleHead MyAccountChg" data-placement="bottom"><button class="svg-button"><svg id="sign-in-icon-svg" class="img-responsive icons" data-name="sign-in-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+  <title>account-icon-white</title>
+  <path class="sign-in-icon" d="M14.89613,15A7.40588,7.40588,0,0,0,22.375,7.72887,7.72458,7.72458,0,0,0,14.89613.25,7.5441,7.5441,0,0,0,7.41725,7.52113h0A7.44778,7.44778,0,0,0,14.89613,15Zm0,3.73944c-4.98592,0-14.54226,2.28521-14.54226,7.27112V29.75H29.64613V26.01056C29.43838,21.02465,19.67429,18.73944,14.89613,18.73944Z"/>
+</svg>
+</button></a>
+
+            <div class="fluke-account" id="fluke-account-mobile-switcher" style="display: none;">
+              <div id="fluke-account-mobile">
+                <ul>
+                  <!-- en -->
+                  <li class="OneLinkHide"><a href="https://www.fluke.com/en/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkHide"><a href="https://www.fluke.com/en/my-account" target="_blank">Sign in </a></li>
+                  <!-- fr -->
+                  <li class="OneLinkTxShow_fr"><a href="https://www.fluke.com/fr/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkTxShow_fr"><a href="https://www.fluke.com/fr/my-account" target="_blank">Sign in </a></li>
+                  <!-- de -->
+                  <li class="OneLinkTxShow_de"><a href="https://www.fluke.com/de-de/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkTxShow_de"><a href="https://www.fluke.com/de-de/my-account" target="_blank">Sign in </a></li>
+                  <!-- es -->
+                  <li class="OneLinkTxShow_es"><a href="https://www.fluke.com/es-es/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkTxShow_es"><a href="https://www.fluke.com/es-es/my-account" target="_blank">Sign in </a></li>
+                  <!-- ja -->
+                  <li class="OneLinkTxShow_ja"><a href="https://www.fluke.com/ja-jp/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkTxShow_ja"><a href="https://www.fluke.com/ja-jp/my-account" target="_blank">Sign in </a></li>
+                  <!-- pt -->
+                  <li class="OneLinkTxShow_pt"><a href="https://www.fluke.com/pt-pt/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkTxShow_pt"><a href="https://www.fluke.com/pt-pt/my-account" target="_blank">Sign in </a></li>
+                  <!-- ko-kr -->
+                  <li class="OneLinkTxShow_ko"><a href="https://www.fluke.com/ko-kr/my-account" target="_blank">Register </a></li>
+                  <li class="OneLinkTxShow_ko"><a href="https://www.fluke.com/ko-kr/my-account" target="_blank">Sign in </a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="fluke-account" id="fluke-account-desktop" style="display: none;">
+              <ul>
+                <!-- en -->
+                <li class="OneLinkHide"><a href="https://www.fluke.com/en/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkHide"><a href="https://www.fluke.com/en/my-account" target="_blank">Sign in </a></li>
+                <!-- fr -->
+                <li class="OneLinkTxShow_fr"><a href="https://www.fluke.com/fr/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkTxShow_fr"><a href="https://www.fluke.com/fr/my-account" target="_blank">Sign in </a></li>
+                <!-- de -->
+                <li class="OneLinkTxShow_de"><a href="https://www.fluke.com/de-de/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkTxShow_de"><a href="https://www.fluke.com/de-de/my-account" target="_blank">Sign in </a></li>
+                <!-- es -->
+                <li class="OneLinkTxShow_es"><a href="https://www.fluke.com/es-es/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkTxShow_es"><a href="https://www.fluke.com/es-es/my-account" target="_blank">Sign in </a></li>
+                <!-- ja -->
+                <li class="OneLinkTxShow_ja"><a href="https://www.fluke.com/ja-jp/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkTxShow_ja"><a href="https://www.fluke.com/ja-jp/my-account" target="_blank">Sign in </a></li>
+                <!-- pt -->
+                <li class="OneLinkTxShow_pt"><a href="https://www.fluke.com/pt-pt/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkTxShow_pt"><a href="https://www.fluke.com/pt-pt/my-account" target="_blank">Sign in </a></li>
+                <!-- ko-kr -->
+                <li class="OneLinkTxShow_ko"><a href="https://www.fluke.com/ko-kr/my-account" target="_blank">Register </a></li>
+                <li class="OneLinkTxShow_ko"><a href="https://www.fluke.com/ko-kr/my-account" target="_blank">Sign in </a></li>
+              </ul>
+            </div>
+          </li><li class="OneLinkTxShow_zh "><a class="titleHead MyAccountChg" href ="/content/my-account" data-link ="/user/login" data-placement="bottom"><button class="svg-button"><svg id="sign-in-icon-svg" class="img-responsive icons" data-name="sign-in-icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+  <title>account-icon-white</title>
+  <path class="sign-in-icon" d="M14.89613,15A7.40588,7.40588,0,0,0,22.375,7.72887,7.72458,7.72458,0,0,0,14.89613.25,7.5441,7.5441,0,0,0,7.41725,7.52113h0A7.44778,7.44778,0,0,0,14.89613,15Zm0,3.73944c-4.98592,0-14.54226,2.28521-14.54226,7.27112V29.75H29.64613V26.01056C29.43838,21.02465,19.67429,18.73944,14.89613,18.73944Z"/>
+</svg>
+</button></a></li><li id="quote_cta" class=""><a class="quote_cta" href="/request/get-quote" data-placement="bottom">Get Quote</a></li>                </ul>
+                <div id="mobile-switcher">
+                  <div class="row OneLinkKeepLinks country-selector-wrapper" style="display: none;">
+                    <div class="switcher-heading">
+                      <h4>CHANGE COUNTRY / LANGUAGE</h4>
+                    </div>
+                    <div class="paddingZero"> <!-- required for floating -->
+                      <!-- Nav tabs -->
+                      <ul>
+                        <li class="fnet-regions reg-americas region-active">
+                          <a href="#">Americas<i class="fa fa-angle-up" aria-hidden="true"></i></a>
+                          <ul class="fnet-lang-menu">
+                            <li>
+                              <div class="country-name col-md-4"> United States </div>
+                              <div class="languages-list col-md-8">
+                                <a id="en-us" onclick="setcnlangcookie(this);" data-region="us" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">English</a>
+                              </div>
+                            </li>
+                            <li>
+                              <div class="country-name col-md-4"> Canada </div>
+                              <div class="languages-list col-md-8">
+                                <a id="en-ca" onclick="setcnlangcookie(this);" data-region="ca" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">English </a>
+                                <a id="fr-ca" onclick="setcnlangcookie(this);" data-region="ca" data-lang="fr" href="javascript:OneLinkSwitch('fr.flukenetworks.com')"> French</a>
+                              </div>
+                            </li>
+                            <li id="latin-america">
+                              <div class="country-name col-md-4"> Latin America </div>
+                              <div class="languages-list col-md-8">
+                                <a id="en-ln" onclick="setcnlangcookie(this);" data-region="ln" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')"> English </a>
+                                <a id="es-ln" onclick="setcnlangcookie(this);" data-region="es" data-lang="es" href="javascript:OneLinkSwitch('es.flukenetworks.com')"> Spanish </a>
+                                <a id="pt-br" onclick="setcnlangcookie(this);" data-region="br" data-lang="pt" href="javascript:OneLinkSwitch('pt.flukenetworks.com')"> Portuguese</a>
+                              </div>
+                            </li>
+                          </ul>
+                        </li>
+                        <li class="fnet-regions reg-europe">
+                          <a href="#">Europe<i class="fa fa-angle-down" aria-hidden="true"></i></a>
+                          <ul class="fnet-lang-menu">
+                            <li><a id="en-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">English</a></li>
+                            <li><a id="fr-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="fr" href="javascript:OneLinkSwitch('fr.flukenetworks.com')">French</a></li>
+                            <li><a id="de-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="de" href="javascript:OneLinkSwitch('de.flukenetworks.com')">German</a></li>
+                            <li><a id="es-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="es" href="javascript:OneLinkSwitch('es.flukenetworks.com')">Spanish</a></li>
+                            <li><a id="pt-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="pt" href="javascript:OneLinkSwitch('pt.flukenetworks.com')">Portuguese</a></li>
+                          </ul>
+                        </li>
+                        <li class="fnet-regions reg-apac">
+                          <a href="#">Asia-Pacific<i class="fa fa-angle-down" aria-hidden="true"></i></a>
+                          <ul class="fnet-lang-menu">
+                            <li><a id="en-su" onclick="setcnlangcookie(this);" data-region="su" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">SE Asia</a></li>
+                            <li><a id="en-au" onclick="setcnlangcookie(this);" data-region="au" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">Oceania</a></li>
+                            <li><a id="en-in" onclick="setcnlangcookie(this);" data-region="in" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">India</a></li>
+                            <li><a id="cn-zh" onclick="setcnlangcookie(this);" data-region="cn" data-lang="cn" href="javascript:OneLinkSwitch('www.flukenetworks.com.cn')">China</a></li>
+                            <li><a id="ko-kr" onclick="setcnlangcookie(this);" data-region="ko" data-lang="ko" href="javascript:OneLinkSwitch('ko.flukenetworks.com')">Korea</a></li>
+                            <li><a id="jp-ja" onclick="setcnlangcookie(this);" data-region="jp" data-lang="jp" href="javascript:OneLinkSwitch('jp.flukenetworks.com')">Japan</a></li>
+                          </ul>
+                        </li>
+                        <li class="fnet-regions reg-mea">
+                          <a href="#">Middle East & Africa<i class="fa fa-angle-down" aria-hidden="true"></i></a>
+                          <ul class="fnet-lang-menu">
+                            <li><a id="en-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="en" href="javascript:OneLinkSwitch('www.flukenetworks.com')">English</li>
+                            <li><a id="fr-eu" onclick="setcnlangcookie(this);" data-region="eu" data-lang="fr" href="javascript:OneLinkSwitch('fr.flukenetworks.com')">French</a></li>
+                          </ul>
+                        </li>
+                        <li class="fnet-regions reg-ru">
+                          <a href="#">Russia<i class="fa fa-angle-down" aria-hidden="true"></i></a>
+                          <ul class="fnet-lang-menu">
+                            <li><a id="ru-ru" onclick="setcnlangcookie(this);" data-region="ru" data-lang="ru" href="javascript:OneLinkSwitch('ru.flukenetworks.com')">Russia</a></li>
+                          </ul>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <ul class="backTxt visible-sm visible-xs">
+                  <li id="back" style="display: none;">
+                    <a href="#"><i class="fa fa-angle-left icon3" aria-hidden="true"></i><span>BACK <span></a>
+                  </li>
+                </ul>
+                                  <ul id="fresponsive headerMenuCust11" class="nav navbar-nav dropdown"><li id="back" style=""><a href="#"><i class="fa fa-angle-left icon3" aria-hidden="true"></i><span>BACK</span></a></li><li class="first expanded flukeMenu content dropdown-submenu" id="one"><a href="/products" id="menu_first_link_cust" class="topMenu arrow_append_cls dropdown-toggle" data-toggle="dropdown">Products</a><div class="row dropdown-menu content1 product"><ul class="subMenuContent"><li class="first expanded dropdown-submenu col-md-3 col-xs-12 padMarg"><a href="/cabling-certification" class="vldproducts dropdown-toggle">VLD Products</a><ul class="dropDownMenuCont productData"><li class="first leaf subMenu dropdown"><a href="/products/cabling-certification/cabling-certification-versiv" class="subMenuTitle dropdown">VERSIV</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/industrialethernet" class="subMenuTitle dropdown">INDUSTRIAL ETHERNET</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="last leaf subMenu dropdown"><a href="/linkwarelive" class="subMenuTitle dropdown">LINKWARE LIVE</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+</ul></li>
+<li class="expanded mobileCustPad dropdown-submenu col-md-3 col-xs-12 padMarg"><a href="/cabling-certification" class="title productHead custProductOverd dropdown-toggle">Cabling Certification</a><ul class="dropDownMenuCont productData"><li class="first leaf subMenu dropdown"><a href="/products/cabling-certification/cabling-certification-versiv" class="subMenuTitle dropdown">Versiv Cabling Certification</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/products/cabling-certification/copper-certification" class="subMenuTitle dropdown">Copper Certification</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="last leaf subMenu dropdown"><a href="/products/cabling-certification/fiber-certification" class="subMenuTitle dropdown">Fiber Certification</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+</ul></li>
+<li class="expanded mobileCustPad dropdown-submenu col-md-3 col-xs-12 padMarg"><a href="/installation-and-test" class="title productHead custProductOverd dropdown-toggle">Installation and Test</a><ul class="dropDownMenuCont productData"><li class="first leaf subMenu dropdown"><a href="/products/installation-and-test/cable-and-network-testing" class="subMenuTitle dropdown">Cable and Network Testing</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/products/installation-and-test/fiber-inspection-and-cleaning" class="subMenuTitle dropdown">Fiber Inspection and Cleaning</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/products/installation-and-test/fiber-optic-power-meters-and-fault-locators" class="subMenuTitle dropdown">Fiber Optic Power Meters and Fault Locators</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/products/installation-and-test/copper-cable-testers-and-tone-generators" class="subMenuTitle dropdown">Network Cable Testers</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="last leaf subMenu dropdown"><a href="/products/installation-and-test/punch-down-and-termination-tools" class="subMenuTitle dropdown">Punch Down Tools and Termination Tools</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+</ul></li>
+<li class="last expanded mobileCustPad dropdown-submenu col-md-3 col-xs-12 padMarg"><a href="/telecom-test" class="title productHead custProductOverd dropdown-toggle">Telecom Test</a><ul class="dropDownMenuCont productData"><li class="first leaf subMenu dropdown"><a href="/products/telecom-test/telephone-line-test-sets" class="subMenuTitle dropdown">Telephone Line Test Sets</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/products/telecom-test/fault-locators-and-tone-generators" class="subMenuTitle dropdown">Fault Locators and Tone Generators</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="last leaf subMenu dropdown"><a href="/products/telecom-test/termination-tools" class="subMenuTitle dropdown">Termination Tools</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+</ul></li>
+</ul> <div class="row allTxt"><div class="col-md-12 productAll"><div class="viewAll"><p>Can’t find it?</p><ul><li><a href="/products">View all Products &gt;</a></li></ul></div></div></div> </div></li>
+<li class="expanded flukeMenu content dropdown-submenu" id="two"><a href="/content/were-here-help" id="menu_cust_frfx_cls" class="topMenu arrow_append_cls dropdown-toggle" data-toggle="dropdown">Support</a><div class="row dropdown-menu content1 frfxWdth"><ul class="subMenuContent"><li class="first leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/gold-product-support" class="subMenuTitle dropdown-toggle">Fluke Premium Care – Gold</a><ul class="dropDownMenuCont productData"></ul></li>
+<li class="leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/support/downloads" class="subMenuTitle dropdown-toggle">Downloads & Updates</a><ul class="dropDownMenuCont productData"></ul></li>
+<li class="leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/knowledge-base" class="subMenuTitle dropdown-toggle">Knowledge Base</a><ul class="dropDownMenuCont productData"></ul></li>
+<li class="leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/support/manuals" class="subMenuTitle dropdown-toggle">Manuals</a><ul class="dropDownMenuCont productData"></ul></li>
+<li class="leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/expertise/whitepapers" class="subMenuTitle dropdown-toggle">Whitepapers</a><ul class="dropDownMenuCont productData"></ul></li>
+<li class="leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/support/application-notes" class="subMenuTitle dropdown-toggle">Application Notes</a><ul class="dropDownMenuCont productData"></ul></li>
+<li class="leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/contact" class="subMenuTitle dropdown-toggle">Contact Us</a><ul class="dropDownMenuCont productData"></ul></li>
+<li class="last leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/content/register-your-product" class="subMenuTitle dropdown-toggle">Product registration</a><ul class="dropDownMenuCont productData"></ul></li>
+</ul></div></li>
+<li class="expanded flukeMenu content thirdlinkSln dropdown-submenu" id="three"><a href="/solutions" id="menu_third_link_cust" class="topMenu arrow_append_cls dropdown-toggle" data-toggle="dropdown">Solutions</a><div class="row dropdown-menu content1 solution"><ul class="subMenuContent"><li class="first expanded dropdown-submenu col-md-6 col-xs-12 padMarg" id="custMenuClsItmsln"><a href="/solutions/roles" class="title solnHead productHead dropdown-toggle">Roles</a><ul class="dropDownMenuCont productData"><li class="first leaf subMenu dropdown"><a href="/expertise/role/architects-consultants-and-designers" class="subMenuTitle dropdown">Architects, Consultants and Designers</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/expertise/role/guide-to-contract-installers-and-installation" class="subMenuTitle dropdown">Contractors and Installers</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/expertise/role/industrial-automation-controls-engineers-technicians-and-electricians" class="subMenuTitle dropdown">Controls System Engineers</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/expertise/role/network-engineers" class="subMenuTitle dropdown">Network Engineers</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="last leaf subMenu dropdown"><a href="/solutions/roles" class="subMenuTitle dropdown">See More ></a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+</ul></li>
+<li class="last expanded dropdown-submenu col-md-6 col-xs-12 padMarg" id="custMenuClsItmsln"><a href="/solutions/learn-about" class="title solnHead productHead dropdown-toggle">Fundamentals</a><ul class="dropDownMenuCont productData"><li class="first leaf subMenu dropdown"><a href="/expertise/learn-about/cable-installation" class="subMenuTitle dropdown">Cable Installation Tools</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/expertise/learn-about/cable-testing" class="subMenuTitle dropdown">Network Cable Testers</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/Expertise/Learn-About/Fiber-Testing" class="subMenuTitle dropdown">Fiber Optic Testers</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/expertise/learn-about/cabling-certification" class="subMenuTitle dropdown">Cabling Certification</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/expertise/learn-about/otdr" class="subMenuTitle dropdown">OTDR - Optical Time Domain Reflectometer</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/expertise/learn-about/category-8-cable-testing" class="subMenuTitle dropdown">Category 8 Cable Testing</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="leaf subMenu dropdown"><a href="/solutions/case-studies" class="subMenuTitle dropdown">Case Studies</a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+<li class="last leaf dropdown"><a href="/solutions/learn-about" class="subMenuTitle dropdown">See More ></a><div class="row dropdown-menu content1 product"><ul class="col-md-4 col-xs-12 col-sm-4"></ul></div></li>
+</ul></li>
+</ul></div></li>
+<li class="expanded flukeMenu content dropdown-submenu" id="four"><a href="/community" class="topMenu arrow_append_cls dropdown-toggle" data-toggle="dropdown">Community</a><div class="row dropdown-menu content1"><ul class="subMenuContent"><li class="first leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/news-list" class="subMenuTitle dropdown-toggle">News</a><ul class="dropDownMenuCont productData"></ul></li>
+<li class="leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/blog/cabling-chronicles" class="subMenuTitle dropdown-toggle">Blog</a><ul class="dropDownMenuCont productData"></ul></li>
+<li class="last leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/community" class="subMenuTitle dropdown-toggle">Social Media</a><ul class="dropDownMenuCont productData"></ul></li>
+</ul></div></li>
+<li class="expanded flukeMenu content dropdown-submenu" id="five"><a href="/news-events" id="menu_cust_frfx_cls" class="topMenu arrow_append_cls dropdown-toggle" data-toggle="dropdown">TRAINING & EVENTS</a><div class="row dropdown-menu content1 frfxWdth"><ul class="subMenuContent"><li class="first leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/content/certified-cabling-test-technician-training-program" class="subMenuTitle dropdown-toggle">Certified Cabling Technician Training</a><ul class="dropDownMenuCont productData"></ul></li>
+<li class="leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/knowledge-base?title=&amp;term_node_tid_depth=622" class="subMenuTitle dropdown-toggle">Online Training Videos</a><ul class="dropDownMenuCont productData"></ul></li>
+<li class="last leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/training-events/webinars" class="subMenuTitle dropdown-toggle">Webinars</a><ul class="dropDownMenuCont productData"></ul></li>
+</ul></div></li>
+<li class="last expanded flukeMenu content dropdown-submenu" id="six"><a href="/wheretobuy" class="topMenu arrow_append_cls dropdown-toggle" data-toggle="dropdown">Where To Buy</a><div class="row dropdown-menu content1"><ul class="subMenuContent"><li class="first leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/wheretobuy" class="subMenuTitle dropdown-toggle">Find a Reseller</a><ul class="dropDownMenuCont productData"></ul></li>
+<li class="last leaf subMenu dropdown-submenu" id="custMenuClsItm"><a href="/content/contact-sales-representative" class="subMenuTitle dropdown-toggle">Call Us</a><ul class="dropDownMenuCont productData"></ul></li>
+</ul></div></li>
+</ul>                                <div class="mobile-other-company-list">
+                  <div class="menu-block-wrapper menu-block-1 menu-name-menu-other-companies parent-mlid-0 menu-level-1">
+  <ul class="menu nav"><li class="first last expanded menu-mlid-26345 dropdown"><a href="/" class="arrow_append_cls disabled-link dropdown-toggle" data-toggle="dropdown">Other Fluke companies <span class="caret"></span></a><ul class="dropdown-menu"><li class="first collapsed menu-mlid-26346"><a href="/" id="other-companies" class="subMenuTitle">OTHER FLUKE COMPANIES</a></li>
+<li class="leaf menu-mlid-26347"><a href="https://www.fluke.com/en-us" target="_blank">Fluke</a></li>
+<li class="leaf menu-mlid-26348"><a href="https://flukecal.com/" target="_blank">Fluke Calibration</a></li>
+<li class="leaf menu-mlid-26349"><a href="https://www.flukebiomedical.com" target="_blank">Fluke Biomedical</a></li>
+<li class="leaf menu-mlid-26350"><a href="https://www.flukeprocessinstruments.com/en-us" target="_blank">Fluke Process Instruments</a></li>
+<li class="leaf menu-mlid-26351"><a href="https://www.accelix.com/" target="_blank">Accelix</a></li>
+<li class="leaf menu-mlid-26352"><a href="http://www.amprobe.com/" target="_blank">Amprobe</a></li>
+<li class="leaf menu-mlid-26353"><a href="https://www.beha-amprobe.com/" target="_blank">Beha-Amprobe</a></li>
+<li class="leaf menu-mlid-26354"><a href="https://www.comarkinstruments.net/" target="_blank">Comark</a></li>
+<li class="leaf menu-mlid-26355"><a href="https://www.landauer.com" target="_blank">Landauer</a></li>
+<li class="leaf menu-mlid-26356"><a href="https://www.pruftechnik.com/" target="_blank">Pruftechnik</a></li>
+<li class="last leaf menu-mlid-26357"><a href="https://www.raysafe.com/" target="_blank">RaySafe</a></li>
+</ul></li>
+</ul></div>
+                </div>
+              </div>
+                      </nav>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+<div id="search" style="display: none;">
+        <div class="region region-header">
+    <section id="block-views-exp-fnet-site-search-page" class="block block-views clearfix">
+
+      
+  <form action="/site-search" method="get" id="views-exposed-form-fnet-site-search-page" accept-charset="UTF-8"><div><div class="views-exposed-form">
+  <div class="views-exposed-widgets clearfix">
+          <div id="edit-term-wrapper" class="views-exposed-widget views-widget-filter-search_api_views_fulltext">
+                  <label for="edit-term">
+            Search          </label>
+                        <div class="views-widget">
+          <div class="form-item form-item-term form-type-textfield form-group"><input class="form-control form-text" type="text" id="edit-term" name="term" value="" size="30" maxlength="128" /></div>        </div>
+              </div>
+                    <div class="views-exposed-widget views-submit-button">
+      <button type="submit" id="edit-submit-fnet-site-search" name="" value="Search" class="btn btn-primary form-submit">Search</button>
+    </div>
+      </div>
+</div>
+</div></form>
+</section>
+  </div>
+  </div>
+
+<div id="myaccount" style="display: none;">
+  <h5 class="topTitle myAccountTitle">
+    <a href="/myaccount" rel="nofollow">MY ACCOUNT</a></h5>
+  <h5 class="topTitle myAccountTitle">
+    <a href="/user/logout" rel="nofollow">LOG OUT</a></h5>
+</div>
+
+<section class="main-content">
+                <div id="content">
+        <!-- Breadcrumbs moved here to resolve tabs overlapping issue FN-572 -->
+        <div id="bread" class="container "><div class="breadcrumb"><a href="/" class="breadcrumbs--item">Home<span class="arrowBread"> > </span></a><a href="/" class="breadcrumbs--item">Support<span class="arrowBread"> > </span></a><a href="/" class="breadcrumbs--item">eDoc New</a><a href="/" class="breadcrumbs--item"><span class="arrowBread"> > </span>Datasheet</a><span class="breadcrumbs--item hidden-xs breadcrumbs--item---active"><span class="arrowBread"> > </span>IntelliTone™ Pro 200 LAN Toner and Probe Series</span></div></div>          <div class="region region-content">
+    <section id="block-system-main" class="block block-system clearfix">
+
+      
+  ﻿<div class="container">
+    <div class="edocPage">
+        <div class="content_part">
+            <p class="contentName">DATASHEET</p>
+            <h1>IntelliTone™ Pro 200 LAN Toner and Probe Series</h1>
+            <div class="download_pdf">
+                <h4>Download PDF</h4>
+				<div class="edocPDF-icon">
+                     <a href="/createpdf/en/content/datasheet-intellitone-pro-toner-and-probe-series" title="Download a PDF version of this page."><img src="/sites/all/modules/features/edoc_new/images/pdf-icon.svg" class="img-responsive pdf-icon"></a>                    </div>
+            </div>
+        </div>
+            <div class="content_part" id="overview">
+              <h3>Overview</h3>
+              <p>
+	Every day, cabling installers and network technicians deal with the shortcomings of cable location tools based on 40-year-old technology. Until now.</p>
+
+<p>
+	The IntelliTone&trade; Pro 200 LAN Toner and Probe Series from Fluke Networks gives you cutting-edge digital and analog cable locating technologies that are as advanced as the systems you work with. IntelliTone is a breakthrough solution &ndash; and the only solution &ndash; that locates and isolates the most elusive, hidden or bundled voice, data and video cables and wire pairs quickly and reliably &ndash; even on active networks.</p>
+                            <div class="imgpart">
+                  <img src="https://www.flukenetworks.com/sites/default/files/3298_headgraphic.png" class="img-responsive">
+              </div>
+                        </div> <!-- End of 'content_part' DIV -->
+          <div class="content_part">
+            <h3>On This Page</h3>
+            <ul><li><a href="#breakthrough_digital_and_analog_toning_in_one"> Breakthrough digital and analog toning in one </a></li><li><a href="#locate_cables_quickly_and_easily"> Locate cables quickly and easily </a></li><li><a href="#locate_hidden_cables"> Locate hidden cables </a></li><li><a href="#isolate_the_right_cable_or_pair_–_fast"> Isolate the right cable or pair – fast </a></li><li><a href="#overcome_noise_–_and_save_hours_of_time"> Overcome noise – and save hours of time </a></li><li><a href="#tone_on_live_networks_safely_and_effectively"> Tone on live networks safely and effectively </a></li><li><a href="#tone_on_live_networks_safely_and_effectively"> Tone on live networks safely and effectively </a></li><li><a href="#verify_conductor_continuity_with_cablemap"> Verify conductor continuity with cablemap </a></li><li><a href="#identify_and_troubleshoot_cable_services"> Identify and troubleshoot cable services </a></li><li><a href="#200_lan_toner"> 200 LAN Toner </a></li><li><a href="#200_probe"> 200 Probe </a></li><li><a href="#toner_and_probe_shared_features:"> Toner and Probe shared features: </a></li><li><a href="#specifications"> Specifications </a></li><li><a href="#ordering_information"> Ordering Information </a></li><li><a href="#intellitone_pro_200_lan_kit"> IntelliTone Pro 200 LAN Kit </a></li></ul></div>    <div class="content_part" id="breakthrough_digital_and_analog_toning_in_one">
+              <h3>Breakthrough digital and analog toning in one</h3>
+              <p>
+	IntelliTone Pro is the first toner and probe to offer digital and analog toning all in one tool. That means it&rsquo;s equipped with the most powerful cable location and verification technologies for any work environment &ndash; even active networks.</p>
+
+<ul>
+	<li>
+		Eliminates confusion over cable location; decisively rejects noise and false signals</li>
+	<li>
+		Locates the correct cable bundle</li>
+	<li>
+		Isolates a cable within the bundle, despite cable bleed</li>
+	<li>
+		Verifies twisted-pair installation with visual end-to-end continuity test (opens, shorts and reversed pairs)</li>
+	<li>
+		Identifies individual wire pairs with new SmartTone&trade; analog toning</li>
+	<li>
+		Simplifies signal interpretation in noisy environments with multiple LED indicators</li>
+</ul>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="locate_cables_quickly_and_easily">
+              <h3>Locate cables quickly and easily</h3>
+              <p>
+	Fluke Networks has applied decades of cable test engineering expertise to the science of locating copper cables. The result is what we call IntelliTone technology &ndash; a digital signal-toning and signal-interpreting process that rapidly zeroes in on cables.</p>
+
+<p>
+	IntelliTone technology energizes cable conductors with a smart, sychronized digital signal. Multiple tone types occur in the signal that help you to:</p>
+
+<ul>
+	<li>
+		LOCATE the correct cable bundle using maximum radiation.</li>
+	<li>
+		ISOLATE a cable within the bundle using a signal with minimum radiation.</li>
+	<li>
+		VERIFY cable conductor continuity with an automated signal that steps through each conductor.</li>
+</ul>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="locate_hidden_cables">
+              <h3>Locate hidden cables</h3>
+              <p>
+	One of the toughest, most time-consuming parts of locating a cable has been in tracing its path amidst multiple cables and bundles in wiring closets. The IntelliTone digital signal features a LOCATE tone that provides maximum radiation, allowing you to quickly locate hidden and hard-to-find cabling.</p>
+                            <div class="imgpart">
+                  <img src="https://www.flukenetworks.com/sites/default/files/fn-intellitonepro-200_09c_350.jpg" class="img-responsive">
+              </div>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="isolate_the_right_cable_or_pair_–_fast">
+              <h3>Isolate the right cable or pair – fast</h3>
+              <p>
+	Cabling installations have become increasingly complex, which has made cabling increasingly difficult to locate with traditional technologies.</p>
+
+<p>
+	When cables are run together for even short lengths, a signal from one can bleed over to another. One cable might carry the original signal; other cables might carry the signal as a result of bleed. Isolating cables with traditional tools requires guesswork, training, time for repeated testing &ndash; and even the best efforts often result in mistakes.</p>
+
+<p>
+	IntelliTone Pro provides two cutting-edge technologies to isolate cables or wire pairs. Digital mode can be used to isolate twisted-pair cables on a switch or within a bundle. SmartTone&trade; analog mode can be used to isolate wire pairs at an unterminated outlet.</p>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="overcome_noise_–_and_save_hours_of_time">
+              <h3>Overcome noise – and save hours of time</h3>
+              <p>
+	Fluorescent lights, machinery, computer monitors and electrical wiring all produce noise that slows down cable location. Together, the IntelliTone Pro Toner&rsquo;s synchronized digital signal and the IntelliTone Pro Probe&rsquo;s microprocessor controlled signal identification technology reject noise and false signals to clearly identify cable location. This can save you hours every week on cable location projects.</p>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="tone_on_live_networks_safely_and_effectively">
+              <h3>Tone on live networks safely and effectively</h3>
+              <p>
+	Modern network devices use common mode termination for cables connected to their ports. This reduces noise and crosstalk in the cable; but, it can also absorb a traditional toner signal. Unlike traditional signals, the IntelliTone digital signal stays strong despite common mode termination. And the IntelliTone Pro 200 LAN Toner automates toning individual cable conductors, making it quick, efficient and safe to locate cables on active networks.</p>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="tone_on_live_networks_safely_and_effectively">
+              <h3>Tone on live networks safely and effectively</h3>
+              <p>
+	Modern network devices use common mode termination for cables connected to their ports. This reduces noise and crosstalk in the cable; but, it can also absorb a traditional toner signal. Unlike traditional signals, the IntelliTone digital signal stays strong despite common mode termination. And the IntelliTone Pro 200 LAN Toner automates toning individual cable conductors, making it quick, efficient and safe to locate cables on active networks.</p>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="verify_conductor_continuity_with_cablemap">
+              <h3>Verify conductor continuity with cablemap</h3>
+              <p>
+	Eliminate callbacks during cabling moves, adds and changes with the powerful diagnostic capabilities of IntelliTone&trade; Pro 200 LAN. The IntelliTone Pro 200 Probe features a Cablemap capability that identifies common cable miswires in twisted pair cabling. IntelliTone technology automates the testing of each conductor for end-to-end continuity; LED lights and tones clearly indicate miswires.</p>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="identify_and_troubleshoot_cable_services">
+              <h3>Identify and troubleshoot cable services</h3>
+              <p>
+	<strong>Service</strong>&nbsp;&ndash; Is the RJ45 jack a datacom jack, or a dead jack? IntelliTone Pro 200 LAN Toner LEDs clearly identify common datacom services found on today&#39;s networks including 10/100/Gigabit Ethernet links.</p>
+
+<p>
+	<strong>Continuity</strong>&nbsp;&ndash; Once you&rsquo;ve located a cable, the next step is to verify cable conductor continuity. IntelliTone Pro 200 LAN Toners make it easy &ndash; eliminating the need for a separate diagnostic tool.</p>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="200_lan_toner">
+              <h3>200 LAN Toner</h3>
+              <p>
+	1. <strong>IntelliTone provides robust toning into active network equipment</strong>&nbsp;while eliminating cable misidentification due to bleed</p>
+
+<p>
+	2. <strong>Banana jacks</strong>&nbsp;allow you to use only the leads you need and facilitates easy replacement</p>
+
+<p>
+	3. <strong>Test cable continuity,</strong>&nbsp;eliminating need for separate diagnostic tool</p>
+
+<p>
+	4. <strong>Test cable continuity,</strong>&nbsp;eliminating need for separate diagnostic tool</p>
+
+<p>
+	5. <strong>Precisely isolate wire pairs</strong>&nbsp;with built-in SmartTone analog toning</p>
+
+<p>
+	6. <strong>Tone active networks safely and effectively&nbsp;</strong>with IntelliTone digital mode</p>
+
+<p>
+	7. <strong>Identify resistance</strong>&nbsp;and if digital tone or analog tone function is operational</p>
+
+<p>
+	8. <strong>Identify and diagnose Ethernet</strong>&nbsp;link connectivity with NIC/hub indication</p>
+
+<p>
+	9. <strong>Cable termination&nbsp;</strong>indicator identifies if cable is connected or not</p>
+
+<p>
+	10. Knob provides&nbsp;<strong>simple, task oriented operation</strong></p>
+                            <div class="imgpart">
+                  <img src="https://www.flukenetworks.com/sites/default/files/fn-intellitonepro-200_32b_features_0.jpg" class="img-responsive">
+              </div>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="200_probe">
+              <h3>200 Probe</h3>
+              <p>
+	1. <strong>Multiple-level LEDs</strong>&nbsp;simplify signal interpretation in noisy environments. Visually steps through wiremap tests</p>
+
+<p>
+	2. <strong>SYNC indicates detection of IntellTone signal</strong>&nbsp;and shows battery status at power-up</p>
+
+<p>
+	&nbsp;</p>
+
+<p>
+	<strong>Choose between two digital detection modes:</strong></p>
+
+<p>
+	3. <strong>Digital detection mode:&nbsp;</strong>lets you locate cables at a distance</p>
+
+<p>
+	4. <strong>Digital detection mode:</strong>&nbsp;lets you isolate cables in bundles or at patch panels</p>
+
+<p>
+	5. Analog mode used to<strong>&nbsp;isolate individual wire pairs</strong>&nbsp;with SmartTone</p>
+
+<p>
+	6. <strong>Test cable continuity</strong>&nbsp;&ndash; eliminating need for separate diagnostic tool</p>
+
+<p>
+	7. <strong>Time-saving thumbwheel</strong>&nbsp;lets you select desired toning mode on the probe rather than toner</p>
+
+<p>
+	8. <strong>Plug</strong>&nbsp;works with CableMap function &ndash; eliminating the need for a separate wiremap tool</p>
+                            <div class="imgpart">
+                  <img src="https://www.flukenetworks.com/sites/default/files/fn-intellitonepro-200_34a_features_0.jpg" class="img-responsive">
+              </div>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="toner_and_probe_shared_features:">
+              <h3>Toner and Probe shared features:</h3>
+              <p>
+	IntelliTone digital technology with advanced signal processing provides&nbsp;<strong>high-resolution measurement</strong></p>
+
+<p>
+	<strong>Auto-Off feature:</strong>&nbsp;The toner turns off automatically after 2.5 hours of inactivity. Probe turns off after 1 hour of inactivity</p>
+
+<p>
+	<strong>SmartTone&trade; analog technology</strong>: IntelliTone Pro Toners generate four different analog songs which alternate every time the pair under test is shorted; IntelliTone Pro Probes detect this tone or any other analog signal from other testers</p>
+
+<p>
+	<strong>Battery status:</strong>&nbsp;3-level battery status indicator LEDs on the toner and probe light for one second at power on</p>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="specifications">
+              <h3>Specifications</h3>
+              <table border="1">
+	<tbody>
+		<tr>
+			<th colspan="2">
+				General</th>
+		</tr>
+		<tr>
+			<td>
+				Operating temperature</td>
+			<td>
+				32&deg; F to 104&deg; F (0&deg; C to 40&deg; C)</td>
+		</tr>
+		<tr>
+			<td>
+				Storage temperature</td>
+			<td>
+				-4&deg; F to +140&deg; F (-20&deg; C to +60&deg; C)</td>
+		</tr>
+		<tr>
+			<td>
+				Operating relative humidity<br />
+				(% RH without condensation)</td>
+			<td>
+				95% (50&deg; F to 95&deg; F; 10&deg; C to 35&deg; C)<br />
+				75% (95&deg; F to 104&deg; F; 35&deg; C to 40&deg; C)<br />
+				Uncontrolled &lt; 50&deg; F (&lt; 10&deg; C)</td>
+		</tr>
+		<tr>
+			<td>
+				Vibration</td>
+			<td>
+				Random, 2 g, 5 Hz &ndash; 500 Hz</td>
+		</tr>
+		<tr>
+			<td>
+				Shock</td>
+			<td>
+				1 m drop test with and without module</td>
+		</tr>
+		<tr>
+			<td>
+				Safety</td>
+			<td>
+				IEC 61010 Category: None</td>
+		</tr>
+		<tr>
+			<td>
+				Altitude</td>
+			<td>
+				3000 m</td>
+		</tr>
+		<tr>
+			<td>
+				EMC</td>
+			<td>
+				EN 61326-1</td>
+		</tr>
+		<tr>
+			<td>
+				Battery type and life</td>
+			<td>
+				9 V alkaline (NEDA 1604A or IEC 6LR61); 20 hours typical</td>
+		</tr>
+		<tr>
+			<td>
+				Applications</td>
+			<td>
+				Copper cabling media, including shielded (STP) and UTP cable; 75 or 50 Ohm coaxial cable; two conductor<br />
+				control, security, generic cabling. 10 Base-T or 10/100/1000 Base-T datacom networks.</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>
+	&nbsp;</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<th colspan="3">
+				Toner</th>
+		</tr>
+		<tr>
+			<td>
+				Dimensions</td>
+			<td>
+				5.54 in x 2.94 in x 1.25 in (14.1 cm x 7.5 cm x 3.2 cm)</td>
+			<td rowspan="7">
+				<img alt="Toner" height="188" src="http://images.flukenetworks.com/IntelliTone_DS/Fn-IntelliTonePro-200_03c_table.jpg" width="80" /></td>
+		</tr>
+		<tr>
+			<td>
+				Display</td>
+			<td>
+				LED</td>
+		</tr>
+		<tr>
+			<td>
+				Control</td>
+			<td>
+				Thumbwheel switch</td>
+		</tr>
+		<tr>
+			<td>
+				Toner interface</td>
+			<td>
+				Main Mod8 port for tone generation on all 4 pairs of UTP / STP cabling, F connector for coaxial cabling, Banana jack plugs (2) &ndash; two conductor wiring</td>
+		</tr>
+		<tr>
+			<td>
+				Toner frequency</td>
+			<td>
+				IntelliTone signal: encoded digital signal Analog SmartTone signal: 500-1200Hz, 4 Songs</td>
+		</tr>
+		<tr>
+			<td>
+				Output power</td>
+			<td>
+				5 V p-p</td>
+		</tr>
+		<tr>
+			<td>
+				Auto power down</td>
+			<td>
+				Turns off automatically after 2.5 hours of inactivity</td>
+		</tr>
+	</tbody>
+</table>
+
+<p>
+	&nbsp;</p>
+
+<table border="1">
+	<tbody>
+		<tr>
+			<th colspan="3">
+				Probe</th>
+		</tr>
+		<tr>
+			<td>
+				Dimensions</td>
+			<td>
+				8.73 in x 1.88 in x 1.26 in (22.2 cm x 4.8 cm x 3.2 cm)</td>
+			<td rowspan="7">
+				<img alt="Probe" height="191" src="http://images.flukenetworks.com/IntelliTone_DS/Fn-IntelliTonePro-200_02b_c.jpg" width="52" /></td>
+		</tr>
+		<tr>
+			<td>
+				Display</td>
+			<td>
+				(8) LED indicators, Synch LED indicator</td>
+		</tr>
+		<tr>
+			<td>
+				Audio</td>
+			<td>
+				IntelliTone: Microprocessor controlled audio files, Analog: Detected toner signal</td>
+		</tr>
+		<tr>
+			<td>
+				Control</td>
+			<td>
+				Thumbwheel switch, volume control wheel</td>
+		</tr>
+		<tr>
+			<td>
+				Tone detection</td>
+			<td>
+				Detects IntelliTone digital signal for Locate, Isolate and CableMap Detects Analog SmartTone Signal (500-1200Hz) and other analog toners.</td>
+		</tr>
+		<tr>
+			<td>
+				Toner interface</td>
+			<td>
+				Main Mod8 port for cablemap on all four pairs of UTP / STP cabling</td>
+		</tr>
+		<tr>
+			<td>
+				Auto power down</td>
+			<td>
+				Main Mod8 port for cablemap on all four pairs of UTP / STP cabling</td>
+		</tr>
+	</tbody>
+</table>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="ordering_information">
+              <h3>Ordering Information</h3>
+              <table border="1">
+	<tbody>
+		<tr>
+			<th>
+				Model Number</th>
+			<th>
+				Items Included</th>
+		</tr>
+		<tr>
+			<td>
+				MT-8200-60-KIT</td>
+			<td>
+				<strong>IntelliTone Pro 200 LAN Kit</strong><br />
+				Includes IntelliTone Pro 200 LAN Toner and 200 Probe, coax F connector adapter, two RJ11 and two RJ45 patch cables,test leads with alligator clips, lanyards, quick start guide, and two 9 volt batteries</td>
+		</tr>
+		<tr>
+			<td>
+				MT-8200-61-TNR</td>
+			<td>
+				IntelliTone Pro 200 LAN Toner</td>
+		</tr>
+		<tr>
+			<td>
+				MT-8200-63A</td>
+			<td>
+				IntelliTone Pro 200 Probe</td>
+		</tr>
+		<tr>
+			<th colspan="2">
+				IntelliTone Pro Toner and Probe Accessories</th>
+		</tr>
+		<tr>
+			<td>
+				MT-8202-05</td>
+			<td>
+				IntelliTone Pro Case</td>
+		</tr>
+		<tr>
+			<td>
+				MT-8203-20</td>
+			<td>
+				Test Leads with Bed of Nails</td>
+		</tr>
+		<tr>
+			<td>
+				MT-8203-22</td>
+			<td>
+				Test Leads with Alligator Clips</td>
+		</tr>
+	</tbody>
+</table>
+                        </div> <!-- End of 'content_part' DIV -->
+              <div class="content_part" id="intellitone_pro_200_lan_kit">
+              <h3>IntelliTone Pro 200 LAN Kit</h3>
+              <ul>
+	<li>
+		Finds the cables the others can&#39;t</li>
+	<li>
+		IntelliTone digital signal processing rejects noise and false signals</li>
+	<li>
+		SmartTone analog signal precisely isolates individual wire pairs</li>
+	<li>
+		Tones safely and clearly on active networks</li>
+	<li>
+		Tests for continuity</li>
+	<li>
+		Identifies and diagnoses 10/100/1 Gb Ethernet link connectivity with NIC/hub indication</li>
+	<li>
+		Verifies twisted-pair installation with CableMap capability which identifies common cable miswire</li>
+</ul>
+                        </div> <!-- End of 'content_part' DIV -->
+              </div> <!-- End of 'edocPage' DIV -->
+</div> <!-- End of 'container' DIV -->
+
+
+
+ <!-- START: KB Related Products list -->
+    <!-- END: KB Related Products List -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</section>
+  </div>
+      </div>
+          </section>
+
+<section id="footer">
+  <div class="container footerTop">
+    <div class="row">
+      <div class="col-md-3 col-sm-3"><h5 class="footerHead"><a href="/products" >PRODUCTS</a></h5><ul class="footerData"><li class="footerLink"><a href="/products/cabling-certification/cabling-certification-versiv" class="footerText">Versiv</a></li><li class="footerLink"><a href="/linkwarelive" class="footerText">LinkWare Live</a></li><li class="footerLink"><a href="/cabling-certification" class="footerText">Cabling Certification</a></li><li class="footerLink"><a href="/installation-and-test" class="footerText">Installation and Test</a></li><li class="footerLink"><a href="/telecom-test" class="footerText">Telecom Test</a></li><li class="footerLink"><a href="/products" class="footerText">Complete Product List </a></li><li class="footerLink"><a href="/promotions" class="footerText">Promotions</a></li></ul></div><div class="col-md-3 col-sm-3"><h5 class="footerHead"><a href="/content/were-here-help" >SUPPORT</a></h5><ul class="footerData"><li class="footerLink"><a href="/gold-product-support" class="footerText">Gold Support Plan</a></li><li class="footerLink"><a href="/support/downloads" class="footerText">Downloads and Updates</a></li><li class="footerLink"><a href="/knowledge-base" class="footerText">Knowledge Base </a></li><li class="footerLink"><a href="/support/manuals" class="footerText">Manuals</a></li><li class="footerLink"><a href="/expertise/whitepapers" class="footerText">Whitepapers</a></li><li class="footerLink"><a href="/support/application-notes" class="footerText">Application Notes</a></li><li class="footerLink"><a href="/content/standard-warranty" class="footerText">Warranty Information</a></li><li class="footerLink"><a href="/contact" class="footerText">Contact Us</a></li><li class="footerLink"><a href="/content/register-your-product" class="footerText">Product registration</a></li></ul></div><div class="col-md-2 col-sm-2"><h5 class="footerHead"><a href="/solutions" >SOLUTIONS</a></h5><ul class="footerData"><li class="footerLink"><a href="/solutions/roles" class="footerText">Solutions by Role</a></li><li class="footerLink"><a href="/solutions/case-studies" class="footerText">Case Studies</a></li><li class="footerLink"><a href="/solutions/learn-about" class="footerText">Fundamentals</a></li></ul><h5 class="footerHead community"><a href="/community" >COMMUNITY</a></h5><ul class="footerData"><li class="footerLink"><a href="/news-list" class="footerText">News</a></li><li class="footerLink"><a href="/blog/cabling-chronicles" class="footerText">Blog </a></li><li class="footerLink"><a href="/community" class="footerText">Social Media </a></li></ul></div><div class="col-md-2 col-sm-2"><h5 class="footerHead"><a href="/" >TRAINING & EVENTS</a></h5><ul class="footerData"><li class="footerLink"><a href="/content/certified-cabling-test-technician-training-program" class="footerText">Certified Cabling Technician Training</a></li><li class="footerLink"><a href="/knowledge-base" class="footerText">Online Training Videos</a></li><li class="footerLink"><a href="/training-events/webinars" class="footerText">Webinars</a></li><li class="footerLink"><a href="/training-events/workshops" class="footerText">Workshops</a></li><li class="footerLink"><a href="/training-events/trade-shows" class="footerText">Trade Shows</a></li></ul><h5 class="footerHead vspace51px" data-href="footerSI"><a href="/extranet" >SALES INSIDER</a></h5></div><div class="col-md-2 col-sm-2"><h5 class="footerHead"><a href="/" >WHERE TO BUY</a></h5><ul class="footerData"><li class="footerLink"><a href="/wheretobuy" class="footerText">Find a Reseller</a></li><li class="footerLink"><a href="/content/contact-sales-representative" class="footerText">Contact a Sales Representative</a></li></ul><h5 class="footerHead vspace51px"><a href="/about-us" >ABOUT</a></h5><ul class="footerData"><li class="footerLink"><a href="/about-us" class="footerText">Who We Are</a></li><li class="footerLink"><a href="https://careers.fortive.com/fluke" class="footerText">Careers</a></li><li class="footerLink"><a href="https://p1.aprimocdn.net/fluke/b5987e9d-edc4-4637-8de5-b10d002ee2fe/Fluke_Supplier_Quality_Manual.pdf" class="footerText">Supplier handbook</a></li></ul></div>    </div>
+  </div>
+  <div class="container footerBottom">
+    <div class="row">
+      <div class="col-md-3 col-xs-12 col-sm-3 socialIconblock">
+        <div class="OneLinkShow_zh">
+            <div class="region region-china-footer-socials">
+    <section id="block-block-8" class="block block-block OneLinkShow_zh clearfix">
+
+      
+  <style type="text/css">.OneLinkShow_zh .socialIcons li a img {
+width: 60px !important;
+height: 60px !important;
+}
+</style>
+<div class="OneLinkShow_zh">
+	<ul class="socialIcons">
+		<li>
+			<a class="fnet_fancybox" href="/sites/default/files/other/ewm01.png"><img alt="" class="img-responsive" src="/sites/default/files/other/ewm01.png" /></a></li>
+		<li>
+			<a class="fnet_fancybox" href="/sites/default/files/other/ewm03.jpg"><img alt="" class="img-responsive" src="/sites/default/files/other/ewm03.jpg" /></a></li>
+		<li>
+			<a class="fnet_fancybox" href="/sites/default/files/other/ewm02.jpg"><img alt="" class="img-responsive" src="/sites/default/files/other/ewm02.jpg" /></a></li>
+	</ul>
+	<select class="input" onchange="if(this.value!='')window.open(this.value);this.options[0].selected=true"><option disabled="disabled" hidden="" selected="selected" value="0">友情链接</option><option value="http://www.0755tianyou.com">深圳天游信息科技有限公司</option><option value="http://www.whpermanent.com">武汉恒景科技有限公司</option><option value="http://www.deanyee.com.cn">重庆得安易科技有限公司</option><option value="http://www.sdlk.cn">山东朗坤信息系统有限公司</option><option value="http://www.njjinshun.com.cn">南京锦顺网络科技有限公司</option><option value="http://www.clouvis.com">云乔科技（北京）有限公司</option><option value="http://www.thxc-bj.com.cn">北京泰和信测科技有限公司</option><option value="http://www.gztester.com">广州泰息特电子科技有限公司</option><option value="">北京艾特耐特科技发展有限公司</option><option value="http://www.nanqiao.cc">广州市南乔网络技术有限公司</option><option value="http://www.langkun.com">上海朗坤信息系统有限公司</option><option value="http://www.mingczh.com/">北京明辰智航科技有限公司</option> </select></div>
+
+</section>
+  </div>
+        </div>
+          <ul class="socialIcons OneLinkHide_zh">
+            <li><a href="https://twitter.com/FlukeNetDCI" target="_blank" title="Twitter"><img class="menu-social-twitter" src="/sites/all/themes/fnet_bootstrap_subtheme/images/x-logo.svg" /> </a></li><li><a href="https://www.facebook.com/flukenetworks" target="_blank" title="Facebook"><img class="menu-social-facebook" src="/sites/all/themes/fnet_bootstrap_subtheme/images/facebook-icon.svg" /> </a></li><li><a href="https://www.youtube.com/flukenetworksvideo" target="_blank" title="YouTube"><img class="menu-social-youtube" src="/sites/all/themes/fnet_bootstrap_subtheme/images/you-tube-icon.svg" /> </a></li>          </ul>
+      </div>
+      <div class="col-md-5 col-xs-12 col-sm-5 policyBlock">
+        <ul class="policy">
+          <li><a href="https://www.fortive.com/integrity-compliance" class="policyPointsFirst">Integrity and Compliance Program </a> </li><li><a href="/about/privacy" class="policyPoints">Privacy Policy</a> </li><li><a href="/about/terms-of-use" class="policyPoints">Terms of Use</a> </li><li><a href="/sitemap" class="policyPointsLast">Sitemap</a> </li>        </ul>
+      </div>
+      <div class="col-md-4 col-xs-12 col-sm-4 copyrightBlock">
+        <div class="OneLinkShow_zh">
+            <div class="region region-china-footer-copyright">
+    <section id="block-block-9" class="block block-block OneLinkShow_zh clearfix">
+
+      
+  <div class="region-footer-copyright rights">
+	<p>
+		&copy;2006-2021&nbsp;Fluke Corporation。保留所有权利。</p>
+
+	<p>
+		RM2011, 20/F, SCITECH Tower, 22 Jianguomenwai Avenue, Chaoyang District, Beijing, China<br />
+		地址：北京市朝阳区建国门外大街22号赛特大厦20层2011室<br />
+		联系电话：400-8103435<br />
+		<a href="https://beian.miit.gov.cn" target="_blank">沪ICP备11037028号-15</a><img alt="" height="14" class="OneLinkShow_zh" src="https://www.flukenetworks.com.cn/sites/default/files/homepage/gongxinbu.jpg" width="14" /></p>
+</div>
+
+</section>
+  </div>
+        </div>
+        <div class="OneLinkHide_zh">
+            <div class="region region-footer-copyright">
+    <section id="block-block-10" class="block block-block clearfix">
+
+      
+  <div id="cf-gpt"></div>
+</section>
+<section id="block-block-6" class="block block-block clearfix">
+
+      
+  <script type="text/javascript">
+    var http_cf_ipcountry = 'IN';
+console.log(http_cf_ipcountry, "- The country from Cloudflare");</script>
+</section>
+  </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+  <script type="text/javascript" src="/sites/default/files/advagg_js/js__Pl-hcTf0a-8hCOZYOyUfHDPivggjGT2g9t9sJSvz5aM__SMuqX5P-l2tkiEx2KqcVzIiiUv0Qon1n_k828Iz6Z1k__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.js"></script>
+<script type="text/javascript" src="/sites/default/files/advagg_js/js__i11V-7AETPhfL9YzRpXBpECwVkYyQ_ahu2eHxES_mK0__S79mhsO6q7fWONLNt9XSEZx-JmiQeAEtuPkuVxIEjpY__tA3REixy5NH_b0mRU8rTLti28cNgbRMzQkq5tVgXYxI.js"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b40bc7469940803',t:'MTc2Njc1Mzc2NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

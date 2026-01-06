@@ -1,0 +1,940 @@
+ <!DOCTYPE html> <!--[if lt IE 9]>     <html class="no-js lt-ie10 lt-ie9" lang="en"><![endif]--> <!--[if IE 9]>        <html class="no-js lt-ie10 ie9" lang="en"><![endif]--> <!--[if gt IE 9]><!--> <html class="no-js" lang="en"> <!--<![endif]--> <head> <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" /> <meta charset="utf-8" /><script type="text/html" id="sf-tracking-consent-manager">
+	<!--<script>
+    (function () {
+        $("#divTrackingConsentDialogDescription").html($("#divTrackingConsentDialogDescription").text()).show();
+    })();
+</script>-->
+
+<div id="tracking-consent-dialog">
+    <strong>We use cookies to make our site as useful as possible.</strong>
+    <div id="divTrackingConsentDialogDescription" style="display:none;">A cookie is a small text file we put in your browser to track usage of the website but they don't tell us who you are. For more information, click to see our cookies &lt;a href="https://www.wernerco.com/eu/en/legal-notices#cookies"&gt;policy here &lt;/a&gt;</div>
+    <button type="button" onclick="TrackingConsentManager.updateUserConsent(true)" id="tracking-consent-dialog-accept" class="btn btn-default">I accept</button>
+    <button type="button" onclick="TrackingConsentManager.updateUserConsent(false)" id="tracking-consent-dialog-reject" class="btn btn-default">I refuse</button>
+</div>
+</script><script type="text/javascript" src="/WebResource.axd?d=DzHrpQl5URXarFHAtrmzFun5Ufh-KUxCxtxmLDsxIfzv4VJ4V6ljTplQZCdoqdL4vhoIy5yyQCMXo70IX-FptN98-w94FknVmfH0Lr_2Vxpinqs7jNOkAN6G9ONrvq9OQ86_2sSZrFuZ-_E89xsyqIztqbyP1pAgoSz4ayAI4TUD56CF8O6lgoN_eX-wafod0&amp;t=639001726441933025">
+
+</script> <meta name="viewport" content="width=device-width, initial-scale=1"> <!--<!BEGIN WERNER--> <meta name="facebook-domain-verification" content="0j8tfxk68hbe27ax95bsrexzc0zqn8" /> <meta name="google-site-verification" content="vvRiugnKYtDyiZQITnQ7Kufu2HzR7v46NpIKYWUU3BQ" /> <!--<!END WERNER--> <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" /> <link rel="apple-touch-icon" sizes="180x180" href="/ResourcePackages/Talon/assets/dist/images/Werner-apple-touch-icon.png"> <link rel="icon" type="image/png" sizes="32x32" href="/ResourcePackages/Talon/assets/dist/images/WernerFavicon-32x32.png"> <link rel="icon" type="image/png" sizes="16x16" href="/ResourcePackages/Talon/assets/dist/images/WernerFavicon-16x16.png"> <link rel="icon" href="/ResourcePackages/Talon/assets/dist/images/WernerFavicon.ico" type="image/x-icon"> <title>
+	6206 | Step Ladders | Werner
+</title> <link href="/ResourcePackages/Talon/assets/dist/css/Werner/main.min.css?v=6227485801656687331" rel="stylesheet" type="text/css" /><link href="/ResourcePackages/Talon/assets/dist/css/WernerCommon/common.min.css?v=6227485801656687331" rel="stylesheet" type="text/css" /> <script>
+        (function () {
+            "use strict";
+            var el = document.getElementsByTagName('html')[0],
+                nojsClass = "no-js", jsClass = "js";
+            if (el.classList) {
+                el.classList.remove(nojsClass);
+                el.classList.add(jsClass);
+            } else {
+                el.className = el.className.replace(new RegExp('(^|\\b)' + nojsClass.split(' ').join('|') + '(\\b|$)', 'gi'), ' ');
+                el.className += ' ' + jsClass;
+            }
+        }());
+    </script> <!--[if lt IE 9]><script src="/Frontend-Assembly/Telerik.Sitefinity.Frontend/assets/dist/js/respond.min.js?package=Talon&amp;v=MTQuNC44MTQ2LjA%3d" type="text/javascript"></script><![endif]--> <meta name="ps-account" content="1746">
+<meta name="ps-country" content="US">
+<meta name="ps-language" content="en"><meta property="og:title" content="Step Ladders" /><meta property="og:description" content="Werner Stepladders are the most popular ladder style. They are available in several styles: single side, platform, twin, A-frame, tripod, and trestle." /><meta property="og:url" content="https://www.wernerco.com/us/products/ladders/step-ladders" /><meta property="og:type" content="website" /><meta property="og:site_name" content="Werner" /><script type="text/javascript">
+</script>
+<script src="//cdn.pricespider.com/1/lib/ps-widget.js" async></script>
+<script type="text/javascript" src="//cdn.pricespider.com/1/1746/ps-utid.js" async></script>
+<script>
+</script><link rel="canonical" href="https://www.wernerco.com/us/products/ladders/step-ladders/6200Series/6206" /><meta name="title" content="6206 | Step Ladders | Werner US" /><meta name="Generator" content="Sitefinity 14.4.8146.0 DX" /><meta name="description" content="The Werner 6206 Fiberglass 6-foot Step Ladder is ideal for any professional and features a LOCKTOP®, the EDGE bracing system to help protect the rails from damage, and a 300lb duty rating." /><meta name="keywords" content="Werner, 6206, 6200, fiberglass, non conductive, electric, electricity, safe, safety, single, side, sided, step, ladder, step ladder, IA, 6 ft step stool, LOCKTOP, EDGE" /></head> <body class=" werner-us werner-us-2023"> <header id="site-header" class="site-header" role="banner"> <div style="display:none"></div> <script src="/ScriptResource.axd?d=ktXPS54N4JY6vbaCTPlT9ZFRzh-OYOasUCfZoB6yzU9sXLUG3K5knzM-q4eMH1PspHOGLgOp34FMTokU-9Lb_iYOkhT3hp5AD2GihVy8EiG-Ltyc1elQ3vAPaPKJfStTIAuik8dD0y6H8xRPa-WM5-taA7ImnvubR23RiCJftmgNGntmeq2dv8F6dbs4yNEQ0&amp;t=ffffffffaa59361e" type="text/javascript"></script><script src="/ScriptResource.axd?d=ePnjFy9PuY6CB3GWMX-b_yf1FdPJDvTHGrJkObBsMJfdEXKUA8ffK2FUtNtEXm4GNHkR6_zqwxE7aRSHcarWYEijML6I5m9DrBLpQYp-tPjsgjqMzWnAi0FbkNw1LSu8l5ivY_8nTYzecSduNxHvs4PnqdgwInIcxtLtVkTQlCggvDQe1oN0nWEXFLa-xQId0&amp;t=ffffffffaa59361e" type="text/javascript"></script><script src="/Frontend-Assembly/SitefinityWebApp/Scripts/External/axios.0.18.0.min.js?package=Talon&amp;v=LTE3NDY2MTk4NzQ%3d" type="text/javascript"></script><script src="/Frontend-Assembly/SitefinityWebApp/Scripts/External/jquery.ezpz_tooltip.min.js?package=Talon&amp;v=LTE3NTE2MjMwNzY%3d" type="text/javascript"></script><script src="/Frontend-Assembly/SitefinityWebApp/Scripts/External/vue.2.5.17.min.js?package=Talon&amp;v=LTE3NTI0MDYzMDM%3d" type="text/javascript"></script><script src="/Frontend-Assembly/SitefinityWebApp/Scripts/External/vue-slick-carousel.1.0.6.min.js?package=Talon&amp;v=LTE3NTIwNTQ1Njk%3d" type="text/javascript"></script><script src="/Frontend-Assembly/SitefinityWebApp/Scripts/Constants.min.js?package=Talon&amp;v=6227485801656687331" type="text/javascript"></script><script src="/Frontend-Assembly/SitefinityWebApp/Scripts/RouteUtils.min.js?package=Talon&amp;v=6227485801656687331" type="text/javascript"></script><script src="/Frontend-Assembly/SitefinityWebApp/Scripts/utils.min.js?package=Talon&amp;v=6227485801656687331" type="text/javascript"></script><script src="/Frontend-Assembly/SitefinityWebApp/Mvc/Scripts/ProductDetails/product-details.min.js?package=Talon&amp;v=6227485801656687331" type="text/javascript"></script><script src="/Frontend-Assembly/SitefinityWebApp/Scripts/ProductUtils.min.js?package=Talon&amp;v=6227485801656687331" type="text/javascript"></script><script src="https://apps.bazaarvoice.com/deployments/werner/main_site/production/en_US/bv.js" type="text/javascript"></script><script src="/Mvc/Scripts/ProductDetails/product-details-initialize.min.js?package=Talon&amp;v=6227485801656687331" type="text/javascript"></script><script src="/Mvc/Scripts/ProductDetails/where-to-buy-api-usage.min.js?package=Talon&amp;v=6227485801656687331" type="text/javascript"></script> 
+
+
+
+
+ 
+<div>
+    <div aria-hidden="true" class="svg-legend"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><symbol id="icon-google" viewBox="0 0 32 32"><title>Google-Plus</title>
+ <path d="M10.181 14.294v3.494h5.775c-0.231 1.5-1.744 4.394-5.775 4.394-3.475 0-6.313-2.881-6.313-6.431s2.838-6.431 6.313-6.431c1.981 0 3.3 0.844 4.056 1.569l2.762-2.662c-1.775-1.656-4.075-2.662-6.819-2.662-5.631 0.006-10.181 4.556-10.181 10.188s4.55 10.181 10.181 10.181c5.875 0 9.775-4.131 9.775-9.95 0-0.669-0.075-1.181-0.163-1.688h-9.613z"></path><path d="M32 14h-3v-3h-3v3h-3v3h3v3h3v-3h3z"></path></symbol>
+
+ <symbol id="icon-facebook" viewBox="0 0 32 32"><title>Facebook</title>
+ <path d="M19 6h5v-6h-5c-3.86 0-7 3.14-7 7v3h-4v6h4v16h6v-16h5l1-6h-6v-3c0-0.542 0.458-1 1-1z"></path></symbol>
+
+ <symbol id="icon-twitter" viewBox="0 0 32 32"><title>Twitter</title>
+ <path d="M24.325 3h4.411l-9.636 11.013 11.336 14.987h-8.876l-6.952-9.089-7.955 9.089h-4.413l10.307-11.78-10.875-14.22h9.101l6.284 8.308zM22.777 26.36h2.444l-15.776-20.859h-2.623z"></path></symbol>
+
+ <symbol id="icon-pinterest" viewBox="0 0 32 32"><title>Pinterest</title>
+ <path d="M16 2.138c-7.656 0-13.863 6.206-13.863 13.863 0 5.875 3.656 10.887 8.813 12.906-0.119-1.094-0.231-2.781 0.050-3.975 0.25-1.081 1.625-6.887 1.625-6.887s-0.412-0.831-0.412-2.056c0-1.925 1.119-3.369 2.506-3.369 1.181 0 1.756 0.887 1.756 1.95 0 1.188-0.756 2.969-1.15 4.613-0.331 1.381 0.688 2.506 2.050 2.506 2.462 0 4.356-2.6 4.356-6.35 0-3.319-2.387-5.638-5.787-5.638-3.944 0-6.256 2.956-6.256 6.019 0 1.194 0.456 2.469 1.031 3.163 0.113 0.137 0.131 0.256 0.094 0.4-0.106 0.438-0.338 1.381-0.387 1.575-0.063 0.256-0.2 0.306-0.463 0.188-1.731-0.806-2.813-3.337-2.813-5.369 0-4.375 3.175-8.387 9.156-8.387 4.806 0 8.544 3.425 8.544 8.006 0 4.775-3.012 8.625-7.194 8.625-1.406 0-2.725-0.731-3.175-1.594 0 0-0.694 2.644-0.863 3.294-0.313 1.206-1.156 2.712-1.725 3.631 1.3 0.4 2.675 0.619 4.106 0.619 7.656 0 13.863-6.206 13.863-13.863 0-7.662-6.206-13.869-13.863-13.869z"></path></symbol>
+
+ <symbol id="icon-linkedin" viewBox="0 0 32 32"><title>Linked In</title>
+ <path d="M12 12h5.535v2.837h0.079c0.77-1.381 2.655-2.837 5.464-2.837 5.842 0 6.922 3.637 6.922 8.367v9.633h-5.769v-8.54c0-2.037-0.042-4.657-3.001-4.657-3.005 0-3.463 2.218-3.463 4.509v8.688h-5.767v-18z"></path><path d="M2 12h6v18h-6v-18z"></path><path d="M8 7c0 1.657-1.343 3-3 3s-3-1.343-3-3c0-1.657 1.343-3 3-3s3 1.343 3 3z"></path></symbol>
+
+ <symbol id="icon-youtube" viewBox="0 0 32 32"><title>YouTube</title>
+ <path d="M31.681 9.6c0 0-0.313-2.206-1.275-3.175-1.219-1.275-2.581-1.281-3.206-1.356-4.475-0.325-11.194-0.325-11.194-0.325h-0.012c0 0-6.719 0-11.194 0.325-0.625 0.075-1.987 0.081-3.206 1.356-0.963 0.969-1.269 3.175-1.269 3.175s-0.319 2.588-0.319 5.181v2.425c0 2.587 0.319 5.181 0.319 5.181s0.313 2.206 1.269 3.175c1.219 1.275 2.819 1.231 3.531 1.369 2.563 0.244 10.881 0.319 10.881 0.319s6.725-0.012 11.2-0.331c0.625-0.075 1.988-0.081 3.206-1.356 0.962-0.969 1.275-3.175 1.275-3.175s0.319-2.587 0.319-5.181v-2.425c-0.006-2.588-0.325-5.181-0.325-5.181zM12.694 20.15v-8.994l8.644 4.513-8.644 4.481z"></path></symbol>
+
+ <symbol id="icon-instagram" viewBox="0 0 32 32"><title>Instagram</title>
+ <path d="M16 2.881c4.275 0 4.781 0.019 6.462 0.094 1.563 0.069 2.406 0.331 2.969 0.55 0.744 0.288 1.281 0.638 1.837 1.194 0.563 0.563 0.906 1.094 1.2 1.838 0.219 0.563 0.481 1.412 0.55 2.969 0.075 1.688 0.094 2.194 0.094 6.463s-0.019 4.781-0.094 6.463c-0.069 1.563-0.331 2.406-0.55 2.969-0.288 0.744-0.637 1.281-1.194 1.837-0.563 0.563-1.094 0.906-1.837 1.2-0.563 0.219-1.413 0.481-2.969 0.55-1.688 0.075-2.194 0.094-6.463 0.094s-4.781-0.019-6.463-0.094c-1.563-0.069-2.406-0.331-2.969-0.55-0.744-0.288-1.281-0.637-1.838-1.194-0.563-0.563-0.906-1.094-1.2-1.837-0.219-0.563-0.481-1.413-0.55-2.969-0.075-1.688-0.094-2.194-0.094-6.463s0.019-4.781 0.094-6.463c0.069-1.563 0.331-2.406 0.55-2.969 0.288-0.744 0.638-1.281 1.194-1.838 0.563-0.563 1.094-0.906 1.838-1.2 0.563-0.219 1.412-0.481 2.969-0.55 1.681-0.075 2.188-0.094 6.463-0.094zM16 0c-4.344 0-4.887 0.019-6.594 0.094-1.7 0.075-2.869 0.35-3.881 0.744-1.056 0.412-1.95 0.956-2.837 1.85-0.894 0.888-1.438 1.781-1.85 2.831-0.394 1.019-0.669 2.181-0.744 3.881-0.075 1.713-0.094 2.256-0.094 6.6s0.019 4.887 0.094 6.594c0.075 1.7 0.35 2.869 0.744 3.881 0.413 1.056 0.956 1.95 1.85 2.837 0.887 0.887 1.781 1.438 2.831 1.844 1.019 0.394 2.181 0.669 3.881 0.744 1.706 0.075 2.25 0.094 6.594 0.094s4.888-0.019 6.594-0.094c1.7-0.075 2.869-0.35 3.881-0.744 1.050-0.406 1.944-0.956 2.831-1.844s1.438-1.781 1.844-2.831c0.394-1.019 0.669-2.181 0.744-3.881 0.075-1.706 0.094-2.25 0.094-6.594s-0.019-4.887-0.094-6.594c-0.075-1.7-0.35-2.869-0.744-3.881-0.394-1.063-0.938-1.956-1.831-2.844-0.887-0.887-1.781-1.438-2.831-1.844-1.019-0.394-2.181-0.669-3.881-0.744-1.712-0.081-2.256-0.1-6.6-0.1v0z"></path><path d="M16 7.781c-4.537 0-8.219 3.681-8.219 8.219s3.681 8.219 8.219 8.219 8.219-3.681 8.219-8.219c0-4.537-3.681-8.219-8.219-8.219zM16 21.331c-2.944 0-5.331-2.387-5.331-5.331s2.387-5.331 5.331-5.331c2.944 0 5.331 2.387 5.331 5.331s-2.387 5.331-5.331 5.331z"></path><path d="M26.462 7.456c0 1.060-0.859 1.919-1.919 1.919s-1.919-0.859-1.919-1.919c0-1.060 0.859-1.919 1.919-1.919s1.919 0.859 1.919 1.919z"></path></symbol>
+
+ <symbol id="icon-search" viewBox="0 0 32 32"><title>search</title>
+ <path d="M31.008 27.231l-7.58-6.447c-0.784-0.705-1.622-1.029-2.299-0.998 1.789-2.096 2.87-4.815 2.87-7.787 0-6.627-5.373-12-12-12s-12 5.373-12 12 5.373 12 12 12c2.972 0 5.691-1.081 7.787-2.87-0.031 0.677 0.293 1.515 0.998 2.299l6.447 7.58c1.104 1.226 2.907 1.33 4.007 0.23s0.997-2.903-0.23-4.007zM12 20c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8z"></path></symbol>
+ </defs>
+ </svg>
+</div>
+
+</div> 
+<div id="Header_TDC6A9926022_Col00" class="sf_colsIn logo-search-nav" data-sf-element="Container" data-placeholder-label="Container"><div class="logo">
+    <a href="https://www.wernerco.com/us/"><img alt="Werner" src="/ResourcePackages/Talon/assets/images/logo.png" /></a>
+
+</div><div id="Header_TDC6A9926025_Col00" class="sf_colsIn search-nav" data-sf-element="Container" data-placeholder-label="Container"><div class="country-link">
+    <span style="color:#ffffff;">United States&nbsp;</span><a href="https://www.prodrivenbrands.com/global" target="_blank" data-sf-ec-immutable=""><span style="color:#E1B72D;">[Change]</span></a><span class="sf-Image-wrapper" data-sfref="[images|OpenAccessDataProvider]4c47487e-a493-4ba1-ab48-a3c4f56e1fbe"><img src="/images/default-source/werner-us/icons/werner-world-map.png?sfvrsn=89ff5e93_8" title="WernerCo World Map" data-displaymode="Original" alt="WernerCo World Map" /></span>
+
+</div>
+
+<div class="form-inline">
+    <button class="search-toggle">
+        <svg class="icon">
+            <use xlink:href="#icon-search"></use>
+        </svg>
+    </button>
+    <div class="form-control">
+        <button class="search-button" id="btnSiteSearch">
+            <svg class="icon">
+                <use xlink:href="#icon-search"></use>
+            </svg>
+        </button>
+        <input type="search" title="Search input" placeholder="What can we help you find" id="txtSiteSearch" />
+    </div>
+
+    <input type="hidden" id="hdnResultsUrl" value="/us/finder" />
+    <input type="hidden" id="hdnGaTrackingId" value="UA-962434-11" />
+</div>
+
+
+
+
+
+<nav class="main-nav nav-bar" id="site-navigation" role="navigation">
+    <button class="mobile-toggle"><span><span class="visually-hidden">Menu</span></span></button>
+    <ul class="cm-menu">
+        <li>
+            <a href="/us/products" target="_self"><span>Products</span></a>
+            
+            <div class="mega-menu">
+                <ul>             <li class="Featured Products">
+                <a href="/us/products/featured-products" target="_self"><span>Featured Products</span></a>
+                <ul>            <li class="Fall Protection"><a href="/us/products/featured-products/fall-protection" target="_self"><span>Fall Protection</span></a></li>
+            <li class="Fall Protection Safety Harnesses"><a href="/us/products/featured-products/fall-protection-safety-harnesses" target="_self"><span>Fall Protection Safety Harnesses</span></a></li>
+            <li class="LEANSAFE"><a href="/us/products/featured-products/leansafe" target="_self"><span>LEANSAFE</span></a></li>
+            <li class="GLIDESAFE Extension Ladders"><a href="/us/products/featured-products/glidesafe" target="_self"><span>GLIDESAFE Extension Ladders</span></a></li>
+            <li class="AERO Extension Ladders"><a href="/us/products/featured-products/aero-extension-ladders" target="_self"><span>AERO Extension Ladders</span></a></li>
+            <li class="ProForm Harnesses"><a href="/us/products/featured-products/proform-harness" target="_self"><span>ProForm Harnesses</span></a></li>
+            <li class="LEVELSAFE PRO"><a href="/us/products/featured-products/levelsafe-pro" target="_self"><span>LEVELSAFE PRO</span></a></li>
+            <li class="R3 Concrete Anchor"><a href="/us/products/featured-products/r3" target="_self"><span>R3 Concrete Anchor</span></a></li>
+            <li class="Anchorage"><a href="/us/products/featured-products/anchorage" target="_self"><span>Anchorage</span></a></li>
+            <li class="Multi Position Ladders"><a href="/us/products/featured-products/multi-position-ladders" target="_self"><span>Multi Position Ladders</span></a></li>
+            <li class="Podium Ladders"><a href="/us/products/featured-products/podium-ladders" target="_self"><span>Podium Ladders</span></a></li>
+            <li class="Step Ladders with LOCKTOP"><a href="/us/products/featured-products/locktop-step-ladders" target="_self"><span>Step Ladders with LOCKTOP</span></a></li>
+            <li class="LOCK-IN Ladder Accessories"><a href="/us/products/featured-products/lock-in-ladder-accessories" target="_self"><span>LOCK-IN Ladder Accessories</span></a></li>
+            <li class="Attic Ladders"><a href="/us/products/featured-products/attic-ladders" target="_self"><span>Attic Ladders</span></a></li>
+</ul>
+            </li>
+             <li class="Ladders">
+                <a href="/us/products/ladders" target="_self"><span>Ladders</span></a>
+                <ul>            <li class="Step Ladders"><a href="/us/products/ladders/step-ladders" target="_self"><span>Step Ladders</span></a></li>
+            <li class="Extension Ladders"><a href="/us/products/ladders/extension-ladders" target="_self"><span>Extension Ladders</span></a></li>
+            <li class="Rolling Scaffolds"><a href="/us/products/ladders/scaffolds" target="_self"><span>Rolling Scaffolds</span></a></li>
+            <li class="Work Platforms"><a href="/us/products/ladders/work-platforms" target="_self"><span>Work Platforms</span></a></li>
+            <li class="Ladder Accessories"><a href="/us/products/ladders/ladder-accessories" target="_self"><span>Ladder Accessories</span></a></li>
+</ul>
+            </li>
+             <li class="Multi Ladders">
+                <a href="/us/products/ladders/multi-ladders" target="_self"><span>Multi Ladders</span></a>
+                <ul>            <li class="Multi Position"><a href="/us/us/products/ladders/multi-ladders/multi-position" target="_self"><span>Multi Position</span></a></li>
+</ul>
+            </li>
+             <li class="Attic Ladders">
+                <a href="/us/products/attic-ladders" target="_self"><span>Attic Ladders</span></a>
+                <ul>            <li class="Compact"><a href="/us/products/attic-ladders/compact" target="_self"><span>Compact</span></a></li>
+            <li class="Aluminum"><a href="/us/products/attic-ladders/aluminum" target="_self"><span>Aluminum</span></a></li>
+            <li class="Wood"><a href="/us/products/attic-ladders/wood" target="_self"><span>Wood</span></a></li>
+</ul>
+            </li>
+             <li class="Scaffolds &amp; Planks">
+                <a href="/us/products/scaffold-platforms" target="_self"><span>Scaffolds &amp; Planks</span></a>
+                <ul>            <li class="Rolling Scaffolds"><a href="/us/products/scaffold-platforms/rolling-scaffolds" target="_self"><span>Rolling Scaffolds</span></a></li>
+            <li class="Planks"><a href="/us/products/scaffold-platforms/planks" target="_self"><span>Planks</span></a></li>
+            <li class="Scaffold Components"><a href="/us/products/scaffold-platforms/scaffold-components" target="_self"><span>Scaffold Components</span></a></li>
+</ul>
+            </li>
+             <li class="Fall Protection">
+                <a href="/us/products/fall-protection" target="_self"><span>Fall Protection</span></a>
+                <ul>            <li class="Harnesses"><a href="/us/products/fall-protection/harnesses" target="_self"><span>Harnesses</span></a></li>
+            <li class="Lanyards"><a href="/us/products/fall-protection/lanyards" target="_self"><span>Lanyards</span></a></li>
+            <li class="Retractables"><a href="/us/products/fall-protection/retractables" target="_self"><span>Retractables</span></a></li>
+            <li class="Anchorage Connectors"><a href="/us/products/fall-protection/anchorage-connectors" target="_self"><span>Anchorage Connectors</span></a></li>
+            <li class="Horizontal Lifelines"><a href="/us/products/fall-protection/horizontal-lifelines" target="_self"><span>Horizontal Lifelines</span></a></li>
+            <li class="Vertical Lifelines"><a href="/us/products/fall-protection/vertical-lifelines" target="_self"><span>Vertical Lifelines</span></a></li>
+            <li class="Compliance Kits"><a href="/us/products/fall-protection/compliance-kits" target="_self"><span>Compliance Kits</span></a></li>
+            <li class="Confined Space"><a href="/us/products/fall-protection/confined-space" target="_self"><span>Confined Space</span></a></li>
+            <li class="Drop Safety Equipment"><a href="/us/products/fall-protection/drop-safety-equipment" target="_self"><span>Drop Safety Equipment</span></a></li>
+            <li class="Accessories"><a href="/us/products/fall-protection/accessories" target="_self"><span>Accessories</span></a></li>
+</ul>
+            </li>
+             <li class="Specialty Products">
+                <a href="/us/products/specialty-products" target="_self"><span>Specialty Products</span></a>
+                <ul>            <li class="Racks"><a href="/us/products/specialty-products/racks-ramps" target="_self"><span>Racks</span></a></li>
+            <li class="Pump Jacks"><a href="/us/products/specialty-products/pump-jacks" target="_self"><span>Pump Jacks</span></a></li>
+            <li class="Stages"><a href="/us/products/specialty-products/stages" target="_self"><span>Stages</span></a></li>
+            <li class="Guard Rails"><a href="/us/products/specialty-products/guard-rails" target="_self"><span>Guard Rails</span></a></li>
+</ul>
+            </li>
+</ul>
+            </div>
+            
+        </li>
+        <li><a href="/us/fall-protection" target="_self"><span>Fall Protection</span></a></li>
+        <li>
+            <a href="/us/safety" target="_self"><span>Safety</span></a>
+            
+            <div class="mega-menu">
+                <ul>            <li class="Safety Training"><a href="/us/safety/safety-training" target="_self"><span>Safety Training</span></a></li>
+            <li class="Schedule Safety Training"><a href="/us/safety/schedule-safety-training" target="_self"><span>Schedule Safety Training</span></a></li>
+            <li class="Ladder Safety Videos"><a href="/us/safety/safety-videos" target="_self"><span>Ladder Safety Videos</span></a></li>
+            <li class="Fall Protection Safety Videos"><a href="/us/safety/fall-protection-safety-videos" target="_self"><span>Fall Protection Safety Videos</span></a></li>
+            <li class="Safety Instructions"><a href="/us/safety/safety-instructions" target="_self"><span>Safety Instructions</span></a></li>
+            <li class="Capacitaci&#243;n Seguridad"><a href="/us/safety/safety-training-espa&#241;ol" target="_self"><span>Capacitaci&#243;n Seguridad</span></a></li>
+</ul>
+            </div>
+            
+        </li>
+        <li>
+            <a href="/us/support" target="_self"><span>Support</span></a>
+            
+            <div class="mega-menu">
+                <ul>            <li class="Submit a Review"><a href="/us/support/submit-a-review" target="_self"><span>Submit a Review</span></a></li>
+            <li class="Replacement Parts"><a href="/us/support/replacement-parts" target="_self"><span>Replacement Parts</span></a></li>
+             <li class="How To Choose a Ladder">
+                <a href="/us/support/how-to-choose-a-ladder" target="_self"><span>How To Choose a Ladder</span></a>
+                <ul>            <li class="Ladder Height"><a href="/us/support/how-to-choose-a-ladder/ladder-height" target="_self"><span>Ladder Height</span></a></li>
+            <li class="Performance System"><a href="/us/support/how-to-choose-a-ladder/performance-system" target="_self"><span>Performance System</span></a></li>
+            <li class="Materials Matter"><a href="/us/support/how-to-choose-a-ladder/materials-matter" target="_self"><span>Materials Matter</span></a></li>
+            <li class="Unique Product Solutions"><a href="/us/support/how-to-choose-a-ladder/unique-product-solutions" target="_self"><span>Unique Product Solutions</span></a></li>
+</ul>
+            </li>
+            <li class="Literature"><a href="/us/support/literature" target="_self"><span>Literature</span></a></li>
+             <li class="FAQs">
+                <a href="/us/support/faq" target="_self"><span>FAQs</span></a>
+                <ul>            <li class="Climbing Equipment "><a href="/us/support/faq/climbing-equipment" target="_self"><span>Climbing Equipment </span></a></li>
+            <li class="Fall Protection"><a href="/us/support/faq/fall-protection" target="_self"><span>Fall Protection</span></a></li>
+            <li class="Attic Ladders"><a href="/us/support/faq/attic-ladders" target="_self"><span>Attic Ladders</span></a></li>
+            <li class="Ladder Racks"><a href="/us/support/faq/ladder-racks" target="_self"><span>Ladder Racks</span></a></li>
+</ul>
+            </li>
+</ul>
+            </div>
+            
+        </li>
+        <li><a href="/us/where-to-buy" target="_self"><span>Where To Buy</span></a></li>
+        <li>
+            <a href="/us/news-events" target="_self"><span>News</span></a>
+            
+            <div class="mega-menu">
+                <ul>            <li class="Get Home Safe"><a href="/us/news-events/get-home-safe" target="_self"><span>Get Home Safe</span></a></li>
+            <li class="100 Years"><a href="/us/news-events/100-years" target="_self"><span>100 Years</span></a></li>
+            <li class="News Releases"><a href="/us/news-events/news-releases" target="_self"><span>News Releases</span></a></li>
+            <li class="Featured Videos"><a href="/us/news-events/featured-videos" target="_self"><span>Featured Videos</span></a></li>
+            <li class="Events"><a href="/us/news-events/events" target="_self"><span>Events</span></a></li>
+            <li class="Sponsorships"><a href="/us/news-events/sponsorships" target="_self"><span>Sponsorships</span></a></li>
+            <li class="Testimonials"><a href="/us/news-events/testimonials" target="_self"><span>Testimonials</span></a></li>
+            <li class="ProZone"><a href="/us/news-events/prozone" target="_self"><span>ProZone</span></a></li>
+            <li class="Recalls"><a href="/us/news-events/recalls" target="_self"><span>Recalls</span></a></li>
+</ul>
+            </div>
+            
+        </li>
+        <li>
+            <a href="/us/company" target="_self"><span>Company</span></a>
+            
+            <div class="mega-menu">
+                <ul>            <li class="About Us"><a href="/us/company/about-us" target="_self"><span>About Us</span></a></li>
+            <li class="Locations"><a href="/us/company/locations" target="_self"><span>Locations</span></a></li>
+            <li class="Careers"><a href="/us/company/careers" target="_blank"><span>Careers</span></a></li>
+            <li class="Asset Library"><a href="/us/company/asset-library" target="_blank"><span>Asset Library</span></a></li>
+            <li class="Contact Us"><a href="/us/company/contact-us" target="_self"><span>Contact Us</span></a></li>
+</ul>
+            </div>
+            
+        </li>
+    </ul>
+</nav>
+
+
+
+
+
+
+</div></div> </header> <main id="site-main" class="site-main" tabindex="-1" role="main"> 
+<div id="Main_T62651BB9001_Col00" class="sf_colsIn products-interior" data-sf-element="Container" data-placeholder-label="Container"><div id="Main_T62651BB9003_Col00" class="sf_colsIn container" data-sf-element="Container" data-placeholder-label="Container">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" src="/Scripts/External/lodash.4.17.5.min.js"></script>
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+
+
+<!----------------------------------------BEGIN WERNER---------------------------------------->
+<style>
+	.slick-next:before, .slick-prev:before {
+		color: #000 !important;
+	}
+</style>
+<!----------------------------------------END WERNER---------------------------------------->
+
+	<!--Begin Werner-->
+	<!--End Werner-->
+
+<script type="text/javascript">
+    var GQLEndpoint = 'https://2i9x475eh8.execute-api.us-east-1.amazonaws.com/prod/s/werner/us/en_us/gql'
+    var ProdDataEsDomain = 'https://search-proddata-e7v7zqfjiajxocf6d64svmfaea.us-east-1.es.amazonaws.com';
+    var bazaarVoiceTopCategory = 'Werner US'
+    $.noConflict(true);
+</script>
+<input type="hidden" id="hdnBazaarVoiceInstanceName" value="Werner" />
+<input type="hidden" id="hdnBazaarVoiceLocale" value="en_US" />
+<script type="text/javascript" src="/Scripts/client.min.js"></script>
+<script type="text/javascript" src="/Scripts/menu.min.js"></script>
+<script src="//cdn.jsdelivr.net/bluebird/3.5.0/bluebird.min.js"></script>
+
+<link href="/Scripts/External/cloud-zoom.css" rel="stylesheet" type="text/css">
+
+<script type="text/javascript" src="//content.webcollage.net/api/v2/product-content"></script>
+
+
+
+<!-- Details App -->
+<div id="details-app" class="details-app container " v-cloak data-template="index">
+
+	<!-- Preloader -->
+	<div v-if="working">
+		<div class="loading">
+			<span>Loading details</span>
+			<div class="loading-ellipsis"> <div></div> <div></div> <div></div> <div></div> </div>
+		</div>
+	</div>
+
+	<div v-if="!working" itemscope="" itemtype="https://schema.org/Product">
+
+		<!-- Breadcrumb -->
+		<div class="row details-app__section">
+			<div class="col-sm-12">
+				<span class="breadcrumb">
+					<a href="/us/products">Products</a>
+					<a href="/us/products/ladders/step-ladders/">Step Ladders</a>
+					<a v-if="currentItemSeriesFullUrl && currentItemSeriesName" v-bind:href="currentItemSeriesFullUrl">{{ currentItemSeriesName }}</a>
+					<span v-html="productTitle"></span>
+				</span>
+			</div>
+		</div>
+
+
+		<div class="row details-app__section">
+			<!-- Product Title / Rating Summary / Buy Now Button / Spects Table / Description -->
+			<div class="product-header" v-bind:class="isLongDescription ? 'active' : ''">
+
+				<!-- Product Title -->
+				<h1 class="product-title lower-model-title" id="productTitle" itemprop="name" v-if="productTitle != ''">
+					<span v-html="productTitle"></span>
+				</h1>
+				<!--Begin Werner-->
+				<div style="position: relative; text-align: right;" v-for="(column, idx) in highlightAttrbiuteNames">
+					<img v-if="getDataAttributeValue(column).length <= 11" src="/ResourcePackages/Talon/assets/images/werner_attrib_Red.png" style="width: 200px; height: 32px; top: 0;"  alt="special feature callout background"/>
+					<img v-else-if="getDataAttributeValue(column).length > 11 && getDataAttributeValue(column).length <= 25" src="/ResourcePackages/Talon/assets/images/werner_attrib_Red.png" style="width: 440px; height: 32px; top: 0;"  alt="special feature callout background"/>
+					<img v-else src="/ResourcePackages/Talon/assets/images/werner_attrib_Red.png" style="width: 650px; height: 32px; top: 0;"  alt="special feature callout background"/>
+					<h3><span style="color:white; position: absolute; top: 0; right: 5px;" class="badge bg-secondary" v-html="getDataAttributeValue(column)"></span></h3>
+				</div>
+				<!--End Werner-->
+				<!-- Rating Summary -->
+				<div class="col-sm-12" v-for="(column, idx) in segmentAttrbiuteNames">
+					<input id="segmentType" type="hidden" v-model="getDataAttributeValue(column)" />
+				</div>
+						<div class="product-rating" data-bv-show="rating_summary" v-bind:data-bv-productId="id"></div>					
+
+				<!-- Product Gallery -->
+				<div class="images">
+					<!-- Image Gallery -->
+					<div class="images__gal image-gallery">
+						<div class="image-gallery__hero">
+							<div id="wrap" style="position: relative;">
+								<a v-bind:href="mainImage.replace('300', '1200').replace('300', '1200').replace('300', '1200').replace('quality=80', 'quality=100')" class="cloud-zoom" id="zooomr" rel="position:'inside'" style="position: relative; display: block; margin: auto;">
+									<img class="main-image"
+										 sitemprop="image"
+										 v-bind:src="mainImage.replace('300', '1200').replace('300', '1200').replace('300', '1200').replace('quality=80', 'quality=100')"
+										 v-bind:alt="getImageAlt(mainImage)"
+										 title="Product Image"
+										 border="0">
+								</a>
+							</div>
+						</div>
+						<div class="image-gallery__thumbs thumbs">
+							<vue-slick-carousel v-bind="imagesSliderSettings">
+								<template v-if="asset.url != ''" v-for="(asset, idx) in assets">
+									<a v-if="asset.url != ' '" v-bind:href="asset.url.replace('300', '1200').replace('300', '1200').replace('300', '1200')" class="cloud-zoom-gallery" v-bind:rel="'useZoom:\'zooomr\'' + ' , smallImage:\'' + asset.url.replace('300', '1200').replace('300', '1200').replace('300', '1200') + '\''">
+										<img v-if="asset.url != ' '" v-bind:src="asset.url.replace('300', '128').replace('300', '128').replace('300', '128').replace('quality=80', 'quality=100')" v-bind:alt="getImageAlt(asset.url)" class="thumbnail">
+									</a>
+								</template>
+							</vue-slick-carousel>
+						</div>
+					</div>
+					<!-- YouTube Player -->
+					<div class="images__video video-gallery">
+						<div v-if="youtubeIds.length > 0">
+							<h3 class="video-title">Videos</h3>
+							<div v-if="youtubeIds.length > 0" class="video-list">
+								<vue-slick-carousel v-bind="videoSliderSettings">
+									<template v-if="youtubeIds.length > 0" v-for="(youtubeId, idx) in youtubeIds">
+										<div class="video-item" @click="pop_video($event)">
+											<a class="video video-icon" v-bind:href="'https://www.youtube.com/embed/' +  youtubeId  + '?'" v-bind:data-modaal-scope="'modaal_' + youtubeId">
+												<img v-bind:src="'https://i.ytimg.com/vi/' + youtubeId  + '/mqdefault.jpg'" />
+											</a>
+											<div class="video-item-content">
+											</div>
+										</div>
+									</template>
+								</vue-slick-carousel>
+							</div>
+							<!-- Video Popup -->
+							<template v-if="youtubeIds.length > 0" v-for="(youtubeId, idx) in youtubeIds">
+								<div style="display: none" ref="el">
+									<div class="modaal-wrapper modaal-video" v-bind:id="'modaal_' + youtubeId">
+										<div class="modaal-outer-wrapper">
+											<div class="modaal-inner-wrapper">
+												<div class="modaal-video-wrap modaal-focus" aria-hidden="false" aria-label="Dialog Window - Close (Press escape to close)" role="dialog" tabindex="0">
+													<div class="modaal-video-container"><iframe v-bind:src="'https://www.youtube.com/embed/' +  youtubeId  + '?'" class="modaal-video-frame" frameborder="0" allowfullscreen=""></iframe></div>
+												</div>
+												<button @click="hide_video($event)" ref="btnClose" type="button" class="modaal-close" id="modaal-close" aria-label="Close (Press escape to close)"><span>Close</span></button>
+											</div>
+										</div>
+									</div>
+									<div class="modaal-overlay" v-bind:id="'modaal_' + youtubeId + '_overlay'" style="background: rgb(0, 0, 0); opacity: 0.8;"></div>
+								</div>
+							</template>
+						</div>
+					</div>
+				</div>
+
+
+				<!-- Buy Now Button -->
+				<div class="product-buynow">
+					<div class="ps-widget" style="display: block; position: relative; visibility: visible;" v-bind:data-ps-sku="id" tabindex="0" aria-disabled="false" role="button" aria-label="shop now."></div>
+					<div>
+					</div>
+				</div>
+
+				<!-- Spects -->
+				<div class="product-spects">
+					<div class="product-spects__row" v-for="(column, idx) in overviewColumns">
+						<span class="product-spects__col product-spects__col--col-start">{{column}}:</span>
+						<!--BEGIN WERNER-->
+						<span class="product-spects__col product-spects__col--col-end" v-html="getDataAttributeValue(column)"> </span>
+						<!--END WERNER-->
+					</div>
+				</div>
+
+				<!-- Links -->
+				<div class="product-links">
+					<a class="product-links__link" href="#resources" @click="smoothScroll('resources')">
+						<i aria-hidden="true" class="fa fa-link"></i>
+						Resources
+					</a>
+					<template v-if="Array.isArray(accessories) && accessories.length > 0">
+						<a class="product-links__link" href="#accessories" @click="smoothScroll('accessories');">
+							<i aria-hidden="true" class="fa fa-link"></i>
+							Compatible Accessories
+						</a>
+					</template>
+				</div>
+
+				<!-- Description -->
+				<div class="product-description" :class="{'product-description--expanded' : isDescPanelExpanded == true}">
+
+					<div class="product-description__content" itemprop="description" v-html="description">
+					</div>
+
+					<button class="product-description__toggle" @click="toggleDescPanel">
+						<span v-show="!isDescPanelExpanded">
+							<i class="fa fa-plus-square-o" aria-hidden="true"></i>
+							<span>Show more</span>
+						</span>
+						<span v-show="isDescPanelExpanded">
+							<i class="fa fa-minus-square-o" aria-hidden="true"></i>
+							<span>Show Less</span>
+						</span>
+					</button>
+
+				</div>
+			</div>
+		</div>
+
+		<!-- Features -->
+		<div class="row details-app__section">
+			<div class="col-sm-12">
+				<div class="product-features">
+					<!-- Features -->
+					<h3 class="product-features__title">Features</h3>
+					<ul class="product-features__list">
+						<li class="product-features__list-item" v-for="(bullet, idx) in bullets" v-html="bullet"></li>
+					</ul>
+
+					<!-- PackageContents -->
+					<div class="product-package" v-if="Array.isArray(kitItems) && kitItems.length > 0">
+						<h3 class="product-package__title">Package Contents</h3>
+						<div class="product-package__table table-wrapper">
+							<table width="100%" class="alt">
+								<tr class="alt">
+									<th style="text-align:left;">Part Number</th>
+									<th>Quantity</th>
+									<th>Description</th>
+								</tr>
+								<tr class="kitItems" v-for="(kitItem, idx) in kitItems">
+									<td style="text-align:left;">
+										<a :href="kitItem.productUrl">  {{ kitItem.modelId }}</a>
+									</td>
+									<td>{{ kitItem.quantity }}</td>
+									<td>{{ kitItem.title }}</td>
+								</tr>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+		<!-- Notes -->
+		<div class="row details-app__section" v-if="productNotes && (productNotes.note1 || productNotes.note2)">
+
+			<!-- Notes -->
+			<div class="col-sm-12">
+				<div class="product-notes" id="resources">
+
+					<h3 class="product-notes__title">Notes</h3>
+
+					<ul class="product-notes__list" style="list-style: none;">
+						<li v-if="productNotes.note1" class="product-notes__list-item">{{ productNotes.note1 }}</li>
+						<li v-if="productNotes.note2" class="product-notes__list-item">{{ productNotes.note2 }}</li>
+					</ul>
+
+				</div>
+			</div>
+		</div>
+
+		<!-- Specifications -->
+		<div class="product-secifications details-app__section">
+
+			<div class="row">
+				<div class="col-sm-12">
+					<h3 class="product-secifications__title">
+						Specifications
+						<span class="iquestion-dark spec-tooltip" id="perf-target-3" style="display:none;"></span>
+					</h3>
+				</div>
+			</div>
+
+			<div class="product-expandable-panel" :class="{'product-expandable-panel-active' : isPanelExpanded == true}">
+
+				<div class="product-expandable-panel__content" id="expandable-panel">
+					<div class="row">
+						<div class="col-sm-6">
+							<div class="product-secifications__features" style="display:;">
+								<h4 class="product-secifications__sub-title">
+									<span>Details</span>
+								</h4>
+								<div class="product-secifications__table product-secifications__table--features table-wrapper">
+									<table class="alt">
+										<tbody>
+											<tr v-for="(featColumn, idx) in featuresAttributeNames">
+												<td style="text-align:left;">{{ featColumn }}</td>
+												<td><span v-html="getDataAttributeValue(featColumn)"></span></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+						<div class="col-sm-6">
+							<div class="product-secifications__dimensions" style="display:;">
+								<h4 class="product-secifications__sub-title">
+									<span>Dimensions</span>
+								</h4>
+								<div class="product-secifications__table product-secifications__table--dimentions table-wrapper">
+									<table class="alt">
+										<tbody>
+											<tr v-for="(dimColumn, idx) in dimensionsAttrbiuteNames">
+												<td style="text-align:left;">{{ dimColumn }}</td>
+												<td><span v-html="getDataAttributeValue(dimColumn)"></span></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<button class="product-expandable-panel__toggle" @click="togglePanel">
+					<span v-show="!isPanelExpanded">
+						<i class="fa fa-plus-square-o" aria-hidden="true"></i>
+						<span>Show more</span>
+					</span>
+					<span v-show="isPanelExpanded">
+						<i class="fa fa-minus-square-o" aria-hidden="true"></i>
+						<span>Show Less</span>
+					</span>
+				</button>
+
+			</div>
+
+		</div>
+
+		<!-- Resources, Documents & Accessories -->
+		<div class="row details-app__section">
+
+			<!-- Resources -->
+			<div class="col-sm-4">
+				<div class="product-resources" id="resources">
+
+					<h3 class="product-resources__title">Resources</h3>
+
+					<ul class="product-resources__list resources">
+
+						<li class="product-resources__list-item resources__link resources__link--res-seriesPage" v-if="currentItemSeriesFullUrl && currentItemSeriesName">
+							<i class="fa fa-link" aria-hidden="true"></i>
+							<a v-bind:href="currentItemSeriesFullUrl">View {{ currentItemSeriesName }} Page</a>
+						</li>
+
+						<template>
+							<li class="product-resources__list-item resources__link resources__link--documents" v-if="documents != undefined && documents.length > 0" v-for="(document, idx) in documents">
+								<i class="fa fa-file-pdf-o" aria-hidden="true"></i>
+								<a v-bind:href="document.file" target="_blank" aria-label="link opens in a new tab">{{ document.name }}</a>
+							</li>
+						</template>
+
+
+					</ul>
+
+					<!-- Documents -->
+					<div class="product-resources__documents assoc-documents" id="gql-model-documents"></div>
+
+				</div>
+			</div>
+
+			<!-- Accessories -->
+			<div class="col-sm-8">
+				<div class="product-accessories" id="accessories" v-if="Array.isArray(accessories) && accessories.length > 0">
+					<h3 class="product-accessories__title">Compatible Accessories</h3>
+					<div class="product-accessories__list accessories-slider">
+
+						<vue-slick-carousel v-bind="accessoriesSliderSettings">
+							<div class="product-accessories__list-item-inner row" v-for="(accessory, idx) in accessories">
+								<a class="col-sm-12" :href="accessory.productUrl" v-if="accessory.model != null && accessory.model.pim != null">
+									<div class="product-accessories__list-col col-sm-2">
+										<img v-bind:src="accessory.model.pim.image" v-bind:alt="getImageAlt(accessory.model.pim.image)" width="32" height="32">
+									</div>
+									<div class="product-accessories__list-col col-sm-10">
+										<span class="title">
+											<!--BEGIN WERNER-->
+											<span v-html="accessory.model.pim.title">
+											</span>
+											<!--END WERNER-->
+										</span>
+									</div>
+								</a>
+							</div>
+						</vue-slick-carousel>
+
+					</div>
+				</div>
+			</div>
+
+		</div>
+
+		<!-- Complementary Products -->
+		<div class="row details-app__section" style="display:none;">
+			<div class="col-sm-12">
+				<div class="product-complementary">
+					<h3 class="product-complementary__title">Complementary Products</h3>
+					<div class="ref-group">
+						<ul class="product-complementary__list accessories"></ul>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- You May Also Consider -->
+		<div class="row details-app__section">
+			<div class="col-sm-12">
+				<div class="product-consider" style="display:none;">
+					<h3 class="product-consider__title">You May Also Consider</h3>
+					<div class="ref-group">
+						<ul class="product-consider__list accessories"></ul>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Additional -->
+		<div class="row details-app__section">
+			<div class="col-sm-12">
+				<div class="product-additional">
+					<h3 class="product-additional__title" v-if="seriesModels.length > 0">
+						Additional {{ currentItemSeriesName }} Models
+					</h3>
+
+					<div class="product-additional-expandable-panel" :class="{'product-additional-expandable-panel-active' : isProdPanelExpanded == true}">
+
+						<div class="product-additional__table prodadd-table">
+							<div class="prodadd-table__header">
+								<div class="prodadd-table__col">
+									<div data-mh="row1" class="prodadd-table__col-item prodadd-table__col-item--header invisible" id="prod-add-modelimage" style="height: 176px;">Model Image</div>
+									<div data-mh="row2" class="prodadd-table__col-item prodadd-table__col-item--header" id="prod-add-modelnumber" style="height: 44px;">Model Number</div>
+
+
+									<div v-for="(column, idx) in seriesColumns" :data-mh="'row'+(idx+4)" class="prodadd-table__col-item prodadd-table__col-item--header">
+										<span class="col-item-text-content">
+											{{column}}
+										</span>
+
+									</div>
+								</div>
+							</div>
+
+							<div class="prodadd-table__body">
+								<vue-slick-carousel v-bind="seriesSliderSettings">
+									<div class="prodadd-table__col" v-for="(seriesModel, idx) in seriesModels">
+										<div data-mh="row1" class="prodadd-table__col-item prodadd-table__col-item--media" aria-labelledby="prod-add-modelimage"><a v-bind:href="seriesModel.productUrl"><img :src="seriesModel.pim.image" height="48" /></a></div>
+										<div data-mh="row2" class="prodadd-table__col-item prodadd-table__col-item--model-number" aria-labelledby="prod-add-modelnumber"><a v-bind:href="seriesModel.productUrl"><span>{{seriesModel.pim.id}}</span></a></div>
+
+										<div v-for="(column, idx) in seriesColumns" :data-header="column" :data-mh="'row'+(idx+4)" class="prodadd-table__col-item">
+											<span class="col-item-text">
+												<span v-if="getModelColumnValue(seriesModel, column)" class="col-item-text-content this">
+													<!--BEGIN WERNER--> <span v-html="getModelColumnValue(seriesModel, column)"></span> <!--END WERNER-->
+												</span>
+												<span v-else>N/A</span>
+											</span>
+										</div>
+									</div>
+								</vue-slick-carousel>
+							</div>
+						</div>
+
+						<button class="product-expandable-panel__toggle" @click="toggleProdPanel">
+							<span v-show="!isProdPanelExpanded">
+								<i class="fa fa-plus-square-o" aria-hidden="true"></i>
+								<span>Show more</span>
+							</span>
+							<span v-show="isProdPanelExpanded">
+								<i class="fa fa-minus-square-o" aria-hidden="true"></i>
+								<span>Show Less</span>
+							</span>
+						</button>
+
+					</div>
+
+				</div>
+			</div>
+		</div>
+
+		<!-- Reviews & Questions -->
+			<div class="row details-app__section">
+				<div class="col-sm-12" v-for="(column, idx) in segmentAttrbiuteNames">
+					<div class="product-reviews" v-if="getDataAttributeValue(column) != 'Van'">
+						<h3 class="product-reviews__title">Reviews</h3>
+						<div class="product-reviews__content" data-bv-show="reviews" v-bind:data-bv-productId="id"></div>
+					</div>
+				</div>
+			</div>
+			<div class="row details-app__section">
+				<div class="col-sm-12">
+					<div class="product-questions">
+						<h3 class="product-questions__title">Questions</h3>
+						<div class="product-questions__content" data-bv-show="questions" v-bind:data-bv-productId="id"></div>
+					</div>
+				</div>
+			</div>
+	</div>
+</div>
+
+
+
+
+<script type="text/javascript">
+
+    
+    var siteLang = "werner-us.en_us";
+    
+
+
+    var productDetailsUrl = '/us/view';
+    var seriesDetailsUrl = '/us/series';
+    var categoryMappings = {"Accessories":{"Name":"Accessories","PageUrl":"/us/products/ladders/ladder-accessories","DisplayName":"Accessories","IncludeInSite":true},"Scaffold Towers":{"Name":"Scaffold Towers","PageUrl":"/us/products/scaffold-platforms/towers","DisplayName":"Scaffold Towers","IncludeInSite":true},"Step Ladders":{"Name":"Step Ladders","PageUrl":"/us/products/ladders/step-ladders","DisplayName":"Step Ladders","IncludeInSite":true},"Extension Ladders":{"Name":"Extension Ladders","PageUrl":"/us/products/ladders/extension-ladders","DisplayName":"Extension Ladders","IncludeInSite":true},"Multi-Ladders":{"Name":"Multi-Ladders","PageUrl":"/us/products/ladders/multi-ladders","DisplayName":"Multi-Ladders","IncludeInSite":true},"Work Platform":{"Name":"Work Platform","PageUrl":"/us/products/ladders/work-platforms","DisplayName":"Work Platforms","IncludeInSite":true},"Rolling Scaffolds":{"Name":"Rolling Scaffolds","PageUrl":"/us/products/scaffold-platforms/rolling-scaffolds","DisplayName":"Rolling Scaffolds","IncludeInSite":true},"Step Stools":{"Name":"Step Stools","PageUrl":"/us/products/ladders/step-stools","DisplayName":"Step Stools","IncludeInSite":true},"Harnesses":{"Name":"Harnesses","PageUrl":"/us/products/fall-protection/harnesses","DisplayName":"Harnesses","IncludeInSite":true},"Lanyards":{"Name":"Lanyards","PageUrl":"/us/products/fall-protection/lanyards","DisplayName":"Lanyards","IncludeInSite":true},"Stages":{"Name":"Stages","PageUrl":"/us/products/specialty-products/stages","DisplayName":"Stages","IncludeInSite":true},"Anchorage Connectors":{"Name":"Anchorage Connectors","PageUrl":"/us/products/fall-protection/anchorage-connectors","DisplayName":"Anchorage Connectors","IncludeInSite":true},"Horizontal Lifelines":{"Name":"Horizontal Lifelines","PageUrl":"/us/products/fall-protection/horizontal-lifelines","DisplayName":"Horizontal Lifelines","IncludeInSite":true},"Attic Ladders":{"Name":"Attic Ladders","PageUrl":"/us/products/attic-ladders","DisplayName":"Attic Ladders","IncludeInSite":true},"Pump Jacks":{"Name":"Pump Jacks","PageUrl":"/us/products/specialty-products/pump-jacks","DisplayName":"Pump Jacks","IncludeInSite":true},"Compliance Kits":{"Name":"Compliance Kits","PageUrl":"/us/products/fall-protection/compliance-kits","DisplayName":"Compliance Kits","IncludeInSite":true},"Fall Protection Accessories":{"Name":"Fall Protection Accessories","PageUrl":"/us/products/fall-protection/accessories","DisplayName":"Fall Protection Accessories","IncludeInSite":true},"Planks":{"Name":"Planks","PageUrl":"/us/products/scaffold-platforms/planks","DisplayName":"Planks","IncludeInSite":true},"Confined Space":{"Name":"Confined Space","PageUrl":"/us/products/fall-protection/confined-space","DisplayName":"Confined Space","IncludeInSite":true},"Vertical Lifelines":{"Name":"Vertical Lifelines","PageUrl":"/us/products/fall-protection/vertical-lifelines","DisplayName":"Vertical Lifelines","IncludeInSite":true},"Self Retractable Lifelines":{"Name":"Self Retractable Lifelines","PageUrl":"/us/products/fall-protection/retractables","DisplayName":"Self Retractable Lifelines","IncludeInSite":true},"Guardrails":{"Name":"Guardrails","PageUrl":"/us/products/specialty-products/guard-rails","DisplayName":"Guard Rails","IncludeInSite":true},"Racks":{"Name":"Racks","PageUrl":"/us/products/specialty-products/racks-ramps","DisplayName":"Racks","IncludeInSite":true},"Ramps":{"Name":"Ramps","PageUrl":"/us/products/specialty-products/ramps","DisplayName":"Ramps","IncludeInSite":true},"Fire Escape Ladders":{"Name":"Fire Escape Ladders","PageUrl":"/us/products/specialty-products/fire-escape-ladders","DisplayName":"Fire Escape Ladders","IncludeInSite":true},"Scaffold Components":{"Name":"Scaffold Components","PageUrl":"/us/products/scaffold-platforms/scaffold-components","DisplayName":"Scaffold Components","IncludeInSite":true},"Scaffold Sections":{"Name":"Scaffold Sections","PageUrl":"/us/products/scaffold-platforms/scaffold-sections","DisplayName":"Scaffold Sections","IncludeInSite":true},"Drop Safety Equipment":{"Name":"Drop Safety Equipment","PageUrl":"/us/products/fall-protection/drop-safety-equipment","DisplayName":"Drop Safety Equipment","IncludeInSite":true},"Platform Stepladders":{"Name":"Platform Stepladders","PageUrl":"/us/products/ladders/platform-stepladders","DisplayName":"Platform Stepladders","IncludeInSite":true},"Fall Protection":{"Name":"Fall Protection","PageUrl":"/us/products/fall-protection","DisplayName":"Fall Protection","IncludeInSite":true},"Multi Purpose Ladders":{"Name":"Multi Purpose Ladders","PageUrl":"/us/products/ladders/%20dual-purpose-ladders","DisplayName":"Dual Purpose Ladders","IncludeInSite":true}};
+    productDetailsInitialize("", productDetailsUrl, "", siteLang, categoryMappings, seriesDetailsUrl);
+    if (document.getElementById('loft-finder-widget') !== null) {
+        document.getElementById('loft-finder-widget').style.display = "none";
+    }
+
+</script>
+</div></div> </main> <footer id="site-footer" class="site-footer" role="contentinfo"> 
+<div id="Footer_TDC6A9926019_Col00" class="sf_colsIn container" data-sf-element="Container" data-placeholder-label="Container"><div class="row" data-sf-element="Row">
+    <div id="Footer_TDC6A9926017_Col00" class="sf_colsIn col-md-9 footer-links" data-sf-element="Column 1" data-placeholder-label="Column 1"><div class="row" data-sf-element="Row">
+    <div id="Footer_TDC6A9926018_Col00" class="sf_colsIn col-md-3" data-sf-element="Column 1" data-placeholder-label="Column 1">
+<div class="footer-column">
+        <a class="footer-column-primary" href="/us/products" target="_self">Products</a>
+        <a class="footer-column-secondary" href="/us/products/featured-products" target="_self">Featured Products</a>
+        <a class="footer-column-secondary" href="/us/products/ladders" target="_self">Ladders</a>
+        <a class="footer-column-secondary" href="/us/products/ladders/multi-ladders" target="_self">Multi Ladders</a>
+        <a class="footer-column-secondary" href="/us/products/attic-ladders" target="_self">Attic Ladders</a>
+        <a class="footer-column-secondary" href="/us/products/scaffold-platforms" target="_self">Scaffolds &amp; Planks</a>
+        <a class="footer-column-secondary" href="/us/products/fall-protection" target="_self">Fall Protection</a>
+        <a class="footer-column-secondary" href="/us/products/specialty-products" target="_self">Specialty Products</a>
+</div>
+
+
+
+    </div>
+     <div id="Footer_TDC6A9926018_Col01" class="sf_colsIn col-md-3" data-sf-element="Column 2" data-placeholder-label="Column 2">
+<div class="footer-column">
+        <a class="footer-column-primary" href="/us/support" target="_self">Support</a>
+        <a class="footer-column-secondary" href="/us/support/submit-a-review" target="_self">Submit a Review</a>
+        <a class="footer-column-secondary" href="/us/support/replacement-parts" target="_self">Replacement Parts</a>
+        <a class="footer-column-secondary" href="/us/support/how-to-choose-a-ladder" target="_self">How To Choose a Ladder</a>
+        <a class="footer-column-secondary" href="/us/support/literature" target="_self">Literature</a>
+        <a class="footer-column-secondary" href="/us/support/faq" target="_self">FAQs</a>
+</div>
+
+
+
+    </div>
+     <div id="Footer_TDC6A9926018_Col02" class="sf_colsIn col-md-3" data-sf-element="Column 3" data-placeholder-label="Column 3">
+<div class="footer-column">
+        <a class="footer-column-primary" href="/us/news-events" target="_self">News</a>
+        <a class="footer-column-secondary" href="/us/news-events/get-home-safe" target="_self">Get Home Safe</a>
+        <a class="footer-column-secondary" href="/us/news-events/100-years" target="_self">100 Years</a>
+        <a class="footer-column-secondary" href="/us/news-events/news-releases" target="_self">News Releases</a>
+        <a class="footer-column-secondary" href="/us/news-events/featured-videos" target="_self">Featured Videos</a>
+        <a class="footer-column-secondary" href="/us/news-events/events" target="_self">Events</a>
+        <a class="footer-column-secondary" href="/us/news-events/sponsorships" target="_self">Sponsorships</a>
+        <a class="footer-column-secondary" href="/us/news-events/testimonials" target="_self">Testimonials</a>
+        <a class="footer-column-secondary" href="/us/news-events/prozone" target="_self">ProZone</a>
+        <a class="footer-column-secondary" href="/us/news-events/recalls" target="_self">Recalls</a>
+</div>
+
+
+
+    </div>
+     <div id="Footer_TDC6A9926018_Col03" class="sf_colsIn col-md-3" data-sf-element="Column 4" data-placeholder-label="Column 4">
+<div class="footer-column">
+        <a class="footer-column-primary" href="/us/company" target="_self">Company</a>
+        <a class="footer-column-secondary" href="/us/company/about-us" target="_self">About Us</a>
+        <a class="footer-column-secondary" href="/us/company/locations" target="_self">Locations</a>
+        <a class="footer-column-secondary" href="/us/company/careers" target="_blank">Careers</a>
+        <a class="footer-column-secondary" href="/us/company/asset-library" target="_blank">Asset Library</a>
+        <a class="footer-column-secondary" href="/us/company/contact-us" target="_self">Contact Us</a>
+</div>
+
+
+<div>
+    <div class="footer-column"><a href="https://orders.wernerco.com/" target="_blank" data-sf-ec-immutable="">Distributor Portal</a></div>
+
+</div><div>
+    <div class="footer-column"><a href="/us/incident-report">Incident Report</a></div>
+
+</div><div>
+    <div class="footer-column"><p><a href="https://www.prodrivenbrands.com/legal-notices" target="_blank" data-sf-ec-immutable="" data-sf-marked="">Legal Notices</a></p></div>
+
+</div>
+    </div>
+</div>
+
+    </div>
+    <div id="Footer_TDC6A9926017_Col01" class="sf_colsIn col-md-3 footer-social" data-sf-element="Column 2" data-placeholder-label="Column 2"><div class="social">
+    <span>Connect With Us</span>
+<a href="https://x.com/Werner_Safety" target="_blank" data-sf-ec-immutable=""><svg class="icon"><use xlink:href="#icon-twitter"></use></svg></a>
+<a href="https://www.facebook.com/WernerSafetyAboveAll" target="_blank" data-sf-ec-immutable=""><svg class="icon"><use xlink:href="#icon-facebook"></use></svg></a>
+<a href="https://www.instagram.com/wernersafetyaboveall" target="_blank"><svg class="icon"><use xlink:href="#icon-instagram"></use></svg><br data-sf-ec-immutable="" /></a><a href="https://www.youtube.com/@WernerSafetyAboveAll?sub_confirmation=1" target="_blank" data-sf-ec-immutable=""><svg class="icon"><use xlink:href="#icon-youtube"></use></svg></a>
+<a href="https://www.linkedin.com/showcase/werner" target="_blank" data-sf-ec-immutable=""><svg class="icon"><use xlink:href="#icon-linkedin"></use></svg></a>
+
+</div><div>
+    <p style="text-align:center;"><span class="sf-Image-wrapper" data-sfref="[images|OpenAccessDataProvider]292d475d-578a-4e94-be88-36059de9349d"><br /><img alt="ProZone" data-displaymode="Original" src="/images/default-source/werner-us/homepage/werner-prozone.png?sfvrsn=5d041ad_8" style="display:block;margin-left:auto;margin-right:auto;" title="ProZone" /></span>
+ <a href="https://www.wernerco.com/us/news-events/prozone"><strong><span class="hollow-button yellow">SIGN UP FOR PROZONE</span></strong></a>
+</p>
+
+</div>
+    </div>
+</div>
+<div class="copyright">
+    <p style="text-align:center;">&copy; 2025 Werner Co.&nbsp; All Rights Reserved.</p>
+
+</div></div> </footer> <script src="/ScriptResource.axd?d=Uf8BQcxRshYGUr_fjsqPCJO0MohkUD-9NrTchc6seDXl8py2RQefifTR4o4ILZ6Fkoffwr_7OaGvR0roaIsq9NbYm2wRwQ9pLuw-7UibYE-TipddY7poGnWVs71sW1rgJky6OJCxW0UC3Za2_Bs5aIkyudRUS8S6jYVHhHesBy2oNryrwQNTL5Y1dMviRbxg0&amp;t=ffffffffaa59361e" type="text/javascript"></script> <script src="/Frontend-Assembly/Telerik.Sitefinity.Frontend/assets/dist/js/Werner/plugins.min.js?package=Talon&amp;v=LTE2MjgxMzgxNzU%3d" type="text/javascript"></script> <script src="/Frontend-Assembly/Telerik.Sitefinity.Frontend/assets/dist/js/Werner/functions.min.js?package=Talon&amp;v=LTE2MjgwMTU3Mzc%3d" type="text/javascript"></script> 
+
+<script type="text/javascript">
+  <!-- Google Tag Manager -->
+(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-PMDKTZ5');
+<!-- End Google Tag Manager -->
+  </script>
+  
+  <!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PMDKTZ5"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+  
+  <script type="text/javascript">
+  piAId = '406802';
+piCId = '48963';
+piHostname = 'pi.pardot.com';
+
+(function() {
+               function async_load(){
+                              var s = document.createElement('script'); s.type = 'text/javascript';
+                              s.src = ('https:' == document.location.protocol ? 'https://pi' : 'http://cdn') + '.pardot.com/pd.js';
+                              var c = document.getElementsByTagName('script')[0]; c.parentNode.insertBefore(s, c);
+               }
+               if(window.attachEvent) { window.attachEvent('onload', async_load); }
+               else { window.addEventListener('load', async_load, false); }
+})();
+
+  </script>
+    
+    <script src ="https://up.pixel.ad/assets/up.js?um=1"></script>
+<script type="text/javascript">
+cntrUpTag.track('cntrData', '3542f80e9816e61c');
+</script>
+  
+  <!-- Facebook Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '295844571693916');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=295844571693916&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Facebook Pixel Code -->
+<script type="text/javascript">
+_linkedin_partner_id = "2608161";
+window._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];
+window._linkedin_data_partner_ids.push(_linkedin_partner_id);
+</script><script type="text/javascript">
+(function(){var s = document.getElementsByTagName("script")[0];
+var b = document.createElement("script");
+b.type = "text/javascript";b.async = true;
+b.src = "https://snap.licdn.com/li.lms-analytics/insight.min.js";
+s.parentNode.insertBefore(b, s);})();
+</script>
+<noscript>
+<img height="1" width="1" style="display:none;" alt="" src="https://px.ads.linkedin.com/collect/?pid=2608161&fmt=gif" />
+</noscript> <script src="/Frontend-Assembly/SitefinityWebApp/Mvc/Scripts/CustomSearchBox/search-box.min.js?package=Talon&amp;v=6227485801656687331" type="text/javascript"></script> </body> </html>

@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<!--[if lt IE 9]><html lang="en" dir="ltr" prefix="content: http://purl.org/rss/1.0/modules/content/  dc: http://purl.org/dc/terms/  foaf: http://xmlns.com/foaf/0.1/  og: http://ogp.me/ns#  rdfs: http://www.w3.org/2000/01/rdf-schema#  schema: http://schema.org/  sioc: http://rdfs.org/sioc/ns#  sioct: http://rdfs.org/sioc/types#  skos: http://www.w3.org/2004/02/skos/core#  xsd: http://www.w3.org/2001/XMLSchema# " class="no-js"><![endif]-->
+<!--[if gt IE 8]><!-->
+<html lang="en" dir="ltr" prefix="content: http://purl.org/rss/1.0/modules/content/  dc: http://purl.org/dc/terms/  foaf: http://xmlns.com/foaf/0.1/  og: http://ogp.me/ns#  rdfs: http://www.w3.org/2000/01/rdf-schema#  schema: http://schema.org/  sioc: http://rdfs.org/sioc/ns#  sioct: http://rdfs.org/sioc/types#  skos: http://www.w3.org/2004/02/skos/core#  xsd: http://www.w3.org/2001/XMLSchema# " class="no-js">
+<!--<![endif]-->
+  <head>
+    <meta charset="utf-8" />
+<link rel="canonical" href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/devices-and-equipment/radio-equipment-standards/radio-standards-specifications-rss/rss-287-emergency-position-indicating-radio-beacons-epirb-emergency-locator-transmitters-elt" />
+<meta http-equiv="content-language" content="en-CA" />
+<link rel="shortlink" href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/node/584" />
+<meta name="description" content="Radio Standard Specification 287, issue 3, Emergency Position Indicating Radio Beacons (EPIRB), Emergency Locator Transmitters (ELT), Personal Locator Beacons (PLB), and Maritime Survivor Locator Devices (MSLD), replaces RSS-287, issue 2, dated March 2014." />
+<meta name="keywords" content="Emergency Position Indicating Radio Beacons (EPIRB); Emergency Locator Transmitters (ELT); Personal Locator Beacons (PLB); and Maritime Survivor Locator Devices (MSLD)" />
+<meta name="dcterms.title" content="RSS-287 — Emergency Position Indicating Radio Beacons (EPIRB), Emergency Locator Transmitters (ELT), Personal Locator Beacons (PLB), and Maritime Survivor Locator Devices (MSLD)" />
+<meta name="dcterms.creator" content="Government of Canada, Innovation, Science and Economic Development Canada, Office of the Deputy Minister, Spectrum and Telecommunications Sector" />
+<meta name="dcterms.description" content="Radio Standard Specification 287, issue 3, Emergency Position Indicating Radio Beacons (EPIRB), Emergency Locator Transmitters (ELT), Personal Locator Beacons (PLB), and Maritime Survivor Locator Devices (MSLD), replaces RSS-287, issue 2, dated March 2014." />
+<meta name="dcterms.publisher" content="Innovation, Science and Economic Development Canada" />
+<meta name="dcterms.date" content="2024-04-03" />
+<meta name="dcterms.format" content="HTML" />
+<meta name="Generator" content="Drupal 8 (https://www.drupal.org)" />
+<meta name="MobileOptimized" content="width" />
+<meta name="HandheldFriendly" content="true" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<noscript><link rel="stylesheet" href="/site/spectrum-management-telecommunications/libraries/wet-boew/css/noscript.min.css" />
+</noscript><meta name="dcterms.language" title="ISO639-2" content="eng" />
+<meta name="author" content="Spectrum and Telecommunications Sector" />
+<meta name="dcterms.type" title="ictype" content="Standards" />
+<meta name="dcterms.spatial" title="ISO3166-1" content="" />
+<meta name="dcterms.spatial" title="gcgeonames" content="" />
+<meta name="dcterms.audience" title="icaudience" content="" />
+<meta name="dcterms.subject" title="gccore" content="telecommunications policy; standardization; certification" />
+<meta name="dcterms.subject" title="naics" content="" />
+<meta name="dcterms.created" title="W3CDTF" content="2007-02-12" />
+<meta name="dcterms.modified" title="W3CDTF" content="2024-04-03" />
+<meta name="dcterms.issued" title="W3CDTF" content="2001-07-31" />
+<meta name="dcterms.identifier" title="ICsiteProduct" content="760" />
+<link rel="shortcut icon" href="/site/spectrum-management-telecommunications/themes/custom/epic_theme/favicon.ico" type="image/vnd.microsoft.icon" />
+<link rel="alternate" hreflang="en" href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/devices-and-equipment/radio-equipment-standards/radio-standards-specifications-rss/rss-287-emergency-position-indicating-radio-beacons-epirb-emergency-locator-transmitters-elt" />
+<link rel="alternate" hreflang="fr" href="https://ised-isde.canada.ca/site/gestion-spectre-telecommunications/fr/dispositifs-materiel/normes-applicables-materiel-radio/cahiers-charges-normes-radioelectriques-cnr/cnr-287-radiobalises-localisation-sinistres-rls-radiobalises-secours-rbs-balises-localisation" />
+
+    <title>RSS-287 — Emergency Position Indicating Radio Beacons (EPIRB), Emergency Locator Transmitters (ELT), Personal Locator Beacons (PLB), and Maritime Survivor Locator Devices (MSLD)</title>
+    <link rel="stylesheet" media="all" href="/site/spectrum-management-telecommunications/sites/default/files/css/css_bB0TQtlEZy1-QiWN3h7RTRfZGEI3rKl-ZggDiXU353c.css" />
+
+<!--[if gte IE 9]><!-->
+<link rel="stylesheet" media="all" href="/site/spectrum-management-telecommunications/sites/default/files/css/css_YMSUlbHLSXAs7J4ZlHpfMLBEUZhqx4WohyYgkGEMqXw.css" />
+<!--<![endif]-->
+
+<!--[if lt IE 9]>
+<link rel="stylesheet" media="all" href="/site/spectrum-management-telecommunications/libraries/theme-gcweb/css/ie8-theme.min.css?swvau5" />
+<![endif]-->
+<link rel="stylesheet" media="all" href="/site/spectrum-management-telecommunications/sites/default/files/css/css_PutnoShyduDhIITgMO9s2016tw_WmGSxX9uZZCZWjLs.css" />
+<link rel="stylesheet" media="all" href="/site/spectrum-management-telecommunications/sites/default/files/css/css_uxz_CoRrgNqDcZENta1ELi907oY8InqUwqtFXS7Os28.css" />
+<link rel="stylesheet" media="all" href="/site/spectrum-management-telecommunications/sites/default/files/asset_injector/css/invisibledetails-a5de85d7a2b71e7974f6cb9d7d0d0606.css?swvau5" />
+
+    
+<!--[if lte IE 8]>
+<script src="/site/spectrum-management-telecommunications/sites/default/files/js/js_VtafjXmRvoUgAzqzYTA3Wrjkx9wcWhjP0G4ZnnqRamA.js"></script>
+<![endif]-->
+<script src="https://use.fontawesome.com/releases/v6.1.0/js/all.js" defer crossorigin="anonymous"></script>
+<script src="https://use.fontawesome.com/releases/v6.1.0/js/v4-shims.js" defer crossorigin="anonymous"></script>
+
+    <style>
+details > summary, details {
+        border: none !important;
+}
+.stick {
+        position: sticky;
+        top: 0;
+}
+.clearspc {
+        display: none;
+}
+
+@media (max-width: 991px) {
+.stick {
+        position: static;
+}
+.clearspc {
+        display: block;
+}
+}
+</style>
+
+  </head>
+  <body class="anonymous devices-and-equipment-radio-e devices-and-equipment-radio-equipment-standards node-584 page published-yes path-node page-node-type-page has-glyphicons epic-theme theme-gcweb">
+    <nav aria-label="Skip links">
+      <ul id="wb-tphp">
+        <li class="wb-slc">
+          <a class="wb-sl" href="#wb-cont">
+            Skip to main content
+          </a>
+        </li>
+        <li class="wb-slc visible-sm visible-md visible-lg">
+          <a class="wb-sl" href="#wb-info">
+            Skip to "About this site"
+          </a>
+        </li>
+      </ul>
+    </nav>
+    <div id="sitewide-alert"></div>
+      <div class="dialog-off-canvas-main-canvas" data-off-canvas-main-canvas>
+    
+  
+        <header class="navbar navbar-default" id="navbar">
+      <div id="wb-bnr" class="container">
+        <div class="row">
+          <section id="wb-lng" class="col-xs-3 col-sm-12 pull-right text-right">
+            <h2 class="wb-inv">Language selection</h2>
+              <div class="region region-language-toggle">
+    <section class="language-switcher-language-url block block-wxt-library block-wxt-language-blocklanguage-interface clearfix" id="block-epic-theme-languageswitcher" data-block-plugin-id="wxt_language_block:language_interface">
+  
+      <div class="hidden">WxT Language switcher</div>
+    
+
+      <ul class="links list-inline mrgn-bttm-0">                    <li><a href="https://ised-isde.canada.ca/site/gestion-spectre-telecommunications/fr/dispositifs-materiel/normes-applicables-materiel-radio/cahiers-charges-normes-radioelectriques-cnr/cnr-287-radiobalises-localisation-sinistres-rls-radiobalises-secours-rbs-balises-localisation" class="language-link" lang="fr" hreflang="fr" data-drupal-link-system-path="node/584"><span class="hidden-xs">Français</span><abbr title="Français" class="visible-xs h3 mrgn-tp-sm mrgn-bttm-0 text-uppercase">fr</abbr></a></li></ul>
+  </section>
+
+  </div>
+
+          </section>
+        
+            <div class="region col-xs-9 col-sm-5 col-md-4 region-banner">
+      <div class="brand" property="publisher" typeof="GovernmentOrganization">
+    <a href="https://canada.ca/en.html" property="url">
+      <img id="header-logo" src='/site/spectrum-management-telecommunications/themes/custom/epic_theme/images/sig-blk-en.svg' alt="Government of Canada" property="logo" />
+      <span class="wb-inv"> /
+        <span lang="fr">Gouvernement du Canada</span>
+      </span>
+    </a>
+    <meta property="name" content="Government of Canada">
+    <meta property="areaServed" typeof="Country" content="Canada">
+    <link property="logo" href="/libraries/theme-gcweb/assets/wmms-blk.svg">
+  </div>
+
+  </div>
+
+            <div class="region col-lg-offset-4 col-md-offset-4 col-sm-offset-2 col-xs-12 col-sm-5 col-md-4 region-search">
+    <section  class="wxt-search-canada-block-form block clearfix text-right" data-drupal-selector="wxt-search-canada-block-form" novalidate="novalidate" id="wb-srch" data-block-plugin-id="wxt_search_form_block">
+  
+      <h2 class="block-title">WxT Search form</h2>
+    
+
+      <form action="https://www.canada.ca/en/sr/srb.html#wb_land" method="get" id="wxt-search-canada-block-form" accept-charset="UTF-8" class="search-form search-block-form form-inline" role="search">
+  <div class="form-item js-form-item form-type-search js-form-type-search form-item-q js-form-item-q form-no-label form-group">
+      <label for="wb-srch-q" class="control-label sr-only"><span class="field-name">Search</span>
+    </label>
+  
+  
+  
+  <input data-drupal-selector="wb-srch-q" class="form-search form-control" placeholder="Search Canada.ca" type="search" id="wb-srch-q" name="q" value="" size="27" maxlength="128" />
+
+  
+  </div>
+<div class="submit form-group js-form-wrapper form-wrapper" data-drupal-selector="edit-submit-container" id="edit-submit-container"><button class="btn-primary button js-form-submit form-submit btn icon-before" data-drupal-selector="wb-srch-sub" type="submit" id="wb-srch-sub" name="op" value="" title="Search"><span class="icon glyphicon glyphicon-search" aria-hidden="true"></span><span class="wb-inv">Search</span></button></div>
+<input data-drupal-selector="edit-cdn" type="hidden" name="cdn" value="canada" /><input data-drupal-selector="edit-st" type="hidden" name="st" value="s" /><input data-drupal-selector="edit-num" type="hidden" name="num" value="10" /><input data-drupal-selector="edit-langs" type="hidden" name="langs" value="eng" /><input data-drupal-selector="edit-st1rt" type="hidden" name="st1rt" value="0" /><input data-drupal-selector="edit-s5bm3ts21rch" type="hidden" name="s5bm3ts21rch" value="x" /><input data-drupal-selector="form-8hlir-7-dgwg4mmvbtx4k7h2zf2ktainz6yphwt6wxa" type="hidden" name="form_build_id" value="form-8hLiR_7-dgWG4MMVbtX4K7h2ZF2kTaINZ6yPHwT6wXA" /><input data-drupal-selector="edit-wxt-search-canada-block-form" type="hidden" name="form_id" value="wxt_search_canada_block_form" />
+</form>
+
+  </section>
+
+  </div>
+
+        </div>
+      </div>
+      <nav class="gcweb-menu" data-trgt="mb-pnl" typeof="SiteNavigationElement">
+        <div class="container">
+          <h2 class="wb-inv">Menu</h2>
+          <button type="button" aria-haspopup="true" aria-expanded="false"><span class="wb-inv">Main </span>Menu <span class="expicon glyphicon glyphicon-chevron-down"></span></button>
+              
+                      <ul role="menu" aria-orientation="vertical" data-ajax-replace="https://www.canada.ca/content/dam/canada/sitemenu/sitemenu-v2-en.html">
+                                  <li role="presentation">
+        <a href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en" role="menuitem" data-drupal-link-system-path="&lt;front&gt;">Home</a>
+                  </li>
+        </ul>
+  
+
+
+
+
+        </div>
+      </nav>
+        <div class="region region-breadcrumb">
+        <nav id="wb-bc" property="breadcrumb" aria-labelledby="breadcrumbTitle">
+    <h2 id="breadcrumbTitle">You are here</h2>
+    <div class="container">
+      <ol class="breadcrumb">
+                              <li >
+                              <a href="https://www.canada.ca/en.html">Canada.ca</a>
+                          </li>
+                                        <li >
+                              <a href="https://www.canada.ca/en/services/business.html">Business and industry</a>
+                          </li>
+                                        <li >
+                              <a href="https://www.canada.ca/en/services/business/permits.html">Permits, licences and regulations</a>
+                          </li>
+                                        <li >
+                              <a href="https://www.canada.ca/en/services/business/permits/federallyregulatedindustrysectors.html">Federally regulated industry sectors</a>
+                          </li>
+                                        <li >
+                              <a href="https://www.canada.ca/en/services/business/permits/federallyregulatedindustrysectors/broadcastingtelecommunicationsregulation.html">Broadcasting and telecommunications regulation</a>
+                          </li>
+                                        <li >
+                              <a href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/spectrum-management-and-telecommunications">Spectrum management and telecommunications</a>
+                          </li>
+                                        <li >
+                              <a href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/devices-and-equipment">Devices and equipment</a>
+                          </li>
+                                        <li >
+                              <a href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/devices-and-equipment/radio-equipment-standards">Radio equipment standards</a>
+                          </li>
+                                        <li >
+                              <a href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/devices-and-equipment/radio-equipment-standards/radio-standards-specifications-rss">Radio Standards Specifications (RSS)</a>
+                          </li>
+                        </ol>
+  </div>
+</nav>
+
+
+  </div>
+
+    </header>
+  
+
+  <div class="container">
+    <div class="row">
+
+                              <div class="highlighted">  <div class="region region-highlighted">
+    <div data-drupal-messages-fallback class="hidden"></div>
+
+  </div>
+</div>
+              
+            
+                  <main property="mainContentOfPage"  class="col-md-12 main-container container js-quickedit-main-content">
+
+                                <div class="region region-header">
+      
+  <h1 id="wb-cont">RSS-287 — Emergency Position Indicating Radio Beacons (EPIRB), Emergency Locator Transmitters (ELT), Personal Locator Beacons (PLB), and Maritime Survivor Locator Devices (MSLD)</h1>
+
+
+  </div>
+
+              
+      <section>
+
+                
+                
+                                      
+                  
+                          <a id="main-content"></a>
+            <div class="region region-content">
+      <article data-history-node-id="584" class="page full clearfix">
+
+  
+    
+
+  
+  <div class="content">
+    
+            <div class="field field--name-body field--type-text-with-summary field--label-hidden field--item"><div class="tex2jax_process"><article><!--RSS-287 - Emergency Position Indicating Radio Beacons (EPIRB), Emergency Locator Transmitters (ELT), Personal Locator Beacons (PLB), and Maritime Survivor Locator Devices (MSLD)-->
+<p><br />
+Issue 3<br />
+April 2, 2024</p>
+
+<p><a href="https://gazette.gc.ca/rp-pr/p1/2024/2024-04-13/html/notice-avis-eng.html#ne1">Gazette notice SMSE-001-24</a></p>
+
+<section id="details-elements"><a class="btn bg-info wb-toggle" data-toggle="{&quot;selector&quot;: &quot;details&quot;, &quot;parent&quot;: &quot;#details-elements&quot;}">Expand all content / collapse all content</a>  <a class="btn bg-info" data-entity-substitution="file" data-entity-type="file" data-entity-uuid="afbbbd1f-c0e5-4295-927d-a42039830d8d" href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/sites/default/files/documents/RSS-287_I3%282024%29.pdf" target="_blank" title="RSS-287_I3(2024).pdf"> PDF</a>
+
+<div class="pull-right col-xs-12 col-md-3">
+<div class="panel panel-info small">
+<details><summary class="mrgn-tp-sm">
+<h2 class="h3">Contents</h2>
+</summary>
+
+<ul class="small list-unstyled">
+	<li><a href="#sp">Preface</a></li>
+	<li><a href="#s1">1. Scope</a></li>
+	<li><a href="#s2">2. General information</a></li>
+	<li><a href="#s3">3. General requirements</a></li>
+	<li><a href="#s4">4. Labelling requirements</a></li>
+	<li><a href="#s5">5. Type designator</a></li>
+	<li><a href="#s6">6. Measurement methods for equipment operating with 121.5 MHz or 243 MHz frequency</a></li>
+	<li><a href="#s7">7. Transmitter and receiver standard specifications</a></li>
+	<li><a href="#s8">8. Authorization to perform radiation tests</a></li>
+	<li><a href="#sA">Annex A: Addresses</a></li>
+</ul>
+</details>
+</div>
+</div>
+<!--SECTION -->
+
+<section class="mrgn-tp-lg">
+<details><summary>
+<h2 class="h3" id="sp">Preface</h2>
+</summary>
+
+<p class="mrgn-tp-md">Radio Standard Specification 287, issue 3, <cite>Emergency Position Indicating Radio Beacons (EPIRB), Emergency Locator Transmitters (ELT), Personal Locator Beacons (PLB), and Maritime Survivor Locator Devices (MSLD)</cite>, replaces RSS-287, issue 2, dated March 2014.</p>
+
+<p>Main changes are listed below:</p>
+
+<ol class="lst-spcd mrgn-tp-md mrgn-bttm-md">
+	<li>modified section 1 to add references for automatic identification system (AIS) and digital selective calling (DSC)</li>
+	<li>added section 2.1, Coming into force</li>
+	<li>modified section 2.3 to introduce the AIS and DSC frequencies</li>
+	<li>removed section 2.3.5 <cite>Transport Canada (Marine Safety) Documents</cite> and replaced with section 3.2.3, Transport Canada requirements</li>
+	<li>removed section 2.3.6 <cite>National Search and Rescue Secretariat (NSS) Document</cite> and moved the text to section 3.4.3, NSS requirements</li>
+	<li>modified sections 3, 4, and 6 to segregate the requirements by device type</li>
+	<li>modified section 7.3 to include the DSC frequency</li>
+	<li>made editorial changes and clarifications, as appropriate</li>
+</ol>
+
+<p>Inquiries may be submitted by one of the following methods:</p>
+
+<ol class="lst-spcd mrgn-tp-md mrgn-bttm-md">
+	<li>Online using the <a href="https://ised-isde.canada.ca/site/certification-engineering-bureau/en/general-inquiry">General Inquiry</a> form. In the form, select the Directorate of Regulatory Standards radio button and specify “RSS-287” in the General Inquiry field.</li>
+	<li>By mail to the following address:
+	<ul class="mrgn-tp-md mrgn-bttm-md lst-spcd list-unstyled">
+		<li>Innovation, Science and Economic Development Canada<br />
+		Engineering, Planning and Standards Branch<br />
+		Attention: Regulatory Standards Directorate<br />
+		235 Queen St<br />
+		Ottawa ON  K1A 0H5<br />
+		Canada</li>
+	</ul>
+	</li>
+	<li>By email to <a href="mailto:consultationradiostandards-consultationnormesradio@ised-isde.gc.ca">consultationradiostandards-consultationnormesradio@ised-isde.gc.ca</a></li>
+</ol>
+
+<p>Comments and suggestions for improving this standard may be submitted online using the <a href="https://www.ic.gc.ca/eic/site/ceb-bhst.nsf/frm-eng/EABV-9VCLQJ">Standard Change Request</a> form, or by mail or email to the above addresses.</p>
+
+<p>All Innovation, Science and Economic Development Canada publications related to spectrum and telecommunications are available on the <a data-entity-substitution="canonical" data-entity-type="node" data-entity-uuid="0e00ce59-c885-4eac-945d-e5904aafbd2d" href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/spectrum-management-and-telecommunications" title="Spectrum management and telecommunications">Spectrum Management and Telecommunications</a> website.</p>
+
+<p class="mrgn-tp-lg">Issued under the authority<br />
+of the Minister of Innovation, Science and Industry</p>
+
+<p>____________________________________<br />
+Martin Proulx<br />
+Director General<br />
+Engineering, Planning and Standards Branch</p>
+</details>
+</section>
+<!--SECTION 1-->
+
+<section>
+<details><summary>
+<h2 class="h3" id="s1">1. Scope</h2>
+</summary>
+
+<p class="mrgn-tp-md">This Radio Standard Specification (RSS) document sets out the requirements for certification of:</p>
+
+<ul class="mrgn-tp-md mrgn-bttm-md">
+	<li>emergency position indicating radio beacons (EPIRB)</li>
+	<li>emergency locator transmitters (ELT)</li>
+	<li>personal locator beacons (PLBs)</li>
+	<li>maritime survivor locator devices (MSLD)</li>
+</ul>
+
+<p>EPIRBs are for carriage on ships, ELTs are for carriage on aircraft, and PLBs are for use by persons. Each of these devices may send a distress signal on the 406 MHz dedicated distress frequency band via satellite systems. These devices are also intended and designed to provide the standardized capabilities necessary to transmit alert and location information via coded messages to be relayed through the COSPAS-SARSAT system to Search and Rescue agencies.</p>
+
+<p>MSLDs are devices worn on the person while aboard a vessel, which are intended and designed to provide limited proximity alerting and locating capability. The device will transmit low-power alerting and homing signals to an appropriate directional receiver on board a vessel in the devices’ vicinity to facilitate the distressed user's rescue.</p>
+
+<div class="mrgn-tp-md mrgn-bttm-md">
+<div class="well">
+<p class="mrgn-tp-sm"><b>Important note:</b> </p>
+
+<p>MSLDs DO NOT comply with Transport Canada (TC) and National Search and Rescue Secretariat (NSS) minimum performance standards governing EPIRBs and PLBs, respectively.</p>
+
+<p>MSLDs are NOT considered to be EPIRBs or PLBs by Innovation, Science and Economic Development Canada (ISED), in agreement with the Transport Canada and the National Search and Rescue Secretariat.</p>
+
+<p>MSLDs are NOT intended or designed to provide the standardized capabilities necessary to transmit alerts via satellites.</p>
+</div>
+</div>
+
+<p>The automatic identification system (AIS) is a maritime navigation safety communication system standardized by the International Telecommunication Union (ITU) and adopted by the International Maritime Organization (IMO).</p>
+
+<p>AIS automatically provides vessel information (including the vessel’s identity, type, position, course, speed, navigation status and other safety-related information) to appropriately equipped shore stations, other ships and aircraft, and:</p>
+
+<ol class="mrgn-tp-md mrgn-bttm-md lst-lwr-alph">
+	<li>automatically receives such information from similarly fitted ships</li>
+	<li>monitors and tracks ships and</li>
+	<li>exchanges data with shore-based facilities</li>
+</ol>
+
+<p>Digital selective calling (DSC) is a type of synchronous system developed by the ITU Radiocommunication Sector (ITU-R) that is used to establish contact with a station or groups of stations automatically by means of radio equipment.</p>
+
+<p>MSLDs, EPIRBs and PLBs with added capabilities, such as AIS and DSC, are to be used on a non-interference basis to the COSPAS-SARSAT satellite system.</p>
+
+<p>In an emergency situation, the radio beacon is turned on either automatically, such as a water activated switch in an EPIRB or an inertia switch in an ELT, or manually by the user for all types of beacons transmitting on the 406 MHz frequency.</p>
+
+<p>The manufacturing, importation, or sale of EPIRBs and PLBs operating only on 121.5 MHz or/and 243 MHz is prohibited.</p>
+
+<p>ELTs shall be certified only if the equipment has, at a minimum, operating frequencies of 121.5 MHz and 406 MHz.</p>
+</details>
+</section>
+<!--SECTION 2 -->
+
+<section>
+<details><summary>
+<h2 class="h3" id="s2">2. General information</h2>
+</summary>
+
+<p class="mrgn-tp-md">Equipment covered by this RSS is classified as Category I equipment. Either a technical acceptance certificate (TAC) issued by the Certification and Engineering Bureau of Innovation, Science and Economic Development Canada (ISED) or a certificate issued by a recognized certification body (CB) is required, pursuant to subsection 21(1) of the <cite><a href="https://laws-lois.justice.gc.ca/eng/regulations/sor-96-484/FullText.html">Radiocommunication Regulations</a></cite>.</p>
+<!--section 2.1--> <a id="s2.1"></a>
+
+<h4>2.1 Coming into force</h4>
+
+<p class="mrgn-tp-md">This standard will be in force as of the date of its publication on <a data-entity-substitution="canonical" data-entity-type="node" data-entity-uuid="0e00ce59-c885-4eac-945d-e5904aafbd2d" href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/spectrum-management-and-telecommunications" title="Spectrum management and telecommunications">ISED</a>’s website.</p>
+
+<p>However, a transition period of six months from the publication date will be provided. During this period, compliance with RSS-287, issue 2, or RSS-287, issue 3, will be accepted. After this period, only applications for the certification of equipment under RSS-287, issue 3 will be accepted. Furthermore, after this transition period, equipment manufactured, imported, distributed, leased, offered for sale, or sold in Canada shall comply with RSS-287, issue 3.</p>
+
+<p>A copy of RSS-287, issue 2, is available upon request by emailing <a href="mailto:consultationradiostandards-consultationnormesradio@ised-isde.gc.ca">consultationradiostandards-consultationnormesradio@ised-isde.gc.ca</a>.</p>
+<!--section 2.2--> <a id="s2.2"></a>
+
+<h4>2.2 Licensing requirements</h4>
+
+<p class="mrgn-tp-md">Equipment covered by this RSS is exempt from licensing requirements pursuant to section 15 of the <cite><a href="https://laws-lois.justice.gc.ca/eng/regulations/sor-96-484/FullText.html">Radiocommunication Regulations</a></cite>. For further information, consult ISED’s <a data-entity-substitution="canonical" data-entity-type="node" data-entity-uuid="d8950fb7-b5a0-4095-b47a-1c26f97d81dc" href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/licences-and-certificates/licensing-exemptions" title="Licensing exemptions">Licensing exemptions</a>.</p>
+<!--section 2.3--> <a id="s2.3"></a>
+
+<h4>2.3 Transmitter frequency configurations</h4>
+
+<p class="mrgn-tp-md">The equipment shall comply with the following configurations:</p>
+
+<div class="mrgn-tp-md col-md-12">
+<div class="mrgn-tp-sm col-md-2">EPIRB:</div>
+
+<div class="mrgn-tp-sm col-md-10">406 MHz primary transmitter with homing frequency on 121.5 MHz and/or 243 MHz, and optional AIS locating signal on 161.975 MHz or 162.025 MHz</div>
+</div>
+
+<div class="mrgn-tp-md col-md-12">
+<div class="mrgn-tp-sm col-md-2">ELT:</div>
+
+<div class="mrgn-tp-sm col-md-10">Shall transmit on at least one of the following frequencies:
+<ul class="mrgn-tp-md mrgn-bttm-md">
+	<li>406 MHz or</li>
+	<li>homing frequency on 121.5 MHz</li>
+</ul>
+</div>
+</div>
+
+<div class="mrgn-tp-md col-md-12">
+<div class="mrgn-tp-sm col-md-2">PLB:</div>
+
+<div class="mrgn-tp-sm col-md-10">406 MHz with homing frequency on 121.5 MHz and/or 243 MHz, and optional AIS locating signal on 161.975 MHz or 162.025 MHz</div>
+</div>
+
+<div class="mrgn-tp-md col-md-12">
+<div class="mrgn-tp-sm col-md-2">MSLD:</div>
+
+<div class="mrgn-tp-sm col-md-10">Shall transmit on at least one of the following frequencies:
+<ul class="mrgn-tp-md mrgn-bttm-md">
+	<li>homing frequency on 121.5 MHz</li>
+	<li>AIS locating signal on 161.975 MHz or 162.025 MHz or</li>
+	<li>*DSC closed loop communication, channel 70, on 156.525 MHz</li>
+</ul>
+</div>
+</div>
+
+<p class="col-md-offset-1">* DSC closed loop communication uses an addressed message for a closed group of users.</p>
+<!--section 2.4--> <a id="s2.4"></a>
+
+<h4>2.4 Applicable standards and related documents</h4>
+
+<p class="mrgn-tp-md">The equipment shall comply with the standards listed in this section, where applicable. These documents can be obtained at the addresses listed in <a href="#sA">annex A</a>.</p>
+<a id="s2.4.1"></a>
+
+<h5>2.4.1 ISED documents</h5>
+
+<div class="mrgn-tp-md col-md-12">
+<div class="mrgn-tp-sm col-md-2">CPC-2-3-07</div>
+
+<div class="mrgn-tp-sm col-md-10"><a data-entity-substitution="canonical" data-entity-type="node" data-entity-uuid="d8872023-bfee-4c93-a9f1-aae72889d3d6" href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/learn-more/key-documents/procedures/client-procedures-circulars-cpc/cpc-2-3-07-obtaining-identities-maritime-mobile-service" title="CPC-2-3-07 — Obtaining Identities in the Maritime Mobile Service"><cite>Obtaining Identities in the Maritime Mobile Service</cite></a></div>
+</div>
+
+<div class="clearfix"> </div>
+<a id="s2.4.2"></a>
+
+<h5>2.4.2 COSPAS/SARSAT documents</h5>
+
+<div class="mrgn-tp-md col-md-12">
+<div class="mrgn-tp-sm col-md-2">C/S T.001</div>
+
+<div class="mrgn-tp-sm col-md-10"><cite><a href="https://www.cospas-sarsat.int/images/stories/SystemDocs/Current/T001-NOV-29-2022.pdf">Specification for COSPAS-SARSAT 406 MHz Distress Beacons</a></cite></div>
+</div>
+
+<div class="mrgn-tp-md col-md-12">
+<div class="mrgn-tp-sm col-md-2">C/S T.007</div>
+
+<div class="mrgn-tp-sm col-md-10"><cite><a href="https://www.cospas-sarsat.int/images/stories/SystemDocs/Current/T007-NOV-29-2022.pdf">COSPAS SARSAT 406 MHz Distress Beacons Type Approval Standard</a></cite></div>
+</div>
+
+<div class="mrgn-tp-md col-md-12">
+<div class="mrgn-tp-sm col-md-2">C/S S.007</div>
+
+<div class="mrgn-tp-sm col-md-10"><cite><a href="https://www.cospas-sarsat.int/images/stories/SystemDocs/Current/S.007-Canada.pdf">Handbook on Beacon Regulations Canada</a></cite></div>
+</div>
+
+<div class="mrgn-tp-md col-md-12">
+<div class="mrgn-tp-sm col-md-2">C/S G.005</div>
+
+<div class="mrgn-tp-sm col-md-10"><cite><a href="https://www.cospas-sarsat.int/images/stories/SystemDocs/Current/G005-NOV-2019.pdf">COSPAS SARSAT Guidelines on 406 MHz Beacon Coding, Registration and Type Approval</a></cite></div>
+</div>
+
+<p> </p>
+
+<p class="col-md-offset-1 mrgn-tp-md">The above documents can be obtained from the <a href="https://cospas-sarsat.int/en/">COSPAS-SARSAT</a> website.</p>
+<a id="s2.4.3"></a>
+
+<h5>2.4.3 Transport Canada Civil Aviation documents</h5>
+
+<p class="mrgn-tp-md"><cite><a href="https://lois-laws.justice.gc.ca/eng/regulations/SOR-96-433/FullText.html">Canadian Aviation Regulations</a></cite>, Part VI, section 605.38</p>
+
+<p><a href="https://tc.canada.ca/en/corporate-services/acts-regulations/list-regulations/canadian-aviation-regulations-sor-96-433/standards/airworthiness-chapter-551-aircraft-equipment-installation-canadian-aviation-regulations-cars">Airworthiness Manual (AWM) Chapter 551</a>, <cite>Aircraft Equipment and Installation – Canadian Aviation Regulations (CARs)</cite>, section 551.104, prescribing the Canadian standards of airworthiness for the design and installation of ELT equipment.</p>
+
+<p><a href="https://tc.canada.ca/en/corporate-services/acts-regulations/list-regulations/canadian-aviation-regulations-sor-96-433/standards/airworthiness-chapter-537-standards-appliances-parts-canadian-aviation-regulations-cars">Airworthiness Manual Chapter 537</a>, <cite>Standards Appliances and Parts – Canadian Aviation Regulations (CARs)</cite></p>
+<a id="s2.4.4"></a>
+
+<h5>2.4.4 Federal Aviation Administration Technical Standard Orders (TSO)</h5>
+
+<div class="mrgn-tp-md col-md-12">
+<div class="mrgn-tp-sm col-md-2">TSO-C126</div>
+
+<div class="mrgn-tp-sm col-md-10"><cite>406 MHz Emergency Locator Transmitter (ELT) </cite></div>
+</div>
+
+<div class="mrgn-tp-md col-md-12">
+<div class="mrgn-tp-sm col-md-2">TSO-C126a</div>
+
+<div class="mrgn-tp-sm col-md-10"><cite>406 MHz Emergency Locator Transmitter (ELT)</cite></div>
+</div>
+
+<div class="mrgn-tp-md col-md-12">
+<div class="mrgn-tp-sm col-md-2">TSO-C126b</div>
+
+<div class="mrgn-tp-sm col-md-10"><cite>406 MHz Emergency Locator Transmitter (ELT)</cite></div>
+</div>
+
+<div class="mrgn-tp-md col-md-12">
+<div class="mrgn-tp-sm col-md-2">TSO-C126c</div>
+
+<div class="mrgn-tp-sm col-md-10"><cite>406 MHz Emergency Locator Transmitter (ELT)</cite></div>
+</div>
+
+<p> </p>
+</details>
+</section>
+<!--SECTION 3-->
+
+<section>
+<details><summary>
+<h2 class="h3" id="s3">3. General requirements</h2>
+</summary>
+
+<p class="mrgn-tp-md">This section specifies the general requirements related to this RSS.</p>
+<!--section 3.1--> <a id="s3.1"></a>
+
+<h4>3.1 RSS-Gen compliance</h4>
+
+<p class="mrgn-tp-md">RSS-287 shall be used in conjunction with RSS-Gen, <a data-entity-substitution="canonical" data-entity-type="node" data-entity-uuid="d97e3d6d-e2ef-46ff-9110-4ccbd24f6d37" href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/devices-and-equipment/radio-equipment-standards/radio-standards-specifications-rss/rss-gen-general-requirements-compliance-radio-apparatus" title="RSS-Gen — General Requirements for Compliance of Radio Apparatus"><cite>General Requirements for Compliance of Radio Apparatus</cite></a>, for general specifications and information relevant to the equipment for which this standard applies. Should there be any discrepancies between the requirements in this standard and RSS-Gen, the requirements in this standard shall govern.</p>
+<!--section 3.2--> <a id="s3.2"></a>
+
+<h4>3.2. EPIRB requirements</h4>
+<a id="s3.2.1"></a>
+
+<h5>3.2.1 Approved test facilities</h5>
+
+<ol class="lst-spcd mrgn-tp-md mrgn-bttm-md lst-lwr-alph">
+	<li>Tests to show compliance to COSPAS-SARSAT standards for the 406 MHz transmitter shall be carried out by a test facility that has been approved by COSPAS-SARSAT. A list of COSPAS-SARSAT approved test facilities can be obtained from the <a href="https://cospas-sarsat.int/en/">COSPAS-SARSAT</a> website.</li>
+	<li>Battery and reliability tests shall be carried out by a test facility approved by Transport Canada (Marine Safety) or a country that is a signatory to the SOLAS Convention. Addresses of these test facilities can be obtained from these organizations.</li>
+</ol>
+<a id="s3.2.2"></a>
+
+<h5>3.2.2 Requirements relating to 406-406.1 MHz certification</h5>
+
+<p class="mrgn-tp-md">In addition to the requirements in the test report specified in RSS-Gen, the certification application of EPIRB devices that transmit on 406.0-406.1 MHz shall include documentation to show that the equipment is certified by a test facility recognized by one of the COSPAS-SARSAT partners and that the equipment complies with the requirements in COSPAS-SARSAT standards <a href="https://www.cospas-sarsat.int/images/stories/SystemDocs/Current/T001-NOV-29-2022.pdf">C/S T.001</a> and <a href="https://www.cospas-sarsat.int/images/stories/SystemDocs/Current/T007-NOV-29-2022.pdf">C/S T.007</a>.</p>
+<a id="s3.2.3"></a>
+
+<h5>3.2.3 Transport Canada requirements</h5>
+
+<p class="mrgn-tp-md">EPIRBs require verification from Transport Canada (TC) that they meet TC’s operational requirements before the applicant can submit the equipment to ISED for certification under this RSS. TC requirements can be found in the <a href="https://laws-lois.justice.gc.ca/eng/regulations/SOR-2020-216/index.html"><cite>Navigation Safety Regulations</cite></a>, 2020.</p>
+
+<p>The test report sent to TC shall contain the following:</p>
+
+<ol class="mrgn-tp-md mrgn-bttm-md lst-lwr-alph">
+	<li>the signature of the testing and supervising officers</li>
+	<li>the name of the signing persons</li>
+	<li>phone and facsimile numbers</li>
+	<li>the full name and address of the testing facility and</li>
+	<li>proof that the facility is an approved test facility</li>
+</ol>
+
+<p>Proof of compliance submitted to Transport Canada (Marine Safety) shall be in the form of documentation issued by a classification society or by a recognized independent testing establishment. See <a href="#sA">annex A</a> for Transport Canada (Marine Safety) contact information.</p>
+
+<p>The acceptance letter issued by TC, confirming that the equipment has met TC requirements, shall be included as part of the certification application sent to the Certification and Engineering Bureau (CEB) or a recognized CB.</p>
+
+<p>If applicable, ISED or the appropriate CB shall evaluate the evaluation results for the homing transmitter.</p>
+
+<p>Inquiries concerning TC’s requirements should be directed to Manager, Navigation Safety and Radiocommunications listed in annex A.</p>
+<!--section 3.3--> <a id="s"></a>
+
+<h4>3.3 ELT requirements</h4>
+<a id="s3.3.1"></a>
+
+<h5>3.3.1 Approved test facilities</h5>
+
+<p class="mrgn-tp-md">Tests to show compliance to COSPAS-SARSAT standards for the 406 MHz transmitter shall be carried out by a test facility that has been approved by COSPAS/SARSAT. A list of COSPAS-SARSAT approved test facilities can be obtained from the <a href="https://cospas-sarsat.int/en/">COSPAS-SARSAT</a> website.</p>
+<a id="s3.3.2"></a>
+
+<h5>3.3.2 Declaration of compliance (DOC)</h5>
+
+<p class="mrgn-tp-md">The certification application for an ELT device shall provide, in the test report specified in RSS-GEN, a DOC stating that the device meets all the applicable requirements from section 104 of AWM chapter 551 and the applicable TSO standards for its operating frequencies.</p>
+<!--section 3.4--> <a id="s3.4"></a>
+
+<h4>3.4 PLB requirements</h4>
+<a id="s3.4.1"></a>
+
+<h5>3.4.1 Approved test facilities</h5>
+
+<ol class="lst-spcd mrgn-tp-md mrgn-bttm-md lst-lwr-alph">
+	<li>Tests to show compliance to COSPAS-SARSAT standards for the 406 MHz transmitter shall be carried out by a test facility that has been approved by COSPAS/SARSAT. A list of COSPAS-SARSAT approved test facilities can be obtained from the <a href="https://cospas-sarsat.int/en/">COSPAS-SARSAT</a> website.</li>
+	<li>Battery and reliability tests for PLBs shall be carried out by a test facility approved by the National Search and Rescue Secretariat. Addresses of such test facilities are obtainable from these organizations.</li>
+</ol>
+<a id="s3.4.2"></a>
+
+<h5>3.4.2 Requirements relating to 406-406.1 MHz certification</h5>
+
+<p class="mrgn-tp-md">In addition to the requirements in the test report specified in RSS-Gen, the certification application of PLB devices that transmits on the 406.0-406.1 MHz shall include documentation to show that the equipment is certified by a test facility recognized by one of the COSPAS-SARSAT Partners and that the equipment complies with the requirements in COSPAS-SARSAT Standards <a href="https://www.cospas-sarsat.int/images/stories/SystemDocs/Current/T001-NOV-29-2022.pdf">C/S T.001</a> and <a href="https://www.cospas-sarsat.int/images/stories/SystemDocs/Current/T007-NOV-29-2022.pdf">C/S T.007</a>.</p>
+<a id="s3.4.3"></a>
+
+<h5>3.4.3 NSS requirements</h5>
+
+<p class="mrgn-tp-md">The applicant shall refer to the National Search and Rescue Secretariat, <cite><a href="https://www.publicsafety.gc.ca/cnt/rsrcs/pblctns/prsnl-lctr-bcn-406-mhz-2022/index-en.aspx">406 megahertz (MHZ) Personal Locator Beacon</a></cite> performance document, which is amended from time to time. PLB devices require verification from The National Search and Rescue Secretariat and confirmation that it meets requirements in the 406 megahertz (MHz) Personal Locator Beacon performance document before the applicant can submit the equipment to ISED for certification under this RSS.</p>
+
+<p>The test report sent to NSS shall contain the following:</p>
+
+<ol class="mrgn-tp-md mrgn-bttm-md lst-lwr-alph">
+	<li>the signature of the testing and supervising officers</li>
+	<li>the name of the signing persons</li>
+	<li>phone and facsimile numbers</li>
+	<li>the full name and address of the testing facility and</li>
+	<li>proof that the facility is an approved test facility</li>
+</ol>
+
+<p>Proof of compliance submitted to NSS shall be in the form of documentation issued by a classification society or by a recognized independent testing establishment. See annex A for contact information.</p>
+
+<p>NSS will provide a recommendation letter to the applicant, confirming that the equipment has met NSS Standards, to include as part of the certification application sent to the CEB or a recognized CB.</p>
+
+<p>If applicable, ISED or the appropriate Certification Body shall review the evaluation results for the homing transmitter.</p>
+
+<p>Inquiries concerning the NSS document should be directed to NSS COSPAS-SARSAT listed in <a href="#sA">annex A</a>.</p>
+</details>
+</section>
+<!--SECTION 4-->
+
+<section>
+<details><summary>
+<h2 class="h3" id="s4">4. Labelling requirements</h2>
+</summary>
+
+<p class="mrgn-tp-md">This section specifies labelling requirements.</p>
+<!--section 4.1--> <a id="s4.1"></a>
+
+<h4>4.1 General labelling requirements</h4>
+
+<p class="mrgn-tp-md">In addition to the labelling requirements in RSS-Gen, each device shall be labelled with the following:</p>
+
+<ol class="mrgn-tp-md mrgn-bttm-md lst-lwr-alph">
+	<li>its type designator, as listed in section 5</li>
+	<li>its class type, as listed in section 6.1, where applicable</li>
+</ol>
+<!--section 4.2--> <a id="s4.2"></a>
+
+<h4>4.2 EPIRB</h4>
+
+<p class="mrgn-tp-md">Labelling required by Transport Canada (Marine Safety) for EPIRBs (see document IMO Resolution MSC.471(101)), may be combined with the labelling requirements in RSS-Gen and section 4.1 and put into a single label.</p>
+<!--section 4.3--> <a id="s4.3"></a>
+
+<h4>4.3 ELT</h4>
+
+<p class="mrgn-tp-md">Labelling required by Transport Canada (Civil Aviation) for ELTs (see <cite>Airworthiness Manual</cite>, section 551.104), may be combined with the labelling requirements in RSS-Gen and section 4.1 and put into a single label.</p>
+<!--section 4.4--> <a id="s4.4"></a>
+
+<h4>4.4 PLB</h4>
+
+<p class="mrgn-tp-md">Labelling required by The National Search and Rescue Secretariat for PLBs (see <cite><a href="https://www.publicsafety.gc.ca/cnt/rsrcs/pblctns/prsnl-lctr-bcn-406-mhz-2022">406 megahertz (MHz) Personal Locator Beacon</a></cite>), may be combined with the labelling requirements in RSS-Gen and section 4.1 and put into a single label.</p>
+<!--section 4.5--> <a id="s4.5"></a>
+
+<h4>4.5 MSLD</h4>
+
+<p class="mrgn-tp-md">The sale packaging and user manual of MSLDs shall clearly indicate the following or equivalent bilingual statement:</p>
+
+<div class="mrgn-tp-md mrgn-bttm-md">
+<div class="well">
+<p class="mrgn-tp-sm"><i>This radio device is designed to only provide an effective alerting and locating capability in close proximity to a vessel. This radio beacon is NOT an EPIRB.</i></p>
+
+<p><i>Cette radiobalise est conçue uniquement dans le but de fournir une fonction d’alerte et de localisation efficace à proximité immédiate d’un navire. Cette radiobalise n’est PAS une RLS.</i></p>
+</div>
+</div>
+</details>
+</section>
+<!--SECTION 5-->
+
+<section>
+<details><summary>
+<h2 class="h3" id="s5">5. Type designator</h2>
+</summary>
+
+<p class="mrgn-tp-md">An appropriate type designator shall be appended as a suffix (as shown below) to the technical acceptance certification number to indicate the class of the device.</p>
+
+<div class="table-responsive col-md-7">
+<table class="table">
+	<thead>
+		<tr>
+			<th>Suffix</th>
+			<th>Abbreviated definition</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>E1</td>
+			<td>EPIRB, float free</td>
+		</tr>
+		<tr>
+			<td>E2</td>
+			<td>EPIRB, manual activation</td>
+		</tr>
+		<tr>
+			<td>E3</td>
+			<td>EPIRB + AIS, float free</td>
+		</tr>
+		<tr>
+			<td>E4</td>
+			<td>EPIRB + AIS, manual activation</td>
+		</tr>
+		<tr>
+			<td>PL</td>
+			<td>PLB</td>
+		</tr>
+		<tr>
+			<td>PL1</td>
+			<td>PLB + AIS</td>
+		</tr>
+		<tr>
+			<td>A</td>
+			<td>ELT, automatically ejected</td>
+		</tr>
+		<tr>
+			<td>AD</td>
+			<td>ELT, automatic deployable</td>
+		</tr>
+		<tr>
+			<td>F</td>
+			<td>ELT, Fixed</td>
+		</tr>
+		<tr>
+			<td>AF</td>
+			<td>ELT, automatic fixed</td>
+		</tr>
+		<tr>
+			<td>AP</td>
+			<td>ELT, automatic portable</td>
+		</tr>
+		<tr>
+			<td>W</td>
+			<td>ELT, water activated</td>
+		</tr>
+		<tr>
+			<td>S</td>
+			<td>ELT, survival</td>
+		</tr>
+		<tr>
+			<td>DT</td>
+			<td>ELT, Distress Tracking</td>
+		</tr>
+		<tr>
+			<td>X</td>
+			<td>MSLD</td>
+		</tr>
+		<tr>
+			<td>X1</td>
+			<td>MSLD + AIS</td>
+		</tr>
+		<tr>
+			<td>X2</td>
+			<td>MSLD + DSC</td>
+		</tr>
+		<tr>
+			<td>X3</td>
+			<td>MSLD + AIS + DSC</td>
+		</tr>
+	</tbody>
+</table>
+</div>
+
+<div class="clearfix"> </div>
+</details>
+</section>
+<!--SECTION 6-->
+
+<section>
+<details><summary>
+<h2 class="h3" id="s6">6. Measurement methods for equipment operating with 121.5 MHz or 243 MHz frequency</h2>
+</summary>
+
+<p class="mrgn-tp-md">This section specifies the measurement methods for equipment operating with 121.5 MHz or 243 MHz frequency.</p>
+<!--section 6.1--> <a id="s6.1"></a>
+
+<h4>6.1 Transmitter frequency and output power stability for all devices</h4>
+
+<p class="mrgn-tp-md">The output power and frequency stability measurements described below shall be carried out just before the end-of-life battery test that is required by TC or NSS. Other tests, such as the out-of-band emissions test, can be carried out at any time.</p>
+
+<p>The output power and unmodulated carrier frequency shall be measured at the antenna connector and under the conditions specified below. A sufficient stabilization period at each temperature shall be used prior to each frequency measurement:</p>
+
+<ol class="lst-spcd mrgn-tp-md mrgn-bttm-md lst-lwr-alph">
+	<li>at 10 degree intervals of temperatures between the temperatures listed below and at the manufacturer's rated supply voltage and</li>
+	<li>at +20<sup>o</sup>C temperature and ±15% supply voltage variations</li>
+</ol>
+
+<p>The equipment shall be tested at the following temperature ranges:</p>
+
+<table class="table">
+	<tbody>
+		<tr>
+			<td>ELT, EPIRB and PLB:</td>
+			<td>Class 0: -55°C to +70°C</td>
+		</tr>
+		<tr>
+			<td rowspan="2"> </td>
+			<td>Class 1: -40°C to +55°C</td>
+		</tr>
+		<tr>
+			<td>Class 2: -20°C to +55°C</td>
+		</tr>
+		<tr>
+			<td>MSLDs:</td>
+			<td>-20°C to +55°C</td>
+		</tr>
+	</tbody>
+</table>
+<!--section 6.2--> <a id="s6.2"></a>
+
+<h4>6.2 Other measurement methods used with EPIRB, PLB and MSLDs</h4>
+<a id="s6.2.1"></a>
+
+<h5>6.2.1 Transmitter output power (Radiated)</h5>
+
+<p class="mrgn-tp-md">The transmitter shall be modulated by an A3X signal as described in section 7.4.1(a). The resolution bandwidth of the spectrum analyzer shall be wide enough to include all significant modulation products. The bandwidth used shall be reported.</p>
+
+<p>The radiated power of a 121.5 or 243 MHz transmitter is required only in the main beam (i.e. antenna pattern is not required).</p>
+<a id="s6.2.2"></a>
+
+<h5>6.2.2 Transmitter unwanted emissions</h5>
+
+<p class="mrgn-tp-md">The transmitter unwanted emissions shall be measured at room temperature and this temperature shall be recorded. The transmitter shall be modulated with an audio sweep signal as described in section 7.4.1(a).</p>
+<a id="s6.2.3"></a>
+
+<h5>6.2.3 Modulation factor and audio sweep</h5>
+
+<p class="mrgn-tp-md">The transmitter shall be modulated with an A3X signal as described in section 7.4.1(a) and its output displayed on the oscilloscope.</p>
+
+<ol class="lst-spcd mrgn-tp-md mrgn-bttm-md lst-lwr-alph">
+	<li>Measure and record the peak and through voltages of the RF envelope of the modulated carrier to determine the modulation factor, which is the ratio of the difference to the sum of the carrier levels at the peaks and troughs of the modulated RF envelope, that is:<br />
+	\[ Modulation factor = \frac{V_{peak} - V_{trough}}{V_{peak} + V_{trough}} \]</li>
+	<li>Measure and record the direction of the audio sweep.</li>
+	<li>Measure and record the highest and the lowest audio frequencies of the sweep.</li>
+	<li>Measure and record the audio sweep repetition rate.</li>
+	<li>Measure and record the modulation duty cycle (see definition in section 7.4.1(e)).</li>
+	<li>Modulate the transmitter with voice and CW (carrier wave) if the beacon is equipped with this feature. Provide a diagram of the modulated signal in the time domain, properly labelled to show the duration of each mode (A3X, A3E, N0N) of modulation.</li>
+</ol>
+<a id="s6.2.4"></a>
+
+<h5>6.2.4 Spectrum characteristics</h5>
+
+<p class="mrgn-tp-md">The spectrum characteristics described in section 7.4.1(d) are to be measured.</p>
+
+<p>The transmitter shall be modulated with an A3X signal, as described in sections 7.4.1(a) and (d).</p>
+
+<p>Set the resolution bandwidth of the spectrum analyzer to 60 Hz for 121.5 MHz transmitters and to 120 Hz for 243 MHz transmitters. If a spectrum analyzer of the correct resolution bandwidth is not available, use a narrower bandwidth and sum the powers over the desired band. Record all measurements.</p>
+
+<p>If the beacon design is such that the type of modulation is changed during transmission (e.g. from A3E to N0N), describe the test and verify that the carrier frequency shift complies with section 7.4.1(d).</p>
+</details>
+</section>
+<!--SECTION 7-->
+
+<section>
+<details><summary>
+<h2 class="h3" id="s7">7. Transmitter and receiver standard specifications</h2>
+</summary>
+
+<p class="mrgn-tp-md">This section specifies the transmitter and receiver standard specifications for the equipment specified in this RSS.</p>
+<!--section 7.1--> <a id="s7.1"></a>
+
+<h4>7.1 ELT</h4>
+
+<p class="mrgn-tp-md">ELTs shall comply with all the requirements in the standard AWM section 551.104.</p>
+<!--section 7.2--> <a id="s7.2"></a>
+
+<h4>7.2 EPIRB and PLB</h4>
+
+<p class="mrgn-tp-md">EPIRB and PLB transmitters using 406 MHz shall comply with the technical requirements in COSPAS SARSAT Standards listed in either section 3.2.2 or 3.4.2 as appropriate.</p>
+<!--section 7.3--> <a id="s7.3"></a>
+
+<h4>7.3 MSLD</h4>
+
+<p class="mrgn-tp-md">MSLDs with operating frequencies of 161.975 MHz, 162.025 MHz or 156.525 MHz shall comply with the requirements in section 5 of RSS-182, <cite><a data-entity-substitution="canonical" data-entity-type="node" data-entity-uuid="59f1874d-da66-4ea4-aabe-a3bba236e40d" href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/devices-and-equipment/radio-equipment-standards/radio-standards-specifications-rss/rss-182-maritime-radio-equipment-operating-156-1625-mhz-band" title="RSS-182 — Maritime Radio Equipment Operating in the 156-162.5 MHz Band">Maritime Radio Equipment Operating in the 156-162.5 MHz Band</a></cite> where applicable.</p>
+<!--section 7.4 --> <a id="s7.4"></a>
+
+<h4>7.4 121.5 MHz and 243 MHz transmitters excluding ELTs</h4>
+<a id="s7.4.1"></a>
+
+<h5>7.4.1 Modulation characteristics</h5>
+
+<p class="mrgn-tp-md">The modulation technique for each carrier is described as follows:</p>
+
+<ol class="lst-spcd mrgn-tp-md mrgn-bttm-md lst-lwr-alph">
+	<li>The type of emission shall be A3X, with periods of voice modulation or no modulation (CW) permitted, as described below.
+	<ul class="mrgn-tp-md mrgn-bttm-md list-unstyled">
+		<li>During A3X transmissions, the emissions shall have the distinctive characteristic achieved by amplitude modulating the carrier with an audio frequency sweeping upwards or downwards for EPIRBs and upwards for PLBs, over a range of not less than 700 Hz within the band 300 Hz to 1600 Hz, at a sweep repetition rate between 2 and 4 Hz.</li>
+	</ul>
+	</li>
+	<li>The modulation factor for A3X modulation shall be at least 85% and not more than 100%, that is, over modulation is not permitted.</li>
+	<li>The transmission shall be continuous, except in the case of a homing transmitter when it may be interrupted for up to two seconds during the transmission of the 406 MHz burst.</li>
+	<li>The A3X modulation must have a clearly defined carrier frequency distinct from the modulation sideband components. For this, at least 30% of the total power emitted during any transmission shall be contained within ±30 Hz of the carrier frequency in the case of the 121.5 MHz beacon, and ±60 Hz of the carrier frequency in the case of the 243.0 MHz beacon.
+	<ul class="mrgn-tp-md mrgn-bttm-md list-unstyled">
+		<li>Additionally, if the type of modulation is changed during transmission, the carrier frequency shall not shift by more than ±30 Hz and ±60 Hz for the 121.5 MHz and 243.0 MHz transmitters, respectively.</li>
+	</ul>
+	</li>
+	<li>Modulation duty cycle is the ratio of the positive modulation duration, measured at the half-amplitude points on the modulation signal envelope to the period of the audio modulating frequency. This duty cycle shall be between 33% and 55%.</li>
+</ol>
+<a id="s7.4.2"></a>
+
+<h5>7.4.2 Transmitter frequency stability</h5>
+
+<p class="mrgn-tp-md">The carrier frequency shall not depart by more than 0.005% (±50 ppm) from that measured at 20°C and the rated supply voltage. If the 121.5 MHz and 243 MHz frequencies are derived from the same oscillator circuitry, it is not necessary to repeat the frequency stability test for the other frequency.</p>
+<a id="s7.4.3"></a>
+
+<h5>7.4.3 Transmitter output power (Radiated)</h5>
+
+<p class="mrgn-tp-md">The average output power of EPIRBs and PLBs shall not be less than 50 mW when the transmitter is used as a primary beacon and not less than 25 mW when used as a homing transmitter. The output power of MSLDs shall be less than 25 mW.</p>
+<a id="s7.4.4"></a>
+
+<h5>7.4.4 Transmitter unwanted emissions</h5>
+
+<p>The average power of unwanted emissions in a 300 Hz resolution bandwidth shall be attenuated below the level of the average transmitter power P (dBW) by: </p>
+
+<ol class="lst-spcd lst-lwr-alph">
+	<li>at least 25 dB on any frequency removed from the centre of the authorized bandwidth by more than 50%, up to and including 100% of the authorized bandwidth and</li>
+	<li>at least 30 dB on any frequency removed from the centre of the authorized bandwidth by more than 100%</li>
+</ol>
+
+<p>where the authorized bandwidth is set at 25 kHz with the transmit frequency at the centre of the bandwidth.</p>
+<a id="s7.4.5"></a>
+
+<h5>7.4.5 Spectrum characteristics</h5>
+
+<p class="mrgn-tp-md">The total power in the reference bandwidth (see section 6.2.4) shall not drop by more than 5 dB below the transmitter mean output power that is measured by a wideband meter (see section 6.1 or 6.2.1), indicating that at least 30% of the power resides within the band ƒ<sub>c</sub> ±30 Hz (at 121.5 MHz) and within the band ƒ<sub>c</sub> ±60 Hz (at 243 MHz), where ƒ<sub>c</sub> is the carrier frequency.</p>
+</details>
+</section>
+<!--SECTION 8-->
+
+<section>
+<details><summary>
+<h2 class="h3" id="s8">8. Authorization to perform radiation tests</h2>
+</summary>
+
+<p class="mrgn-tp-md">Before carrying out any tests at offset frequencies or at distress frequencies in Canada that involve radiation of signal into the air (including any tests not performed in a properly shielded room, whether the antenna is attached to the device or not), prior authorization from the offices/agencies nearest to where radiation testing is to be conducted shall be obtained. The agencies are listed below (see addresses in annex A for the nearest office/agency):</p>
+
+<ul class="mrgn-tp-md mrgn-bttm-md">
+	<li>NAV CANADA Area Control Centres (ACC)</li>
+	<li>Canadian Mission Control Centre (CMCC) at CFB Trenton, Ontario (406 MHz devices only)</li>
+	<li>Joint Rescue Coordination Centres (JRCC)</li>
+</ul>
+
+<div class="mrgn-tp-lg mrgn-bttm-md">
+<div class="well">
+<p class="mrgn-tp-sm"><b>Note:</b> </p>
+
+<p>The local NAV CANADA office should be contacted for up-to-date telephone numbers of the above-mentioned personnel/agencies. In informing each party, the testing officer shall provide the following information several days in advance: name, telephone number, date and duration of the test (test time shall be as short as possible), and location of the test site.</p>
+</div>
+</div>
+
+<p>The agencies’ written consent to the test shall be submitted to the local ISED office for the purpose of issuing the authorization to use the radio frequency.</p>
+
+<p>Unless there are valid reasons to use distress frequencies, only offset frequencies may be authorized as follows:</p>
+
+<ul class="mrgn-tp-md mrgn-bttm-md lst-spcd">
+	<li>121.100 to 121.450 MHz; 121.550 to 121.900 MHz</li>
+	<li>242.200 to 242.900 MHz; 243.100 to 243.800 MHz</li>
+	<li>406.000 to 406.99 MHz (in accordance with CMCC authorization and COSPAS-SARSAT technical directives, see C/S T.007)</li>
+</ul>
+
+<p>Great care shall be taken not to accidentally radiate in the forbidden bands (121.5 MHz ±50 kHz and 243 MHz ±100 kHz).</p>
+
+<p>No activation of operationally coded 406 MHz devices is permitted without prior registration in the appropriate National Beacon Registry.</p>
+</details>
+</section>
+<!--SECTION A-->
+
+<section>
+<details><summary>
+<h2 class="h3" id="sA">Annex A: Addresses</h2>
+</summary>
+
+<p class="mrgn-tp-md">The following addresses are relevant to this document. The addresses, especially telephone and fax numbers, are subject to change without notice:</p>
+
+<address>Canadian Mission Control Centre (CMCC)<br />
+P.O. Box 1000, Canadian Forces Base Trenton, 8 Wing<br />
+Astra ON K0K 3W0<br />
+Duty Officer Tel: (613) 965-2026/fax: (613) 965-7045<br />
+Tel: 1-877-406-7671<br />
+Fax: 1-877-406-3298<br />
+Email: <a href="mailto:cbr@sarnet.dnd.ca">cbr@sarnet.dnd.ca</a></address>
+
+<address>COSPAS/SARSAT Secretariat<br />
+1250 René-Lévesque Blvd W<br />
+Suite 4215<br />
+Montréal QC H3B 4W8<br />
+Tel: (514) 500-7999<br />
+Fax: (514) 500-7996<br />
+Email: <a href="mailto:mail@406.org">mail@406.org</a><br />
+Website: <a href="http://406.org">http://406.org</a></address>
+
+<address>International Civil Aviation Organization<br />
+Document Sales Unit<br />
+999 University St<br />
+Montréal QC H3C 5H7<br />
+Tel: (514) 954-8219<br />
+Fax: (514) 954-6077<br />
+Email: <a href="mailto:icaohq@icao.int">icaohq@icao.int</a><br />
+Web support: <a href="http://web@icao.int">web@icao.int</a></address>
+
+<address>International Maritime Organization<br />
+4 Albert Embankment<br />
+London, England SE1 7SR<br />
+United Kingdom<br />
+Tel: +44 (0) 22 7735 7611<br />
+Fax: +44 (0) 22 7587 3210</address>
+
+<address>International Telecommunication Union<br />
+Publication Sales<br />
+Place des Nations, CH-1211<br />
+Geneva 20, Switzerland<br />
+Tel: +41 22 730 6141 (English)<br />
+Fax: +41 22 730 5194<br />
+Email: <a href="mailto:sales@itu.int">sales@itu.int</a></address>
+
+<address>Public Safety Canada<br />
+National Search and Rescue Secretariat (NSS)<br />
+COSPAS-SARSAT section<br />
+269 Laurier Ave W<br />
+Ottawa, ON K1A 0P8<br />
+Tel: 1-800-830-3118 or 613-944-4875<br />
+Public Inquiries: <a href="mailto:communications@ps-sp.gc.ca">communications@ps-sp.gc.ca</a></address>
+
+<p>Joint Rescue Coordination Centres (JRCCs), East to West:</p>
+
+<div class="mrgn-lft-lg">
+<address>Joint Rescue Coordination Centre Halifax<br />
+Canadian Forces Base, Halifax<br />
+P.O. Box 99000 Stn Forces<br />
+Halifax NS<br />
+B3K 2X0<br />
+Tel: (902) 427-2104<br />
+Fax: (902) 424-2114</address>
+
+<address>Joint Rescue Coordination Centre Trenton<br />
+Canadian Forces Base Trenton, 8 Wing<br />
+P.O. Box 1000<br />
+Astra ON<br />
+K0K 3W0<br />
+Tel: (613) 965-3870<br />
+Toll Free: (800) 267-7270</address>
+
+<address>Joint Rescue Coordination Centre Victoria<br />
+Canadian Forces Base, Esquimalt<br />
+P.O. Box 17000 Stn Forces<br />
+Victoria BC<br />
+V9A 7N2<br />
+Tel: (250) 413-8933<br />
+Fax: (250) 413-8932</address>
+</div>
+
+<address>Transport Canada Civil Aviation<br />
+Attention: Program Manager<br />
+Aircraft Design Standards (AARTC/D)<br />
+330 Sparks St<br />
+Ottawa ON K1A 0N5<br />
+Email: <a href="mailto:TC.AARTCDAircraftDesignStandards-NormesdeconceptiondesaeronefsAARTCD.TC@tc.gc.ca&#9;">TC.AARTCDAircraftDesignStandards-NormesdeconceptiondesaeronefsAARTCD.TC@tc.gc.ca </a></address>
+
+<address>Transport Canada (Marine Safety)<br />
+Place de Ville, 10th Floor<br />
+330 Sparks Street<br />
+Ottawa ON K1A 0N5<br />
+Tel: (613) 991-3134<br />
+Fax: (613) 993-8196<br />
+Email: <a href="mailto:marinesafety@tc.gc.ca">marinesafety@tc.gc.ca</a></address>
+
+<p>NAV CANADA Area Control Centre (ACC)</p>
+
+<div class="mrgn-lft-lg">
+<p>Gander Area Control Centre<br />
+Tel: 1-888-672-2052<br />
+Email: <a href="mailto:tocqxacc@navcanada.ca">tocqxacc@navcanada.ca</a></p>
+
+<p>Moncton Area Control Centre<br />
+Tel: 1-888-672-2051<br />
+Email: <a href="mailto:tocqxacc@navcanada.ca">mrccqm@navcanada.ca</a></p>
+
+<p>Montréal Area Control Centre<br />
+Tel: 1-877-533-3281<br />
+Email: <a href="mailto:tocmontreal@navcanada.ca">tocmontreal@navcanada.ca</a></p>
+
+<p>Toronto Area Control Centre<br />
+Tel: 1-800-268-4986<br />
+Email: <a href="mailto:tocmontreal@navcanada.ca">toctoronto@navcanada.ca</a></p>
+
+<p>Winnipeg Area Control Centre<br />
+Tel: 1-877-672-2994<br />
+Email: <a href="mailto:tocmontreal@navcanada.ca">tocywg@navcanada.ca</a></p>
+
+<p>Edmonton Area Control Centre<br />
+Tel: 1-877-672-2934<br />
+Email: <a href="mailto:egacctoc@navcanada.ca">egacctoc@navcanada.ca</a></p>
+
+<p>Vancouver Area Control Centre<br />
+Tel: 1-877-987-8622<br />
+Email: <a href="mailto:tocvancouver@navcanada.ca">tocvancouver@navcanada.ca</a></p>
+</div>
+
+<address>Manager, Navigation Safety and Radiocommunications<br />
+Marine Safety, Transport Canada<br />
+Tower C, Place de Ville<br />
+330 Sparks Street, 10th Floor<br />
+Ottawa ON K1A 0N8<br />
+Email: <a href="mailto:TC.NavRadio.TC@Tc.gc.ca">TC.NavRadio.TC@Tc.gc.ca</a></address>
+</details>
+</section>
+</section>
+</article>
+</div></div>
+      
+  </div>
+
+</article>
+
+
+  </div>
+
+          <div class="row">
+  <div class="pagedetails region region-content-footer">
+    <div class="row">
+      <section id="block-epic-theme-reportproblemblock" class="col-xs-12 col-sm-6 col-md-5 col-lg-4 pull-left block block-wxt-ext-webform block-report-problem-block clearfix" data-block-plugin-id="report_problem_block">
+  
+    
+
+      <a class="btn btn-default" href="https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/form/contact?destination=https%3A//ised-isde.canada.ca/site/spectrum-management-telecommunications/en&_exception_statuscode=404"><span class="glyphicon glyphicon-play">&nbsp;</span>Report a problem</a>
+  </section>
+<section id="block-epic-theme-datemodifiedblock" class="col-xs-12 pull-left block block-wxt-library block-date-modified-block clearfix" data-block-plugin-id="date_modified_block">
+  
+    
+
+      <div class="datemod mrgn-bttm-lg"><dl id="wb-dtmd">
+<dt>Date modified:</dt>
+<dd><time property="dateModified">2024-04-03</time></dd></dl></div>
+  </section>
+
+    </div>
+  </div>
+</div>
+
+              </section>
+
+      </main>
+
+                        
+                        
+    </div>
+  </div>
+
+
+
+
+
+  <div class="site-footer__contextual_footer gc-footer__contextual_footer gc-contextual">
+    <div class="container">
+      
+    </div>
+  </div>
+
+
+
+            <footer id="wb-info">
+        <div class="gc-main-footer">
+          <div class="container">
+              <div class="region region-footer">
+    <nav id="block-epic-theme-footer" class="visible-xs visible-sm visible-md visible-lg wb-navcurr">
+  <h3>Government of Canada</h3>
+
+  <ul class="list-col-xs-1 list-col-sm-2 list-col-md-3">
+    <li><a href="https://www.canada.ca/en/contact.html">All contacts</a></li>
+    <li><a href="https://www.canada.ca/en/government/dept.html">Departments and agencies</a></li>
+    <li><a href="https://www.canada.ca/en/government/system.html">About government</a></li></ul>
+    <h4><span class="wb-inv">Themes and topics</span></h4>
+    <ul class="list-unstyled colcount-sm-2 colcount-md-3"><li><a href="https://www.canada.ca/en/services/jobs.html">Jobs</a></li>
+    <li><a href="https://www.canada.ca/en/services/immigration-citizenship.html">Immigration and citizenship</a></li>
+    <li><a href="https://travel.gc.ca/">Travel and tourism</a></li>
+    <li><a href="https://www.canada.ca/en/services/business.html">Business</a></li>
+    <li><a href="https://www.canada.ca/en/services/benefits.html">Benefits</a></li>
+    <li><a href="https://www.canada.ca/en/services/health.html">Health</a></li>
+    <li><a href="https://www.canada.ca/en/services/taxes.html">Taxes</a></li>
+    <li><a href="https://www.canada.ca/en/services/environment.html">Environment and natural resources</a></li>
+    <li><a href="https://www.canada.ca/en/services/defence.html">National security and defence</a></li>
+    <li><a href="https://www.canada.ca/en/services/culture.html">Culture, history and sport</a></li>
+    <li><a href="https://www.canada.ca/en/services/policing.html">Policing, justice and emergencies</a></li>
+    <li><a href="https://www.canada.ca/en/services/transport.html">Transport and infrastructure</a></li>
+    <li><a href="https://international.gc.ca/world-monde/index.aspx?lang=eng">Canada and the world</a></li>
+    <li><a href="https://www.canada.ca/en/services/finance.html">Money and finance</a></li>
+    <li><a href="https://www.canada.ca/en/services/science.html">Science and innovation</a></li>
+    <li><a href="https://www.canada.ca/en/services/indigenous-peoples.html">Indigenous peoples</a></li>
+    <li><a href="https://www.canada.ca/en/services/veterans.html">Veterans and military</a></li>
+    <li><a href="https://www.canada.ca/en/services/youth.html">Youth</a></li>
+  </ul>
+
+</nav>
+<section id="block-siteimprove" data-block-plugin-id="block_content:9a1143c9-7853-4fce-8342-428e34731fcf" class="block block-block-content block-block-content9a1143c9-7853-4fce-8342-428e34731fcf clearfix">
+  
+    
+
+      
+            <div class="field field--name-body field--type-text-with-summary field--label-hidden field--item"><div class="tex2jax_process"><script type="text/javascript">
+/*<![CDATA[*/
+(function() {
+var sz = document.createElement('script'); sz.type = 'text/javascript'; sz.async = true;
+sz.src = '//siteimproveanalytics.com/js/siteanalyze_8489.js';
+var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(sz, s);
+})();
+/*]]>*/
+</script>
+</div></div>
+      
+  </section>
+
+  </div>
+
+          </div>
+        </div>
+        <div class="brand">
+          <div class="container">
+            <div class="row ">
+                <div class="region region-branding">
+    <nav aria-labelledby="block-epic-theme-brand-menu" id="block-epic-theme-brand" data-block-plugin-id="system_menu_block:brand" class="col-md-10 ftr-urlt-lnk">
+      
+  <h2 class="wb-inv" id="block-epic-theme-brand-menu">Brand</h2>
+  
+
+          <ul>
+    <li><a href="https://www.canada.ca/en/social.html">Social media</a></li>
+    <li><a href="https://www.canada.ca/en/mobile.html">Mobile applications</a></li>
+    <li><a href="https://www.canada.ca/en/government/about.html">About Canada.ca</a></li>
+    <li><a href="https://www.ic.gc.ca/eic/site/icgc.nsf/eng/h_07033.html">Terms and conditions</a></li>
+    <li><a href="https://www.ic.gc.ca/eic/site/icgc.nsf/eng/h_07033.html#p1">Privacy</a></li>
+  </ul>
+
+  </nav>
+
+  </div>
+
+              <div class="col-xs-6 visible-sm visible-xs tofpg">
+                <a href="#wb-cont">Top of Page<span class="glyphicon glyphicon-chevron-up"></span></a>
+              </div>
+              <div class="col-xs-6 col-md-2 text-right">
+                <img src='/site/spectrum-management-telecommunications/themes/custom/epic_theme/images/wmms-blk.svg' alt='Symbol of the Government of Canada' />
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
+      
+  </div>
+
+    
+    <script type="application/json" data-drupal-selector="drupal-settings-json">{"path":{"baseUrl":"\/site\/spectrum-management-telecommunications\/","scriptPath":null,"pathPrefix":"en\/","currentPath":"node\/584","currentPathIsAdmin":false,"isFront":false,"currentLanguage":"en"},"pluralDelimiter":"\u0003","suppressDeprecationErrors":true,"mathjax":{"config_type":1,"config":{"tex2jax":{"inlineMath":[["$$","$$"],["\\(","\\)"]],"processEscapes":"true"},"showProcessingMessages":"false","messageStyle":"none"}},"bootstrap":{"forms_has_error_value_toggle":1,"modal_animation":1,"modal_backdrop":"true","modal_focus_input":1,"modal_keyboard":1,"modal_select_text":1,"modal_show":1,"modal_size":"","popover_enabled":1,"popover_animation":1,"popover_auto_close":1,"popover_container":"body","popover_content":"","popover_delay":"0","popover_html":0,"popover_placement":"right","popover_selector":"","popover_title":"","popover_trigger":"click","tooltip_enabled":1,"tooltip_animation":1,"tooltip_container":"body","tooltip_delay":"0","tooltip_html":0,"tooltip_placement":"auto left","tooltip_selector":"","tooltip_trigger":"hover"},"ajaxTrustedUrl":{"https:\/\/www.canada.ca\/en\/sr\/srb.html#wb_land":true},"appPath":{"en":"site\/spectrum-management-telecommunications","fr":"site\/gestion-spectre-telecommunications"},"sitewideAlert":{"refreshInterval":15000,"automaticRefresh":false},"ajax":[],"user":{"uid":0,"permissionsHash":"6005d5b1eaa32f47732b6cbc02ddf8578c483c69711fa7b764d4407a05bf4e14"}}</script>
+<script src="/site/spectrum-management-telecommunications/sites/default/files/js/js_rpvXNXRS3XUPWzCXlyAoa7rqGUt25Ou7loW6Se9303E.js"></script>
+
+<!--[if lt IE 9]>
+<script src="/site/spectrum-management-telecommunications/libraries/wet-boew/js/ie8-wet-boew.min.js?swvau5"></script>
+<![endif]-->
+
+<!--[if gte IE 9]><!-->
+<script src="/site/spectrum-management-telecommunications/libraries/wet-boew/js/wet-boew.min.js?swvau5"></script>
+<!--<![endif]-->
+
+<!--[if lt IE 9]>
+<script src="/site/spectrum-management-telecommunications/libraries/wet-boew/js/ie8-wet-boew2.min.js?swvau5"></script>
+<![endif]-->
+<script src="/site/spectrum-management-telecommunications/sites/default/files/js/js_VOvqJrl9S0mjyANPdfL8k_cjMLvWthJPrrkEWyLUBio.js"></script>
+<script src="/site/spectrum-management-telecommunications/sites/default/files/asset_injector/js/new-4b4bec2e1e471431a396989737fcb2c7.js?swvau5"></script>
+<script src="/site/spectrum-management-telecommunications/sites/default/files/asset_injector/js/printpdfjs-932f058631c9b0abe1da35251c583ee6.js?swvau5"></script>
+<script src="/site/spectrum-management-telecommunications/sites/default/files/js/js_nHeaBfnMhQYAqiPwS-JhiSdM5ys3FpkrA-F7O5FSNkY.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+<script src="/site/spectrum-management-telecommunications/sites/default/files/js/js_3yl7d-hT3ZWjnDT2sL_Dj1bJOjqqaXQrNCprpAYSo1U.js"></script>
+<script src="/site/spectrum-management-telecommunications/libraries/theme-gcweb/js/theme.min.js?swvau5"></script>
+<script src="/site/spectrum-management-telecommunications/sites/default/files/js/js_5DLQNFV47gdUUZNjJq_PcFNglVoOkS4fkogb8yptc64.js"></script>
+<script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=fetch"></script>
+<script src="https://unpkg.com/react@16.12.0/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@16.12.0/umd/react-dom.production.min.js"></script>
+<script src="/site/spectrum-management-telecommunications/sites/default/files/js/js_VPYBt1CC6zgKIWjH6G-lyGzw6E9PW5UZi99Zj8ITYRE.js"></script>
+
+  </body>
+</html>

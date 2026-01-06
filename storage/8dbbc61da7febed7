@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8" />
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-859862-1"></script>
+<script>window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments)};gtag("js", new Date());gtag("config", "UA-859862-1", {"groups":"default","anonymize_ip":true,"allow_ad_personalization_signals":false});</script>
+<link rel="canonical" href="https://www.netl.doe.gov/carbon-management/carbon-storage/carbonsafe" />
+<meta name="description" content="*/" />
+<meta property="og:site_name" content="netl.doe.gov" />
+<meta property="og:url" content="https://www.netl.doe.gov/carbon-management/carbon-storage/carbonsafe" />
+<meta property="og:title" content="CarbonSafe Initiative" />
+<meta property="og:image" content="https://netl.doe.gov/sites/default/files/inline-images/topLogo_0.png" />
+<meta name="Generator" content="Drupal 9 (https://www.drupal.org)" />
+<meta name="MobileOptimized" content="width" />
+<meta name="HandheldFriendly" content="true" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" href="/themes/netl/favicon.ico" type="image/vnd.microsoft.icon" />
+
+<title>CarbonSafe Initiative | netl.doe.gov</title>
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/ajax-progress.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/align.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/autocomplete-loading.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/fieldgroup.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/container-inline.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/clearfix.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/details.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/hidden.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/item-list.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/js.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/nowrap.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/position-container.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/progress.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/reset-appearance.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/resize.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/sticky-header.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/system-status-counter.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/system-status-report-counters.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/system-status-report-general-info.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/tabledrag.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/tablesort.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/system/css/components/tree-child.module.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/core/modules/filter/css/filter.caption.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/themes/netl/css/bootstrap.css?t5ioq4" />
+<link rel="stylesheet" media="all" href="/themes/netl/css/style.css?t5ioq4" />
+
+
+
+
+
+<script async type="text/javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?Agency=DOE&subagency=NETL"></script>
+</head>
+<body class="path-node node--type-page">
+<div class="totopshow">
+<a href="#" class="back-to-top"><img alt="Back to Top" src="/themes/netl/images/gototop.png"/></a>
+</div>
+<a class="visually-hidden focusable" href="#main-content" aria-label="Skip to main content">Skip to main content</a>
+
+  <div class="dialog-off-canvas-main-canvas" data-off-canvas-main-canvas>
+    <div id="netlpage" class="container">
+<div class="netlbanner_header">
+</div>
+<div style="height:0px;width:0px;overflow:hidden;-webkit-margin-top-collapse: separate;"></div>
+<header id="netlheader1">
+<div id="netlheader_inner1">
+<div class="netlheader_element_alignment1 container1">
+</div>
+  <div>
+     
+  
+<div id="block-2023header" class="block block-block-content block-block-content79b94d4a-88b9-4161-a19c-2386adccf33a"> 
+ 
+ 
+ 
+ 
+<div class="content"> 
+
+            <div><div class="main-header-wrapper">
+<div class="main-header">
+<div class="header-logo-2023"><a href="https://netl.doe.gov"><img alt="NETL Logo" src="https://netl.doe.gov/sites/default/files/2023-05/NETL%20Stacked%20Color.png" /></a></div>
+
+<div class="subnav">
+<div class="dropdown-mini">
+<div class="dropbtn-mini  hover-underline-animation">
+<p class="TitleAltFont"><strong>About</strong></p>
+</div>
+
+<div class="dropdown-content-mini"><a href="https://netl.doe.gov/about/mission-overview">Mission and Overview</a> <a href="https://netl.doe.gov/about/visit-netl">Visit NETL</a> <a href="https://netl.doe.gov/about/contact">Contact NETL</a> <!--<a href="https://netl.doe.gov/about/organization">Organization</a>--> <a href="https://netl.doe.gov/about/key-staff">Key Staff</a> <a href="https://netl.doe.gov/about/history">History</a> <a href="https://netl.doe.gov/about/awards-list">Awards and Recognition</a> <a href="https://netl.doe.gov/about/environmental-quality">Environmental Quality</a> <a href="https://netl.doe.gov/about/netl-logo">NETL Logo</a></div>
+</div>
+
+<div class="dropdown-mini">
+<div class="dropbtn-mini  hover-underline-animation">
+<p class="TitleAltFont"><strong>News and Events</strong></p>
+</div>
+
+<div class="dropdown-content-mini"><a href="https://netl.doe.gov/news-room-news-stories?tid=All&amp;year=All">News Stories</a> <a href="https://netl.doe.gov/events">Events</a> <a href="https://netl.doe.gov/events/conference-proceedings">Conference Proceedings</a></div>
+</div>
+
+<div class="dropdown-mini">
+<div class="dropbtn-mini  hover-underline-animation">
+<p class="TitleAltFont"><strong>Education</strong></p>
+</div>
+
+<div class="dropdown-content-mini"><a href="https://netl.doe.gov/education/internship">Internship &amp; Fellowship Programs</a> <a href="https://netl.doe.gov/education">STEM Education and Outreach</a></div>
+</div>
+
+<div class="searchbox-main">
+<form action="https://netl.doe.gov/search/node" class="form" method="GET"><input class="search-field" id="Searchtxt" name="keys" placeholder="Search" type="text" /><button class="search-button-main" type="submit"><img alt="Search" src="https://netl.doe.gov/sites/default/files/2022-12/magnifying-glass-grey.png" /></button></form>
+</div>
+</div>
+
+<div class="main-nav">
+<div class="dropdown-navigation">
+<div class="dropbtn-nav hover-underline-animation">
+<p class="TitleAltFont"><strong>Research and Programs</strong></p>
+</div>
+
+<div class="dropdown-content">
+<div class="row">
+<div class="mainnav-column-3"><a href="https://netl.doe.gov/key-lab-initiatives"><strong class="NavTitle">Featured Initiatives</strong></a> <a href="https://netl.doe.gov/key-lab-initiatives/aasc">Advanced Alloys Signature Center (AASC)</a> <a href="https://netl.doe.gov/key-lab-initiatives/cfc">Center for Fuels and Chemicals (CFC)</a> <a href="https://netl.doe.gov/key-lab-initiatives/cmc">Center for Microwave Chemistry (CMC)</a> <a href="https://netl.doe.gov/sites/default/files/2025-12/Carbon%20Engineering_0.pdf&#10;">Coal for High-Value Products</a> <a href="https://netl.doe.gov/resource-sustainability/critical-minerals-and-materials/ric">Critical Minerals and Materials</a> <!--<a href="#">Enhanced Oil Recovery</a>--> <a href="https://netl.doe.gov/sites/default/files/2025-12/Natural%20Gas%20and%20Infrastructure.pdf">Natural Gas</a> <!--<a href="#">Offshore Resources and Modeling</a>--> <a href="https://netl.doe.gov/key-lab-initiatives/sami">Science-based Artificial Intelligence and Machine Learning Institute (SAMI)</a> <a href="https://netl.doe.gov/sites/default/files/2025-12/Subsurface%20Engineering.pdf">Subsurface Science</a> <a href="https://netl.doe.gov/carbon-management/turbines">Turbine System Optimization</a></div>
+
+<div class="mainnav-column-3"><a href="https://www.energy.gov/fecm/office-fossil-energy"><strong class="NavTitle">Major Fossil Energy Programs</strong></a> <a href="https://www.netl.doe.gov/carbon-management">Carbon Management</a> <a href="https://netl.doe.gov/resource-sustainability">Resource Sustainability</a><br /><br /><a href="https://netl.doe.gov/core-competencies"><strong class="NavTitle">Core Competencies</strong></a> <a href="https://netl.doe.gov/onsite-research/computational">Computational Science and Engineering</a> <a href="https://netl.doe.gov/onsite-research/ec-engineering">Energy Conversion Engineering</a> <a href="https://netl.doe.gov/onsite-research/geological">Geological and Environmental Systems</a> <a href="https://netl.doe.gov/onsite-research/materials">Materials Engineering and Manufacturing</a> <a href="https://netl.doe.gov/onsite-research/systems-engineering-and-analysis">Strategic Systems Analysis and Engineering</a> <a href="https://netl.doe.gov/onsite-research/program">Program Execution and Integration</a></div>
+
+<div class="mainnav-column-3"><a href="https://netl.doe.gov/etd"><strong class="NavTitle">Energy Technology Development</strong></a> <a href="https://www.energy.gov/eere/office-energy-efficiency-renewable-energy">Office of Energy Efficiency and Renewable Energy</a> <a href="https://netl.doe.gov/bwi">Battery Workforce Initiative</a> <a href="https://www.energy.gov/ceser">Cybersecurity, Energy Security, and Emergency Response</a> <a href="https://www.energy.gov/oe/office-electricity">Office of Electricity</a><br /><br /><a href="https://netl.doe.gov/carbon-management/university-training"><strong class="NavTitle">University Training &amp; Research</strong></a> <a href="https://netl.doe.gov/carbon-management/university-training#HBCU%E2%80%93MSI">Historically Black Colleges and Universities and Minority Serving Institutions Program </a> <a href="https://netl.doe.gov/carbon-management/university-training#UCR">University Carbon Research Program</a></div>
+</div>
+</div>
+</div>
+
+<div class="dropdown-navigation">
+<div class="dropbtn-nav hover-underline-animation">
+<p class="TitleAltFont"><strong>Business</strong></p>
+</div>
+
+<div class="dropdown-content">
+<div class="row">
+<div class="mainnav-two-column">
+<div class="mainnav-column-text">
+<p class="TitleAltFont">Work with Us</p>
+</div>
+
+<div class="mainnav-column-image"><img alt="business researcher image" src="https://netl.doe.gov/sites/default/files/2024-03/business-nav-img.jpg" /></div>
+</div>
+
+<div class="mainnav-column"><a href="https://netl.doe.gov/business/solicitations-hub">Solicitations and Funding Opportunities</a> <a href="https://netl.doe.gov/iijahub">Infrastructure Investment and Jobs Act</a> <a href="https://netl.doe.gov/challenges">Prizes and Challenges</a> <a href="https://netl.doe.gov/employment">Careers</a> <a href="https://netl.doe.gov/business/business-forms">Business Forms</a> <a href="https://netl.doe.gov/business/site-support">Site Support Electronic Reading Room</a> <a href="https://netl.doe.gov/business/unsolicited-proposals">Unsolicited Proposals</a> <a href="https://netl.doe.gov/business/property">Available Property</a> <a href="https://netl.doe.gov/business/partnerships">Partnering with NETL</a> <a href="https://netl.doe.gov/business/rwfi">Regional Workforce Initiative</a> <a href="https://netl.doe.gov/small-business">Small Business Corner</a></div>
+
+<div class="mainnav-column"><a href="https://netl.doe.gov/business/tech-transfer"><strong class="NavTitle">Technology Transfer</strong></a> <a href="https://netl.doe.gov/business/tech-transfer/agreements">Agreements</a> <a href="https://netl.doe.gov/business/tech-transfer/licensing">Licensing</a> <a href="https://netl.doe.gov/business/tech-transfer/success">Success Stories</a> <a href="https://netl.doe.gov/business/tech-transfer/available-technologies">Available Technologies</a> <a href="https://netl.doe.gov/business/tech-transfer/faq">FAQ</a></div>
+</div>
+</div>
+</div>
+
+<div class="dropdown-navigation">
+<div class="dropbtn-nav hover-underline-animation">
+<p class="TitleAltFont"><strong>Library</strong></p>
+</div>
+
+<div class="dropdown-content">
+<div class="row">
+<div class="mainnav-two-column">
+<div class="mainnav-column-text">
+<p class="TitleAltFont">Explore our Library</p>
+</div>
+
+<div class="mainnav-column-image"><img alt="business researcher image" src="https://netl.doe.gov/sites/default/files/2024-03/library-nav-img.jpg" /></div>
+</div>
+
+<div class="mainnav-column"><a href="https://netl.doe.gov/nepa">Approved Categorical Exclusions</a> <a href="https://netl.doe.gov/node/6939">Environmental Assessments</a> <a href="https://netl.doe.gov/library/eis">Environmental Impact Statements</a> <a href="https://netl.doe.gov/oil-gas/oil-and-gas-project-summaries?tid=34&amp;field_project_type_value=All">Oil and Gas Projects Summaries</a> <a href="https://netl.doe.gov/netl-factsheets">NETL Fact Sheets</a> <a href="https://netl.doe.gov/advsearch">Publication Search</a> <a href="https://netl.doe.gov/edx">Energy Data Exchange (EDX)</a> <a href="https://netl.doe.gov/FECM-External-R-and-D-Final-Technical-Reports">FECM External R&amp;D Final Technical Reports</a> <a href="https://netl.doe.gov/node/2476">Project Landing Page Summary Information for External R&amp;D Awards</a> <a href="https://netl.doe.gov/search-r-d-publications">NETL R&amp;D Publication Search</a> <a href="https://netl.doe.gov/peerreviews">Peer Review Reports</a></div>
+
+<div class="mainnav-column"><a href="https://netl.doe.gov/ea/about"><strong class="NavTitle">Energy Analysis</strong></a></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="mobilemenu-nav">
+<section><input class="m-menu__checkbox" id="menu" name="menu" type="checkbox" /><label class="m-menu__toggle" for="menu"> <svg fill="none" height="80" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="60"><line x1="3" x2="21" y1="12" y2="12"></line><line x1="3" x2="21" y1="6" y2="6"></line><line x1="3" x2="21" y1="18" y2="18"></line></svg></label>
+
+<div class="m-menu">
+<div class="m-menu__header"><label class="m-menu__toggle" for="menu"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><line x1="18" x2="6" y1="6" y2="18"></line><line x1="6" x2="18" y1="6" y2="18"></line></svg></label></div>
+
+<ul><li><label class="a-label__chevron" for="researchPrograms">Research and Programs</label> <input class="m-menu__checkbox" id="researchPrograms" name="researchPrograms" type="checkbox" /><div class="m-menu">
+	<div class="m-menu__header"><label class="m-menu__toggle" for="researchPrograms"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><path d="M19 12H6M12 5l-7 7 7 7"></path></svg></label> <span>Research and Programs</span></div>
+
+	<ul><li><label class="a-label__chevron" for="FeaturedInitiatives">Featured Initiatives</label> <input class="m-menu__checkbox" id="FeaturedInitiatives" name="FeaturedInitiatives" type="checkbox" /><div class="m-menu">
+		<div class="m-menu__header"><label class="m-menu__toggle" for="FeaturedInitiatives"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><path d="M19 12H6M12 5l-7 7 7 7"></path></svg></label> <span>Featured Initiatives</span></div>
+
+		<ul><li><label><a href="https://netl.doe.gov/key-lab-initiatives">Main Page</a></label></li>
+			<li><label><a href="https://netl.doe.gov/key-lab-initiatives/aasc">Advanced Alloys Signature Center (AASC)</a></label></li>
+			<li><label><a href="https://netl.doe.gov/key-lab-initiatives/cfc">Center for Fuels and Chemicals (CFC)</a></label></li>
+			<li><label><a href="https://netl.doe.gov/key-lab-initiatives/cmc">Center for Microwave Chemistry (CMC)</a></label></li>
+			<li><label><a href="https://netl.doe.gov/sites/default/files/2025-12/Carbon%20Engineering_0.pdf">Coal for High-Value Products</a></label></li>
+			<li><label><a href="https://netl.doe.gov/resource-sustainability/critical-minerals-and-materials/ric">Critical Minerals and Materials</a></label></li>
+			<!--<li><label><a href="#">Enhanced Oil Recovery</a></label></li>-->
+			<li><label><a href="https://netl.doe.gov/sites/default/files/2025-12/Natural%20Gas%20and%20Infrastructure.pdf">Natural Gas</a></label></li>
+			<!--<li><label><a href="#">Offshore Resources and Modeling</a></label></li>-->
+			<li><label><a href="https://netl.doe.gov/key-lab-initiatives/sami">Science-based Artificial Intelligence and Machine Learning Institute (SAMI)</a></label></li>
+			<li><label><a href="https://netl.doe.gov/sites/default/files/2025-12/Subsurface%20Engineering.pdf">Subsurface Science</a></label></li>
+			<li><label><a href="https://netl.doe.gov/carbon-management/turbines">Turbine System Optimization</a></label></li>
+		</ul></div>
+		</li>
+		<li><label class="a-label__chevron" for="FEPrograms">Major Fossil Energy Prorams</label> <input class="m-menu__checkbox" id="FEPrograms" name="FEPrograms" type="checkbox" /><div class="m-menu">
+		<div class="m-menu__header"><label class="m-menu__toggle" for="FEPrograms"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><path d="M19 12H6M12 5l-7 7 7 7"></path></svg></label> <span>Core Competencies</span></div>
+
+		<ul><li><label><a href="https://www.energy.gov/fecm/office-fossil-energy">Main Page</a></label></li>
+			<li><label><a href="https://www.netl.doe.gov/carbon-management">Carbon Management</a></label></li>
+			<li><label><a href="https://netl.doe.gov/resource-sustainability">Resource Sustainability</a></label></li>
+		</ul></div>
+		</li>
+		<li><label class="a-label__chevron" for="CoreComp">Core Competencies</label> <input class="m-menu__checkbox" id="CoreComp" name="CoreComp" type="checkbox" /><div class="m-menu">
+		<div class="m-menu__header"><label class="m-menu__toggle" for="CoreComp"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><path d="M19 12H6M12 5l-7 7 7 7"></path></svg></label> <span>Core Competencies</span></div>
+
+		<ul><li><label><a href="https://netl.doe.gov/core-competencies">Main Page</a></label></li>
+			<li><label><a href="https://netl.doe.gov/onsite-research/computational">Computational Science and Engineering</a></label></li>
+			<li><label><a href="https://netl.doe.gov/onsite-research/ec-engineering">Energy Conversion Engineering</a></label></li>
+			<li><label><a href="https://netl.doe.gov/onsite-research/geological">Geological and Environmental Systems</a></label></li>
+			<li><label><a href="https://netl.doe.gov/onsite-research/materials">Materials Engineering and Manufacturing</a></label></li>
+			<li><label><a href="https://netl.doe.gov/onsite-research/systems-engineering-and-analysis">Strategic Systems Analysis and Engineering</a></label></li>
+			<li><label><a href="https://netl.doe.gov/onsite-research/program">Program Execution and Integration</a></label></li>
+		</ul></div>
+		</li>
+		<li><label class="a-label__chevron" for="EnergyTech">Energy Technology Development</label> <input class="m-menu__checkbox" id="EnergyTech" name="EnergyTech" type="checkbox" /><div class="m-menu">
+		<div class="m-menu__header"><label class="m-menu__toggle" for="EnergyTech"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><path d="M19 12H6M12 5l-7 7 7 7"></path></svg></label> <span>Energy Technology Development</span></div>
+
+		<ul><li><label><a href="https://netl.doe.gov/etd">Main Page</a></label></li>
+			<li><label><a href="https://www.energy.gov/eere/office-energy-efficiency-renewable-energy">Office of Energy Efficiency and Renewable Energy</a></label></li>
+			<li><label><a href="https://netl.doe.gov/bwi">Battery Workforce Initiative</a></label></li>
+			<li><label><a href="https://www.energy.gov/ceser">Cybersecurity, Energy Security, and Emergency Response</a></label></li>
+			<li><label><a href="https://www.energy.gov/oe/office-electricity">Office of Electricity</a></label></li>
+		</ul></div>
+		</li>
+		<li><label class="a-label__chevron" for="UTR">University Training &amp; Research</label> <input class="m-menu__checkbox" id="UTR" name="UTR" type="checkbox" /><div class="m-menu">
+		<div class="m-menu__header"><label class="m-menu__toggle" for="UTR"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><path d="M19 12H6M12 5l-7 7 7 7"></path></svg></label> <span>University Training &amp; Research</span></div>
+
+		<ul><li><label><a href="https://netl.doe.gov/carbon-management/university-training">Main Page</a></label></li>
+			<li><label><a href="https://netl.doe.gov/carbon-management/university-training#HBCU%E2%80%93MSI">Historically Black Colleges and Universities and Minority Serving Institutions Program</a></label></li>
+			<li><label><a href="https://netl.doe.gov/carbon-management/university-training#UCR">University Carbon Research Program</a></label></li>
+		</ul></div>
+		</li>
+	</ul></div>
+	</li>
+	<li><label class="a-label__chevron" for="business">Business</label> <input class="m-menu__checkbox" id="business" name="business" type="checkbox" /><div class="m-menu">
+	<div class="m-menu__header"><label class="m-menu__toggle" for="business"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><path d="M19 12H6M12 5l-7 7 7 7"></path></svg></label> <span>Business</span></div>
+
+	<ul><li><label><a href="https://netl.doe.gov/business/solicitations-hub">Solicitations and Funding Opportunities</a></label></li>
+		<li><label><a href="https://netl.doe.gov/iijahub">Infrastructure Investment and Jobs Act</a></label></li>
+		<li><label><a href="https://netl.doe.gov/challenges">Prizes and Challenges</a></label></li>
+		<li><label><a href="https://netl.doe.gov/employment">Careers</a></label></li>
+		<li><label><a href="https://netl.doe.gov/business/business-forms">Business Forms</a></label></li>
+		<li><label><a href="https://netl.doe.gov/business/site-support">Site Support Electronic Reading Room</a></label></li>
+		<li><label><a href="https://netl.doe.gov/business/unsolicited-proposals">Unsolicited Proposals</a></label></li>
+		<li><label><a href="https://netl.doe.gov/business/property">Available Property</a></label></li>
+		<li><label><a href="https://netl.doe.gov/business/partnerships">Partnerting with NETL</a></label></li>
+		<li><label><a href="https://netl.doe.gov/business/rwfi">Regional Workforce Initiative</a></label></li>
+		<li><label><a href="https://netl.doe.gov/small-business">Small Business Corner</a></label></li>
+		<li><label class="a-label__chevron" for="techtrans">Technology Transfer</label> <input class="m-menu__checkbox" id="techtrans" name="techtrans" type="checkbox" /><div class="m-menu">
+		<div class="m-menu__header"><label class="m-menu__toggle" for="techtrans"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><path d="M19 12H6M12 5l-7 7 7 7"></path></svg></label> <span>Technology Transfer</span></div>
+
+		<ul><li><label><a href="https://netl.doe.gov/business/tech-transfer">Main Page</a></label></li>
+			<li><label><a href="https://netl.doe.gov/business/tech-transfer/agreements">Agreements</a></label></li>
+			<li><label><a href="https://netl.doe.gov/business/tech-transfer/licensing">Licensing</a></label></li>
+			<li><label><a href="https://netl.doe.gov/business/tech-transfer/success">Success Stories</a></label></li>
+			<li><label><a href="https://netl.doe.gov/business/tech-transfer/available-technologies">Available Technologies</a></label></li>
+			<li><label><a href="https://netl.doe.gov/business/tech-transfer/faq">FAQ</a></label></li>
+		</ul></div>
+		</li>
+	</ul></div>
+	</li>
+	<li><label class="a-label__chevron" for="library">Library</label> <input class="m-menu__checkbox" id="library" name="library" type="checkbox" /><div class="m-menu">
+	<div class="m-menu__header"><label class="m-menu__toggle" for="library"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><path d="M19 12H6M12 5l-7 7 7 7"></path></svg></label> <span>Library</span></div>
+
+	<ul><li><label><a href="https://netl.doe.gov/nepa">Approved Categorical Exclusions</a></label></li>
+		<li><label><a href="https://netl.doe.gov/node/6939">Environmental Assessments</a></label></li>
+		<li><label><a href="https://netl.doe.gov/library/eis">Environmental Impact Statements</a></label></li>
+		<li><label><a href="https://netl.doe.gov/oil-gas/oil-and-gas-project-summaries?tid=34&amp;field_project_type_value=All">Oil and Gas Projects Summaries</a></label></li>
+		<li><label><a href="https://netl.doe.gov/netl-factsheets">NETL Fact Sheets</a></label></li>
+		<li><label><a href="https://netl.doe.gov/advsearch">Publication Search</a></label></li>
+		<li><label><a href="https://netl.doe.gov/edx">Energy Data Exchange (EDX)</a></label></li>
+		<li><label><a href="https://netl.doe.gov/FECM-External-R-and-D-Final-Technical-Reports">FECM External R&amp;D Final Technical Reports</a></label></li>
+		<li><label><a href="https://netl.doe.gov/node/2476">Project Landing Page Summary Information for External R&amp;D Awards</a></label></li>
+		<li><label><a href="https://netl.doe.gov/energy-analysis/search">NETL R&amp;D Publication Search</a></label></li>
+		<li><label><a href="https://netl.doe.gov/peerreviews">Peer Review Reports</a></label></li>
+		<li><label class="a-label__chevron" for="energyAnalysis">Energy Analysis</label> <input class="m-menu__checkbox" id="energyAnalysis" name="energyAnalysis" type="checkbox" /><div class="m-menu">
+		<div class="m-menu__header"><label class="m-menu__toggle" for="energyAnalysis"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><path d="M19 12H6M12 5l-7 7 7 7"></path></svg></label><span>Energy Analysis</span></div>
+
+		<ul><li><label><a href="https://netl.doe.gov/ea/about">Main Page</a></label></li>
+		</ul></div>
+		</li>
+	</ul></div>
+	</li>
+	<li><label class="a-label__chevron" for="About">About</label> <input class="m-menu__checkbox" id="About" name="About" type="checkbox" /><div class="m-menu">
+	<div class="m-menu__header"><label class="m-menu__toggle" for="About"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><path d="M19 12H6M12 5l-7 7 7 7"></path></svg></label> <span>About</span></div>
+
+	<ul><li><a href="https://netl.doe.gov/about/mission-overview">Mission and Overview</a></li>
+		<li><label><a href="https://netl.doe.gov/about/visit-netl">Visit NETL</a></label></li>
+		<li><label><a href="https://netl.doe.gov/about/contact">Contact NETL</a></label></li>
+		<!--<li><label><a href="https://netl.doe.gov/about/organization">Organization</a></label></li>-->
+		<li><label><a href="https://netl.doe.gov/about/key-staff">Key Staff</a></label></li>
+		<li><label><a href="https://netl.doe.gov/about/history">History</a></label></li>
+		<li><label><a href="https://netl.doe.gov/about/awards-list">Awards and Recognition</a></label></li>
+		<li><label><a href="https://netl.doe.gov/about/environmental-quality">Environmental Quality</a></label></li>
+		<li><label><a href="https://netl.doe.gov/about/netl-logo">NETL Logo</a></label></li>
+	</ul></div>
+	</li>
+	<li><label class="a-label__chevron" for="NewsEvents">News and Events</label> <input class="m-menu__checkbox" id="NewsEvents" name="NewsEvents" type="checkbox" /><div class="m-menu">
+	<div class="m-menu__header"><label class="m-menu__toggle" for="NewsEvents"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><path d="M19 12H6M12 5l-7 7 7 7"></path></svg></label> <span>News and Events</span></div>
+
+	<ul><li><label><a href="https://netl.doe.gov/news-room-news-stories?tid=All&amp;year=All">News Stories</a></label></li>
+		<li><label><a href="https://netl.doe.gov/events">Events</a></label></li>
+		<li><label><a href="https://netl.doe.gov/events/conference-proceedings">Conference Proceedings</a></label></li>
+	</ul></div>
+	</li>
+	<li><label class="a-label__chevron" for="Education">Education</label> <input class="m-menu__checkbox" id="Education" name="Education" type="checkbox" /><div class="m-menu">
+	<div class="m-menu__header"><label class="m-menu__toggle" for="Education"><svg fill="none" height="35" stroke="#000000" stroke-linecap="butt" stroke-linejoin="arcs" stroke-width="2" viewbox="0 0 24 24" width="35"><path d="M19 12H6M12 5l-7 7 7 7"></path></svg></label> <span>Education</span></div>
+
+	<ul><li><label><a href="https://netl.doe.gov/education/internship">Internship &amp; Fellowship Programs</a></label></li>
+		<li><label><a href="https://netl.doe.gov/education">STEM Education and Outreach</a></label></li>
+	</ul></div>
+	</li>
+	<li style="padding-top: 20px; padding-left: 20px; width: 95%;">
+	<form action="https://netl.doe.gov/search/node" class="form searchbox-mobile" method="GET"><input class="search-field" id="Searchtxtmobile" name="keys" placeholder="Search" type="text" /><button class="search-button-main" type="submit"><img alt="Search" src="https://netl.doe.gov/sites/default/files/2022-12/magnifying-glass-grey.png" /></button></form>
+	</li>
+</ul></div>
+</section></div>
+</div>
+</div>
+</div>
+       
+</div> 
+ 
+</div> 
+ 
+
+  </div>
+ 
+<!--TEST Code -->
+
+
+<!-- END Test Code -->
+
+
+</div>
+</header>
+<div class="netlbanner_header1">
+</div>
+<div class="netlbanner_menu1">
+</div>
+<nav id="netlmenu" class="navbar-default1 navbar1" aria-label="Main Navigation">
+<div id="netlmenu_inner_in1"> 
+<div class="netlmenu_element_alignment container">
+</div>
+<div id="navigationmenu">
+<div class="navbar-header">
+<button id="nav-expander" data-target=".navbar-collapse" data-toggle="collapse" class="navbar-toggle" type="button">
+<span class="netlmenu_toggle_button">
+<span class="sr-only">
+</span>
+<span class="icon-bar">
+</span>
+<span class="icon-bar">
+</span>
+<span class="icon-bar">
+</span>
+</span>
+<span class="netlmenu_button_text">
+Menu
+</span>
+</button>
+</div>
+<div class="menu-center collapse navbar-collapse">
+
+</div>
+</div>
+</div>
+</nav>
+<div class="netlbanner_menu">
+</div>
+<div id="netlcontent_and_sidebar_container">
+<div id="netlcontent">
+<div id="netlcontent_margin" class="container-fluid">
+<div style="height:0px;width:0px;overflow:hidden;-webkit-margin-top-collapse: separate;"></div>
+<div style="clear:both;">
+</div>
+
+
+<div class="row">
+  <div>
+     
+  
+<div id="block-netl-content" class="block block-system block-system-main-block"> 
+ 
+ 
+ 
+ 
+<div class="content"> 
+<div data-history-node-id="11332" class="node node--type-page node--view-mode-full ds-1col clearfix" typeof="schema:WebPage">
+
+  
+
+  
+            <div><h1 class="factsheetTitle">
+  CarbonSafe Initiative
+</h1>
+</div>
+      
+            <div property="schema:text"><style type="text/css">
+<!--/*--><![CDATA[/* ><!--*/
+
+<!--/*--><![CDATA[/* ><!--*/
+
+<!--/*--><![CDATA[/* ><!--*/
+@media (min-width: 979px) {
+    .vertical-align {
+        display: flex;
+        align-items: center;
+    }
+}
+
+.csheadcaption {
+    font-style: italic;
+    color: #656565;
+    border-bottom: solid thin #65656565;
+    font-weight: lighter;
+    margin: -2% 3% 2% 3%;
+}
+.panel-group .panel {
+margin-bottom:15px;
+border: 0px;
+}
+
+
+.panel-body {
+background-color: #ddd;
+border: 0px !important;
+padding-left: 50px;
+padding-right: 50px;
+}
+
+
+.panel-title a.collapsed:before {
+content: '>';
+display: inline-block;
+margin-right: 10px;
+-webkit-transform: rotate(0deg);
+-moz-transform: rotate(0deg);
+-o-transform: rotate(0deg);
+transform: rotate(0deg);
+font-size: 28px;
+}
+
+.panel-title a:before {
+content: '>';
+display: inline-block;
+margin-right: 10px;
+-webkit-transform: rotate(90deg);
+-moz-transform: rotate(90deg);
+-o-transform: rotate(90deg);
+transform: rotate(90deg);
+font-size: 28px;
+}
+
+.panel-default > .panel-heading {
+background-color: #ddd;
+}
+
+/*--><!]]]]]]><![CDATA[><![CDATA[>*/
+
+/*--><!]]]]><![CDATA[>*/
+
+/*--><!]]>*/
+</style><!--Full page header. Note that you will have to change the 'padding:top' value for the size of the pic --><div class="full" style="background-image: url('/sites/default/files/2021-11/Banner%20project%20tundra%201900x400.png');   background-repeat: no-repeat;  padding-top:26%; background-size:contain;">
+<p class="csheadcaption"><em>J-LOC1 Well at the Project Tundra site. EERC’s Project Tundra is two projects in one: 1) Divert flue gas then separate CO<sub>2</sub> and 2) inject CO<sub>2</sub> into the storage formation. Photo courtesy of UND, EERC DE-FE0031889</em></p>
+</div>
+
+<h4>Carbon <u>S</u>torage <u>A</u>ssurance <u>F</u>acility <u>E</u>nterprise (CarbonSAFE) Overview:</h4>
+
+<p>The CarbonSAFE Initiative began in 2016 with the goal of addressing key gaps toward carbon capture and storage (CCS) deployment. Building upon the knowledge and experience of the<span style="font-size:11.0pt"><span style="line-height:107%"><span style="font-family:&quot;Calibri&quot;,sans-serif"> </span></span></span> <a href="/carbon-management/carbon-storage/RCSP">Regional Carbon Sequestration Partnerships’ (RCSPs)</a> this initiative is identifying and characterizing geologic storage sites. CarbonSAFE seeks to understand the development of a CCS storage complex, from feasibility study to injection, through the following phases: integrated carbon capture and storage prefeasibility, storage complex feasibility, site characterization and permitting, and construction. The CarbonSAFE Initiative will reduce technical risk, uncertainty, and the cost of commercial-scale saline storage projects. Results will improve the understanding of project screening; site selection; characterization; baseline monitoring, verification and accounting (MVA) procedures; and information necessary to submit appropriate permit applications for such projects.</p>
+
+<p><a href="https://netl.doe.gov/sites/default/files/2025-08/CarbonSAFE%20Map_27111%20Round%202.png"><img alt="Map of projects" src="https://netl.doe.gov/sites/default/files/2025-08/CarbonSAFE%20Map_27111%20Round%202.png" class="align-center" /></a></p>
+
+<p>The CarbonSAFE effort contributes to developing and refining technologies and techniques critical to characterizing potential 50+ million metric ton (MMT) storage complexes. Project research will provide insight for integrating site characterization information into reservoir simulations and designing injection and monitoring strategies. The progress made by the CarbonSAFE Initiative will instill greater confidence that commercial-scale CCS projects can be integrated in a technically and economically feasible manner.</p>
+<!-- Main Accordian code -->
+
+<div aria-multiselectable="true" class="panel-group" id="accordion" role="tablist"><!-- Panel 1 -->
+<div class="panel panel-default">
+<div class="panel-heading" id="PhaseI" role="tab"><!-- change 'id' here -->
+<h4 class="panel-title"><a aria-controls="collapsePhaseI" aria-expanded="false" class="collapsed" data-parent="#accordion" data-toggle="collapse" href="#collapsePhaseI" role="button"><strong><u>Phase I: Integrated Prefeasibility Projects</u></strong></a></h4>
+</div>
+
+<div aria-labelledby="PhaseI" class="panel-collapse collapse" id="collapsePhaseI" role="tabpanel">
+<div class="panel-body"><!--Phase I Copy goes Here -->
+<div class="row vertical-align">
+<div class="col-md-6" style="padding-right: 20px;"><figure role="group" class="align-center"><a href="https://netl.doe.gov/sites/default/files/2025-08/CarbonSAFE%20Phase%201.png"><img src="https://netl.doe.gov/sites/default/files/2025-08/CarbonSAFE%20Phase%201.png" style="height:400px; width: auto;" /></a>
+<figcaption>Locations of CarbonSAFE Integrated CCS Pre-Feasibility projects. Click to enlarge.</figcaption></figure></div>
+
+<div class="col-md-6">
+<p>In the prefeasibility projects, economic feasibility analyses were conducted for targeted sites under varying scenarios under Phase I. In addition, extensive regional data was collected, analyzed and modeled; multiple storage sites and infrastructure were evaluated; and business plans for a variety of CCS scenarios were developed. Overall lessons learned from the prefeasibility projects include the following:</p>
+
+<ul><li>CCS projects require strong collaborations and a business-focused strategy.</li>
+	<li>Strong host site support is critical.</li>
+	<li>Capture costs are a limiting factor for making CCS economical.</li>
+	<li>Stacked storage is feasible but might not be practical at every storage site.</li>
+	<li>Pressure management might be necessary to meet target rates and volumes.</li>
+	<li>Reservoir heterogeneity requires improved models and data to increase plume behavior accuracy.</li>
+</ul></div>
+</div>
+<!--Phase I Copy Ends Here --></div>
+</div>
+</div>
+<!--Phase II-->
+
+<div class="panel panel-default">
+<div class="panel-heading" id="PhaseII" role="tab"><!-- change 'id' here -->
+<h4 class="panel-title"><a aria-controls="collapsePhaseII" aria-expanded="false" class="collapsed" data-parent="#accordion" data-toggle="collapse" href="#collapsePhaseII" role="button"><strong><u>Phase II: Storage Complex Feasibility Projects </u></strong></a></h4>
+</div>
+
+<div aria-labelledby="PhaseII" class="panel-collapse collapse" id="collapsePhaseII" role="tabpanel">
+<div class="panel-body"><!--Phase II Copy goes Here -->
+<div class="row vertical-align">
+<div class="col-md-6" style="padding-right: 20px;"><figure role="group" class="align-center"><a href="https://netl.doe.gov/sites/default/files/2025-08/CarbonSAFE_phase2_with_2711_release2.png"><img src="https://netl.doe.gov/sites/default/files/2025-08/CarbonSAFE_phase2_with_2711_release2.png" style="height:400px; width: auto;" /></a>
+<figcaption>Locations of CarbonSAFE Storage Complex Feasibility projects. Click to enlarge.</figcaption></figure></div>
+
+<div class="col-md-6">
+<p>Research in the storage complex feasibility projects focuses on one or more specific reservoirs within the defined storage complex, encompassing:</p>
+
+<ul><li>Data collection.</li>
+	<li>Geologic analysis.</li>
+	<li>Identification of contractual and regulatory requirements and plans to satisfy them.</li>
+	<li>• Subsurface modeling to support geologic characterization, risk assessment and monitoring.</li>
+	<li>Public outreach.</li>
+</ul><p>In this phase, project performers might drill a characterization well and acquire geologic data from seismic surveys, core logs and well tests. These projects evaluate initial reservoir characteristics to determine if the reservoir is suitable for 50+ MMT geologic storage, address technical and nontechnical challenges that may arise, develop a risk assessment and CO<sub>2</sub> management strategy for the project; and assist with the validation of National Risk Assessment Partnership (NRAP) tools and other United States Department of Energy (DOE) tools.</p>
+
+<p>The DOE Office of Fossil Energy and Carbon Management (FECM) continues to award new projects under CarbonSAFE Phase II that will improve procedures to safely, efficiently and affordably assess onshore and offshore project sites for commercial-scale geologic carbon storage.</p>
+
+<p> </p>
+</div>
+</div>
+<!--Phase II Copy Ends Here --></div>
+</div>
+</div>
+<!--Phase III-->
+
+<div class="panel panel-default">
+<div class="panel-heading" id="PhaseIII" role="tab"><!-- change 'id' here -->
+<h4 class="panel-title"><a aria-controls="collapsePhaseIII" aria-expanded="false" class="collapsed" data-parent="#accordion" data-toggle="collapse" href="#collapsePhaseIII" role="button"><strong><u>Phase III: Site Characterization and Permitting</u></strong></a></h4>
+</div>
+
+<div aria-labelledby="PhaseIII" class="panel-collapse collapse" id="collapsePhaseIII" role="tabpanel">
+<div class="panel-body"><!--Phase III Copy goes Here -->
+<div class="row vertical-align">
+<div class="col-md-6" style="padding-right: 20px;"><figure role="group" class="align-center"><a href="https://netl.doe.gov/sites/default/files/2025-08/CarbonSAFE_phase3_with_2711_release2.png"><img src="https://netl.doe.gov/sites/default/files/2025-08/CarbonSAFE_phase3_with_2711_release2.png" style="height:400px; width: auto;" /></a>
+<figcaption>Locations of the CarbonSAFE Site Characterization and CO2 Capture Assessment projects. Click to enlarge.</figcaption></figure></div>
+
+<div class="col-md-6">
+<p>CarbonSAFE Phase III projects commenced in 2020 with the goal of demonstrating storage resources for commercial volumes of CO<sub>2</sub> (a minimum of 50 MMT of CO<sub>2</sub> within a 30-year period). Activities under the projects include the acquisition, analysis and development of information to fully characterize storage complexes at multiple locations across the nation. These projects will provide lessons learned by doing, information on the costs of early mover projects, data on project risks, practice in understanding and adhering to regulations, and a basis for public acceptance. This phase also involves the identification of a storage site(s) within the storage complex, as well as the preparation and submission of an Underground Injection Control (UIC) Class VI permit to construct for each proposed injection well. Projects will provide a prefeasibility study of the commercial sources of anthropogenic CO<sub>2</sub> and the necessary capture technologies that can be used to provide the quality and quantity of CO<sub>2</sub> needed. Once the UIC Class VI permits to construct are submitted, project performers will work with the regulators to satisfy requirements until construction is authorized. Finally, this phase addresses pore/surface rights, rights of way, and all other permitting requirements (including National Environmental Policy Act [NEPA] determination and issuance), liability relief, and finance agreements in support of the business model for eventual commercial operations. Phase III projects continue to be awarded.</p>
+
+<p><strong>Phase III.5: NEPA, Storage Development Plan and Front-End Engineering Design (FEED) Studies Only:</strong> Phase III.5 is intended for applicants who have completed most phase III activities independent of DOE. It entails completing NEPA determination and issuance, preparing storage development plans, and conducting FEED studies before the project will be considered for phase IV.</p>
+</div>
+</div>
+<!--Phase III.5 Copy Ends Here --></div>
+</div>
+</div>
+<!--Phase IV-->
+
+<div class="panel panel-default">
+<div class="panel-heading" id="PhaseIV" role="tab"><!-- change 'id' here -->
+<h4 class="panel-title"><a aria-controls="collapsePhaseIV" aria-expanded="false" class="collapsed" data-parent="#accordion" data-toggle="collapse" href="#collapsePhaseIV" role="button"><strong><u>Phase IV: Construction</u></strong></a></h4>
+</div>
+
+<div aria-labelledby="PhaseIV" class="panel-collapse collapse" id="collapsePhaseIV" role="tabpanel">
+<div class="panel-body"><!--Phase IV Copy goes Here -->
+<div class="row vertical-align">
+<div class="col-md-12">
+<p>Subject to the availability of funding, the final phase of CarbonSAFE, Construction, will involve drilling and completing injection and monitoring wells, completing risk and mitigation plans, engaging with the public, and obtaining authorization to inject.</p>
+</div>
+</div>
+<!--Phase II Copy Ends Here --></div>
+</div>
+<!-- Close  --></div>
+</div>
+
+<table align="center" border="1" bordercolor="#99adce" cellpadding="2" cellspacing="0" style="margin-top: 75px;"><tbody><tr><th align="center" class="TitleAltFont" colspan="2"><strong><em>CarbonSAFE Phase I Project Landing Pages</em></strong></th>
+		</tr><tr><td rowspan="2"><a href="https://netl.doe.gov/sites/default/files/Carbon_Storage/retired-2023/FE0029186.pdf" target="_blank">Nebraska Integrated Carbon Capture and Storage Prefeasibility Study</a></td>
+			<td><strong>University of North Dakota Energy and Environmental Research Center </strong></td>
+		</tr><tr><td>FE0029186</td>
+		</tr><tr><td rowspan="2"><a href="https://netl.doe.gov/sites/default/files/Carbon_Storage/retired-2023/FE0029219.pdf" target="_blank">Integrated Prefeasibility Study for CO<sub>2</sub> Geological Storage in the Cascadia Basin, Offshore Washington State and British Columbia</a></td>
+			<td><strong>Columbia University</strong> </td>
+		</tr><tr><td>FE0029219</td>
+		</tr><tr><td rowspan="2"><a href="https://netl.doe.gov/sites/default/files/Carbon_Storage/retired-2023/FE0029264.pdf" target="_blank">Integrated Midcontinent Stacked Carbon Storage Hub</a></td>
+			<td><strong>Battelle Memorial Institute</strong></td>
+		</tr><tr><td>FE0029264</td>
+		</tr><tr><td rowspan="2"><a href="https://netl.doe.gov/sites/default/files/Carbon_Storage/retired-2024/FE0029274.pdf">Integrated Carbon Capture and Storage in the Louisiana Chemical Corridor</a></td>
+			<td><strong>Louisiana State University</strong> </td>
+		</tr><tr><td>FE0029274</td>
+		</tr><tr><td rowspan="2"><a href="https://netl.doe.gov/sites/default/files/Carbon_Storage/retired-2023/FE0029276.pdf" target="_blank">Northern Michigan Basin CarbonSAFE Integrated Prefeasibility Project</a></td>
+			<td><strong>Battelle Memorial Institute</strong></td>
+		</tr><tr><td>FE0029276</td>
+		</tr><tr><td rowspan="2"><a href="https://netl.doe.gov/sites/default/files/Carbon_Storage/retired-2023/FE0029280.pdf">CarbonSAFE Rocky Mountain Phase I: Ensuring Safe Subsurface Storage of Carbon Dioxide in the Intermountain West</a></td>
+			<td><strong>University of Utah</strong></td>
+		</tr><tr><td>FE0029280</td>
+		</tr><tr><td rowspan="2"><a href="https://netl.doe.gov/sites/default/files/Carbon_Storage/retired-2024/FE0029302.pdf" target="_blank">Integrated Prefeasibility Study of a Commercial-Scale Commercial Carbon Capture Project in Formations of the Rock Springs Uplift, Wyoming</a></td>
+			<td><strong>University of Wyoming</strong></td>
+		</tr><tr><td>FE0029302</td>
+		</tr><tr><td rowspan="2">CarbonSAFE Illinois East Subbasin</td>
+			<td><strong>Illinois State Geological Survey</strong></td>
+		</tr><tr><td>FE0029445</td>
+		</tr><tr><td rowspan="2"><a href="https://netl.doe.gov/sites/default/files/Carbon_Storage/retired-2023/FE0029466.pdf" target="_blank">CAB-CS: Central Appalachian Basin CarbonSAFE Integrated Prefeasibility Project</a></td>
+			<td><strong>Battelle Memorial Institute</strong></td>
+		</tr><tr><td>FE0029466</td>
+		</tr><tr><td rowspan="2"><a href="https://netl.doe.gov/sites/default/files/Carbon_Storage/retired-2023/FE0029474.pdf" target="_blank">Integrated Carbon Capture and Storage in Kansas (ICKan)</a></td>
+			<td><strong>University of Kansas Center for Research</strong></td>
+		</tr><tr><td>FE0029474</td>
+		</tr><tr><td rowspan="2"><a href="https://netl.doe.gov/sites/default/files/Carbon_Storage/retired-2023/FE0029487.pdf" target="_blank">Integrated CCS Prefeasibility in the Northwest Gulf of Mexico</a></td>
+			<td><strong>University of Texas at Austin</strong></td>
+		</tr><tr><td>FE0029487</td>
+		</tr><tr><td rowspan="2"><a href="https://netl.doe.gov/sites/default/files/Carbon_Storage/retired-2023/FE0029489.pdf" target="_blank">California CO<sub>2</sub> Storage Assurance Facility Enterprise (C<sub>2</sub>SAFE)</a></td>
+			<td><strong>Electric Power Research Institute</strong></td>
+		</tr><tr><td>FE0029489</td>
+		</tr></tbody></table><table align="center" border="1" bordercolor="#99adce" cellpadding="2" cellspacing="0"><tbody><tr><th align="center" class="TitleAltFont" colspan="2"><strong><em>CarbonSAFE Phase II Project Landing Pages</em></strong></th>
+		</tr><tr><td rowspan="2">CarbonSAFE Illinois Macon County</td>
+			<td><strong>Illinois State Geological Survey</strong></td>
+		</tr><tr><td>FE0029381</td>
+		</tr><tr><td rowspan="2">Establishing An Early Carbon Dioxide Storage (ECO<sub>2</sub>S) Complex in Kemper County, Mississippi:  Project ECO<sub>2</sub>S</td>
+			<td><strong>Southern States Energy Board </strong></td>
+		</tr><tr><td>FE0029465</td>
+		</tr><tr><td rowspan="2">North Dakota Integrated Carbon Storage Complex Feasibility Study</td>
+			<td><strong>University of North Dakota Energy and Environmental Research Center </strong></td>
+		</tr><tr><td>FE0029488</td>
+		</tr><tr><td rowspan="2">Integrated Midcontinent Stacked Carbon Storage Hub</td>
+			<td><strong>Battelle Memorial Institute</strong></td>
+		</tr><tr><td>FE0031623</td>
+		</tr><tr><td rowspan="2">Commercial-Scale Carbon Storage Complex Feasibility Study at Dry Fork Station, Wyoming</td>
+			<td><strong>University of Wyoming</strong></td>
+		</tr><tr><td>FE0031624</td>
+		</tr><tr><td rowspan="2">Wabash CarbonSAFE</td>
+			<td><strong>University of Illinois</strong></td>
+		</tr><tr><td>FE0031626</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?p=FE0032239">Sutter County CO<sub>2</sub> Capture and Storage Project, Northern California </a></td>
+			<td><strong>Gas Technology Institute</strong></td>
+		</tr><tr><td>FE0032239</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032264">Tulare County Carbon Storage Project (TCCSP)</a></td>
+			<td><strong>Advanced Resources International, Inc.</strong></td>
+		</tr><tr><td>FE0032264</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?p=FE0032265">Coastal Bend Carbon Management Project: CarbonSAFE Phase II </a></td>
+			<td><strong>Port of Corpus Christi Authority of Nueces County, Texas</strong></td>
+		</tr><tr><td>FE0032265</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032266">Uinta Basin CarbonSAFE II: Storage Complex Feasibility</a></td>
+			<td><strong>University of Utah</strong></td>
+		</tr><tr><td>FE0032266</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032267">Optimizing Alabama’s CO<sub>2</sub> Storage in Shelby County (OASIS)</a></td>
+			<td><strong>Southern States Energy Board</strong></td>
+		</tr><tr><td>FE0032267</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032268">Mitchell CarbonSAFE</a></td>
+			<td><strong>University of Illinois</strong></td>
+		</tr><tr><td>FE0032268</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032270">Louisiana Offshore Carbon Dioxide Hub Repurposing Infrastructure to Decrease Greenhouse Gas Emissions (Project Lochridge)</a></td>
+			<td><strong>Southern States Energy Board</strong></td>
+		</tr><tr><td>FE0032270</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032279">Hermiston Oregon Basalt Carbon Storage Assurance Facility Enterprise</a></td>
+			<td><strong>University of Wyoming</strong></td>
+		</tr><tr><td>FE0032279</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032282">Roughrider Carbon Storage Hub</a></td>
+			<td><strong>University of North Dakota</strong></td>
+		</tr><tr><td>FE0032282</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032312">Carbon Storage Complex Feasibility for Commercial Development in Southeastern Michigan</a></td>
+			<td><strong>Battelle Memorial Institute</strong></td>
+		</tr><tr><td>FE0032312</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032446">Red Hills CO<sub>2</sub> Storage Hub (RHCSH) Feasibility Study </a></td>
+			<td><strong>Trifecta Renewable Solutions</strong></td>
+		</tr><tr><td>FE0032446</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032447">Atlantic Coast CO<sub>2</sub> Emissions Storage Sink (Project ACCESS)</a></td>
+			<td><strong>Southern States Energy Board</strong></td>
+		</tr><tr><td>FE0032447</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032448">The Williams Echo Springs CarbonSAFE Storage Complex Feasibility Study</a></td>
+			<td><strong>University of Wyoming</strong></td>
+		</tr><tr><td>FE0032448</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032449">Carbon Storage Complex Feasibility for Commercial Development in Paradise, Kentucky – CarbonSAFE Phase II</a></td>
+			<td><strong>Battelle Memorial Institute</strong></td>
+		</tr><tr><td>FE0032449</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032450">CTV III CO<sub>2</sub> Storage Project (CTV III) in Sacramento Basin, California</a></td>
+			<td><strong>Colorado School of Mines</strong></td>
+		</tr><tr><td>FE0032450</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032451">California-Nevada CO<sub>2</sub> Storage Project (CANstore)</a></td>
+			<td><strong>Electric Power Research Institute </strong></td>
+		</tr><tr><td>FE0032451</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032452">Permian Regional Carbon Sequestration Hub</a></td>
+			<td><strong>Omnia Midstream Partners, LLC</strong></td>
+		</tr><tr><td>FE0032452</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032453">Alaska Railbelt Carbon Capture and Storage (ARCCS) Project </a></td>
+			<td><strong>University of Alaska Fairbanks</strong></td>
+		</tr><tr><td>FE0032453</td>
+		</tr></tbody></table><table align="center" border="1" bordercolor="#99adce" cellpadding="2" cellspacing="0"><tbody><tr><th align="center" class="TitleAltFont" colspan="2"><strong><em>CarbonSAFE Phase III Project Landing Pages</em></strong></th>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0031888">Establishing An Early Carbon Dioxide Storage (ECO<sub>2</sub>S) Complex in Kemper County, Mississippi:  Project ECO<sub>2</sub>S (Phase III)</a></td>
+			<td><strong>Southern States Energy Board</strong></td>
+		</tr><tr><td>FE0031888</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0031889">North Dakota CarbonSAFE Phase III: Site Characterization and Permitting</a></td>
+			<td><strong>University of North Dakota, Energy &amp; Environmental Research Center</strong></td>
+		</tr><tr><td>FE0031889</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0031890">San Juan Basin CarbonSAFE Phase III: Ensuring Safe Subsurface Storage of Carbon Dioxide in Saline Reservoirs</a></td>
+			<td><strong>New Mexico Institute of Mining and Technology</strong></td>
+		</tr><tr><td>FE0031890</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0031891">Wyoming CarbonSAFE: Accelerating CCUS Commercialization and Deployment at Dry Fork Power Station and the Wyoming Integrated Test Center</a></td>
+			<td><strong>University of Wyoming</strong></td>
+		</tr><tr><td>FE00031891</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0031892">Illinois Storage Corridor</a></td>
+			<td><strong>University of Illinois</strong></td>
+		</tr><tr><td>FE0031892</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032330">A Biomass Carbon Dioxide Capture and Removal Project at a Pulp Mill in Alabama</a></td>
+			<td><strong>Timberlands Sequestration, LLC </strong></td>
+		</tr><tr><td>FE0032330</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032331">Coal Creek Carbon Capture: Site Characterization and Permitting</a></td>
+			<td><strong>University of North Dakota, Energy &amp; Environmental Research Center</strong></td>
+		</tr><tr><td>FE0032331</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032332">Lone Star Storage Hub Project</a></td>
+			<td><strong>BP Carbon Solutions LLC</strong></td>
+		</tr><tr><td>FE0032332</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032338">Bluebonnet Sequestration Project</a></td>
+			<td><strong>Bluebonnet Sequestration Hub, LLC, a business unit of OLCV</strong></td>
+		</tr><tr><td>FE0032338</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032339">Magnolia Sequestration Project</a></td>
+			<td><strong>Magnolia Sequestration Hub, LLC, a business unit of OLCV </strong></td>
+		</tr><tr><td>FE0032339</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032341">Longleaf CCS Hub</a></td>
+			<td><strong>Southern States Energy Board</strong></td>
+		</tr><tr><td>FE0032341</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032342">CarbonSAFE Eos: Developing Commercial Sequestration for Southern Colorado </a></td>
+			<td><strong>Colorado School of Mines </strong></td>
+		</tr><tr><td>FE0032342</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032343">CarbonSAFE Phase III: Sweetwater Carbon Storage (SCS) Hub</a></td>
+			<td><strong>University of Wyoming </strong></td>
+		</tr><tr><td>FE0032343</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032438">GeoDura CO<sub>2</sub> Storage Hub Project</a></td>
+			<td><strong>Advanced Resources International, Inc</strong></td>
+		</tr><tr><td>FE0032438</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032441">Tri-State CO<sub>2</sub> Storage Hub; Tri-State Project</a></td>
+			<td><strong>Southern States Energy Board</strong></td>
+		</tr><tr><td>FE0032441</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032442">Four Corners Carbon Storage Hub: CarbonSAFE Phase III Project</a></td>
+			<td><strong>New Mexico Institute of Mining and Technology</strong></td>
+		</tr><tr><td>FE0032442</td>
+		</tr><tr><td rowspan="2"><a href="https://www.netl.doe.gov/project-information?k=FE0032443">River Parish Sequestration — A Critical Carbon Storage Hub for the Louisiana Chemical Corridor</a></td>
+			<td><strong>River Parish Sequestration, LLC</strong></td>
+		</tr><tr><td>FE0032443</td>
+		</tr></tbody></table><p> </p>
+
+<h3 style="margin-top:75px;margin-bottom:25px;">Explore the Site</h3>
+
+<div class="row" style="text-align: center;">
+<div class="col-md-2"><a href="/carbon-management/carbon-storage/carbonsafe/publications"><img alt="News Button" class="iconFade align-center" src="https://netl.doe.gov/sites/default/files/netl-file/Web%20icon_Publications.png" style="margin-bottom:25px;width:100px;" /></a><a class="TitleAltFont" href="/carbon-management/carbon-storage/carbonsafe/publications">CarbonSAFE Publications</a></div>
+
+<div class="col-md-2"><a href="/carbon-management/carbon-storage"><img alt="Project Button" class="iconFade align-center" src="https://netl.doe.gov/sites/default/files/2023-11/Explore%20Icon_Explore.png" style="margin-bottom:25px;width:100px;" /></a><a class="TitleAltFont" href="/carbon-management/carbon-storage">Carbon Transport &amp; Storage Homepage</a></div>
+</div>
+</div>
+      
+
+</div>
+
+ 
+</div> 
+ 
+</div> 
+ 
+
+  </div>
+
+</div>
+<div style="height:0px;width:0px;overflow:hidden;-webkit-margin-top-collapse: separate;"></div>
+</div> 
+</div> 
+<div style="clear:both;">
+</div>
+</div>
+<div class="footer-widget-area">
+
+<div class="footer-widget-area_left_border_image">
+<div class="footer-widget-area_right_border_image">
+<div class="footer-widget-area_inner">
+<div class="netlfooter-widget-area_inner_above_widget_container">
+</div>
+</div>
+</div>
+</div>
+</div>
+<div style="height:0px;width:0px;overflow:hidden;-webkit-margin-top-collapse: separate;"></div>
+<footer id="netlfooter">
+  <div>
+     
+  
+<div id="block-2023footer" class="block block-block-content block-block-contentf3cbe066-5ae7-4fc4-be02-2f671eeb21b1"> 
+ 
+ 
+ 
+ 
+<div class="content"> 
+
+            <div><div class="footer">
+<div class="footer-links">
+<div class="fl-column">
+<p><a href="https://netl.doe.gov/home/disclaimer">Disclaimer</a></p>
+
+<p><a href="https://netl.doe.gov/home/privacy-policy">Privacy Policy</a></p>
+
+<p><a href="https://netl.doe.gov/home/website-policies">Web Policies</a></p>
+</div>
+
+<div class="fl-column">
+<p><a href="https://netl.doe.gov/home/foia">FOIA/Privacy Act</a></p>
+
+<p><a href="https://netl.doe.gov/home/employees">Employees Only</a></p>
+
+<p><a href="/home/no-fear">No Fear Act</a></p>
+</div>
+
+<div class="fl-column">
+<p><a href="https://doe.responsibledisclosure.com/hc/en-us">Vulnerabilities Disclosure Program</a></p>
+</div>
+</div>
+
+<div class="footer-logo"><img alt="NETL &amp; DOE Logo" class="footerDOENETLLogo" src="https://netl.doe.gov/sites/default/files/2025-02/NETL-DOE_Cobrand%20-%20White.png" /></div>
+
+<div class="social-media-links"><a href="https://www.facebook.com/NationalEnergyTechnologyLaboratory?ref=mf"><img alt="Facebook" class="iconFade" src="https://netl.doe.gov/sites/default/files/2023-04/Social_NETL%20Facebook%20White.png" /></a> <a href="https://twitter.com/NETL_DOE"><img alt="X" class="iconFade" src="https://netl.doe.gov/sites/default/files/netl-file/Social%20Media%20Logos_NETL%20X%20White.png" /></a> <a href="https://www.linkedin.com/company/national-energy-technology-laboratory"><img alt="LinkedIn" class="iconFade" src="https://netl.doe.gov/sites/default/files/2023-04/Social_NETL%20LinkedIn%20White.png" /></a> <a href="https://www.youtube.com/NETLMultimedia"><img alt="YouTube" class="iconFade" src="https://netl.doe.gov/sites/default/files/2023-06/Social%20Media%20Logos_NETL%20YouTube%20White.png" /></a> <a href="https://www.flickr.com/photos/netlmultimedia/"><img alt="Flickr" class="iconFade" src="https://netl.doe.gov/sites/default/files/2023-04/Social_NETL%20Flickr%20White.png" /></a> <a href="https://www.instagram.com/netl_doe/?hl=en"><img alt="Instagram" class="iconFade" src="https://netl.doe.gov/sites/default/files/2023-04/Social_NETL%20Instagram%20White.png" /></a></div>
+</div>
+</div>
+       
+</div> 
+ 
+</div> 
+ 
+
+  </div>
+
+<div id="netlfooter_top_for_widgets">
+<div  class="netlfooter_top_for_widgets_inner">
+</div>
+</div>
+<div class="netlfooter_bottom_footer">
+<div class="netlfooter_bottom_footer_inner">
+<div class="netlfooter_element_alignment container">
+</div>
+
+
+</div>
+</div>
+</footer>
+<div style="height:0px;width:0px;overflow:hidden;-webkit-margin-top-collapse: separate;"></div>
+<div class="footer-widget-area">
+<div class="netlfooter-widget-area_inner_below_widget_container">
+</div>
+</div>
+</div>
+
+  </div>
+
+
+<script type="application/json" data-drupal-selector="drupal-settings-json">{"path":{"baseUrl":"\/","scriptPath":null,"pathPrefix":"","currentPath":"node\/11332","currentPathIsAdmin":false,"isFront":false,"currentLanguage":"en"},"pluralDelimiter":"\u0003","suppressDeprecationErrors":true,"google_analytics":{"account":"UA-859862-1","trackOutbound":true,"trackMailto":true,"trackDownload":true,"trackDownloadExtensions":"7z|aac|arc|arj|asf|asx|avi|bin|csv|doc(x|m)?|dot(x|m)?|exe|flv|gif|gz|gzip|hqx|jar|jpe?g|js|mp(2|3|4|e?g)|mov(ie)?|msi|msp|pdf|phps|png|ppt(x|m)?|pot(x|m)?|pps(x|m)?|ppam|sld(x|m)?|thmx|qtm?|ra(m|r)?|sea|sit|tar|tgz|torrent|txt|wav|wma|wmv|wpd|xls(x|m|b)?|xlt(x|m)|xlam|xml|z|zip"},"user":{"uid":0,"permissionsHash":"ed83fa3092a696eaa955c346dcfe26828d3f2b79ab751f0aab105a6dcee287e2"}}</script>
+<script src="/core/assets/vendor/jquery/jquery.min.js?v=3.6.0"></script>
+<script src="/core/misc/drupalSettingsLoader.js?v=9.4.8"></script>
+<script src="/core/misc/drupal.js?v=9.4.8"></script>
+<script src="/core/misc/drupal.init.js?v=9.4.8"></script>
+<script src="/modules/contrib/google_analytics/js/google_analytics.js?v=9.4.8"></script>
+<script src="/themes/netl/js/totop.js?v=9.4.8"></script>
+<script src="/themes/netl/js/bootstrap.min.js?v=9.4.8"></script>
+<script src="/themes/netl/js/Customjs.js?v=9.4.8"></script>
+<script src="/themes/netl/js/html5shiv.js?v=9.4.8"></script>
+<script src="/themes/netl/js/respond.min.js?v=9.4.8"></script>
+
+</body>
+</html>
