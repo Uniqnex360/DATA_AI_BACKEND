@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+
+    <title>Federal Register :: Request Access</title>
+
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="csrf-param" content="authenticity_token" />
+<meta name="csrf-token" content="GHOedZOUDVXEjm9xBtnjNAc5NRPF_kl0w2wdwwg-G1z6mh351qp7X980epML1mYUpmmVnZnbmbeBXsgSgY2Gng" />
+    <meta name="csp-nonce" />
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <link rel="stylesheet" href="/assets/application-e146e8e3.css" data-turbo-track="reload" />
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="header" id="header_refresh">
+        <div class="header_wrapper">
+          <div class="logo">
+            <div class="hgroup official">
+              <a href="/" title="Federal Register Home - The Daily Journal of the United States Government">
+                <svg class="masthead">
+                  <use xlink:href="/assets/fr-mastheads-74d61d18.svg#official-masthead">
+                    </use>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="main">
+        <div class="main-title-bar">
+          <div class="bar left-extender"></div>
+          <div class="bar left"></div>
+          <h1 class="">Request Access</h1>
+          <div class="bar right"></div>
+        </div>
+
+        <div class="dialog">
+          <h3>Request Access</h3>
+
+          <p>
+  Due to aggressive automated scraping of FederalRegister.gov and eCFR.gov, programmatic access to these sites is limited to access to our extensive developer APIs.
+</p>
+
+<p>
+  If you are human user receiving this message, we can add your IP address to a set of IPs that can access FederalRegister.gov &amp; eCFR.gov; complete the CAPTCHA (bot test) below and click "Request Access". This process will be necessary for each IP address you wish to access the site from, requests are valid for approximately one quarter (three months) after which the process may need to be repeated.
+</p>
+
+<form action="/unblock" method="post">
+  <input type="hidden" name="authenticity_token" id="authenticity_token" value="9Dv9clJnKK5WAInfl8TbkZDmL_lDhS38l0HfqkyjRM8W0n7-F1lepE26nD2ay16xMbaPdx-g_T_Vcwp7xRDZDQ" autocomplete="off" />
+  <script src="https://www.recaptcha.net/recaptcha/api.js" async defer ></script>
+<div data-sitekey="6LfpbQcUAAAAAMw_vbtM1IRqq7Dvf-AftcZHp_OK" class="g-recaptcha "></div>
+          <noscript>
+            <div>
+              <div style="width: 302px; height: 422px; position: relative;">
+                <div style="width: 302px; height: 422px; position: absolute;">
+                  <iframe
+                    src="https://www.recaptcha.net/recaptcha/api/fallback?k=6LfpbQcUAAAAAMw_vbtM1IRqq7Dvf-AftcZHp_OK"
+                    name="ReCAPTCHA"
+                    style="width: 302px; height: 422px; border-style: none; border: 0; overflow: hidden;">
+                  </iframe>
+                </div>
+              </div>
+              <div style="width: 300px; height: 60px; border-style: none;
+                bottom: 12px; left: 25px; margin: 0px; padding: 0px; right: 25px;
+                background: #f9f9f9; border: 1px solid #c1c1c1; border-radius: 3px;">
+                <textarea name="g-recaptcha-response"
+                  class="g-recaptcha-response"
+                  style="width: 250px; height: 40px; border: 1px solid #c1c1c1;
+                  margin: 10px 25px; padding: 0px; resize: none;">
+                </textarea>
+              </div>
+            </div>
+          </noscript>
+
+  <button type="submit">Request Access for 49.43.251.66</button>
+</form>
+
+<p class="small">
+  <em>An official website of the United States government.</em>
+</p>
+
+<p class="small">
+  If you want to request a wider IP range, first request access for your current IP, and then use the "Site Feedback" button found in the lower left-hand side to make the request.
+</p>
+
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

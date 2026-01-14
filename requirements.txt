@@ -14,3 +14,11 @@ pdfplumber==0.11.4
 playwright==1.47.0
 pytesseract==0.3.10
 opencv-python-headless==4.10.0.84
+google-generativeai==0.8.6
+beautifulsoup4==4.14.3
+sqlmodel
+asyncpg
+psycopg2-binary
+alembic
+python-jose[cryptography]
+passlib[bcrypt]

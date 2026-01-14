@@ -1,4 +1,3 @@
-# app/sacred.py — FINAL UNKILLABLE PRODUCTION VERSION
 import json
 import logging
 from typing import Dict, List, Any, Optional
@@ -155,7 +154,7 @@ Return ONLY JSON.
     return result.get(canonical, {"values": values, "conflict": True})
 
 
-def standardize_with_llm(attribute: str, values: list[str]) -> dict:
+def standardize_with_llm(attribute: str, values: List[str]) -> dict:
     if not values:
         return {"standard_value": None, "unit": None, "derived_from": []}
 

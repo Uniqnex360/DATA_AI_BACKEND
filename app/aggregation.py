@@ -129,7 +129,7 @@ def aggregate_product(mpn: str = None, upc: str = None, title: str = None) -> Di
             except Exception as e:
                 logger.warning(f"Extraction failed: {e}")
         keys = [k for e in extracted for k in e.get("attributes", {}).keys()]
-        mapping = unify_attributes(list(set(keys))) if keys else {
+        mapping = unify_attributes(List(set(keys))) if keys else {
             "canonical_attributes": {}}
         standardized = {}
         for canonical, info in mapping.get("canonical_attributes", {}).items():

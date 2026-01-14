@@ -1,6 +1,6 @@
-from .config import settings
-from app.schemas import ReviewItem
+from app.schemas.enrichment import ReviewItem
 from .hitl_store import HITL_QUEUE
+from app.core.config import settings
 
 def check_for_human_review(product_key:str,attribute:str,standarized_attr):
     if(standarized_attr.confidence<settings.hitl_confidence_threashold):

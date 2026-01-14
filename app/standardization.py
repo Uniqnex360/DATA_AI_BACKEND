@@ -1,9 +1,8 @@
-
-from .schemas import RawValue, StandardizedAttribute
+from app.schemas.enrichment import RawValue, StandardizedAttribute
 from .rules import BUSINESS_RULES, SOURCE_CONFIDENCE
 from .utils import extract_number
-
-def standardize_attribute(attribute: str, values: list[RawValue]) -> StandardizedAttribute:
+from typing import List
+def standardize_attribute(attribute: str, values: List[RawValue]) -> StandardizedAttribute:
     if not values:
         raise ValueError("No values to standardize")
 

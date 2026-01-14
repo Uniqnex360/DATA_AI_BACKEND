@@ -1,5 +1,5 @@
 from .llm import call_llm
-from .schemas import EnrichmentResult
+from app.schemas.enrichment import EnrichmentResult
 import json
 
 def enrich_product(brand: str, category: str, standardized_attributes: dict) -> EnrichmentResult:

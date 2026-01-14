@@ -1,16 +1,22 @@
-version: '3.9'
 services:
-  api:
-    build: .
+  db:
+    image: postgres:15
+    container_name: datasphere_db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: datasphere
     ports:
-      - "8000:8000"
+      - "5432:5432"
     volumes:
-      - ./storage:/app/storage
-    env_file:
-      - .env
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - postgres_data:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:

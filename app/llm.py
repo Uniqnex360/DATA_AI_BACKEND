@@ -1,9 +1,8 @@
 from openai import OpenAI
-from .config import settings
 import google.generativeai as genai
 import json
-from app.sacred import generate_search_queries
-
+import time
+from app.core.config import settings
 client = OpenAI(api_key=settings.openai_api_key)
 genai.configure(api_key=settings.gemini_api_key)
 def parse_response(content:str)->dict:
@@ -14,8 +13,10 @@ def parse_response(content:str)->dict:
     elif content.startswith("```"):
         content = content[3:-3]
     print(f"After stripping: {repr(content)}")
+    return json.loads(content)
     
 def call_llm(prompt: str, schema: dict) -> dict:
+    time.sleep(4)
     try:
         print(f"Using model: {settings.llm_model}")
         print(f"API key exists: {bool(settings.openai_api_key)}")
@@ -35,10 +36,10 @@ def call_llm(prompt: str, schema: dict) -> dict:
         print(f"Open AI failed:{str(e)}")
         print(f"---Switching  to Gemini backup ({settings.gemini_model})")
         try:
-            model=genai.GenerativeModel(model_name=settings.gemini_model,generation_config={'response_mime_typ':'application/json'})
-            gemini_prompt=f'{prompt}\n\Return JSON response matching this schema:{json.dumps(schema)}'
+            model=genai.GenerativeModel(model_name=settings.gemini_model,generation_config={'response_mime_type':'application/json'})
+            gemini_prompt = f'{prompt}\n\nReturn JSON response matching this schema:{json.dumps(schema)}'
             response=model.generate_content(gemini_prompt)
             return parse_response(response.text)
         except Exception as e:
             print(f"Gemini Backup also failed: {str(e)}")
-            return e
+            return {"error": str(e)} 
