@@ -7,6 +7,6 @@ from typing import Optional
 class CRUDProduct(CRUDBase[Product,ProductCreate,ProductUpdate]):
     async def get_by_code(self,db:AsyncSession,code:str)->Optional[Product]:
         query=select(Product).where(Product.product_code==code)
-        result=await db.exec(query)
+        result=await db.execute(query)
         return result.one_or_none()    
 product_service=CRUDProduct(Product)

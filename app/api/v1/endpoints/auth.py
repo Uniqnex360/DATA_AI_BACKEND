@@ -1,4 +1,3 @@
-from django.contrib.auth import authenticate
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.core.database import get_session
 from sqlalchemy.ext.asyncio import AsyncSession

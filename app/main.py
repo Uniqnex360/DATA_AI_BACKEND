@@ -343,9 +343,8 @@ import os
 import uuid
 import logging
 from pathlib import Path
-from app.api.v1.endpoints import products
 from app.core.database import init_db
-from app.api.v1.endpoints import auth
+from app.api.v1.endpoints import auth,audit,users,golden_records,dashboard,products,rules,projects,extraction,cleansing
 # Setup Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api_main")
@@ -360,6 +359,22 @@ app.add_middleware(
 )
 app.include_router(products.router, prefix=f"{settings.API_V1_STR}/products", tags=["products"])
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
+app.include_router(audit.router, prefix=f"{settings.API_V1_STR}/audit-trail", tags=["audit"])
+app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users", tags=["users"])
+app.include_router(golden_records.router, prefix=f"{settings.API_V1_STR}/golden-records", tags=["golden"])
+app.include_router(dashboard.router, prefix=f"{settings.API_V1_STR}/dashboard", tags=["dashboard"])
+app.include_router(rules.router, prefix=f"{settings.API_V1_STR}/rules", tags=["rules"])
+app.include_router(projects.router, prefix=f"{settings.API_V1_STR}/projects", tags=["projects"])
+app.include_router(extraction.router, prefix=f"{settings.API_V1_STR}/sources", tags=["sources"])
+app.include_router(cleansing.router, prefix=f"{settings.API_V1_STR}/cleansing", tags=["cleansing"])
+
+
+
+
+
+
+
+
 
 
 STATUS_DIR = "./storage/status"
@@ -388,7 +403,7 @@ def load_batch_status(batch_id):
     except:
         return None
 
-
+    
 @app.get('/health')
 def health():
     return {'status': 'healthy'}

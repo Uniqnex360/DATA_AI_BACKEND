@@ -13,7 +13,7 @@ class CRUDBase(Generic[ModelType,CreateSchemaType,UpdateSchemaType]):
         return await db.get(self.model,id)
     async def get_multi(self,db:AsyncSession,*,skip:int=0,limit:int=100)->List[ModelType]:
         query=select(self.model).offset(skip).limit(limit)
-        result=await db.exec(query)
+        result=await db.execute(query)
         return result.all()
     async def create(self,db:AsyncSession,*,obj_in:CreateSchemaType)->ModelType:
         obj_in_data=jsonable_encoder(obj_in)
