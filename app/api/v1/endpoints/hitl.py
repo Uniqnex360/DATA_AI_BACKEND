@@ -9,20 +9,19 @@ from app.models.product import Product
 logger = logging.getLogger("hitl_router")
 router = APIRouter()
 @router.get("/pending")
-async def get_pending_reviews(db: AsyncSession = Depends(get_session)):
+async def get_pending_items(
+    status: Optional[str] = None, 
+    db: AsyncSession = Depends(get_session)
+):
     try:
-        statement = select(ReviewItem).where(ReviewItem.status == "pending")
+        statement = select(ReviewItem)
+        if status and status != 'all':
+            statement = statement.where(ReviewItem.status == status)
         result = await db.execute(statement)
-        items = result.scalars().all()
-        grouped = {}
-        for item in items:
-            if item.product_code not in grouped:
-                grouped[item.product_code] = []
-            grouped[item.product_code].append(item)
-        return grouped
+        return result.scalars().all() 
     except Exception as e:
-        logger.error(f"Failed to fetch HITL queue: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving review queue")
+        logger.error(f"Failed to fetch HITL items: {e}")
+        return [] 
 @router.get("/stats/{project_id}")
 async def get_hitl_stats(project_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -42,36 +41,31 @@ async def get_hitl_stats(project_id: str, db: AsyncSession = Depends(get_session
         return {"total": 0, "pending": 0, "approved": 0, "rejected": 0, "in_review": 0}
 @router.post("/approve")
 async def approve_item(
-    product_key: str, 
-    attribute: str, 
-    reviewer: str, 
+    queue_id: str, 
     db: AsyncSession = Depends(get_session)
 ):
     try:
-        statement = select(ReviewItem).where(
-            ReviewItem.product_code == product_key, 
-            ReviewItem.attribute == attribute
-        )
-        result = await db.execute(statement)
-        item = result.scalars().first()
+        item = await db.get(ReviewItem, queue_id)
         if not item:
-            raise HTTPException(status_code=404, detail="Review item not found")
+            raise HTTPException(status_code=404, detail="Review task not found")
         item.status = "approved"
-        item.reviewer = reviewer
-        prod_statement = select(Product).where(Product.product_code == product_key)
-        prod_result = await db.execute(prod_statement)
-        product = prod_result.scalars().first()
+        item.reviewer = "Human Validator" 
+        stmt = select(Product).where(Product.product_code == item.product_code)
+        result = await db.execute(stmt)
+        product = result.scalars().first()
         if product:
             new_attrs = dict(product.attributes)
-            new_attrs[attribute] = item.proposed_value
+            new_attrs[item.attribute] = item.proposed_value
             product.attributes = new_attrs
             db.add(product)
         await db.commit()
-        return {"status": "success", "message": f"Approved {attribute}"}
+        logger.info(f"✓ Approved attribute '{item.attribute}' for product '{item.product_code}'")
+        return {"status": "success", "id": queue_id}
     except Exception as e:
         await db.rollback()
-        logger.error(f"Approval failed: {e}")
-        raise HTTPException(status_code=500, detail="Processing failed")
+        logger.error(f"Approval failed for {queue_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to process approval")  
+    
 @router.post("/override")
 async def override_item(
     product_key: str, 

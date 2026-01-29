@@ -344,7 +344,7 @@ import uuid
 import logging
 from pathlib import Path
 from app.core.database import init_db
-from app.api.v1.endpoints import auth,audit,users,golden_records,dashboard,products,rules,projects,extraction,cleansing,extraction
+from app.api.v1.endpoints import auth,audit,users,golden_records,dashboard,products,rules,projects,extraction,cleansing,aggregation,standardization,enrichment,hitl,publishing
 # Setup Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api_main")
@@ -368,8 +368,13 @@ app.include_router(projects.router, prefix=f"{settings.API_V1_STR}/projects", ta
 app.include_router(extraction.router, prefix=f"{settings.API_V1_STR}/sources", tags=["sources"])
 app.include_router(cleansing.router, prefix=f"{settings.API_V1_STR}/cleansing", tags=["cleansing"])
 app.include_router(extraction.router, prefix=f"{settings.API_V1_STR}/extract", tags=["extract"])
+app.include_router(aggregation.router, prefix=f"{settings.API_V1_STR}/aggregation", tags=["aggregation"])
+app.include_router(standardization.router, prefix=f"{settings.API_V1_STR}/standardization", tags=["standardization"])
+app.include_router(enrichment.router, prefix=f"{settings.API_V1_STR}/enrichment", tags=["enrichment"])
+app.include_router(hitl.router, prefix=f"{settings.API_V1_STR}/hitl", tags=["hitl"])
+# app/main.py
 
-
+app.include_router(publishing.router, prefix=f"{settings.API_V1_STR}/publishing", tags=["publishing"])
 
 
 

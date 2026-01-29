@@ -11,11 +11,4 @@ BUSINESS_RULES={
         'type':'boolean'
     }
 }
-SOURCE_CONFIDENCE={
-    'pdf':'0.95',
-    'excel':"0.90",
-    'official':'0.88',
-    'web':'0.70',
-    'image':'0.60',
-    'inference':'0.40'
-}
+
