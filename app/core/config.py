@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 from typing import Optional,List
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
-    PROJECT_NAME:str='Datasphere PIM'
+    PROJECT_NAME:str='Data AI Backend'
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000"]
     SECRET_KEY:str
     ALGORITHM:str="HS256"
