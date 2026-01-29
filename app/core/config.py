@@ -3,7 +3,7 @@ from typing import Optional,List
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME:str='Data AI Backend'
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000","https://data-ai-backend-v1.duckdns.org"]
+    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000","https://data-ai-frontend-dusky.vercel.app"]
     SECRET_KEY:str
     ALGORITHM:str="HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
