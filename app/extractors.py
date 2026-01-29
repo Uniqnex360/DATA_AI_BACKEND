@@ -1,6 +1,6 @@
 import logging
 from typing import Optional, List, Dict
-import fitz  
+import fitz
 import pdfplumber
 import pandas as pd
 import cv2
@@ -11,22 +11,27 @@ from pathlib import Path
 import httpx
 from bs4 import BeautifulSoup
 
-MAX_PDF_MB=100
-MAX_IMAGE_MB=10                                                                                     
+MAX_PDF_MB = 100
+MAX_IMAGE_MB = 10
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
 def extract_web(url: str):
     try:
-        resp = httpx.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+        resp = httpx.get(url, timeout=15, headers={
+                         "User-Agent": "Mozilla/5.0"})
         if resp.status_code == 200 and len(resp.text) > 1000:
             soup = BeautifulSoup(resp.text, "html.parser")
-            for s in soup(["script", "style", "nav", "footer", "header"]):
+            for s in soup(["script", "style", "nav", "footer", "header", "svg", "noscript", "iframe"]):
                 s.decompose()
-            return soup.get_text()
+            content = soup.find('main') or soup.find('body')
+            return content.get_text(separator=' ', strip=True)
     except:
         pass
 
-    return extract_web_playwright(url) 
+    return extract_web_playwright(url)
+
 
 def extract_web_playwright(url: str, timeout: int = 30_000) -> Optional[str]:
     try:
@@ -37,7 +42,7 @@ def extract_web_playwright(url: str, timeout: int = 30_000) -> Optional[str]:
             )
             page = context.new_page()
             page.goto(url, timeout=timeout, wait_until="domcontentloaded")
-            page.wait_for_timeout(2000) 
+            page.wait_for_timeout(2000)
             content = page.content()
             browser.close()
             return content
@@ -47,64 +52,67 @@ def extract_web_playwright(url: str, timeout: int = 30_000) -> Optional[str]:
         logger.error(f"Playwright failed on {url}: {e}")
     return None
 
+
 def extract_pdf_pdfplumber(path: str) -> str:
-    file=Path(path)
+    file = Path(path)
     if not file.exists():
-        logger.warning("PDF not found",extra={"path":path})
+        logger.warning("PDF not found", extra={"path": path})
         return ''
-    if  file.stat().st_size>MAX_PDF_MB*1024*1024:
-        logger.warning("PDF too large",extra={"path":path})
+    if file.stat().st_size > MAX_PDF_MB*1024*1024:
+        logger.warning("PDF too large", extra={"path": path})
         return ''
     try:
         with pdfplumber.open(path) as pdf:
             return "\n".join(page.extract_text() or "" for page in pdf.pages)
     except Exception as e:
         logger.error(f"pdfplumber failed on {path}: {e}")
-        return extract_pdf_pymupdf(path) 
+        return extract_pdf_pymupdf(path)
 
-def extract_pdf_pymupdf(path:str)->str:
+
+def extract_pdf_pymupdf(path: str) -> str:
     try:
-        doc=fitz.open(path)
-        text='\n'.join(page.get_text('text') for page in doc)
+        doc = fitz.open(path)
+        text = '\n'.join(page.get_text('text') for page in doc)
         doc.close()
         return text
     except Exception as e:
         logger.error(f"PYMuPDF failed on {path}:{e}")
         return ""
-    
-def extract_csv_excel(path:str)->List[Dict]:
-    file=Path(path)
+
+
+def extract_csv_excel(path: str) -> List[Dict]:
+    file = Path(path)
     if not file.exists():
-        logger.warning("CSV/Excel not found",extra={'path':path})
+        logger.warning("CSV/Excel not found", extra={'path': path})
         return []
     try:
         if path.endswith('.csv'):
-            df=pd.read_csv(file)
+            df = pd.read_csv(file)
         else:
-            df=pd.read_excel(file)
+            df = pd.read_excel(file)
         return df.to_dict(orient='records')
     except Exception as e:
         logger.error(f"Pandas failed on {path}:{e}")
         return []
 
-def extract_image_text(path:str)->List[Dict]:
-    file=Path(path)
+
+def extract_image_text(path: str) -> List[Dict]:
+    file = Path(path)
     if not file.exists():
-        logger.warning("Image not found",extra={'path':path})
+        logger.warning("Image not found", extra={'path': path})
         return []
-    if file.stat().st_size>MAX_IMAGE_MB*1024*1024:
-        logger.warning("Image too large for OCR",extra={'path':path})
+    if file.stat().st_size > MAX_IMAGE_MB*1024*1024:
+        logger.warning("Image too large for OCR", extra={'path': path})
         return []
     try:
-        img=cv2.imread(path)
+        img = cv2.imread(path)
         if img is None:
             logger.warning(f"OpenCV couldn't read image :{path}")
             return []
-        gray=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-        text=pytesseract.image_to_string(gray,lang='eng',config='--psm 6')
-        lines=[line.strip() for line in text.split('\n') if line.strip()]
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        text = pytesseract.image_to_string(gray, lang='eng', config='--psm 6')
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
         return lines
     except Exception as e:
         logger.error(f"OCR failed on {path}:{e}")
         return []
-

@@ -1,0 +1,35 @@
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.services.truth_engine import aggregate_product 
+from app.services.enrichment import enrich_product 
+from app.models.product import Product
+from app.models.pipeline import AuditTrail
+
+async def run_full_extraction_pipeline(product_id: str, db: AsyncSession):
+    try:
+        product = await db.get(Product, product_id)
+        if not product:
+            return
+
+        result = aggregate_product(
+            mpn=product.mpn, 
+            title=product.product_name
+        )
+
+        product.attributes = result["golden_record"]["attributes"]
+        product.enrichment_status = "processing" 
+        
+        enrichment_result = enrich_product(
+            brand=product.brand_name or "Generic",
+            category=product.category_1 or "Product",
+            standardized_attributes=product.attributes
+        )
+        
+        product.description = enrichment_result.seo_title
+        product.enrichment_status = "completed"
+        
+        await db.commit()
+        
+    except Exception as e:
+        await db.rollback()
+        print(f"Pipeline Error: {e}")

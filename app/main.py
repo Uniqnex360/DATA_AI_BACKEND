@@ -344,7 +344,7 @@ import uuid
 import logging
 from pathlib import Path
 from app.core.database import init_db
-from app.api.v1.endpoints import auth,audit,users,golden_records,dashboard,products,rules,projects,extraction,cleansing
+from app.api.v1.endpoints import auth,audit,users,golden_records,dashboard,products,rules,projects,extraction,cleansing,extraction
 # Setup Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api_main")
@@ -367,6 +367,9 @@ app.include_router(rules.router, prefix=f"{settings.API_V1_STR}/rules", tags=["r
 app.include_router(projects.router, prefix=f"{settings.API_V1_STR}/projects", tags=["projects"])
 app.include_router(extraction.router, prefix=f"{settings.API_V1_STR}/sources", tags=["sources"])
 app.include_router(cleansing.router, prefix=f"{settings.API_V1_STR}/cleansing", tags=["cleansing"])
+app.include_router(extraction.router, prefix=f"{settings.API_V1_STR}/extract", tags=["extract"])
+
+
 
 
 
@@ -566,58 +569,6 @@ def enrich(payload: Dict):
         "review_required": review_required
     }
 
-
-@app.post("/unify-attributes")
-def unify_attributes(attributes: List[str]):
-    prompt = f"""
-You are a semantic attribute harmonization engine.
-Raw attribute names from multiple sources:
-{attributes}
-
-Task:
-- Identify which attributes mean the same thing
-- Group them under ONE canonical attribute in snake_case
-- Do NOT invent new attributes
-- Return only valid JSON
-
-Example output:
-{{
-  "canonical_attributes": {{
-    "screen_size": {{
-      "synonyms": ["Display Size", "Screen Size", "Diagonal", "Size"],
-      "confidence": 0.99
-    }},
-    "ip_rating": {{
-      "synonyms": ["Water Rating", "Waterproof Rating", "Ingress Protection"],
-      "confidence": 0.97
-    }}
-  }}
-}}
-"""
-
-    schema = {
-        "name": "unification",
-        "schema": {
-            "type": "object",
-            "properties": {
-                "canonical_attributes": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "object",
-                        "properties": {
-                            "synonyms": {"type": "array", "items": {"type": "string"}},
-                            "confidence": {"type": "number", "minimum": 0, "maximum": 1}
-                        },
-                        "required": ["synonyms", "confidence"]
-                    }
-                }
-            },
-            "required": ["canonical_attributes"]
-        }
-    }
-
-    result = call_llm(prompt, schema)
-    return result
 
 
 @app.get('/hitl/pending')

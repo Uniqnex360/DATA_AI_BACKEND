@@ -27,7 +27,7 @@ def call_llm(prompt: str, schema: dict) -> dict:
             {"role": "user", "content": prompt}
         ],
         response_format={"type": "json_object"},
-        max_completion_tokens=4000
+        max_completion_tokens=8000
     )
         print(f"Full response: {response}")
         content = response.choices[0].message.content.strip()

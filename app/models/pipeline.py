@@ -2,7 +2,7 @@ from sqlmodel import Field
 from datetime import datetime
 from app.models.base import UUIDModel
 from sqlmodel import Field, Column, JSON
-from typing import Optional, Dict
+from typing import Optional, Dict,Any
 
 class AuditTrail(UUIDModel,table=True):
     __tablename__='audit_trail'
@@ -53,3 +53,14 @@ class Source(UUIDModel,table=True):
     status:str=Field(default='pending')
     uploaded_at:datetime=Field(default_factory=datetime.utcnow)
     
+class ReviewItem(UUIDModel, table=True):
+    __tablename__ = 'hitl_review_queue'
+    product_code: str = Field(index=True)
+    attribute: str
+    proposed_value: str
+    confidence: float
+    reason: str
+    derived_from: Any = Field(sa_column=Column(JSON)) 
+    status: str = Field(default="pending") 
+    reviewer: Optional[str] = None
+    overridden_value: Optional[str] = None
