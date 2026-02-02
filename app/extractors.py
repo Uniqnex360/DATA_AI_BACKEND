@@ -19,14 +19,18 @@ logger = logging.getLogger(__name__)
 
 def extract_web(url: str):
     try:
-        resp = httpx.get(url, timeout=15, headers={
-                         "User-Agent": "Mozilla/5.0"})
+        resp = httpx.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
         if resp.status_code == 200 and len(resp.text) > 1000:
             soup = BeautifulSoup(resp.text, "html.parser")
             for s in soup(["script", "style", "nav", "footer", "header", "svg", "noscript", "iframe"]):
                 s.decompose()
-            content = soup.find('main') or soup.find('body')
-            return content.get_text(separator=' ', strip=True)
+            important_tags = soup.find_all(['table', 'dl', 'ul', 'main', 'article'])
+            cleaned_text = " ".join([tag.get_text(separator=' ', strip=True) for tag in important_tags])
+            if len(cleaned_text) < 500:
+                cleaned_text = soup.body.get_text(separator=' ', strip=True)
+            # content = soup.find('main') or soup.find('body')
+            # return content.get_text(separator=' ', strip=True)
+            return cleaned_text
     except:
         pass
 
