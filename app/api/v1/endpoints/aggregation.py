@@ -3,8 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func 
 from app.core.database import get_session
 from app.models.product import Product
-from app.models.pipeline import RawExtraction
+from app.models.pipeline import AuditTrail, RawExtraction
 import logging
+from app.aggregation import aggregate_product
 logger = logging.getLogger("aggregation_router")
 router = APIRouter()
 @router.get("/attributes/{product_id}")
@@ -47,3 +48,32 @@ async def get_aggregated_attributes(product_id: str, db: AsyncSession = Depends(
     except Exception as e:
         logger.error(f"CRITICAL: Aggregation UI Fetch failed: {str(e)}")
         return []
+
+@router.post('/run/{product_id}')
+async def run_aggregation(product_id:str,db:AsyncSession=Depends(get_session)):
+    try:
+        product=await db.get(Product,product_id)
+        if not product:
+            raise HTTPException(status_code=404,detail='Product not found!')
+        result=aggregate_product(mpn=product.product_code,title=product.product_name)
+        if result.get('status')=='success':
+            product.attributes=result['golden_record']['attributes']
+            product.enrichment_status='completed'
+            db.add(product)
+            db.add(AuditTrail(
+                product_id=product.product_code,
+                stage='aggregation',
+                attribute_name='truth_engine',
+                selected_value='Success',
+                sources_used=f"{result['sources_used']} sources found",
+                reason='AI successfully unified external data'
+                
+            ))
+            await db.commit()
+            return {'status':'success','data':result}
+        else:
+            raise Exception("AI engine failed to find data!")
+    except Exception as e:
+        await db.rollback()
+        logger.error(f'Aggregation failed  for {product_id}:{str(e)}')
+        raise HTTPException(status_code=500,detail=str(e))
