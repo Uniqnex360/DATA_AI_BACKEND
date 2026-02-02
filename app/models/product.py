@@ -15,6 +15,7 @@ class Product(UUIDModel,table=True):
     published_at: Optional[datetime] = Field(default=None, nullable=True)
     gtin:Optional[str]=None
     upc:Optional[str]=None
+    project_id:Optional[str]=Field(default=None,index=True)
     description:Optional[str]=None
     image_url_1:Optional[str]=None
     enrichment_status:str=Field(default='pending')
