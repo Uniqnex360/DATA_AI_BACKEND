@@ -5,18 +5,32 @@ import time
 from app.core.config import settings
 client = OpenAI(api_key=settings.openai_api_key)
 genai.configure(api_key=settings.gemini_api_key)
-def parse_response(content:str)->dict:
-    content=content.strip()
-    print(f"Raw content: {repr(content)}")
-    if content.startswith("```json"):
-        content = content[7:-3]
-    elif content.startswith("```"):
-        content = content[3:-3]
-    print(f"After stripping: {repr(content)}")
-    return json.loads(content)
+# def parse_response(content:str)->dict:
+#     content=content.strip()
+#     print(f"Raw content: {repr(content)}")
+#     if content.startswith("```json"):
+#         content = content[7:-3]
+#     elif content.startswith("```"):
+#         content = content[3:-3]
+#     print(f"After stripping: {repr(content)}")
+#     return json.loads(content)
+
+def parse_response(content: str) -> dict:
+    content = content.strip()
+    
+    if "```json" in content:
+        content = content.split("```json")[1].split("```")[0].strip()
+    elif "```" in content:
+        content = content.split("```")[1].split("```")[0].strip()
+        
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError as e:
+        print(f"JSON Parsing Error: {e} | Content: {content}")
+        return {"error": "invalid_json", "raw": content}
     
 def call_llm(prompt: str, schema: dict) -> dict:
-    time.sleep(4)
+    # time.sleep(4)
     try:
         print(f"Using model: {settings.llm_model}")
         print(f"API key exists: {bool(settings.openai_api_key)}")

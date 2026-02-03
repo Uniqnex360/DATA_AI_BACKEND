@@ -418,8 +418,7 @@ def health():
 
 
 def process_batch_in_background(batch_id: str, df_dict: List[Dict]):
-    logger.info(
-        f"Starting SEQUENTIAL background processing for batch {batch_id}")
+    logger.info(f"Starting SEQUENTIAL background processing for batch {batch_id}")
     final_output = []
     total_items = len(df_dict)
 
@@ -429,61 +428,73 @@ def process_batch_in_background(batch_id: str, df_dict: List[Dict]):
         "results": []
     })
 
-    completed_count = 0
-    for row in df_dict:
-        row_clean = {str(k).strip().lower(): v for k, v in row.items()}
-        mpn = row_clean.get("sku") or row_clean.get(
-            "mpn") or row_clean.get("part number")
-        title = row_clean.get("product title") or row_clean.get("title")
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        future_to_row={}
+        for row in df_dict:
+            row_clean = {str(k).strip().lower(): v for k, v in row.items()}
+            mpn = row_clean.get("sku") or row_clean.get("mpn") or row_clean.get("part number")
+            title = row_clean.get("product title") or row_clean.get("title")
+            if mpn or title:
+                future=executor.submit(aggregate_product_safe,mpn=str(mpn),title=str(title))
+                future_to_row[future]=(mpn,title)
+            
+        completed_count = 0
 
-        if not mpn and not title:
-            continue
+        # if not mpn and not title:
+        #     continue
+        for future in as_completed(future_to_row):
+            mpn,title=future_to_row[future]
+            completed_count+=1
+        
+        
+            try:
+                # result = aggregate_product_safe(
+                #     mpn=str(mpn) if pd.notna(mpn) else None,
+                #     title=str(title) if pd.notna(title) else None
+                # )
+                result=future.result()
+                source_links = result.get("golden_record", {}).get("sources", [])
+                sources_string = "\n".join(
+                    source_links) if source_links else "No sources found"
+                attributes = result.get("golden_record", {}).get("attributes", {})
 
-        try:
-            result = aggregate_product_safe(
-                mpn=str(mpn) if pd.notna(mpn) else None,
-                title=str(title) if pd.notna(title) else None
-            )
+                excel_row = {
+                    "Input SKU": mpn,
+                    "Input Title": title,
+                    "Ready for Publish": result.get("ready_for_publish"),
+                    "Confidence": result.get("golden_record", {}).get("confidence"),
+                    "Sources Count": result.get("sources_used"),
+                    "Source URLs": sources_string,
+                    **attributes
+                }
+                final_output.append(excel_row)
 
-            source_links = result.get("golden_record", {}).get("sources", [])
-            sources_string = "\n".join(
-                source_links) if source_links else "No sources found"
-            attributes = result.get("golden_record", {}).get("attributes", {})
+                # time.sleep(10)
 
-            excel_row = {
-                "Input SKU": mpn,
-                "Input Title": title,
-                "Ready for Publish": result.get("ready_for_publish"),
-                "Confidence": result.get("golden_record", {}).get("confidence"),
-                "Sources Count": result.get("sources_used"),
-                "Source URLs": sources_string,
-                **attributes
-            }
-            final_output.append(excel_row)
+            except Exception as e:
+                logger.error(f"Row failed for {mpn}: {e}")
 
-            time.sleep(10)
+        # completed_count += 1
 
-        except Exception as e:
-            logger.error(f"Row failed for {mpn}: {e}")
-
-        completed_count += 1
+            save_batch_status(batch_id, {
+                "status": "processing",
+                "progress": f"{completed_count}/{total_items}"
+            })
+    if final_output:
+        
+        df_results = pd.DataFrame(final_output)
+        file_path = f"./storage/batch_results_{batch_id}.xlsx"
+        os.makedirs("./storage", exist_ok=True)
+        df_results.to_excel(file_path, index=False)
 
         save_batch_status(batch_id, {
-            "status": "processing",
-            "progress": f"{completed_count}/{total_items}"
+            "status": "completed",
+            "progress": "100%",
+            "excel_file": file_path,
+            "results": []
         })
-
-    df_results = pd.DataFrame(final_output)
-    file_path = f"./storage/batch_results_{batch_id}.xlsx"
-    os.makedirs("./storage", exist_ok=True)
-    df_results.to_excel(file_path, index=False)
-
-    save_batch_status(batch_id, {
-        "status": "completed",
-        "progress": "100%",
-        "excel_file": file_path,
-        "results": []
-    })
+    else:
+        save_batch_status(batch_id, {"status": "failed", "progress": "0/0", "error": "No data processed"})
 
 
 @app.post("/batch-aggregate")
