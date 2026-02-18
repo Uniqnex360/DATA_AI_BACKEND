@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException,status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from app.core.database import get_session
@@ -27,4 +27,8 @@ async def create_project(project_data: Project, db: AsyncSession = Depends(get_s
         return project_data
     except Exception as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail="Failed to create project")
+        logger.error(f"Project creation failed: {str(e)}")
+        raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+        detail="Internal server error: Could not create project. Please try again later."
+    )

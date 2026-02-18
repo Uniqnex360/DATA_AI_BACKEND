@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     SECRET_KEY:str
     ALGORITHM:str="HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
-    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/datasphere"
+    DATABASE_URL: str
     DB_POOL_SIZE:int=20
     DB_MAX_OVERFLOW:int=10
     DB_ECHO_LOG: bool = False

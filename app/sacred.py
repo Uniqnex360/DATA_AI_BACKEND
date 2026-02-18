@@ -78,7 +78,6 @@ def fallback_extraction(html: str) -> Dict:
     try:
         soup = BeautifulSoup(html, 'html.parser')
         
-        # Strategy 1: ALL tables (filter by quality later)
         for table in soup.find_all('table'):
             for row in table.find_all('tr'):
                 cells = row.find_all(['td', 'th'])
@@ -214,7 +213,6 @@ Examples of attribute names: "Battery Capacity", "Weight", "Material", "Color", 
 
 
 def extract_discovered_attributes(html: str, attribute_names: list, sku: str = "") -> Dict:
-    """Pass 2: Extract specific attributes discovered in pass 1"""
     
     if not attribute_names:
         return {"source": "web", "attributes": {}, "error": "no_attributes_discovered"}
@@ -230,7 +228,10 @@ Rules:
 - If an attribute appears multiple times, use the most detailed/complete value
 - If an attribute is not found, omit it (don't include null values)
 - Look in tables, lists, divs, and any structured data
-
+- Return a FLAT JSON object.
+- Example: {"Battery Capacity": "3,349 mAh"}
+- ❌ DO NOT DO THIS: {"Battery Capacity": {"Battery Capacity": "3,349 mAh"}}
+- Ignore all technical metadata such as 'Ray ID', 'Cloudflare', 'Access Denied', or 'Cookies Consent'. Only extract product specifications.
 HTML (first 15000 chars):
 {html[:15000]}
 
@@ -249,12 +250,10 @@ Output ONLY JSON: {{"source": "web", "attributes": {{"Attribute Name": "value"}}
     try:
         result = safe_call_llm(prompt, schema, "extract_discovered_attributes")
         
-        # Validate we got real data
         if not result or "attributes" not in result:
             logger.warning(f"Extraction failed for {sku}")
             return {"source": "web", "attributes": {}, "error": "extraction_failed"}
         
-        # Check if all values are null/empty
         attrs = result["attributes"]
         if not attrs or all(v is None or v == "" for v in attrs.values()):
             logger.warning(f"All extracted values are null/empty for {sku}, trying fallback")
@@ -264,7 +263,6 @@ Output ONLY JSON: {{"source": "web", "attributes": {{"Attribute Name": "value"}}
                 "extraction_method": "fallback"
             }
         
-        # Filter out null values
         result["attributes"] = {k: v for k, v in attrs.items() if v is not None and v != ""}
         logger.info(f"Successfully extracted {len(result['attributes'])} attributes for {sku}")
         
@@ -273,6 +271,7 @@ Output ONLY JSON: {{"source": "web", "attributes": {{"Attribute Name": "value"}}
     except Exception as e:
         logger.exception(f"Attribute extraction failed for {sku}: {e}")
         return {"source": "web", "attributes": {}, "error": str(e)}
+    
 def extract_from_pdf(text: str) -> Dict:
     if not text.strip():
         return {"source": "pdf", "attributes": {}, "error": "empty_pdf"}

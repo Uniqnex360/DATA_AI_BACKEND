@@ -1,4 +1,4 @@
-from sqlmodel import Field
+from sqlmodel import Field,LargeBinary
 from datetime import datetime
 from app.models.base import UUIDModel
 from sqlmodel import Field, Column, JSON
@@ -52,6 +52,7 @@ class Source(UUIDModel,table=True):
         validation_alias="metadata",
         serialization_alias="metadata"
     )
+    content_data: Optional[bytes] = Field(default=None, sa_column=Column(LargeBinary))
     status:str=Field(default='pending')
     uploaded_at:datetime=Field(default_factory=datetime.utcnow)
     

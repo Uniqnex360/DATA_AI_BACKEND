@@ -21,3 +21,4 @@ class Product(UUIDModel,table=True):
     enrichment_status:str=Field(default='pending')
     completeness_score:int=Field(default=0)
     attributes:Dict=Field(default={},sa_column=Column(JSON))
+

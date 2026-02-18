@@ -1,6 +1,12 @@
 from __future__ import annotations
 
 from app.core.config import settings
+from app.models.pipeline import Source
+from datetime import datetime
+from app.core.database import get_session
+from typing import Dict, List, Optional
+from fastapi import  Depends, HTTPException,status
+from app.api.v1.endpoints.extraction import run_extraction_task
 # from __future__ import annotations
 # from fastapi import FastAPI, HTTPException
 # from typing import Dict,List
@@ -334,7 +340,7 @@ from app.llm import call_llm
 from fastapi.middleware.cors import CORSMiddleware
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from .sacred import generate_search_queries, extract_from_web, extract_from_pdf, extract_from_image, standardize_with_llm
-from app.safe_aggregation import aggregate_product_safe
+# from app.safe_aggregation import aggregate_product_safe
 import time
 import pandas as pd
 import io
@@ -367,7 +373,7 @@ app.include_router(rules.router, prefix=f"{settings.API_V1_STR}/rules", tags=["r
 app.include_router(projects.router, prefix=f"{settings.API_V1_STR}/projects", tags=["projects"])
 app.include_router(extraction.router, prefix=f"{settings.API_V1_STR}/sources", tags=["sources"])
 app.include_router(cleansing.router, prefix=f"{settings.API_V1_STR}/cleansing", tags=["cleansing"])
-app.include_router(extraction.router, prefix=f"{settings.API_V1_STR}/extract", tags=["extract"])
+# app.include_router(extraction.router, prefix=f"{settings.API_V1_STR}/extract", tags=["extract"])
 app.include_router(aggregation.router, prefix=f"{settings.API_V1_STR}/aggregation", tags=["aggregation"])
 app.include_router(standardization.router, prefix=f"{settings.API_V1_STR}/standardization", tags=["standardization"])
 app.include_router(enrichment.router, prefix=f"{settings.API_V1_STR}/enrichment", tags=["enrichment"])
@@ -495,39 +501,7 @@ def process_batch_in_background(batch_id: str, df_dict: List[Dict]):
         })
     else:
         save_batch_status(batch_id, {"status": "failed", "progress": "0/0", "error": "No data processed"})
-
-
-@app.post("/batch-aggregate")
-async def batch_aggregate(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
-    content = await file.read()
-    df = pd.read_excel(io.BytesIO(content))
-
-    batch_id = str(uuid.uuid4())[:8]
-    df_dict = df.to_dict('records')
-
-    save_batch_status(batch_id, {
-        "status": "queued",
-        "progress": f"0/{len(df_dict)}",
-        "results": []
-    })
-
-    background_tasks.add_task(process_batch_in_background, batch_id, df_dict)
-
-    return {
-        "message": "Batch processing started in background",
-        "batch_id": batch_id,
-        "total_items": len(df_dict),
-        "check_status_at": f"/batch-status/{batch_id}"
-    }
-
-
-@app.get("/batch-status/{batch_id}")
-def get_batch_status(batch_id: str):
-    batch = load_batch_status(batch_id)
-    if not batch:
-        raise HTTPException(404, "Batch ID not found")
-    return batch
-
+        
 
 @app.post('/clean')
 def clean(payload: Dict):

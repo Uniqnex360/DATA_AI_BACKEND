@@ -1,0 +1,18 @@
+]633;D;2]633;P;Cwd=/home/lexicon/Documents/Harisankar/Projects/Data AI/Data_AI_backend/DATA-AI_BE]633;E;clear;435000e3-59b8-4d5b-91a7-ea4f2919084a]633;C[H[2J[3J]633;D;0]633;P;Cwd=/home/lexicon/Documents/Harisankar/Projects/Data AI/Data_AI_backend/DATA-AI_BE]633;E;docker exec -it datasphere_db psql -U user -d datasphere -c "DROP SCHEMA public CASCADE\x3b CREATE SCHEMA public\x3b";435000e3-59b8-4d5b-91a7-ea4f2919084a]633;CNOTICE:  drop cascades to 14 other objects
+DETAIL:  drop cascades to table audit_trail
+drop cascades to table cleansing_issues
+drop cascades to table standarized_attribute
+drop cascades to table business_rules
+drop cascades to table sources
+drop cascades to table hitl_review_queue
+drop cascades to table source_priority
+drop cascades to table enrichments
+drop cascades to table standardized_attributes
+drop cascades to table publish_targets
+drop cascades to table product_master
+drop cascades to table pim_users
+drop cascades to table catalog_projects
+drop cascades to table raw_extractions
+DROP SCHEMA
+CREATE SCHEMA
+]633;D;0]633;P;Cwd=/home/lexicon/Documents/Harisankar/Projects/Data AI/Data_AI_backend/DATA-AI_BE]633;E;clear;435000e3-59b8-4d5b-91a7-ea4f2919084a]633;C[H[2J[3J]633;D;0]633;P;Cwd=/home/lexicon/Documents/Harisankar/Projects/Data AI/Data_AI_backend/DATA-AI_BE

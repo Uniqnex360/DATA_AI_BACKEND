@@ -7,6 +7,9 @@ from typing import Dict
 import logging
 logger = logging.getLogger("rules")
 router = APIRouter()
+from sqlalchemy.dialects.postgresql import insert 
+from app.models.pipeline import BusinessRule
+from datetime import datetime
 
 @router.post("/seed")
 async def seed_rules(payload: Dict, db: AsyncSession = Depends(get_session)):
@@ -14,19 +17,27 @@ async def seed_rules(payload: Dict, db: AsyncSession = Depends(get_session)):
         rules_data = payload.get("rules", [])
         
         for item in rules_data:
-            statement = select(BusinessRule).where(BusinessRule.rule_id == item["rule_id"])
-            result = await db.execute(statement)
-            existing_rule = result.scalars().first()
+            stmt = insert(BusinessRule).values(
+                rule_id=item["rule_id"],
+                attribute_name=item["attribute_name"],
+                rule_type=item["rule_type"],
+                rule_config=item["rule_config"],
+                active=item.get("active", True),
+                updated_at=datetime.utcnow()
+            )
 
-            if existing_rule:
-                existing_rule.attribute_name = item.get("attribute_name")
-                existing_rule.rule_type = item.get("rule_type")
-                existing_rule.rule_config = item.get("rule_config")
-                existing_rule.active = item.get("active", True)
-                db.add(existing_rule) 
-            else:
-                new_rule = BusinessRule(**item)
-                db.add(new_rule)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=['rule_id'],
+                set_={
+                    "attribute_name": item["attribute_name"],
+                    "rule_type": item["rule_type"],
+                    "rule_config": item["rule_config"],
+                    "active": item.get("active", True),
+                    "updated_at": datetime.utcnow()
+                }
+            )
+            
+            await db.execute(stmt)
         
         await db.commit()
         return {"msg": "Rules synchronized successfully"}
