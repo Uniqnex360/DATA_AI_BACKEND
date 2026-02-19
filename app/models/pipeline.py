@@ -135,3 +135,21 @@ class PublishTarget(UUIDModel, table=True):
     field_mapping: Dict = Field(default={}, sa_column=Column(JSON))
     
     active: bool = Field(default=True)
+    
+class AggregationJob(UUIDModel, table=True):
+    __tablename__ = 'aggregation_jobs'
+    
+    project_id: str = Field(index=True)
+    status: str = Field(default='pending')  
+    
+    total_products: int = Field(default=0)
+    successful: int = Field(default=0)
+    failed: int = Field(default=0)
+    
+    current_product: Optional[str] = Field(default=None)
+    error_message: Optional[str] = Field(default=None)
+    
+    started_at: Optional[datetime] = Field(default=None)
+    completed_at: Optional[datetime] = Field(default=None)
+    
+    details: Dict = Field(default={}, sa_column=Column(JSON))

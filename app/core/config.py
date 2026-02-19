@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     DB_ECHO_LOG: bool = False
     openai_api_key:str
     llm_model:str='gpt-5'
+    MIGRATION_MODE: str = "safe" 
     gemini_api_key:str
     gemini_model: str = "gemini-2.0-flash"
     enrichment_confidence_threashold:float=0.8

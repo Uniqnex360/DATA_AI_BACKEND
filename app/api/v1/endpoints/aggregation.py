@@ -1,79 +1,749 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select, func 
-from app.core.database import get_session
-from app.models.product import Product
-from app.models.pipeline import AuditTrail, RawExtraction
+from sqlmodel import select, func, and_
+from pydantic import BaseModel, Field
+from typing import Optional, List, Dict, Any
+from datetime import datetime, timedelta
 import logging
+from fastapi.responses import StreamingResponse
+import asyncio
+import io
+import pandas as pd
+from app.core.database import get_session, async_session_factory
+from app.models.pipeline import AggregationJob, AuditTrail, CleansingIssue, RawExtraction, Source
+from app.models.product import Product
+from app.models.project import Project
 from app.aggregation import aggregate_product
+from app.utils import is_invalid
+from app.schemas.aggregation import AggregatedAttribute, AggregatedAttributeValue, AggregationJobResponse, AggregationTriggerResponse, ProductAggregationResponse, ProjectStats
+
 logger = logging.getLogger("aggregation_router")
 router = APIRouter()
-@router.get("/attributes/{product_id}")
-async def get_aggregated_attributes(product_id: str, db: AsyncSession = Depends(get_session)):
+
+
+async def get_active_job_for_project(db: AsyncSession, project_id: str) -> Optional[AggregationJob]:
+    stmt = select(AggregationJob).where(
+        and_(
+            AggregationJob.project_id == project_id,
+            AggregationJob.status.in_(['pending', 'processing'])
+        )
+    )
+    result = await db.execute(stmt)
+    return result.scalars().first()
+
+
+async def cleanup_old_jobs(db: AsyncSession, days: int = 7) -> int:
+    cutoff_date = datetime.utcnow() - timedelta(days=days)
+    stmt = select(AggregationJob).where(
+        and_(
+            AggregationJob.status.in_(['completed', 'failed', 'cancelled']),
+            AggregationJob.completed_at < cutoff_date
+        )
+    )
+    result = await db.execute(stmt)
+    old_jobs = result.scalars().all()
+
+    count = 0
+    for job in old_jobs:
+        await db.delete(job)
+        count += 1
+
+    if count > 0:
+        await db.commit()
+        logger.info(f"Cleaned up {count} old aggregation jobs")
+
+    return count
+
+
+def calculate_progress(job: AggregationJob) -> float:
+    if job.total_products == 0:
+        return 0.0
+    processed = job.successful + job.failed
+    return round((processed / job.total_products) * 100, 2)
+
+
+@router.get("/projects/stats", response_model=List[ProjectStats])
+async def get_projects_with_aggregation_stats(
+    db: AsyncSession = Depends(get_session)
+) -> List[ProjectStats]:
+
+    try:
+
+        projects_stmt = select(Project).order_by(Project.created_at.desc())
+        projects_result = await db.execute(projects_stmt)
+        projects = projects_result.scalars().all()
+
+        result: List[ProjectStats] = []
+
+        for project in projects:
+            project_id_str = str(project.id)
+
+            total_stmt = select(func.count(Product.id)).where(
+                Product.project_id == project_id_str
+            )
+            total_result = await db.execute(total_stmt)
+            total_products = total_result.scalar() or 0
+
+            completed_stmt = select(func.count(Product.id)).where(
+                and_(
+                    Product.project_id == project_id_str,
+                    Product.enrichment_status == 'completed'
+                )
+            )
+            completed_result = await db.execute(completed_stmt)
+            aggregated_products = completed_result.scalar() or 0
+
+            failed_stmt = select(func.count(Product.id)).where(
+                and_(
+                    Product.project_id == project_id_str,
+                    Product.enrichment_status == 'failed'
+                )
+            )
+            failed_result = await db.execute(failed_stmt)
+            failed_products = failed_result.scalar() or 0
+
+            pending_products = total_products - aggregated_products - failed_products
+
+            aggregation_status = 'yet_to_start'
+
+            active_job = await get_active_job_for_project(db, project_id_str)
+            if active_job:
+                aggregation_status = 'in_progress'
+            elif total_products == 0:
+                aggregation_status = 'yet_to_start'
+            elif pending_products == 0 and aggregated_products > 0:
+                aggregation_status = 'completed'
+            elif aggregated_products > 0:
+                aggregation_status = 'in_progress'
+            else:
+                aggregation_status = 'yet_to_start'
+
+            result.append(ProjectStats(
+                id=project_id_str,
+                name=project.name,
+                client=project.client,
+                status=project.status,
+                totalProducts=total_products,
+                aggregatedProducts=aggregated_products,
+                pendingProducts=pending_products,
+                failedProducts=failed_products,
+                aggregationStatus=aggregation_status
+            ))
+
+        return result
+
+    except Exception as e:
+        logger.error(f"Failed to get project stats: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch project statistics"
+        )
+
+
+@router.post(
+    "/project/{project_id}",
+    response_model=AggregationTriggerResponse,
+    status_code=status.HTTP_202_ACCEPTED
+)
+async def trigger_project_aggregation(
+    project_id: str,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_session)
+) -> AggregationTriggerResponse:
+
+    try:
+
+        project = await db.get(Project, project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found"
+            )
+
+        active_job = await get_active_job_for_project(db, project_id)
+        if active_job:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Aggregation already in progress. Job ID: {active_job.id}"
+            )
+
+        pending_stmt = select(func.count(Product.id)).where(
+            and_(
+                Product.project_id == project_id,
+                Product.enrichment_status == 'pending'
+            )
+        )
+        pending_result = await db.execute(pending_stmt)
+        pending_count = pending_result.scalar() or 0
+
+        if pending_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No pending products to aggregate"
+            )
+
+        job = AggregationJob(
+            project_id=project_id,
+            status='pending',
+            total_products=pending_count,
+            successful=0,
+            failed=0,
+            started_at=datetime.utcnow(),
+            details={
+                'project_name': project.name,
+                'triggered_at': datetime.utcnow().isoformat()
+            }
+        )
+        db.add(job)
+        await db.commit()
+        await db.refresh(job)
+
+        background_tasks.add_task(run_project_aggregation_task, str(job.id))
+
+        logger.info(
+            f"Aggregation job {job.id} created for project {project_id} with {pending_count} products")
+
+        return AggregationTriggerResponse(
+            status='accepted',
+            message=f'Aggregation started for {pending_count} products',
+            job_id=str(job.id),
+            project_id=project_id,
+            total_products=pending_count
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Failed to start project aggregation: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to start aggregation"
+        )
+
+
+@router.get("/project/{project_id}/status", response_model=AggregationJobResponse)
+async def get_project_aggregation_status(
+    project_id: str,
+    db: AsyncSession = Depends(get_session)
+) -> AggregationJobResponse:
+
+    try:
+
+        stmt = select(AggregationJob).where(
+            AggregationJob.project_id == project_id
+        ).order_by(AggregationJob.created_at.desc()).limit(1)
+
+        result = await db.execute(stmt)
+        job = result.scalars().first()
+
+        if not job:
+            return AggregationJobResponse(
+                id='',
+                project_id=project_id,
+                status='idle',
+                total_products=0,
+                successful=0,
+                failed=0,
+                progress_percent=0.0
+            )
+
+        return AggregationJobResponse(
+            id=str(job.id),
+            project_id=job.project_id,
+            status=job.status,
+            total_products=job.total_products,
+            successful=job.successful,
+            failed=job.failed,
+            current_product=job.current_product,
+            error_message=job.error_message,
+            started_at=job.started_at,
+            completed_at=job.completed_at,
+            progress_percent=calculate_progress(job)
+        )
+
+    except Exception as e:
+        logger.error(f"Failed to get aggregation status: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch aggregation status"
+        )
+
+
+@router.post("/project/{project_id}/cancel")
+async def cancel_project_aggregation(
+    project_id: str,
+    db: AsyncSession = Depends(get_session)
+) -> Dict[str, str]:
+
+    try:
+        active_job = await get_active_job_for_project(db, project_id)
+
+        if not active_job:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No active aggregation job found"
+            )
+
+        active_job.status = 'cancelled'
+        active_job.completed_at = datetime.utcnow()
+        active_job.error_message = 'Cancelled by user'
+        db.add(active_job)
+        await db.commit()
+
+        logger.info(
+            f"Aggregation job {active_job.id} cancelled for project {project_id}")
+
+        return {
+            'status': 'cancelled',
+            'message': f'Aggregation job {active_job.id} has been cancelled',
+            'job_id': str(active_job.id)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to cancel aggregation: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to cancel aggregation"
+        )
+
+
+@router.post("/run/{product_id}", response_model=ProductAggregationResponse)
+async def aggregate_single_product(
+    product_id: str,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_session)
+) -> ProductAggregationResponse:
+
     try:
         product = await db.get(Product, product_id)
         if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
-        statement = select(RawExtraction).where(
-            func.json_extract_path_text(RawExtraction.product_keys, 'sku') == product.product_code
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Product not found"
+            )
+
+        if product.enrichment_status == 'processing':
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Product is already being processed"
+            )
+
+        product.enrichment_status = 'processing'
+        db.add(product)
+        await db.commit()
+
+        background_tasks.add_task(
+            run_single_product_aggregation, str(product.id))
+
+        return ProductAggregationResponse(
+            status='accepted',
+            product_id=str(product.id),
+            attributes_count=0,
+            confidence=0.0,
+            message=f'Aggregation started for {product.product_code}'
         )
-        result = await db.execute(statement)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Failed to start product aggregation: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to start aggregation"
+        )
+
+
+@router.get("/attributes/{product_id}", response_model=List[AggregatedAttribute])
+async def get_aggregated_attributes(
+    product_id: str,
+    db: AsyncSession = Depends(get_session)
+) -> List[AggregatedAttribute]:
+
+    try:
+        product = await db.get(Product, product_id)
+        if not product:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Product not found"
+            )
+
+        stmt = select(RawExtraction).where(
+            func.json_extract_path_text(
+                RawExtraction.product_keys, 'sku') == product.product_code
+        )
+        result = await db.execute(stmt)
         extractions = result.scalars().all()
-        evidence_map = {}
+
+        evidence_map: Dict[str, List[AggregatedAttributeValue]] = {}
+
         for ext in extractions:
+            if not isinstance(ext.raw_attributes, dict):
+                continue
+
             for attr_name, attr_val in ext.raw_attributes.items():
                 if attr_name not in evidence_map:
                     evidence_map[attr_name] = []
-                evidence_map[attr_name].append({
-                    "value": str(attr_val),
-                    "confidence": ext.confidence,
-                    "source_id": str(ext.source_id)[:8] 
-                })
-        ui_format = []
+
+                evidence_map[attr_name].append(AggregatedAttributeValue(
+                    value=str(attr_val),
+                    confidence=ext.confidence,
+                    source_id=str(ext.source_id)[:8]
+                ))
+
+        attributes: List[AggregatedAttribute] = []
         current_attrs = product.attributes or {}
+
         for attr_name, master_value in current_attrs.items():
             values_from_sources = evidence_map.get(attr_name, [])
-            unique_values = set([v["value"] for v in values_from_sources])
-            has_conflict = len(unique_values) > 1
-            ui_format.append({
-                "id": f"{product_id}_{attr_name}",
-                "product_id": product_id,
-                "attribute_name": attr_name,
-                "has_conflict": has_conflict,
-                "values": values_from_sources if values_from_sources else [
-                    {"value": str(master_value), "confidence": 1.0, "source_id": "Truth Engine"}
-                ]
-            })
-        return ui_format
-    except Exception as e:
-        logger.error(f"CRITICAL: Aggregation UI Fetch failed: {str(e)}")
-        return []
 
-@router.post('/run/{product_id}')
-async def run_aggregation(product_id:str,db:AsyncSession=Depends(get_session)):
-    try:
-        product=await db.get(Product,product_id)
-        if not product:
-            raise HTTPException(status_code=404,detail='Product not found!')
-        result=aggregate_product(mpn=product.product_code,title=product.product_name)
-        if result.get('status')=='success':
-            product.attributes=result['golden_record']['attributes']
-            product.enrichment_status='completed'
-            db.add(product)
-            db.add(AuditTrail(
-                product_id=product.product_code,
-                stage='aggregation',
-                attribute_name='truth_engine',
-                selected_value='Success',
-                sources_used=f"{result['sources_used']} sources found",
-                reason='AI successfully unified external data'
-                
+            unique_values = set(v.value for v in values_from_sources)
+            has_conflict = len(unique_values) > 1
+
+            if not values_from_sources:
+                values_from_sources = [AggregatedAttributeValue(
+                    value=str(master_value),
+                    confidence=1.0,
+                    source_id="master"
+                )]
+
+            attributes.append(AggregatedAttribute(
+                id=f"{product_id}_{attr_name}",
+                product_id=product_id,
+                attribute_name=attr_name,
+                has_conflict=has_conflict,
+                values=values_from_sources
             ))
-            await db.commit()
-            return {'status':'success','data':result}
-        else:
-            raise Exception("AI engine failed to find data!")
+
+        return attributes
+
+    except HTTPException:
+        raise
     except Exception as e:
-        await db.rollback()
-        logger.error(f'Aggregation failed  for {product_id}:{str(e)}')
-        raise HTTPException(status_code=500,detail=str(e))
+        logger.error(
+            f"Failed to get aggregated attributes: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch attributes"
+        )
+
+
+async def run_project_aggregation_task(job_id: str) -> None:
+
+    async with async_session_factory() as db_session:
+        job: Optional[AggregationJob] = None
+
+        try:
+
+            job = await db_session.get(AggregationJob, job_id)
+            if not job:
+                logger.error(f"Aggregation job {job_id} not found")
+                return
+
+            if job.status == 'cancelled':
+                logger.info(f"Job {job_id} was cancelled before processing")
+                return
+
+            job.status = 'processing'
+            db_session.add(job)
+            await db_session.commit()
+
+            stmt = select(Product).where(
+                and_(
+                    Product.project_id == job.project_id,
+                    Product.enrichment_status == 'pending'
+                )
+            )
+            result = await db_session.execute(stmt)
+            products = result.scalars().all()
+
+            successful = 0
+            failed = 0
+            total = len(products)
+            failed_products: List[Dict[str, str]] = []
+
+            logger.info(
+                f"Starting aggregation job {job_id} for {total} products")
+
+            for idx, product in enumerate(products):
+
+                await db_session.refresh(job)
+                if job.status == 'cancelled':
+                    logger.info(f"Job {job_id} cancelled during processing")
+                    break
+
+                try:
+                    logger.info(
+                        f"[Job {job_id}] Aggregating {idx+1}/{total}: {product.product_code}")
+
+                    job.current_product = product.product_code
+                    job.successful = successful
+                    job.failed = failed
+                    db_session.add(job)
+                    await db_session.commit()
+
+                    aggregation_result = await aggregate_with_retry(
+                        mpn=product.product_code,
+                        title=product.product_name,
+                        max_retries=2
+                    )
+
+                    if aggregation_result.get('status') == 'success':
+                        ai_data = aggregation_result.get(
+                            'golden_record', {}).get('attributes', {})
+                        confidence = aggregation_result.get(
+                            'golden_record', {}).get('confidence', 0.5)
+                        enriched_attributes = {}
+                        for key, val in ai_data.items():
+                            enriched_attributes[key] = {
+                                "standard_value": val,
+                                "source": "AI_Aggregation_Engine",
+                                "timestamp": datetime.utcnow().isoformat()
+                            }
+                        
+                        product.attributes = {**product.attributes, **ai_data} 
+                        product.enrichment_status = 'completed'
+                        product.completeness_score = min(len(ai_data) * 5, 100)
+                        db_session.add(product)
+
+                        await check_data_quality(db_session, product.product_code, ai_data)
+
+                        successful += 1
+                        logger.info(
+                            f" Aggregated {product.product_code}: {len(ai_data)} attributes")
+                    else:
+                        product.enrichment_status = 'failed'
+                        db_session.add(product)
+                        failed += 1
+                        failed_products.append({
+                            'sku': product.product_code,
+                            'error': aggregation_result.get('reason', 'Unknown error')
+                        })
+                        logger.warning(
+                            f" Aggregation failed for {product.product_code}")
+
+                except Exception as e:
+                    logger.error(
+                        f"Error aggregating {product.product_code}: {e}")
+                    product.enrichment_status = 'failed'
+                    db_session.add(product)
+                    failed += 1
+                    failed_products.append({
+                        'sku': product.product_code,
+                        'error': str(e)
+                    })
+                    continue
+
+            job.status = 'completed' if job.status != 'cancelled' else 'cancelled'
+            job.successful = successful
+            job.failed = failed
+            job.current_product = None
+            job.completed_at = datetime.utcnow()
+            job.details = {
+                **job.details,
+                'failed_products': failed_products[:50],
+                'completed_at': datetime.utcnow().isoformat()
+            }
+            db_session.add(job)
+            source_stmt = select(Source).where(Source.project_id == job.project_id)
+            source_result = await db_session.execute(source_stmt)
+            sources = source_result.scalars().all()
+            for source in sources:
+                new_metadata = dict(source.source_metadata) if source.source_metadata else {}
+                new_metadata['aggregation_status'] = 'completed'
+                new_metadata['successful'] = successful
+                new_metadata['failed'] = failed
+                new_metadata['last_run'] = datetime.utcnow().isoformat()
+                
+                source.source_metadata = new_metadata
+                db_session.add(source)
+            db_session.add(AuditTrail(
+                product_id=f"PROJECT_{job.project_id}",
+                stage="aggregation",
+                attribute_name="project_aggregation",
+                selected_value="Completed" if job.status == 'completed' else "Cancelled",
+                sources_used=f"{total} products",
+                reason=f"Aggregated {successful}/{total} products successfully, {failed} failed"
+            ))
+
+            await db_session.commit()
+            logger.info(
+                f"Job {job_id} complete: {successful}/{total} successful, {failed} failed")
+
+        except Exception as e:
+            await db_session.rollback()
+            logger.error(
+                f"Aggregation job {job_id} failed: {e}", exc_info=True)
+
+            if job:
+                try:
+                    job.status = 'failed'
+                    job.error_message = str(e)[:500]
+                    job.completed_at = datetime.utcnow()
+                    db_session.add(job)
+                    await db_session.commit()
+                except Exception as commit_error:
+                    logger.error(
+                        f"Failed to update job status: {commit_error}")
+
+
+async def run_single_product_aggregation(product_id: str) -> None:
+    async with async_session_factory() as db_session:
+        try:
+            product = await db_session.get(Product, product_id)
+            if not product:
+                logger.error(f"Product {product_id} not found")
+                return
+
+            logger.info(
+                f"Starting single product aggregation: {product.product_code}")
+
+            result = await aggregate_with_retry(
+                mpn=product.product_code,
+                title=product.product_name,
+                max_retries=3
+            )
+
+            if result.get('status') == 'success':
+                ai_data = result.get('golden_record', {}).get('attributes', {})
+                product.attributes = {**product.attributes, **ai_data}
+                product.enrichment_status = 'completed'
+                product.completeness_score = min(len(ai_data) * 5, 100)
+
+                await check_data_quality(db_session, product.product_code, ai_data)
+
+                logger.info(
+                    f"Single product aggregation complete: {product.product_code}")
+            else:
+                product.enrichment_status = 'failed'
+                logger.warning(
+                    f"Single product aggregation failed: {product.product_code}")
+
+            db_session.add(product)
+            await db_session.commit()
+
+        except Exception as e:
+            await db_session.rollback()
+            logger.error(
+                f"Single product aggregation failed: {e}", exc_info=True)
+
+            try:
+                product = await db_session.get(Product, product_id)
+                if product:
+                    product.enrichment_status = 'failed'
+                    db_session.add(product)
+                    await db_session.commit()
+            except Exception:
+                pass
+
+
+async def aggregate_with_retry(
+    mpn: str,
+    title: str,
+    max_retries: int = 2,
+    retry_delay: float = 2.0
+) -> Dict[str, Any]:
+
+    last_error: Optional[Exception] = None
+
+    for attempt in range(max_retries + 1):
+        try:
+            result = await aggregate_product(mpn=mpn, title=title)
+            return result
+        except Exception as e:
+            last_error = e
+            if attempt < max_retries:
+                delay = retry_delay * (2 ** attempt)
+                logger.warning(
+                    f"Aggregation attempt {attempt + 1} failed for {mpn}, retrying in {delay}s: {e}")
+                await asyncio.sleep(delay)
+            else:
+                logger.error(
+                    f"All {max_retries + 1} aggregation attempts failed for {mpn}: {e}")
+
+    return {
+        'status': 'failed',
+        'reason': str(last_error) if last_error else 'Unknown error'
+    }
+
+
+async def check_data_quality(
+    db_session: AsyncSession,
+    product_code: str,
+    ai_data: Dict[str, Any]
+) -> None:
+    for attr_name, attr_value in ai_data.items():
+        val_str = str(attr_value)
+        if is_invalid(val_str):
+            db_session.add(CleansingIssue(
+                product_id=product_code,
+                attribute_name=attr_name,
+                issue_type='invalid',
+                details=f"Placeholder or invalid value detected: '{val_str}'",
+                resolved=False
+            ))
+
+
+@router.delete("/jobs/cleanup")
+async def cleanup_old_aggregation_jobs(
+    days: int = 7,
+    db: AsyncSession = Depends(get_session)
+) -> Dict[str, Any]:
+    try:
+        count = await cleanup_old_jobs(db, days)
+        return {
+            'status': 'success',
+            'message': f'Cleaned up {count} old jobs',
+            'deleted_count': count
+        }
+    except Exception as e:
+        logger.error(f"Failed to cleanup jobs: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to cleanup old jobs"
+        )
+
+
+async def export_project_data(project_id: str, db: AsyncSession = Depends(get_session)):
+    try:
+        stmt = select(Product).where(Product.project_id == project_id)
+        result = await db.execute(stmt)
+        products = result.scalars().all()
+        if not products:
+            raise HTTPException(
+                status_code=404, detail="No products found in this project")
+        export_data = []
+        for p in products:
+            row = {
+                "Product ID": str(p.id),
+                "MPN": p.product_code,
+                "Name": p.product_name,
+                "Brand": p.brand_name,
+                "Status": p.enrichment_status,
+                "Completeness": f"{p.completeness_score}%"
+            }
+            if p.attributes:
+                for key, val in p.attributes.items():
+                    clean_key = key.replace('_', ' ').title()
+                    row[clean_key] = str(val)
+
+            export_data.append(row)
+        df = pd.DataFrame(export_data)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Aggregated Data')
+        output.seek(0)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+        filename = f"Project_Export_{timestamp}.xlsx"
+        return StreamingResponse(output, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Export failed for project {project_id}: {e}")
+        raise HTTPException(
+            status_code=500, detail="Failed to generate export file")

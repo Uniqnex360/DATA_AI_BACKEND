@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession,create_async_engine
 from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 from sqlmodel import SQLModel
+from app.core.auto_migrate import auto_migration
 logger=logging.getLogger(__name__)
 engine=create_async_engine(
     settings.DATABASE_URL,
@@ -24,9 +25,11 @@ async def get_session()->AsyncSession:
         finally:
             await session.close()
 async def init_db():
+    migration_mode = settings.MIGRATION_MODE
     try:
         async with engine.begin() as conn:
             await conn.run_sync(SQLModel.metadata.create_all)
+        await auto_migration.run(mode=migration_mode)
         logger.info(" Database schema restored successfully.")
     except Exception as e:
         logger.error(f" Failed to restore database: {e}")

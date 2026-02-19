@@ -1,30 +1,60 @@
-from typing import Any, List
+from typing import Any, List,Optional,Dict
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from app.services.product_service import product_service
-from sqlmodel import select
+from sqlmodel import select,func
 from app.schemas.product import ProductCreate, ProductResponse
 import logging
+from app.models.project import Project
 logger=logging.getLogger('products')
 router=APIRouter()
-@router.get("/", response_model=List[ProductResponse])
+@router.get("/", response_model=Dict[str, Any]) # Changed from List to Dict
 async def read_products(
     db: AsyncSession = Depends(get_session), 
+    project_id: Optional[str] = None,       
+    enrichment_status: Optional[str] = None, 
     skip: int = 0, 
     limit: int = 100
 ):
     try:
-        statement = select(product_service.model).offset(skip).limit(limit)
+        # 1. Base Query
+        statement = select(product_service.model)
+
+        # 2. Apply Filters
+        if project_id:
+            statement = statement.where(product_service.model.project_id == project_id)
+        
+        if enrichment_status and enrichment_status != 'all':
+            statement = statement.where(product_service.model.enrichment_status == enrichment_status)
+
+        # 3. GET TOTAL COUNT (Crucial for frontend pagination)
+        count_stmt = select(func.count()).select_from(statement.subquery())
+        count_result = await db.execute(count_stmt)
+        total = count_result.scalar() or 0
+
+        # 4. Fetch Products (with pagination)
+        # Order by created_at desc so newest products appear first
+        statement = statement.order_by(product_service.model.created_at.desc()).offset(skip).limit(limit)
         result = await db.execute(statement)
         products = result.scalars().all()
 
-        logger.info(f"DATABASE CHECK: Found {len(products)} rows in product_master")
-        
-        return products
+        # 5. FETCH PROJECT DETAILS
+        project_data = None
+        if project_id:
+            project_data = await db.get(Project, project_id)
+
+        # 6. Return the structured response
+        return {
+            "products": products,
+            "total": total,
+            "project": project_data, # This sends Name, Client, Target Platform, etc.
+            "skip": skip,
+            "limit": limit
+        }
     except Exception as e:
         logger.error(f"API Error: {str(e)}")
-        return []
+        return {"products": [], "total": 0, "project": None}
 @router.post('/',response_model=ProductResponse)
 async def create_product(*,db:AsyncSession=Depends(get_session),product_in:ProductCreate):
     return await product_service.create(db=db,obj_in=product_in)
