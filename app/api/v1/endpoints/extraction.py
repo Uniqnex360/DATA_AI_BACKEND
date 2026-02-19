@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status,Form
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status, Form, UploadFile, File, Request
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from app.models.pipeline import AuditTrail, CleansingIssue, RawExtraction, Source, SourcePriority
@@ -13,7 +14,6 @@ from app.aggregation import aggregate_product
 from app.schemas.extraction import ExtractionRequest, SourceMetricsResponse
 from app.schemas.pipeline import SourcePriorityResponse
 from app.utils import is_invalid
-from fastapi.responses import FileResponse,StreamingResponse
 import pandas as pd
 import os
 logger = logging.getLogger("extraction_router")
@@ -208,8 +208,6 @@ async def download_file(
         logger.error(f"Memory Download Error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error preparing your download")
 
-from fastapi import UploadFile, File,Request
-from typing import Optional
 
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
