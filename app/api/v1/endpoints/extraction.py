@@ -193,7 +193,6 @@ async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get
 @router.get("/{source_id}/download")
 async def download_file(
     source_id: str,
-    # Use alias="type" to match the frontend 'type' parameter
     download_type: str = Query("input", alias="type"), 
     db: AsyncSession = Depends(get_session)
 ):
@@ -202,7 +201,6 @@ async def download_file(
         if not source:
             raise HTTPException(status_code=404, detail="Source record not found")
 
-        # --- LOGIC FOR INPUT ---
         if download_type == 'input':
             if source.content_data:
                 return StreamingResponse(
@@ -210,40 +208,32 @@ async def download_file(
                     media_type="application/octet-stream",
                     headers={"Content-Disposition": f"attachment; filename=Input_{source.source_url}"}
                 )
-            # Fallback for manual log...
             output = io.StringIO()
             output.write(f"SKU: {source.source_url}\nUploaded: {source.uploaded_at}")
             return StreamingResponse(io.BytesIO(output.getvalue().encode()), media_type="text/plain")
 
-        # --- LOGIC FOR OUTPUT (THE ENRICHED DATA) ---
         elif download_type == 'output':
-            # 1. Query the Product table using the project_id from the source
-            stmt = select(Product).where(Product.project_id == source.project_id)
+            stmt = select(Product).where(Product.project_id == source.project_id,Product.source_url==source.source_url)
             result = await db.execute(stmt)
             products = result.scalars().all()
 
             if not products:
                 raise HTTPException(status_code=404, detail="No enriched data found for this project")
 
-            # 2. Advanced Flattening Logic for your specific DB structure
             def flatten_logic(data, prefix=''):
                 items = []
                 
                 if isinstance(data, dict):
                     for k, v in data.items():
-                        # Create a clean title-case key
                         new_key = f"{prefix} {k}".strip().replace('_', ' ').title()
                         
                         if isinstance(v, (dict, list)):
-                            # Recursively flatten
                             items.extend(flatten_logic(v, new_key).items())
                         else:
                             items.append((new_key, v))
                             
                 elif isinstance(data, list):
                     for i, v in enumerate(data):
-                        # If it's a list, we add an index (e.g., "Operating Temp 1", "Operating Temp 2")
-                        # If the list only has 1 item, you could skip the (i+1) if you prefer
                         new_prefix = f"{prefix} {i+1}" if len(data) > 1 else prefix
                         
                         if isinstance(v, (dict, list)):
@@ -255,7 +245,6 @@ async def download_file(
 
             rows = []
             for p in products:
-                # Start with base info
                 row = {
                     "SKU": p.product_code,
                     "Name": p.product_name,
@@ -263,14 +252,12 @@ async def download_file(
                     "Completeness": f"{p.completeness_score}%"
                 }
                 
-                # Flatten the complex attributes column
                 if p.attributes:
                     flattened = flatten_logic(p.attributes)
                     row.update(flattened)
                 
                 rows.append(row)
 
-            # 3. Create Excel
             df = pd.DataFrame(rows)
             excel_buffer = io.BytesIO()
             with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
@@ -287,6 +274,7 @@ async def download_file(
     except Exception as e:
         logger.error(f"Download Error: {str(e)}")
         raise HTTPException(status_code=500, detail="Error generating download")
+
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
     request: Request,

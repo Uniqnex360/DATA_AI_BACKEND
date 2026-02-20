@@ -69,7 +69,6 @@ Output ONLY valid JSON with key 'queries' as array of strings.
 #     result = safe_call_llm(prompt, schema, "extract_from_web")
 #     return result if "attributes" in result else {"source": "web", "attributes": {}, "error": "extraction_failed"}
 def fallback_extraction(html: str) -> Dict:
-    """Universal fallback extraction - no product assumptions"""
     from bs4 import BeautifulSoup
     import re
     
@@ -81,13 +80,12 @@ def fallback_extraction(html: str) -> Dict:
         for table in soup.find_all('table'):
             for row in table.find_all('tr'):
                 cells = row.find_all(['td', 'th'])
-                if len(cells) == 2:  # Key-value pair
+                if len(cells) == 2:  
                     key = cells[0].get_text(strip=True).rstrip(':')
                     val = cells[1].get_text(strip=True)
                     if key and val and 2 < len(key) < 100 and len(val) < 500:
                         attributes[key] = val
         
-        # Strategy 2: Definition lists
         for dl in soup.find_all('dl'):
             dts = dl.find_all('dt')
             dds = dl.find_all('dd')
@@ -97,12 +95,9 @@ def fallback_extraction(html: str) -> Dict:
                 if key and val and len(key) < 100:
                     attributes[key] = val
         
-        # Strategy 3: Colon-separated patterns (common in product specs)
-        # Look for patterns like "Weight: 500g" or "Material: Plastic"
         text_blocks = soup.find_all(['p', 'li', 'div', 'span'])
         for block in text_blocks:
             text = block.get_text()
-            # Match "Label: Value" patterns
             matches = re.findall(r'([A-Za-z][A-Za-z\s]{2,50}):\s*([^\n:]{1,200})', text)
             for key, val in matches:
                 key = key.strip()
@@ -110,7 +105,6 @@ def fallback_extraction(html: str) -> Dict:
                 if key and val and not key.lower().startswith(('http', 'www')):
                     attributes[key] = val
         
-        # Strategy 4: Meta tags (sometimes contain specs)
         for meta in soup.find_all('meta'):
             if meta.get('property') and meta.get('content'):
                 prop = meta['property']
@@ -118,13 +112,11 @@ def fallback_extraction(html: str) -> Dict:
                     key = prop.split(':')[-1].replace('_', ' ').title()
                     attributes[key] = meta['content']
         
-        # Strategy 5: JSON-LD structured data
         for script in soup.find_all('script', type='application/ld+json'):
             try:
                 import json
                 data = json.loads(script.string)
                 if isinstance(data, dict):
-                    # Extract product properties
                     if 'Product' in data.get('@type', ''):
                         for key, val in data.items():
                             if key not in ['@context', '@type'] and isinstance(val, (str, int, float)):
@@ -139,12 +131,10 @@ def fallback_extraction(html: str) -> Dict:
         logger.error(f"Fallback extraction error: {e}")
         return {}
 def extract_from_web(html: str, sku: str = "") -> Dict:
-    """Two-pass extraction: discover schema, then extract"""
     if not html or len(html.strip()) < 100:
         logger.warning("Web HTML too short or empty")
         return {"source": "web", "attributes": {}, "error": "empty_html"}
 
-    # PASS 1: Schema Discovery
     discovery_result = discover_attributes(html, sku)
     
     if not discovery_result or not discovery_result.get("found_attributes"):
@@ -155,7 +145,6 @@ def extract_from_web(html: str, sku: str = "") -> Dict:
             "extraction_method": "fallback"
         }
     
-    # PASS 2: Targeted Extraction
     extraction_result = extract_discovered_attributes(
         html, 
         discovery_result["found_attributes"],
@@ -230,7 +219,7 @@ Rules:
 - Look in tables, lists, divs, and any structured data
 - Return a FLAT JSON object.
 - Example: {"Battery Capacity": "3,349 mAh"}
-- ❌ DO NOT DO THIS: {"Battery Capacity": {"Battery Capacity": "3,349 mAh"}}
+-  DO NOT DO THIS: {"Battery Capacity": {"Battery Capacity": "3,349 mAh"}}
 - Ignore all technical metadata such as 'Ray ID', 'Cloudflare', 'Access Denied', or 'Cookies Consent'. Only extract product specifications.
 HTML (first 15000 chars):
 {html[:15000]}
@@ -496,7 +485,6 @@ Example output:
 #         }
 #     return result
 def build_golden_record(standardized_data: Dict, identifiers: Dict) -> Dict:
-    """Build final golden record from standardized data"""
     
     if not identifiers or 'mpn' not in identifiers:
         logger.error("Golden record failed: missing identifiers")
@@ -569,21 +557,17 @@ CRITICAL: The response must be valid JSON only. Do not add "identifiers" or "sta
     try:
         result = safe_call_llm(prompt, schema, 'build_golden_record')
         
-        # Validate result
         if not result or 'error' in result:
             raise ValueError(f"LLM returned error: {result.get('error', 'unknown')}")
         
-        # Check for required fields
         missing = [f for f in ['sku', 'brand', 'attributes', 'ready_for_publish'] 
                    if f not in result]
         if missing:
             raise ValueError(f"Missing required fields: {missing}")
         
-        # Check attributes not empty
         if not result.get('attributes'):
             raise ValueError("Empty attributes")
         
-        # Check for wrong structure (nested keys)
         if any(k in result for k in ['identifiers', 'standardized_attributes', 'product_attributes']):
             raise ValueError("LLM returned nested structure")
         
