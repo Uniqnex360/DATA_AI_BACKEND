@@ -11,7 +11,7 @@ import json
 import io
 from datetime import datetime
 from app.aggregation import aggregate_product
-from app.schemas.extraction import ExtractionRequest, SourceMetricsResponse
+from app.schemas.extraction import ExtractionRequest, SourceMetricsResponse, SourceResponse
 from app.schemas.pipeline import SourcePriorityResponse
 from app.utils import is_invalid
 import pandas as pd
@@ -20,7 +20,7 @@ logger = logging.getLogger("extraction_router")
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("/", response_model=List[SourceResponse])
 async def getAllSources(db: AsyncSession = Depends(get_session)):
     try:
         statement = select(Source).order_by(Source.uploaded_at.desc())
@@ -93,7 +93,7 @@ async def get_project_priorities(project_id: str, db: AsyncSession = Depends(get
         )
 
 
-@router.get('/project/{project_id}')
+@router.get('/project/{project_id}', response_model=List[SourceResponse])
 async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get_session)):
     try:
         if project_id is None:
