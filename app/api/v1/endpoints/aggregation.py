@@ -619,8 +619,8 @@ async def run_single_product_aggregation(product_id: str) -> None:
                     f"Single product aggregation complete: {product.product_code}")
             else:
                 product.enrichment_status = 'failed'
-                logger.warning(
-                    f"Single product aggregation failed: {product.product_code}")
+                failure_reason = result.get('reason', 'Unknown Error')
+                logger.error(f"Single product aggregation failed: {product.product_code}. Reason: {failure_reason}")
 
             db_session.add(product)
             await db_session.commit()
