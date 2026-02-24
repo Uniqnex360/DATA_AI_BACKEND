@@ -26,6 +26,7 @@ class ProductResponse(BaseModel):
     enrichment_status: str = "pending"
     attributes: Dict = {} 
     completeness_score: int = 0
+    image_url_1: Optional[str] = None
 
     class Config:
         from_attributes = True 

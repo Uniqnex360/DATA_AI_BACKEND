@@ -2,7 +2,9 @@ import json
 import logging
 from typing import Dict, List, Any, Optional
 from .llm import call_llm
-
+import httpx 
+from typing import Optional
+import re
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("aggregation_engine")
 
@@ -28,11 +30,28 @@ def generate_search_queries(mpn: str = None, brand: str = None, title: str = Non
         logger.warning("No identifiers provided for search queries")
         return []
 
+    # prompt = f"""
+    # Generate 5 highly targeted Google search queries to find technical specifications for this product.
+    # Input: {json.dumps({"mpn": mpn, "brand": brand, "title": title}, ensure_ascii=False)}
+    # Generate exhaustive search queries to find product information and official images.
+    # Include queries like:
+    # - '[brand] [mpn] official product page'
+    # - '[brand] [model] high resolution image'
+    # - '[brand] [mpn] technical gallery'
+    # Output ONLY valid JSON with key 'queries' as array of strings.
+    # """
     prompt = f"""
-    Generate 5 highly targeted Google search queries to find technical specifications for this product.
-Input: {json.dumps({"mpn": mpn, "brand": brand, "title": title}, ensure_ascii=False)}
-Output ONLY valid JSON with key 'queries' as array of strings.
-"""
+    Generate 5 highly targeted Google search queries for this product.
+    Input: {json.dumps({"mpn": mpn, "brand": brand, "title": title}, ensure_ascii=False)}
+    
+    Goal: Find technical specifications and high-resolution official images.
+    Include:
+    - Official product pages for [brand] [mpn]
+    - Technical specification PDFs or Datasheets
+    - Official image galleries or high-res product photos
+    
+    Output ONLY valid JSON with key 'queries' as an array of strings.
+    """
     schema = {
         "type": "object",
         "properties": {"queries": {"type": "array", "items": {"type": "string"}}},
@@ -48,7 +67,7 @@ Output ONLY valid JSON with key 'queries' as array of strings.
 #         return {"source": "web", "attributes": {}, "error": "empty_html"}
 
 #     prompt = f"""
-#     You are a Technical Data Extractor. 
+#     You are a Technical Data Extractor.
 #     Extract every single technical specification, dimension, material, and warranty detail from this HTML.
 # Look for tables, list items (li), and definition lists (dt/dd).
 # Extract ALL product attributes exactly as written from this HTML.
@@ -71,21 +90,21 @@ Output ONLY valid JSON with key 'queries' as array of strings.
 def fallback_extraction(html: str) -> Dict:
     from bs4 import BeautifulSoup
     import re
-    
+
     attributes = {}
-    
+
     try:
         soup = BeautifulSoup(html, 'html.parser')
-        
+
         for table in soup.find_all('table'):
             for row in table.find_all('tr'):
                 cells = row.find_all(['td', 'th'])
-                if len(cells) == 2:  
+                if len(cells) == 2:
                     key = cells[0].get_text(strip=True).rstrip(':')
                     val = cells[1].get_text(strip=True)
                     if key and val and 2 < len(key) < 100 and len(val) < 500:
                         attributes[key] = val
-        
+
         for dl in soup.find_all('dl'):
             dts = dl.find_all('dt')
             dds = dl.find_all('dd')
@@ -94,24 +113,25 @@ def fallback_extraction(html: str) -> Dict:
                 val = dd.get_text(strip=True)
                 if key and val and len(key) < 100:
                     attributes[key] = val
-        
+
         text_blocks = soup.find_all(['p', 'li', 'div', 'span'])
         for block in text_blocks:
             text = block.get_text()
-            matches = re.findall(r'([A-Za-z][A-Za-z\s]{2,50}):\s*([^\n:]{1,200})', text)
+            matches = re.findall(
+                r'([A-Za-z][A-Za-z\s]{2,50}):\s*([^\n:]{1,200})', text)
             for key, val in matches:
                 key = key.strip()
                 val = val.strip()
                 if key and val and not key.lower().startswith(('http', 'www')):
                     attributes[key] = val
-        
+
         for meta in soup.find_all('meta'):
             if meta.get('property') and meta.get('content'):
                 prop = meta['property']
                 if 'product' in prop.lower():
                     key = prop.split(':')[-1].replace('_', ' ').title()
                     attributes[key] = meta['content']
-        
+
         for script in soup.find_all('script', type='application/ld+json'):
             try:
                 import json
@@ -123,20 +143,62 @@ def fallback_extraction(html: str) -> Dict:
                                 attributes[key.title()] = str(val)
             except:
                 pass
-        
+
         logger.info(f"Fallback extraction found {len(attributes)} attributes")
         return attributes
-        
+
     except Exception as e:
         logger.error(f"Fallback extraction error: {e}")
         return {}
+
+
+
+async def extract_image_from_source(source_html: str, source_url: str) -> Optional[str]:
+    match = re.search(r'<meta[^>]*property=["\']og:image["\'][^>]*content=["\']([^"\']+)["\']', source_html)
+    if not match:
+        match = re.search(r'<meta[^>]*name=["\']twitter:image["\'][^>]*content=["\']([^"\']+)["\']', source_html)
+    
+    if not match:
+        return None
+
+    image_url = match.group(1)
+
+    if image_url.startswith('//'):
+        image_url = 'https:' + image_url
+    
+    if image_url.startswith('/'):
+        from urllib.parse import urljoin
+        image_url = urljoin(source_url, image_url)
+
+    junk_keywords = ['logo', 'icon', 'pixel', 'banner', 'avatar', 'button', 'spacer', 'loading']
+    if any(junk in image_url.lower() for junk in junk_keywords):
+        return None
+
+    try:
+        async with httpx.AsyncClient(follow_redirects=True, timeout=5.0) as client:
+            response = await client.head(image_url)
+            
+            if response.status_code == 200:
+                content_type = response.headers.get("content-type", "").lower()
+                if "image" in content_type:
+                    return image_url
+            else:
+                response = await client.get(image_url, headers={"Range": "bytes=0-100"})
+                if response.status_code in [200, 206] and "image" in response.headers.get("content-type", ""):
+                    return image_url
+    except Exception as e:
+        import logging
+        logging.getLogger("truth_engine").warning(f"Image validation failed for {image_url}: {e}")
+        return None
+
+    return None
 def extract_from_web(html: str, sku: str = "") -> Dict:
     if not html or len(html.strip()) < 100:
         logger.warning("Web HTML too short or empty")
         return {"source": "web", "attributes": {}, "error": "empty_html"}
 
     discovery_result = discover_attributes(html, sku)
-    
+
     if not discovery_result or not discovery_result.get("found_attributes"):
         logger.warning(f"No attributes discovered for {sku}, using fallback")
         return {
@@ -144,19 +206,19 @@ def extract_from_web(html: str, sku: str = "") -> Dict:
             "attributes": fallback_extraction(html),
             "extraction_method": "fallback"
         }
-    
+
     extraction_result = extract_discovered_attributes(
-        html, 
+        html,
         discovery_result["found_attributes"],
         sku
     )
-    
+
     return extraction_result
 
 
 def discover_attributes(html: str, sku: str = "") -> Dict:
     """Pass 1: Discover what attributes exist in the HTML"""
-    
+
     prompt = f"""
 You are analyzing an HTML product page to discover what technical specifications exist.
 
@@ -191,10 +253,11 @@ Examples of attribute names: "Battery Capacity", "Weight", "Material", "Color", 
         },
         "required": ["found_attributes"]
     }
-    
+
     try:
         result = safe_call_llm(prompt, schema, "discover_attributes")
-        logger.info(f"Discovered {len(result.get('found_attributes', []))} attributes for {sku}: {result.get('product_type_hint', 'unknown')}")
+        logger.info(
+            f"Discovered {len(result.get('found_attributes', []))} attributes for {sku}: {result.get('product_type_hint', 'unknown')}")
         return result
     except Exception as e:
         logger.error(f"Schema discovery failed for {sku}: {e}")
@@ -202,10 +265,10 @@ Examples of attribute names: "Battery Capacity", "Weight", "Material", "Color", 
 
 
 def extract_discovered_attributes(html: str, attribute_names: list, sku: str = "") -> Dict:
-    
+
     if not attribute_names:
         return {"source": "web", "attributes": {}, "error": "no_attributes_discovered"}
-    
+
     prompt = f"""
 You are extracting specific technical specifications from HTML.
 
@@ -235,32 +298,38 @@ Output ONLY JSON: {{"source": "web", "attributes": {{"Attribute Name": "value"}}
         },
         "required": ["source", "attributes"]
     }
-    
+
     try:
         result = safe_call_llm(prompt, schema, "extract_discovered_attributes")
-        
+
         if not result or "attributes" not in result:
             logger.warning(f"Extraction failed for {sku}")
             return {"source": "web", "attributes": {}, "error": "extraction_failed"}
-        
+
         attrs = result["attributes"]
         if not attrs or all(v is None or v == "" for v in attrs.values()):
-            logger.warning(f"All extracted values are null/empty for {sku}, trying fallback")
+            logger.warning(
+                f"All extracted values are null/empty for {sku}, trying fallback")
             return {
                 "source": "web",
                 "attributes": fallback_extraction(html),
                 "extraction_method": "fallback"
             }
-        
-        result["attributes"] = {k: v for k, v in attrs.items() if v is not None and v != ""}
-        logger.info(f"Successfully extracted {len(result['attributes'])} attributes for {sku}")
-        
+
+        result["attributes"] = {
+            k: v for k, v in attrs.items() if v is not None and v != ""}
+        logger.info("Successfully extracted %d attributes for %s", len(result['attributes']), sku)
+
+
+
+
         return result
-        
+
     except Exception as e:
         logger.exception(f"Attribute extraction failed for {sku}: {e}")
         return {"source": "web", "attributes": {}, "error": str(e)}
-    
+
+
 def extract_from_pdf(text: str) -> Dict:
     if not text.strip():
         return {"source": "pdf", "attributes": {}, "error": "empty_pdf"}
@@ -443,17 +512,17 @@ Example output:
 #             "error": 'missing_identifiers',
 #             'sources': []
 #         }
-#     prompt = f""" 
+#     prompt = f"""
 #     You are the final arbiter of truth.
 #     Create a clean JSON Golden record using ONLY the provided standardized data.
-#     NEVER invent information. 
+#     NEVER invent information.
 #     Identifiers:{json.dumps(identifiers)}
 #     Standarized attributes (TRUTH):{json.dumps(standarized_data, indent=2)}
 #     Rules:
 #     - Use ONLY data from above
 #     - ready_for_publish = true IF you have the Brand AND at least 4 other valid technical specifications.
 #     - If uncertain -> ready_for_publish=false
-    
+
 #     Return exactly this structure
 #     """
 #     schema = {
@@ -485,7 +554,7 @@ Example output:
 #         }
 #     return result
 def build_golden_record(standardized_data: Dict, identifiers: Dict) -> Dict:
-    
+
     if not identifiers or 'mpn' not in identifiers:
         logger.error("Golden record failed: missing identifiers")
         return {
@@ -495,7 +564,7 @@ def build_golden_record(standardized_data: Dict, identifiers: Dict) -> Dict:
             'ready_for_publish': False,
             'error': 'missing_identifiers'
         }
-    
+
     if not standardized_data:
         logger.warning("Golden record: no standardized data")
         return {
@@ -505,10 +574,10 @@ def build_golden_record(standardized_data: Dict, identifiers: Dict) -> Dict:
             'ready_for_publish': False,
             'error': 'no_standardized_data'
         }
-    
+
     tech_spec_count = len(standardized_data)
     has_brand = bool(identifiers.get('brand'))
-    
+
     prompt = f"""
 Create a product Golden Record and return the result as JSON.
 
@@ -540,7 +609,7 @@ Return ONLY this JSON structure (no markdown, no extra text):
 
 CRITICAL: The response must be valid JSON only. Do not add "identifiers" or "standardized_attributes" as keys.
 """
-    
+
     schema = {
         'type': 'object',
         'properties': {
@@ -553,38 +622,39 @@ CRITICAL: The response must be valid JSON only. Do not add "identifiers" or "sta
         'required': ['sku', 'brand', 'attributes', 'ready_for_publish'],
         'additionalProperties': False
     }
-    
+
     try:
         result = safe_call_llm(prompt, schema, 'build_golden_record')
-        
+
         if not result or 'error' in result:
-            raise ValueError(f"LLM returned error: {result.get('error', 'unknown')}")
-        
-        missing = [f for f in ['sku', 'brand', 'attributes', 'ready_for_publish'] 
+            raise ValueError(
+                f"LLM returned error: {result.get('error', 'unknown')}")
+
+        missing = [f for f in ['sku', 'brand', 'attributes', 'ready_for_publish']
                    if f not in result]
         if missing:
             raise ValueError(f"Missing required fields: {missing}")
-        
+
         if not result.get('attributes'):
             raise ValueError("Empty attributes")
-        
+
         if any(k in result for k in ['identifiers', 'standardized_attributes', 'product_attributes']):
             raise ValueError("LLM returned nested structure")
-        
+
         logger.info(
             f"✓ Golden record for {result['sku']}: "
             f"{len(result['attributes'])} attrs, "
             f"ready={result['ready_for_publish']}"
         )
-        
+
         return result
-        
+
     except Exception as e:
         logger.warning(
             f"Golden record LLM failed for {identifiers.get('mpn')}: {e}, "
             f"using deterministic fallback"
         )
-        
+
         # Deterministic fallback
         return {
             'sku': identifiers.get('mpn', 'UNKNOWN'),

@@ -57,6 +57,7 @@ async def extract_web_playwright(url: str, timeout: int = 30_000) -> Optional[st
             # 2. Add extra headers to look like a real browser
             context = await browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                ignore_https_errors=True,
                 extra_http_headers={"Accept-Language": "en-US,en;q=0.9"}
             )
             

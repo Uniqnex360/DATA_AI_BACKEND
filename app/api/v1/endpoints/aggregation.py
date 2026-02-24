@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select, func, and_
-from pydantic import BaseModel, Field
+from sqlmodel import select, func, and_,case
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 import logging
@@ -62,89 +61,148 @@ def calculate_progress(job: AggregationJob) -> float:
     return round((processed / job.total_products) * 100, 2)
 
 
+# @router.get("/projects/stats", response_model=List[ProjectStats])
+# async def get_projects_with_aggregation_stats(
+#     db: AsyncSession = Depends(get_session)
+# ) -> List[ProjectStats]:
+
+#     try:
+
+#         projects_stmt = select(Project).order_by(Project.created_at.desc())
+#         projects_result = await db.execute(projects_stmt)
+#         projects = projects_result.scalars().all()
+
+#         result: List[ProjectStats] = []
+
+#         for project in projects:
+#             project_id_str = str(project.id)
+
+#             total_stmt = select(func.count(Product.id)).where(
+#                 Product.project_id == project_id_str
+#             )
+#             total_result = await db.execute(total_stmt)
+#             total_products = total_result.scalar() or 0
+
+#             completed_stmt = select(func.count(Product.id)).where(
+#                 and_(
+#                     Product.project_id == project_id_str,
+#                     Product.enrichment_status == 'completed'
+#                 )
+#             )
+#             completed_result = await db.execute(completed_stmt)
+#             aggregated_products = completed_result.scalar() or 0
+
+#             failed_stmt = select(func.count(Product.id)).where(
+#                 and_(
+#                     Product.project_id == project_id_str,
+#                     Product.enrichment_status == 'failed'
+#                 )
+#             )
+#             failed_result = await db.execute(failed_stmt)
+#             failed_products = failed_result.scalar() or 0
+
+#             pending_products = total_products - aggregated_products - failed_products
+
+#             aggregation_status = 'yet_to_start'
+
+#             active_job = await get_active_job_for_project(db, project_id_str)
+#             if active_job:
+#                 aggregation_status = 'in_progress'
+#             elif total_products == 0:
+#                 aggregation_status = 'yet_to_start'
+#             elif pending_products == 0 and aggregated_products > 0:
+#                 aggregation_status = 'completed'
+#             elif aggregated_products > 0:
+#                 aggregation_status = 'in_progress'
+#             else:
+#                 aggregation_status = 'yet_to_start'
+
+#             result.append(ProjectStats(
+#                 id=project_id_str,
+#                 name=project.name,
+#                 client=project.client,
+#                 status=project.status,
+#                 totalProducts=total_products,
+#                 aggregatedProducts=aggregated_products,
+#                 pendingProducts=pending_products,
+#                 failedProducts=failed_products,
+#                 aggregationStatus=aggregation_status
+#             ))
+
+#         return result
+
+#     except Exception as e:
+#         logger.error(f"Failed to get project stats: {e}", exc_info=True)
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail="Failed to fetch project statistics"
+#         )
 @router.get("/projects/stats", response_model=List[ProjectStats])
 async def get_projects_with_aggregation_stats(
     db: AsyncSession = Depends(get_session)
 ) -> List[ProjectStats]:
-
     try:
-
+        # 1. Fetch all projects
         projects_stmt = select(Project).order_by(Project.created_at.desc())
         projects_result = await db.execute(projects_stmt)
         projects = projects_result.scalars().all()
 
         result: List[ProjectStats] = []
-
+        
+        # 2. Iterate and count efficiently
         for project in projects:
-            project_id_str = str(project.id)
-
-            total_stmt = select(func.count(Product.id)).where(
-                Product.project_id == project_id_str
-            )
-            total_result = await db.execute(total_stmt)
-            total_products = total_result.scalar() or 0
-
-            completed_stmt = select(func.count(Product.id)).where(
-                and_(
-                    Product.project_id == project_id_str,
-                    Product.enrichment_status == 'completed'
-                )
-            )
-            completed_result = await db.execute(completed_stmt)
-            aggregated_products = completed_result.scalar() or 0
-
-            failed_stmt = select(func.count(Product.id)).where(
-                and_(
-                    Product.project_id == project_id_str,
-                    Product.enrichment_status == 'failed'
-                )
-            )
-            failed_result = await db.execute(failed_stmt)
-            failed_products = failed_result.scalar() or 0
-
-            pending_products = total_products - aggregated_products - failed_products
-
-            aggregation_status = 'yet_to_start'
-
-            active_job = await get_active_job_for_project(db, project_id_str)
+            # Explicitly cast to string to avoid UUID mismatches
+            pid = str(project.id)
+            
+            # Use sum(case) to get all counts in ONE query
+            stats_stmt = select(
+                func.count(Product.id).label('total'),
+                func.sum(case((Product.enrichment_status == 'completed', 1), else_=0)).label('completed'),
+                func.sum(case((Product.enrichment_status == 'failed', 1), else_=0)).label('failed'),
+                func.sum(case((Product.enrichment_status == 'pending', 1), else_=0)).label('pending')
+            ).where(Product.project_id == pid)
+            
+            stats_res = await db.execute(stats_stmt)
+            stats = stats_res.first()
+            
+            total = stats.total or 0
+            completed = stats.completed or 0
+            failed = stats.failed or 0
+            pending = stats.pending or 0
+            
+            # Determine Status
+            active_job = await get_active_job_for_project(db, pid)
+            
             if active_job:
-                aggregation_status = 'in_progress'
-            elif total_products == 0:
-                aggregation_status = 'yet_to_start'
-            elif pending_products == 0 and aggregated_products > 0:
-                aggregation_status = 'completed'
-            elif aggregated_products > 0:
-                aggregation_status = 'in_progress'
+                agg_status = 'in_progress'
+            elif total == 0:
+                agg_status = 'yet_to_start' # This is why it might be hidden if you filter empty projects
+            elif pending == 0 and completed > 0:
+                agg_status = 'completed'
+            elif completed > 0:
+                agg_status = 'in_progress'
             else:
-                aggregation_status = 'yet_to_start'
+                agg_status = 'yet_to_start'
 
             result.append(ProjectStats(
-                id=project_id_str,
+                id=pid,
                 name=project.name,
                 client=project.client,
                 status=project.status,
-                totalProducts=total_products,
-                aggregatedProducts=aggregated_products,
-                pendingProducts=pending_products,
-                failedProducts=failed_products,
-                aggregationStatus=aggregation_status
+                totalProducts=total,
+                aggregatedProducts=completed,
+                pendingProducts=pending,
+                failedProducts=failed,
+                aggregationStatus=agg_status
             ))
 
         return result
 
     except Exception as e:
-        logger.error(f"Failed to get project stats: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch project statistics"
-        )
+        logger.error(f"Stats Error: {e}", exc_info=True)
+        return []
 
-
-@router.post(
-    "/project/{project_id}",
-    response_model=AggregationTriggerResponse,
-    status_code=status.HTTP_202_ACCEPTED
-)
+@router.post("/project/{project_id}",response_model=AggregationTriggerResponse,status_code=status.HTTP_202_ACCEPTED)
 async def trigger_project_aggregation(
     project_id: str,
     background_tasks: BackgroundTasks,
@@ -494,6 +552,7 @@ async def run_project_aggregation_task(job_id: str) -> None:
                     if aggregation_result.get('status') == 'success':
                         ai_data = aggregation_result.get(
                             'golden_record', {}).get('attributes', {})
+                        found_image = aggregation_result.get('image_url')
                         confidence = aggregation_result.get(
                             'golden_record', {}).get('confidence', 0.5)
                         enriched_attributes = {}
@@ -505,6 +564,8 @@ async def run_project_aggregation_task(job_id: str) -> None:
                             }
 
                         product.attributes = {**product.attributes, **ai_data}
+                        if found_image:
+                            product.image_url_1 = found_image 
                         product.enrichment_status = 'completed'
                         product.completeness_score = min(len(ai_data) * 5, 100)
                         db_session.add(product)
@@ -611,7 +672,14 @@ async def run_single_product_aggregation(product_id: str) -> None:
 
             if result.get('status') == 'success':
                 ai_data = result.get('golden_record', {}).get('attributes', {})
+                found_image = result.get('image_url') 
+                logger.info(f"🖼️ Single product - Image found: {found_image}")
                 product.attributes = {**product.attributes, **ai_data}
+                if found_image and isinstance(found_image, str) and found_image.strip():
+                    product.image_url_1 = found_image.strip()
+                    logger.info(f"✅ Image URL saved: {product.image_url_1}")
+                else:
+                    logger.warning(f"⚠️ No valid image for {product.product_code}")
                 product.enrichment_status = 'completed'
                 product.completeness_score = min(len(ai_data) * 5, 100)
                 await check_data_quality(db_session, product.product_code, ai_data)
@@ -665,6 +733,8 @@ async def run_single_product_aggregation(product_id: str) -> None:
 
             db_session.add(product)
             await db_session.commit()
+            await db_session.refresh(product)
+            logger.info(f"💾 Single product saved with image: {product.image_url_1}")
 
         except Exception as e:
             await db_session.rollback()
@@ -693,6 +763,9 @@ async def aggregate_with_retry(
     for attempt in range(max_retries + 1):
         try:
             result = await aggregate_product(mpn=mpn, title=title)
+            logger.info(f"🔍 Aggregation result for {mpn}: {result}")
+            image_url = result.get('golden_record', {}).get('image_url')
+            logger.info(f"🖼️ Image URL in result: {image_url}")
             return result
         except Exception as e:
             last_error = e

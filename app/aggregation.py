@@ -9,6 +9,7 @@ import requests
 from app.extractors import extract_pdf_pdfplumber, extract_web_playwright
 from .cloudinary_client import upload_source
 from app.core.config import settings
+from app.sacred import extract_image_from_source
 from concurrent.futures import ThreadPoolExecutor, as_completed
 logger = logging.getLogger("truth_engine")
 logger.setLevel(logging.INFO)
@@ -78,7 +79,8 @@ def get_serp_urls(query: str) -> List[str]:
 async def aggregate_product(mpn: str = None, upc: str = None, title: str = None) -> Dict:
     request_id = hashlib.sha256(f"{mpn}{title}{time.time()}".encode()).hexdigest()[:12]
     logger.info(f"[{request_id}] Aggregation started for {mpn or title}")
-
+    final_image_url = None
+    official_domains = ['apple.com', 'dell.com', 'lenovo.com', 'samsung.com', 'hp.com']
     identifiers = {
         "mpn": mpn or "",
         "upc": upc or "",
@@ -126,6 +128,16 @@ async def aggregate_product(mpn: str = None, upc: str = None, title: str = None)
 
     extracted = []
     for src in sources:
+        current_url = src.get("source_url")
+        html_text = src["raw_bytes"].decode('utf-8', errors='ignore')
+        is_official = any(domain in current_url for domain in official_domains)
+        img = await extract_image_from_source(html_text, current_url)
+        if img:
+            if is_official:
+                logger.info(f"[{request_id}] ✓ FOUND OFFICIAL IMAGE: {img}")
+                final_image_url=img 
+            elif not final_image_url:
+                final_image_url=img
         try:
             if src["type"] == "pdf":
                 with tempfile.NamedTemporaryFile(suffix=".pdf") as tmp:
@@ -133,16 +145,22 @@ async def aggregate_product(mpn: str = None, upc: str = None, title: str = None)
                     raw_text = extract_pdf_pdfplumber(tmp.name)
                     data = extract_from_pdf(raw_text)
             else:
-                html_text = src["raw_bytes"].decode('utf-8', errors='ignore')
                 data = extract_from_web(html_text)
             
             data["source_url"] = src["source_url"]
             data["raw_content"] = src["raw_bytes"] 
             extracted.append(data)
         except Exception as e:
-            logger.warning("Extraction failed for %s: %s", src.get('source_url'), str(e))
+            logger.warning("Extraction failed for %s. Error type: %s", current_url, type(e).__name__)
 
     if not extracted:
+        if final_image_url:
+             return {
+                "status": "success",
+                "image_url": final_image_url,
+                "golden_record": {"attributes": {}, "ready_for_publish": False},
+                "reason": "Image found but no text specs discovered"
+            }
         return {"status": "failed", "reason": "No specifications found across sources"}
 
     keys = [k for e in extracted for k in e.get("attributes", {}).keys()]
@@ -166,6 +184,7 @@ async def aggregate_product(mpn: str = None, upc: str = None, title: str = None)
         "identifiers": identifiers,
         "sources_used": len(sources),
         "sources_data": sources, 
+        "image_url": final_image_url,
         "golden_record": golden,
         "ready_for_publish": golden.get("ready_for_publish", False),
         "status": "success",
