@@ -4,6 +4,7 @@ from sqlmodel import select, func, and_,case
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 import logging
+from sqlalchemy.orm.attributes import flag_modified
 from fastapi.responses import StreamingResponse
 import asyncio
 import io
@@ -622,6 +623,7 @@ async def run_project_aggregation_task(job_id: str) -> None:
                 new_metadata['last_run'] = datetime.utcnow().isoformat()
 
                 source.source_metadata = new_metadata
+                flag_modified(source, "source_metadata") 
                 db_session.add(source)
             db_session.add(AuditTrail(
                 product_id=f"PROJECT_{job.project_id}",
@@ -691,38 +693,45 @@ async def run_single_product_aggregation(product_id: str) -> None:
                 )
                 remaining_count = await db_session.scalar(remaining_stmt)
                 if remaining_count == 0:
-                    logger.info(
-                        f" Project {product.project_id} is FULLY COMPLETED!")
-                    from sqlmodel import update
-                    await db_session.execute(
-                        update(Project).where(Project.id == product.project_id)
-                        .values(status='completed')
-                    )
+                    logger.info(f"✅ Project {product.project_id} is FULLY COMPLETED!")
+                
+                from sqlmodel import update
+                await db_session.execute(
+                    update(Project).where(Project.id == product.project_id)
+                    .values(status='completed')
+                )
+                
+                # ✅ FIX: Get ALL sources for this project
+                source_stmt = select(Source).where(
+                    Source.project_id == product.project_id
+                )  # ← Removed .limit(1)
+                source_result = await db_session.execute(source_stmt)
+                sources = source_result.scalars().all()  # ← Get all sources
+                
+                # ✅ Update EACH source
+                for source in sources:
+                    # Create a NEW dictionary (don't mutate existing)
+                    new_metadata = dict(source.source_metadata) if source.source_metadata else {}
+                    new_metadata['aggregation_status'] = 'completed'
+                    new_metadata['completed_at'] = datetime.utcnow().isoformat()
                     
-                    source_stmt = select(Source).where(
-                        Source.project_id == product.project_id
-                    ).order_by(Source.created_at.desc()).limit(1)
-                    source = await db_session.scalar(source_stmt)
+                    # Assign the NEW dict
+                    source.source_metadata = new_metadata
                     
-                    if source:
-                        if source.source_metadata is None:
-                            source.source_metadata = {}
-                        
-                        source.source_metadata['aggregation_status'] = 'completed'
-                        
-                        from sqlalchemy.orm import flag_modified
-                        flag_modified(source, "source_metadata")
-                        
-                        db_session.add(source)
+                    # Force SQLAlchemy to detect the change
+                    flag_modified(source, "source_metadata")
                     
-                    db_session.add(AuditTrail(
-                        product_id=f"PROJECT_{product.project_id}",
-                        stage="aggregation",
-                        attribute_name="project_completion",
-                        selected_value="Completed",
-                        sources_used="All products",
-                        reason="All products aggregated successfully"
-                    ))
+                    db_session.add(source)
+                    logger.info(f"📝 Updated source {source.id} metadata: {new_metadata}")
+                
+                db_session.add(AuditTrail(
+                    product_id=f"PROJECT_{product.project_id}",
+                    stage="aggregation",
+                    attribute_name="project_completion",
+                    selected_value="Completed",
+                    sources_used="All products",
+                    reason="All products aggregated successfully"
+                ))
                 logger.info(
                     f"Single product aggregation complete: {product.product_code}")
             else:
