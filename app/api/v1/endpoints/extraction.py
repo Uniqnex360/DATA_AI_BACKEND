@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status, 
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
+from sqlalchemy import func
 from app.models.pipeline import AuditTrail, CleansingIssue, RawExtraction, Source, SourcePriority
 from app.core.database import get_session, async_session_factory
 from app.models.product import Product
@@ -253,8 +254,8 @@ async def batch_aggregate(
         file_hash = hashlib.sha256(content).hexdigest()
         from datetime import timedelta
         recent_cutoff = datetime.utcnow() - timedelta(hours=24)
-        duplicate_check = select(Source).where(Source.project_id == projectId,
-                                               Source.source_metadata['file_hash'].astext == file_hash, Source.created_at > recent_cutoff)
+        duplicate_check = select(Source).where(Source.project_id == projectId,func.json_extract_path_text(Source.source_metadata, 'file_hash') == file_hash
+, Source.created_at > recent_cutoff)
         existing = await db.scalar(duplicate_check)
         if existing:
             logger.warning(f"Duplicate file uploaded:{file_hash[:8]}")
@@ -284,14 +285,13 @@ async def batch_aggregate(
             logger.error("Empty file")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="File is empty")
-        df_columns = df.columns.str.strip().str.lower()
-        required_columns = {'mpn', "sku", "product_code"}
+        df.columns = df.columns.str.strip().str.lower()
+        required_columns = {'mpn', 'sku', 'product_code'}
         has_identifier = any(col in df.columns for col in required_columns)
         if not has_identifier:
             logger.error(
                 f"Missing identifier columns.Found:{list(df.columns)}")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail=f"File must contain as least one of :{','.join(required_columns)}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail=f"File must contain as least one of :{','.join(required_columns)}")
         df = df.fillna('')
         df = df.applymap(lambda x: str(x).strip() if isinstance(x, str) else x)
         timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")

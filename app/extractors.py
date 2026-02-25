@@ -1,3 +1,4 @@
+from typing import Optional
 import logging
 from typing import Optional, List, Dict
 import fitz
@@ -19,33 +20,34 @@ logger = logging.getLogger(__name__)
 
 def extract_web(url: str):
     try:
-        resp = httpx.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0"},verify=False)
+        resp = httpx.get(url, timeout=15, headers={
+                         "User-Agent": "Mozilla/5.0"}, verify=False)
         if resp.status_code == 200 and len(resp.text) > 1000:
             soup = BeautifulSoup(resp.text, "html.parser")
             for s in soup(["script", "style", "nav", "footer", "header", "svg", "noscript", "iframe"]):
                 s.decompose()
-            important_tags = soup.find_all(['table', 'dl', 'ul', 'main', 'article'])
-            cleaned_text = " ".join([tag.get_text(separator=' ', strip=True) for tag in important_tags])
+            important_tags = soup.find_all(
+                ['table', 'dl', 'ul', 'main', 'article'])
+            cleaned_text = " ".join(
+                [tag.get_text(separator=' ', strip=True) for tag in important_tags])
             if len(cleaned_text) < 500:
                 cleaned_text = soup.body.get_text(separator=' ', strip=True)
-            # content = soup.find('main') or soup.find('body')
-            # return content.get_text(separator=' ', strip=True)
+
             return cleaned_text
     except:
         pass
 
     return extract_web_playwright(url)
-import asyncio
-import logging
-from typing import Optional
-from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
+
 
 logger = logging.getLogger("extractor")
+
+
 async def extract_web_playwright(url: str, timeout: int = 30_000) -> Optional[str]:
     browser = None
     try:
         async with async_playwright() as p:
-            # 1. ADD STEALTH ARGS: This hides the 'Automation' flag from websites
+
             browser = await p.chromium.launch(
                 headless=True,
                 args=[
@@ -53,29 +55,29 @@ async def extract_web_playwright(url: str, timeout: int = 30_000) -> Optional[st
                     "--no-sandbox"
                 ]
             )
-            
-            # 2. Add extra headers to look like a real browser
+
             context = await browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
                 ignore_https_errors=True,
                 extra_http_headers={"Accept-Language": "en-US,en;q=0.9"}
             )
-            
-            page = await context.new_page() 
-            
-            # 3. Increase wait time for spec tables to render
+
+            page = await context.new_page()
+
             await page.goto(url, timeout=timeout, wait_until="networkidle")
-            await asyncio.sleep(5) # Allow dynamic price/specs to pop in
-            
+            await asyncio.sleep(5)
+
             content = await page.content()
             return content
-            
+
     except Exception as e:
         logger.error("Playwright failed on %s: %s", url, str(e))
         return None
     finally:
-        if browser: await browser.close()
-        
+        if browser:
+            await browser.close()
+
+
 def extract_pdf_pdfplumber(path: str) -> str:
     file = Path(path)
     if not file.exists():

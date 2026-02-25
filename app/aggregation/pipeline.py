@@ -17,7 +17,7 @@ from app.aggregation.services.extraction_service import ExtractionService
 logger = logging.getLogger("pipeline")
 
 MAX_SOURCES = 3
-MAX_SERP_CALLS = 1
+MAX_SERP_CALLS = 3
 
 
 class AggregationPipeline:
@@ -58,9 +58,11 @@ class AggregationPipeline:
             queries = [f"{mpn} datasheet pdf", f"{title} specifications"]
 
         urls: List[str] = []
-        for q in queries[:MAX_SERP_CALLS]:
+        for q in queries:
             found = await self.search.get_urls(q)
             urls.extend(found)
+            if len(urls)>MAX_SOURCES:
+                break
             await asyncio.sleep(0.1)
 
         download_tasks = [self.downloader.download(url) for url in urls]

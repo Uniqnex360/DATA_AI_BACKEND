@@ -25,41 +25,77 @@ def safe_call_llm(prompt: str, schema: dict, context: str = "") -> dict:
         return {"error": "llm_exception", "details": str(e)}
 
 
+# def generate_search_queries(mpn: str = None, brand: str = None, title: str = None) -> List[str]:
+#     if not any([mpn, brand, title]):
+#         logger.warning("No identifiers provided for search queries")
+#         return []
+
+#     # prompt = f"""
+#     # Generate 5 highly targeted Google search queries to find technical specifications for this product.
+#     # Input: {json.dumps({"mpn": mpn, "brand": brand, "title": title}, ensure_ascii=False)}
+#     # Generate exhaustive search queries to find product information and official images.
+#     # Include queries like:
+#     # - '[brand] [mpn] official product page'
+#     # - '[brand] [model] high resolution image'
+#     # - '[brand] [mpn] technical gallery'
+#     # Output ONLY valid JSON with key 'queries' as array of strings.
+#     # """
+#     prompt = f"""
+#     Generate 5 highly targeted Google search queries for this product.
+#     Input: {json.dumps({"mpn": mpn, "brand": brand, "title": title}, ensure_ascii=False)}
+    
+#     Goal: Find technical specifications and high-resolution official images.
+#     Include:
+#     - Official product pages for [brand] [mpn]
+#     - Technical specification PDFs or Datasheets
+#     - Official image galleries or high-res product photos
+    
+#     Output ONLY valid JSON with key 'queries' as an array of strings.
+#     """
+#     schema = {
+#         "type": "object",
+#         "properties": {"queries": {"type": "array", "items": {"type": "string"}}},
+#         "required": ["queries"]
+#     }
+#     result = safe_call_llm(prompt, schema, "generate_search_queries")
+#     return result.get("queries", [])
+
 def generate_search_queries(mpn: str = None, brand: str = None, title: str = None) -> List[str]:
     if not any([mpn, brand, title]):
         logger.warning("No identifiers provided for search queries")
         return []
 
-    # prompt = f"""
-    # Generate 5 highly targeted Google search queries to find technical specifications for this product.
-    # Input: {json.dumps({"mpn": mpn, "brand": brand, "title": title}, ensure_ascii=False)}
-    # Generate exhaustive search queries to find product information and official images.
-    # Include queries like:
-    # - '[brand] [mpn] official product page'
-    # - '[brand] [model] high resolution image'
-    # - '[brand] [mpn] technical gallery'
-    # Output ONLY valid JSON with key 'queries' as array of strings.
-    # """
-    prompt = f"""
-    Generate 5 highly targeted Google search queries for this product.
-    Input: {json.dumps({"mpn": mpn, "brand": brand, "title": title}, ensure_ascii=False)}
-    
-    Goal: Find technical specifications and high-resolution official images.
-    Include:
-    - Official product pages for [brand] [mpn]
-    - Technical specification PDFs or Datasheets
-    - Official image galleries or high-res product photos
-    
-    Output ONLY valid JSON with key 'queries' as an array of strings.
-    """
-    schema = {
-        "type": "object",
-        "properties": {"queries": {"type": "array", "items": {"type": "string"}}},
-        "required": ["queries"]
-    }
-    result = safe_call_llm(prompt, schema, "generate_search_queries")
-    return result.get("queries", [])
+    base_terms = []
+    if brand:
+        base_terms.append(brand)
+    if title:
+        base_terms.append(title)
+    if mpn:
+        base_terms.append(mpn)
 
+    base_query = " ".join(base_terms)
+
+    queries = [
+        f"{base_query} technical specifications PDF",
+        f"{base_query} datasheet download",
+        f"{base_query} product specifications",
+        f"{base_query} high resolution images",
+        f"{base_query} official product page",
+    ]
+
+    known_domains = {
+        "Sony": "sony.com",
+        "Logitech": "logitech.com",
+        "Adidas": "adidas.com",
+        "Apple": "apple.com",
+        "Samsung": "samsung.com",
+    }
+
+    if brand in known_domains:
+        domain = known_domains[brand]
+        queries.insert(0, f"site:{domain} {base_query}")
+
+    return queries
 
 # def extract_from_web(html: str) -> Dict:
 #     if not html or len(html.strip()) < 100:
