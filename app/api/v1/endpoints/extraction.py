@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status, Form, UploadFile, File, Request,Query
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status, Form, UploadFile, File, Request, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -9,13 +9,15 @@ from typing import List
 import logging
 import json
 import io
+import hashlib
 from datetime import datetime
-from app.aggregation import aggregate_product
+from app.aggregation.aggregate_product import aggregate_product
 from app.schemas.extraction import ExtractionRequest, SourceMetricsResponse, SourceResponse
 from app.schemas.pipeline import SourcePriorityResponse
 from app.utils import is_invalid
 import pandas as pd
 import os
+from app.models.project import Project
 logger = logging.getLogger("extraction_router")
 router = APIRouter()
 
@@ -40,6 +42,10 @@ async def extract_from_source(
     db: AsyncSession = Depends(get_session)
 ):
     try:
+        if not payload.projectId:
+            logger.error(f'No project ID in manual extraction')
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Project ID is required,Please select a project first!")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         formatted_name = f"Manual_{timestamp}_{payload.sourceUrl}"
         new_source = Source(
@@ -109,138 +115,64 @@ async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get
         return []
 
 
-# @router.get("/{source_id}/download")
-# async def download_file(
-#     source_id: str,
-#     file_type: str = Query("input", alias="type"), 
-#     db: AsyncSession = Depends(get_session)
-# ):
-#     try:
-#         source = await db.get(Source, source_id)
-#         if not source:
-#             raise HTTPException(
-#                 status_code=404, detail="Source record not found")
-#         if file_type == 'input':
-#             if source.content_data:
-#                 return StreamingResponse(
-#                     io.BytesIO(source.content_data),
-#                     media_type="application/octet-stream",
-#                     headers={
-#                         "Content-Disposition": f"attachment; filename=Input_{source.source_url}"}
-#                 )
-#             elif not source.content_data:
-#                 output = io.StringIO()
-#                 output.write(f"--- MANUAL INGESTION LOG ---\n")
-#                 output.write(f"SKU: {source.source_url}\n")
-#                 output.write(f"Timestamp: {source.uploaded_at}\n")
-#                 return StreamingResponse(
-#                     io.BytesIO(output.getvalue().encode()),
-#                     media_type="text/plain",
-#                     headers={
-#                         "Content-Disposition": f"attachment; filename=Manual_Input_{source_id}.txt"}
-#                 )
-#             else:
-#                 raise HTTPException(
-#                     status_code=404, detail="No source data found in database")
-#         elif file_type == 'output':
-#             stmt = select(RawExtraction).where(
-#                 RawExtraction.source_id == source_id)
-#             result = await db.execute(stmt)
-#             extractions = result.scalars().all()
-#             if not extractions:
-#                 raise HTTPException(
-#                     status_code=404, detail="No AI data generated yet")
-
-#             def flatten_dict(d, parent_key='', sep='_'):
-
-#                 items = []
-#                 for k, v in d.items():
-#                     new_key = f"{parent_key}{sep}{k}" if parent_key else k
-#                     if isinstance(v, dict):
-#                         items.extend(flatten_dict(v, new_key, sep=sep).items())
-#                     elif isinstance(v, list):
-#                         items.append((new_key, ', '.join(map(str, v))))
-#                     else:
-#                         items.append((new_key, v))
-#                 return dict(items)
-#             rows = []
-#             for idx, ext in enumerate(extractions):
-#                 flattened_attrs = flatten_dict(ext.raw_attributes)
-#                 rows.append({
-#                     "System_ID": f"PID-{1000 + idx}",
-#                     "MPN": ext.product_keys.get('sku') or ext.product_keys.get('mpn') or "UNKNOWN",
-#                     **flattened_attrs
-#                 })
-#             excel_buffer = io.BytesIO()
-#             df = pd.DataFrame(rows)
-#             df.columns = [col.replace('_', ' ').title() for col in df.columns]
-#             df.to_excel(excel_buffer, index=False, engine='openpyxl')
-#             excel_buffer.seek(0)
-#             return StreamingResponse(
-#                 excel_buffer,
-#                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-#                 headers={
-#                     "Content-Disposition": f"attachment; filename=AI_Output_{source_id}.xlsx"}
-#             )
-#         raise HTTPException(status_code=400, detail="Invalid file_type")
-#     except HTTPException as he:
-#         raise he
-#     except Exception as e:
-#         logger.error(f"Memory Download Error: {str(e)}")
-#         raise HTTPException(
-#             status_code=500, detail="Internal server error preparing your download")
-
 @router.get("/{source_id}/download")
 async def download_file(
     source_id: str,
-    download_type: str = Query("input", alias="type"), 
+    download_type: str = Query("input", alias="type"),
     db: AsyncSession = Depends(get_session)
 ):
     try:
         source = await db.get(Source, source_id)
         if not source:
-            raise HTTPException(status_code=404, detail="Source record not found")
+            raise HTTPException(
+                status_code=404, detail="Source record not found")
 
         if download_type == 'input':
             if source.content_data:
                 return StreamingResponse(
                     io.BytesIO(source.content_data),
                     media_type="application/octet-stream",
-                    headers={"Content-Disposition": f"attachment; filename=Input_{source.source_url}"}
+                    headers={
+                        "Content-Disposition": f"attachment; filename=Input_{source.source_url}"}
                 )
             output = io.StringIO()
-            output.write(f"SKU: {source.source_url}\nUploaded: {source.uploaded_at}")
+            output.write(
+                f"SKU: {source.source_url}\nUploaded: {source.uploaded_at}")
             return StreamingResponse(io.BytesIO(output.getvalue().encode()), media_type="text/plain")
 
         elif download_type == 'output':
-            stmt = select(Product).where(Product.project_id == source.project_id,Product.source_url==source.source_url)
+            stmt = select(Product).where(
+                Product.project_id == source.project_id, Product.source_url == source.source_url)
             result = await db.execute(stmt)
             products = result.scalars().all()
 
             if not products:
-                raise HTTPException(status_code=404, detail="No enriched data found for this project")
+                raise HTTPException(
+                    status_code=404, detail="No enriched data found for this project")
 
             def flatten_logic(data, prefix=''):
                 items = []
-                
+
                 if isinstance(data, dict):
                     for k, v in data.items():
-                        new_key = f"{prefix} {k}".strip().replace('_', ' ').title()
-                        
+                        new_key = f"{prefix} {k}".strip().replace(
+                            '_', ' ').title()
+
                         if isinstance(v, (dict, list)):
                             items.extend(flatten_logic(v, new_key).items())
                         else:
                             items.append((new_key, v))
-                            
+
                 elif isinstance(data, list):
                     for i, v in enumerate(data):
-                        new_prefix = f"{prefix} {i+1}" if len(data) > 1 else prefix
-                        
+                        new_prefix = f"{prefix} {i+1}" if len(
+                            data) > 1 else prefix
+
                         if isinstance(v, (dict, list)):
                             items.extend(flatten_logic(v, new_prefix).items())
                         else:
                             items.append((new_prefix, v))
-                            
+
                 return dict(items)
 
             rows = []
@@ -251,29 +183,36 @@ async def download_file(
                     "Brand": p.brand_name,
                     "Completeness": f"{p.completeness_score}%"
                 }
-                
+
                 if p.attributes:
                     flattened = flatten_logic(p.attributes)
                     row.update(flattened)
-                
+
                 rows.append(row)
 
             df = pd.DataFrame(rows)
             excel_buffer = io.BytesIO()
             with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
                 df.to_excel(writer, index=False, sheet_name='Enriched Data')
-            
+
             excel_buffer.seek(0)
-            
+
             return StreamingResponse(
                 excel_buffer,
                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                headers={"Content-Disposition": f"attachment; filename=Enriched_Data_{source_id}.xlsx"}
+                headers={
+                    "Content-Disposition": f"attachment; filename=Enriched_Data_{source_id}.xlsx"}
             )
 
     except Exception as e:
         logger.error(f"Download Error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error generating download")
+        raise HTTPException(
+            status_code=500, detail="Error generating download")
+
+ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
+MAX_FILE_SIZE = 10 * 1024 * 1024
+MAX_ROWS = 1000
+
 
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
@@ -284,15 +223,80 @@ async def batch_aggregate(
     db: AsyncSession = Depends(get_session)
 ):
     try:
-        content = await file.read()
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        formatted_filename = f"Import_{timestamp}"
-
-        if not projectId:
+        if not projectId or not projectId.strip():
+            logger.error('Missing project ID    ')
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Project ID is required. Please select a project first."
             )
+        project = await db.get(Project, projectId)
+        if not project:
+            logger.error(f"Project {projectId} not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=f"Project {projectId} not found")
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in ALLOWED_EXTENSIONS:
+            logger.error(f"Invalid file type:{file_ext}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Invalid file type.Allowed:{','.join(ALLOWED_EXTENSIONS)}")
+        content = bytearray()
+        chunk_size = 1024 * 1024
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
+            content.extend(chunk)
+            if len(content) > MAX_FILE_SIZE:
+                raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                                    detail=f"File size exceeds {MAX_FILE_SIZE // (1024*1024)}MB limit")
+        content = bytes(content)
+        file_hash = hashlib.sha256(content).hexdigest()
+        from datetime import timedelta
+        recent_cutoff = datetime.utcnow() - timedelta(hours=24)
+        duplicate_check = select(Source).where(Source.project_id == projectId,
+                                               Source.source_metadata['file_hash'].astext == file_hash, Source.created_at > recent_cutoff)
+        existing = await db.scalar(duplicate_check)
+        if existing:
+            logger.warning(f"Duplicate file uploaded:{file_hash[:8]}")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                detail='This file was already uploaded recently')
+        try:
+            if file_ext in ['.xlsx', '.xls']:
+                df = pd.read_excel(
+                    io.BytesIO(content),
+                    nrows=MAX_ROWS + 1
+                )
+            else:
+                df = pd.read_csv(
+                    io.BytesIO(content),
+                    nrows=MAX_ROWS + 1,
+                    encoding='utf-8-sig'
+                )
+        except Exception as e:
+            logger.error(f"Failed to parse file :{e}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"Failed to parse file: {str(e)}")
+        if len(df) > MAX_ROWS:
+            logger.error(f"Too many rows :{len(df)}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"File contain {len(df)} rows.Maximum allowed :{MAX_ROWS}")
+        if len(df) == 0:
+            logger.error("Empty file")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="File is empty")
+        df_columns = df.columns.str.strip().str.lower()
+        required_columns = {'mpn', "sku", "product_code"}
+        has_identifier = any(col in df.columns for col in required_columns)
+        if not has_identifier:
+            logger.error(
+                f"Missing identifier columns.Found:{list(df.columns)}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f"File must contain as least one of :{','.join(required_columns)}")
+        df = df.fillna('')
+        df = df.applymap(lambda x: str(x).strip() if isinstance(x, str) else x)
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        formatted_filename = f"Import_{timestamp}"
+
         project_id = projectId
         logger.info(f"Using project_id (snake_case): {project_id}")
         new_source = Source(
@@ -305,18 +309,21 @@ async def batch_aggregate(
         )
         db.add(new_source)
         await db.commit()
-        await db.refresh(new_source)
-        if file.filename.endswith(('.xlsx', '.xls')):
-            df = pd.read_excel(io.BytesIO(content))
-        else:
-            df = pd.read_csv(io.BytesIO(content))
-        df.columns = df.columns.str.strip().str.lower()
         df_dict = df.to_dict('records')
+        await db.refresh(new_source)
+        source_id = str(new_source.id)
+        # if file.filename.endswith(('.xlsx', '.xls')):
+        #     df = pd.read_excel(io.BytesIO(content))
+        # else:
+        #     df = pd.read_csv(io.BytesIO(content))
+        # df.columns = df.columns.str.strip().str.lower()
+        # df_dict = df.to_dict('records')
         background_tasks.add_task(
             run_extraction_task,
             str(new_source.id),
             json.dumps(df_dict)
         )
+        logger.info(f"Background task queued for {source_id}")
         return {
             "status": "accepted",
             "batch_id": str(new_source.id),
@@ -521,7 +528,10 @@ async def run_extraction_task(source_id: str, content: str):
             source = await db_session.get(Source, source_id)
             if not source:
                 return
-
+            if not source.project_id:
+                logger.error(
+                    f"Source {source_id} has NO project_id! Aborting.")
+                return
             items_to_process = []
             try:
                 items_to_process = json.loads(content)
@@ -576,7 +586,8 @@ async def run_extraction_task(source_id: str, content: str):
                         logger.info(f"Created product: {sku}")
                     else:
                         product.source_url = source.source_url
-                        product.attributes = {**product.attributes, **raw_attributes}
+                        product.attributes = {
+                            **product.attributes, **raw_attributes}
                         product.enrichment_status = 'pending'
                         db_session.add(product)
                         logger.info(f"Updated product: {sku}")
@@ -678,38 +689,44 @@ async def run_aggregation_task(source_id: str):
             total = len(extractions)
             for idx, extraction in enumerate(extractions):
                 try:
-                    sku = extraction.product_keys.get('sku', '') or extraction.product_keys.get('mpn', '')
-                    prod_stmt=select(Product).where(Product.product_code==sku)
-                    prod_result=await db_session.execute(prod_stmt)
-                    product=prod_result.scalars().first()
+                    sku = extraction.product_keys.get(
+                        'sku', '') or extraction.product_keys.get('mpn', '')
+                    prod_stmt = select(Product).where(
+                        Product.product_code == sku)
+                    prod_result = await db_session.execute(prod_stmt)
+                    product = prod_result.scalars().first()
                     if not product:
                         continue
                     logger.info(f"Aggregating {idx+1}/{total}: {sku}")
-                    aggregation_result=await aggregate_product(mpn=sku,title=product.product_name)
-                    if aggregation_result.get('status')=='success':
-                        ai_data=aggregation_result.get('golden_record',{}).get('attributes',{})
-                        confidence=aggregation_result.get('golden_record',{}).get('confidence',0.5)
-                        extraction.raw_attributes=ai_data
-                        extraction.confidence=confidence
-                        extraction.extracted_at=datetime.utcnow()
+                    aggregation_result = await aggregate_product(mpn=sku, title=product.product_name)
+                    if aggregation_result.get('status') == 'success':
+                        ai_data = aggregation_result.get(
+                            'golden_record', {}).get('attributes', {})
+                        confidence = aggregation_result.get(
+                            'golden_record', {}).get('confidence', 0.5)
+                        extraction.raw_attributes = ai_data
+                        extraction.confidence = confidence
+                        extraction.extracted_at = datetime.utcnow()
                         db_session.add(extraction)
-                        product.attributes={**product.attributes,**ai_data}
-                        product.enrichment_status='completed'
-                        product.completeness_score=min(len(ai_data)*5,100)
+                        product.attributes = {**product.attributes, **ai_data}
+                        product.enrichment_status = 'completed'
+                        product.completeness_score = min(len(ai_data)*5, 100)
                         db_session.add(product)
-                        for attr_name,attr_value in ai_data.items():
+                        for attr_name, attr_value in ai_data.items():
                             if is_invalid(str(attr_value)):
-                                db_session.add(CleansingIssue(product_id=sku,attribute_name=attr_name,issue_type='invalid',details=f"Placeholder detected `{attr_value}`",resolved=False))
-                        successful+=1
-                        logger.info(f"Aggregated {sku}: {len(ai_data)} attributes")
+                                db_session.add(CleansingIssue(product_id=sku, attribute_name=attr_name,
+                                               issue_type='invalid', details=f"Placeholder detected `{attr_value}`", resolved=False))
+                        successful += 1
+                        logger.info(
+                            f"Aggregated {sku}: {len(ai_data)} attributes")
                     else:
-                        failed+=1
-                        product.enrichment_status='Failed'
+                        failed += 1
+                        product.enrichment_status = 'Failed'
                         db_session.add(product)
                         logger.warning(f"Aggregation failed for {sku}")
                 except Exception as e:
                     logger.error(f"Aggregation error for {sku}:{e}")
-                    failed+=1
+                    failed += 1
                     continue
             source.source_metadata = {
                 **source.source_metadata,
@@ -728,9 +745,21 @@ async def run_aggregation_task(source_id: str):
                 reason=f"AI aggregated {successful}/{total} products successfully"
             ))
             await db_session.commit()
-            logger.info(f"Aggregation complete :{successful}/{total} successful,{failed} failed")
+            logger.info(
+                f"Aggregation complete :{successful}/{total} successful,{failed} failed")
 
         except Exception as e:
             await db_session.rollback()
             logger.error(f"Aggregation task failed for {source_id}:{str(e)}")
 
+# if file.filename.endswith(('.xlsx', '.xls')):
+        #     df = pd.read_excel(io.BytesIO(content))
+        # else:
+        #     df = pd.read_csv(io.BytesIO(content))
+        # df.columns = df.columns.str.strip().str.lower()
+        # df_dict = df.to_dict('records')# if file.filename.endswith(('.xlsx', '.xls')):
+        #     df = pd.read_excel(io.BytesIO(content))
+        # else:
+        #     df = pd.read_csv(io.BytesIO(content))
+        # df.columns = df.columns.str.strip().str.lower()
+        # df_dict = df.to_dict('records')

@@ -13,7 +13,7 @@ from app.core.database import get_session, async_session_factory
 from app.models.pipeline import AggregationJob, AuditTrail, CleansingIssue, RawExtraction, Source
 from app.models.product import Product
 from app.models.project import Project
-from app.aggregation import aggregate_product
+from app.aggregation.aggregate_product import aggregate_product
 from app.utils import is_invalid
 from app.schemas.aggregation import AggregatedAttribute, AggregatedAttributeValue, AggregationJobResponse, AggregationTriggerResponse, ProductAggregationResponse, ProjectStats
 
