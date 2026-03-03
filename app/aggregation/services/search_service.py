@@ -29,13 +29,8 @@ BLOCKED_KEYWORDS = [
     "question",
 ]
 
-
 class SerpApiSearchService(ISearchService):
-    """
-    Production-ready SERP filtering.
-    Filters junk pages and prioritizes real product pages.
-    """
-
+    
     def __init__(self, max_results: int = 5):
         self.max_results = max_results
 
@@ -103,12 +98,7 @@ class SerpApiSearchService(ISearchService):
         return True
 
     def _rank_urls(self, urls: List[str]) -> List[str]:
-        """
-        Production ranking:
-        1. Retailers
-        2. Brand product pages
-        3. Others
-        """
+        
 
         def score(url: str) -> int:
             lower = url.lower()

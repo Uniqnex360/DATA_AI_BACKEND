@@ -50,34 +50,29 @@ class HtmlExtractor(IExtractor):
         url: str, 
         prompt_config: Optional[Dict[str, Any]] = None
     ) -> Dict:
-        """
-        Extract from HTML using custom or default prompt
-        """
+        
         html_text = raw_bytes.decode('utf-8', errors='ignore')
         
-        # ✅ CRITICAL: Extract the custom prompt
         custom_prompt = None
         if prompt_config:
-            custom_prompt = prompt_config.get('prompt')  # ✅ GET THE PROMPT!
+            custom_prompt = prompt_config.get('prompt') 
             mode = prompt_config.get('mode', 'unknown')
             
             if custom_prompt:
-                logger.info(f"🎯 Using CUSTOM prompt in {mode} mode")
+                logger.info(f"Using CUSTOM prompt in {mode} mode")
             else:
-                logger.warning(f"⚠️ No custom prompt in prompt_config, using default")
+                logger.warning(f"No custom prompt in prompt_config, using default")
         
-        # Extract metadata
         taxonomy = prompt_config.get('taxonomy') if prompt_config else None
         sku = (prompt_config.get('mpn') or prompt_config.get('sku') or "") if prompt_config else ""
         
         try:
-            # ✅ PASS THE CUSTOM PROMPT TO extract_from_web
             data = await asyncio.to_thread(
                 extract_from_web, 
                 html_text, 
                 sku=sku, 
                 taxonomy=taxonomy,
-                custom_prompt=custom_prompt  # ✅ PASS IT HERE!
+                custom_prompt=custom_prompt  
             )
             return data or {}
         except Exception as e:

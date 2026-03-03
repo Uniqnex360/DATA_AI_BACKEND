@@ -69,29 +69,7 @@ async def calculate_metrics(db:AsyncSession,project_id:str|None)->dict:
 @router.get("/metrics", response_model=DashboardMetricsResponse)
 async def get_dashboard_metrics(db: AsyncSession = Depends(get_session)):
     try:
-        # total_projects_stmt = select(func.count(Project.id))
-        # active_projects_stmt = select(func.count(Project.id)).where(Project.status == "active")
-        # total_projects_res = await db.execute(total_projects_stmt)
-        # active_projects_res = await db.execute(active_projects_stmt)
-        # total_projects = total_projects_res.scalar() or 0
-        # active_projects = active_projects_res.scalar() or 0
-        # total_products_stmt = select(func.count(Product.id))
-        # published_products_stmt = select(func.count(Product.id)).where(Product.published_at.is_not(None))
-        # total_products_res = await db.execute(total_products_stmt)
-        # published_products_res = await db.execute(published_products_stmt)
-        # total_products = total_products_res.scalar() or 0
-        # published_products = published_products_res.scalar() or 0
-        # health_stmt = select(func.avg(Product.completeness_score))
-        # health_res = await db.execute(health_stmt)
-        # avg_health = health_res.scalar() or 0
-        # logger.info(f"Dashboard refreshed: {total_products} products, {total_projects} projects")
-        # return {
-        #     "totalProjects": total_projects,
-        #     "activeProjects": active_projects,
-        #     "totalProducts": total_products,
-        #     "publishedProducts": published_products,
-        #     "catalogHealth": int(avg_health) 
-        # }
+        
         data=await calculate_metrics(db,None)
         logger.info(f"Global dashboard metrics loaded :{data['totalProducts']} products")
         return data
@@ -105,29 +83,7 @@ async def get_dashboard_metrics(db: AsyncSession = Depends(get_session)):
 @router.get('/metrics/{project_id}',response_model=DashboardMetricsResponse)
 async def get_project_metrics(project_id:str,db:AsyncSession=Depends(get_session)):
     try:
-        # total_projects_stmt=select(func.count(Project.id))
-        # active_projects_stmt=select(func.count(Project.id)).where(Project.status=='active')
-        # total_projects_res=await db.execute(total_projects_stmt)
-        # active_projects_res=await db.execute(active_projects_stmt)
-        # total_projects=total_projects_res.scalar() or 0 
-        # active_projects=active_projects_res.scalar() or 0 
         
-        # prod_stmt=select(func.count(Product.id)).where(Product.project_id==project_id)
-        # prod_res=await db.execute(prod_stmt)
-        # total_products=prod_res.scalar() or 0 
-        # pub_stmt=select(func.count(Product.id)).where(Product.project_id==project_id, Product.published_at.is_not(None))    
-        # pub_res=await db.execute(pub_stmt)
-        # published=pub_res.scalar() or 0 
-        # health_stmt=select(func.avg(Product.completeness_score)).where(Product.project_id==project_id)
-        # health_res=await db.execute(health_stmt)
-        # avg_health=health_res.scalar() or 0 
-        # return {
-        #     "totalProjects":total_projects,
-        #     'activeProjects':active_projects,
-        #     'totalProducts':total_products,
-        #     'publishedProducts':published,
-        #     'catalogHealth':int(avg_health)
-        # }
         data = await calculate_metrics(db, project_id)
         logger.info(f"Project metrics loaded for {project_id}")
         return data

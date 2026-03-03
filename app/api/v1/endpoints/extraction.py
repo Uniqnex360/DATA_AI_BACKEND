@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status, Form, UploadFile, File, Request, Query
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from sqlalchemy import func
@@ -11,19 +11,25 @@ import logging
 import json
 import io
 import hashlib
-from datetime import datetime,timedelta
+import re
+from datetime import datetime, timedelta
 from app.aggregation.aggregate_product import aggregate_product
 from app.schemas.extraction import ExtractionRequest, SourceMetricsResponse, SourceResponse
 from app.schemas.pipeline import SourcePriorityResponse
+from app.aggregation.prompt_builder import get_taxonomy_attribute_hints
 import pandas as pd
 import os
 from app.models.project import Project
 from uuid import uuid4
 from app.utils.parsers import infer_taxonomy_for_row, parse_import_file
-from app.utils.matching import get_or_create_brand,get_or_create_vendor,get_or_create_industry
+from app.utils.matching import get_or_create_brand, get_or_create_vendor, get_or_create_industry
 from app.utils.validators import is_invalid
+from app.utils.sanitize import sanitize_ai_data
 logger = logging.getLogger("extraction_router")
 router = APIRouter()
+ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
+MAX_FILE_SIZE = 10 * 1024 * 1024
+MAX_ROWS = 1000
 @router.get("/", response_model=List[SourceResponse])
 async def getAllSources(db: AsyncSession = Depends(get_session)):
     try:
@@ -109,44 +115,36 @@ async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get
     except Exception as e:
         logger.error(f"Failed to fetch project sources:{e}")
         return []
-    
-# def clean_for_excel(val, attr_name=None):
-#     """Safely extracts just the value string, removing JSON keys."""
-#     if val is None or val == "": return ""
-#     if isinstance(val, list):
-#         return " | ".join([clean_for_excel(i, attr_name) for i in val])
-#     if isinstance(val, dict):
-#         if "value" in val:
-#             return str(val["value"])
-#         if attr_name:
-#             norm_attr = str(attr_name).lower().replace(" ", "").replace("_", "")
-#             for k, v in val.items():
-#                 if norm_attr in k.lower().replace("_", "") or k.lower().replace("_", "") in norm_attr:
-#                     return clean_for_excel(v, attr_name)
-#         return ", ".join([str(v) for v in val.values()])
-#     return str(val)
+def sanitize_for_excel(val):
+    if not isinstance(val, str):
+        return val
+    return re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', val)
 def clean_for_excel(val, attr_name=None):
-    """Extracts clean strings from AI JSON objects and removes redundant keys."""
-    if val is None or val == "": return ""
-    if isinstance(val, (str, int, float)): return str(val)
+    """
+    Production-ready cleaner. 
+    Extracts 'standard_value', handles nesting, and removes N/A noise.
+    """
+    if val is None or val == "": 
+        return ""
     if isinstance(val, dict):
-        # Handle standard unit objects {"value": 150, "uom": "W"}
-        if "value" in val and val["value"] is not None:
-            return str(val["value"])
-        # Unwrap if key matches attribute name {"color": "Red"} -> "Red"
+        if "standard_value" in val:
+            return clean_for_excel(val["standard_value"])
+        if "value" in val:
+            return clean_for_excel(val["value"])
         if attr_name:
-            n = str(attr_name).lower().replace("_", "").replace(" ", "")
+            target = str(attr_name).lower().replace("_", "").replace(" ", "")
             for k, v in val.items():
-                if k.lower().replace("_", "") == n: return clean_for_excel(v)
-        # Fallback: Join values
-        vals = [str(v) for v in val.values() if v is not None and not isinstance(v, (dict, list))]
-        return vals[0] if len(vals) == 1 else ", ".join(vals)
+                if target in k.lower().replace("_", ""): 
+                    return clean_for_excel(v)
+        vals = [clean_for_excel(v) for v in val.values() if v is not None]
+        return ", ".join([v for v in vals if v])
     if isinstance(val, list):
-        return " | ".join([clean_for_excel(i, attr_name) for i in val])
-    return str(val)
-
+        return " | ".join([clean_for_excel(i) for i in val if i])
+    val_str = str(val).strip()
+    if val_str.lower() in ["n/a", "none", "null", "nan", "not available", "increase", "*"]:
+        return ""
+    return sanitize_for_excel(val_str)
 def semantic_match_key(target_name: str, ai_keys: list) -> str:
-    """Fuzzy matcher to link 'Color Temperature' to 'color_temp_k' etc."""
     import re
     from difflib import SequenceMatcher
     def cl(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
@@ -155,126 +153,19 @@ def semantic_match_key(target_name: str, ai_keys: list) -> str:
     for key in ai_keys:
         key_clean = cl(key)
         score = 0
-        if target_clean == key_clean: score = 100
+        if target_clean == key_clean:
+            score = 100
         elif target_clean in key_clean or key_clean in target_clean:
-            overlap = min(len(target_clean), len(key_clean)) / max(len(target_clean), len(key_clean))
+            overlap = min(len(target_clean), len(key_clean)) / \
+                max(len(target_clean), len(key_clean))
             score = 80 + (overlap * 19)
         else:
             ratio = SequenceMatcher(None, target_clean, key_clean).ratio()
-            if ratio > 0.8: score = 60 + (ratio * 20)
+            if ratio > 0.8:
+                score = 60 + (ratio * 20)
         if score > highest_score and score > 75:
             highest_score, best_key = score, key
     return best_key
-# @router.get("/{source_id}/download")
-# async def download_file(
-#     source_id: str,
-#     download_type: str = Query("input", alias="type"),
-#     db: AsyncSession = Depends(get_session)
-# ):
-#     try:
-#         source = await db.get(Source, source_id)
-#         if not source:
-#             raise HTTPException(
-#                 status_code=404, detail="Source record not found")
-#         if download_type == 'input':
-#             if source.content_data:
-#                 return StreamingResponse(
-#                     io.BytesIO(source.content_data),
-#                     media_type="application/octet-stream",
-#                     headers={
-#                         "Content-Disposition": f"attachment; filename=Input_{source.source_url}"}
-#                 )
-#             output = io.StringIO()
-#             output.write(
-#                 f"SKU: {source.source_url}\nUploaded: {source.uploaded_at}")
-#             return StreamingResponse(io.BytesIO(output.getvalue().encode()), media_type="text/plain")
-#         elif download_type == 'output':
-#             stmt = select(Product).where(
-#                 Product.project_id == source.project_id, 
-#                 Product.source_url == source.source_url
-#             )
-#             result = await db.execute(stmt)
-#             products = result.scalars().all()
-#             if not products:
-#                 raise HTTPException(status_code=404, detail="No enriched data found")
-#             core_headers = ["Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name", "Brand", "GTIN", "ean", "upc", "unspc", "MPN", "Discontinue_Status"]
-#             cat_headers = ["industry_name", "category 1", "category 2", "category 3", "category 4", "category 5", "category 6", "category 7", "category 8", "Taxonomy"]
-#             phys_headers = ["Country_of_Origin", "Warranty", "Weight", "Weight_Unit", "Length", "Width", "Height", "Dimension_Unit", "Variant_Status"]
-#             price_headers = ["Currency", "Base Price", "Sale Price", "Selling_Price", "Special_Price", "Stock_Qty", "Stock_Status", "Vendor_Name", "Vendor_SKU"]
-#             media_headers = []
-#             for i in range(1, 9): media_headers.extend([f"image_name_{i}", f"image_url_{i}"])
-#             for i in range(1, 4): media_headers.extend([f"video_name_{i}", f"video_url_{i}"])
-#             for i in range(1, 6): media_headers.extend([f"document_name_{i}", f"document_url_{i}"])
-#             content_headers = ["3D_Model_URL", "Short_Description", "Long_Description", "features_1", "features_2", "features_3", "features_4", "features_5", "features_6", "features_7", "features_8", "features_9", "features_10", "Meta_Title", "Meta_Description", "Search_Keywords", "Certification", "Safety_Standard", "Hazardous_Material", "Prop65_Warning"]
-#             attr_headers = []
-#             for i in range(1, 21):
-#                 attr_headers.extend([f"attribute_name{i}", f"attribute_value{i}", f"attribute_uom{i}", f"validation_value{i}", f"validation_uom{i}"])
-#             all_headers = core_headers + cat_headers + phys_headers + price_headers + media_headers + content_headers + attr_headers
-#             IGNORED_OUTPUT_KEYS = [
-#                 "share", "latest_news", "search_for", "error_ref", "important", 
-#                 "frequently_bought_together", "select_all", "contact_info", "customer_service", "phone", "email"
-#             ]
-#             export_rows = []
-#             for p in products:
-#                 row = {h: "" for h in all_headers}
-#                 row.update({
-#                     "SKU": p.sku, "Product_Name": p.product_name, "Brand": p.brand_name, "MPN": p.product_code,
-#                     "GTIN": p.gtin, "upc": p.upc, "ean": p.ean, "unspc": p.unspc, "Taxonomy": p.taxonomy,
-#                     "industry_name": p.industry_name, "category 1": p.category_1, "category 2": p.category_2,
-#                     "Base Price": p.base_price, "Currency": p.currency, "Weight": p.weight, "Warranty": p.warranty,
-#                     "Short_Description": p.short_description, "Long_Description": p.long_description, "Meta_Title": p.meta_title
-#                 })
-#                 ai_data = p.attributes or {}
-#                 user_defined = p.dynamic_attributes or [] 
-#                 def norm(s): return str(s).lower().replace(" ", "").replace("_", "").replace("-", "")
-#                 used_ai_keys = set()
-#                 for i in range(1, 6):
-#                     target_name = user_defined[i-1].get("name", "") if len(user_defined) >= i else ""
-#                     if not target_name: continue
-#                     row[f"attribute_name{i}"] = target_name
-#                     norm_target = norm(target_name)
-#                     match_key = None
-#                     for ai_key in ai_data.keys():
-#                         if norm_target == norm(ai_key) or norm(ai_key) in norm_target or norm_target in norm(ai_key):
-#                             match_key = ai_key
-#                             break
-#                     if match_key:
-#                         val = ai_data[match_key]
-#                         row[f"attribute_value{i}"] = clean_for_excel(val, target_name)
-#                         if isinstance(val, dict) and "uom" in val:
-#                             row[f"attribute_uom{i}"] = val["uom"]
-#                         used_ai_keys.add(match_key)
-#                 remaining_ai_keys = [
-#                     k for k in ai_data.keys() 
-#                     if k not in used_ai_keys and k.lower() not in IGNORED_OUTPUT_KEYS
-#                 ]
-#                 current_ai_idx = 0
-#                 for i in range(1, 21):
-#                     if not row[f"attribute_name{i}"] and current_ai_idx < len(remaining_ai_keys):
-#                         key = remaining_ai_keys[current_ai_idx]
-#                         val = ai_data[key]
-#                         row[f"attribute_name{i}"] = key.replace('_', ' ').title()
-#                         row[f"attribute_value{i}"] = clean_for_excel(val, key)
-#                         if isinstance(val, dict) and "uom" in val:
-#                             row[f"attribute_uom{i}"] = val["uom"]
-#                         current_ai_idx += 1
-#                 export_rows.append(row)
-#             df = pd.DataFrame(export_rows, columns=all_headers)
-#             excel_buffer = io.BytesIO()
-#             with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
-#                 df.to_excel(writer, index=False, sheet_name='Enriched Data')
-#             excel_buffer.seek(0)
-#             filename = f"Enriched_Data_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
-#             return StreamingResponse(
-#                 excel_buffer,
-#                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-#                 headers={"Content-Disposition": f"attachment; filename={filename}"}
-#             )
-#     except Exception as e:
-#         logger.error(f"Download Error: {str(e)}")
-#         raise HTTPException(
-#             status_code=500, detail="Error generating download")
-
 @router.get("/{source_id}/download")
 async def download_file(
     source_id: str,
@@ -285,10 +176,6 @@ async def download_file(
         source = await db.get(Source, source_id)
         if not source:
             raise HTTPException(status_code=404, detail="Source record not found")
-
-        # ═══════════════════════════════════════════════════════════
-        # INPUT DOWNLOAD (unchanged - working fine)
-        # ═══════════════════════════════════════════════════════════
         if download_type == 'input':
             if source.content_data:
                 return StreamingResponse(
@@ -296,13 +183,7 @@ async def download_file(
                     media_type="application/octet-stream",
                     headers={"Content-Disposition": f"attachment; filename=Input_{source.source_url}"}
                 )
-            output = io.StringIO()
-            output.write(f"SKU: {source.source_url}\nUploaded: {source.uploaded_at}")
-            return StreamingResponse(io.BytesIO(output.getvalue().encode()), media_type="text/plain")
-
-        # ═══════════════════════════════════════════════════════════
-        # OUTPUT DOWNLOAD (FIXED)
-        # ═══════════════════════════════════════════════════════════
+            return StreamingResponse(io.BytesIO(b"No data available"), media_type="text/plain")
         elif download_type == 'output':
             stmt = select(Product).where(
                 Product.project_id == source.project_id,
@@ -310,95 +191,191 @@ async def download_file(
             )
             result = await db.execute(stmt)
             products = result.scalars().all()
-            
             if not products:
                 raise HTTPException(status_code=404, detail="No enriched data found")
-
-            # ✅ DEFINE ALL 180 COLUMN HEADERS (EXACT MATCH TO INPUT)
-            core_headers = [
-                "Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name", 
-                "Brand", "GTIN", "ean", "upc", "unspc", "MPN", "Status", 
-                "Lifecycle_Stage", "Launch_Date", "Discontinue_Status"
-            ]
-            
-            cat_headers = [
-                "industry_name", "category 1", "category 2", "category 3", 
-                "category 4", "category 5", "category 6", "category 7", 
-                "category 8", "Taxonomy"
-            ]
-            
-            phys_headers = [
-                "Country_of_Origin", "Warranty", "Weight", "Weight_Unit", 
-                "Length", "Width", "Height", "Dimension_Unit", "Variant_Status"
-            ]
-            
-            price_headers = [
-                "Currency", "Base Price", "Sale Price", "Selling_Price", 
-                "Special_Price", "Stock_Qty", "Stock_Status", "Vendor_Name", "Vendor_SKU"
-            ]
-            
-            # Media headers (8 images, 3 videos, 5 documents)
+            core_headers = ["Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name", "Brand", "GTIN", "ean", "upc", "unspc", "MPN", "Status", "Lifecycle_Stage", "Launch_Date", "Discontinue_Status"]
+            cat_headers = ["industry_name", "category 1", "category 2", "category 3", "category 4", "category 5", "category 6", "category 7", "category 8", "Taxonomy"]
+            phys_headers = ["Country_of_Origin", "Warranty", "Weight", "Weight_Unit", "Length", "Width", "Height", "Dimension_Unit", "Variant_Status"]
+            price_headers = ["Currency", "Base Price", "Sale Price", "Selling_Price", "Special_Price", "Stock_Qty", "Stock_Status", "Vendor_Name", "Vendor_SKU"]
             media_headers = []
-            for i in range(1, 9):
-                media_headers.extend([f"image_name_{i}", f"image_url_{i}"])
-            for i in range(1, 4):
-                media_headers.extend([f"video_name_{i}", f"video_url_{i}"])
-            for i in range(1, 6):
-                media_headers.extend([f"document_name_{i}", f"document_url_{i}"])
-            
-            content_headers = [
-                "3D_Model_URL", "Short_Description", "Long_Description",
-                "features_1", "features_2", "features_3", "features_4", "features_5",
-                "features_6", "features_7", "features_8", "features_9", "features_10",
-                "Meta_Title", "Meta_Description", "Search_Keywords",
-                "Certification", "Safety_Standard", "Hazardous_Material", "Prop65_Warning"
-            ]
-            
-            # 20 attribute slots with 5 fields each
+            for i in range(1, 9): media_headers.extend([f"image_name_{i}", f"image_url_{i}"])
+            for i in range(1, 4): media_headers.extend([f"video_name_{i}", f"video_url_{i}"])
+            for i in range(1, 6): media_headers.extend([f"document_name_{i}", f"document_url_{i}"])
+            content_headers = ["3D_Model_URL", "Short_Description", "Long_Description", 
+                             "features_1", "features_2", "features_3", "features_4", "features_5",
+                             "features_6", "features_7", "features_8", "features_9", "features_10",
+                             "Meta_Title", "Meta_Description", "Search_Keywords",
+                             "Certification", "Safety_Standard", "Hazardous_Material", "Prop65_Warning"]
             attr_headers = []
             for i in range(1, 21):
-                attr_headers.extend([
-                    f"attribute_name{i}", f"attribute_value{i}", f"attribute_uom{i}",
-                    f"validation_value{i}", f"validation_uom{i}"
-                ])
-            
+                attr_headers.extend([f"attribute_name{i}", f"attribute_value{i}", f"attribute_uom{i}", f"validation_value{i}", f"validation_uom{i}"])
             all_headers = core_headers + cat_headers + phys_headers + price_headers + media_headers + content_headers + attr_headers
-
-            # ✅ IGNORED KEYS (non-product attributes from AI)
-            IGNORED_OUTPUT_KEYS = {
+            DEDICATED_COLUMN_MAPPING = {
+                "name": "Product_Name",
+                "product_name": "Product_Name",
+                "title": "Product_Name",
+                "brand": "Brand",
+                "manufacturer": "Brand",
+                "sku": "SKU",
+                "mpn": "MPN",
+                "model": "MPN",
+                "product_type": "Product_Type",
+                "type": "Product_Type",
+                "parent_sku": "Parent_SKU",
+                "gtin": "GTIN",
+                "gtin13": "ean",
+                "gtin12": "upc",
+                "ean": "ean",
+                "upc": "upc",
+                "unspc": "unspc",
+                "status": "Status",
+                "lifecycle_stage": "Lifecycle_Stage",
+                "launch_date": "Launch_Date",
+                "discontinue_status": "Discontinue_Status",
+                "weight": "Weight",
+                "weight_unit": "Weight_Unit",
+                "length": "Length",
+                "width": "Width",
+                "height": "Height",
+                "dimension_unit": "Dimension_Unit",
+                "dimensions": "Length",  
+                "country_of_origin": "Country_of_Origin",
+                "made_in": "Country_of_Origin",
+                "warranty": "Warranty",
+                "warranty_period": "Warranty",
+                "price": "Base Price",
+                "base_price": "Base Price",
+                "list_price": "Base Price",
+                "sale_price": "Sale Price",
+                "selling_price": "Selling_Price",
+                "special_price": "Special_Price",
+                "currency": "Currency",
+                "stock": "Stock_Qty",
+                "stock_qty": "Stock_Qty",
+                "quantity": "Stock_Qty",
+                "stock_status": "Stock_Status",
+                "availability": "Stock_Status",
+                "vendor": "Vendor_Name",
+                "vendor_name": "Vendor_Name",
+                "supplier": "Vendor_Name",
+                "vendor_sku": "Vendor_SKU",
+                "description": "Short_Description",
+                "short_description": "Short_Description",
+                "product_description": "Short_Description",
+                "long_description": "Long_Description",
+                "detailed_description": "Long_Description",
+                "product_summary": "Short_Description",
+                "meta_title": "Meta_Title",
+                "meta_description": "Meta_Description",
+                "keywords": "Search_Keywords",
+                "search_keywords": "Search_Keywords",
+                "seo_keywords": "Search_Keywords",
+                "certification": "Certification",
+                "certifications": "Certification",
+                "safety_standard": "Safety_Standard",
+                "safety_standards": "Safety_Standard",
+                "hazardous": "Hazardous_Material",
+                "hazardous_material": "Hazardous_Material",
+                "prop65": "Prop65_Warning",
+                "prop65_warning": "Prop65_Warning",
+                "image": "image_url_1",
+                "image_url": "image_url_1",
+                "main_image": "image_url_1",
+                "3d_model": "3D_Model_URL",
+                "model_3d": "3D_Model_URL",
+            }
+            IGNORED_KEYS = {
                 "share", "latest_news", "search_for", "error_ref", "important",
                 "frequently_bought_together", "select_all", "contact_info",
                 "customer_service", "phone", "email", "hours", "best_sellers_rank",
-                "asin", "date_first_available", "customer_reviews", "return_policy"
+                "asin", "date_first_available", "customer_reviews", "return_policy",
+                "availability", "sold_by", "ships_from", "seller", "rating",
+                "review_count", "reviews", "item_type", "catalog_number",
+                "authentication_state", "location", "item_package_quantity"
             }
-
-            export_rows = []
-            
+            taxonomy_raw_data = {}
             for p in products:
-                # Initialize row with all headers
+                tax = p.taxonomy or "Unknown"
+                if tax not in taxonomy_raw_data:
+                    taxonomy_raw_data[tax] = {
+                        'user_defined': [],       
+                        'ai_discovered': set(),   
+                    }
+                data = taxonomy_raw_data[tax]
+                if p.dynamic_attributes:
+                    for attr in p.dynamic_attributes:
+                        if isinstance(attr, dict) and attr.get('name'):
+                            name = attr['name'].strip()
+                            if name and name not in data['user_defined']:
+                                data['user_defined'].append(name)
+                if p.attributes:
+                    for key in p.attributes.keys():
+                        key_lower = key.lower().strip()
+                        if key_lower in IGNORED_KEYS:
+                            continue
+                        key_norm = key_lower.replace('_', '').replace(' ', '').replace('-', '')
+                        is_dedicated = False
+                        for map_key in DEDICATED_COLUMN_MAPPING.keys():
+                            map_norm = map_key.lower().replace('_', '').replace(' ', '').replace('-', '')
+                            if key_norm == map_norm:
+                                is_dedicated = True
+                                break
+                        if not is_dedicated:
+                            data['ai_discovered'].add(key)
+            taxonomy_templates = {}
+            for tax, data in taxonomy_raw_data.items():
+                final_template = []
+                added_normalized = set()  
+                def normalize(s):
+                    return s.lower().replace('_', '').replace(' ', '').replace('-', '')
+                def add_if_unique(name):
+                    norm = normalize(name)
+                    if norm not in added_normalized:
+                        added_normalized.add(norm)
+                        final_template.append(name)
+                        return True
+                    return False
+                for attr in data['user_defined'][:5]:
+                    add_if_unique(attr)
+                if tax != "Unknown":
+                    category_attrs = await get_taxonomy_attribute_hints(tax, db)
+                    for cat_attr in category_attrs:
+                        add_if_unique(cat_attr)
+                for ai_attr in sorted(data['ai_discovered']):
+                    add_if_unique(ai_attr)
+                taxonomy_templates[tax] = final_template[:20]
+                logger.info(f"📋 Unified template for '{tax}': {taxonomy_templates[tax]}")
+            export_rows = []
+            for p in products:
                 row = {h: "" for h in all_headers}
-                
-                # ✅ FILL CORE FIELDS
+                ai_data = dict(p.attributes or {})
+                taxonomy = p.taxonomy or "Unknown"
+                attribute_template = taxonomy_templates.get(taxonomy, [])
+                for ai_key in list(ai_data.keys()):
+                    ai_key_norm = ai_key.lower().replace('_', '').replace(' ', '').replace('-', '')
+                    for map_key, target_col in DEDICATED_COLUMN_MAPPING.items():
+                        map_key_norm = map_key.lower().replace('_', '').replace(' ', '').replace('-', '')
+                        if ai_key_norm == map_key_norm:
+                            value = ai_data.pop(ai_key)
+                            row[target_col] = clean_for_excel(value)
+                            logger.info(f"✅ Mapped AI '{ai_key}' → Column '{target_col}'")
+                            break
                 row.update({
-                    "Prod ID": p.id or "",
-                    "SKU": p.sku or "",
-                    "Product_Type": p.product_type or "",
-                    "Parent_SKU": p.parent_sku or "",
-                    "Product_Name": p.product_name or "",
-                    "Brand": p.brand_name or "",
-                    "GTIN": p.gtin or "",
-                    "ean": p.ean or "",
-                    "upc": p.upc or "",
-                    "unspc": p.unspc or "",
-                    "MPN": p.product_code or "",
-                    "Status": getattr(p, 'status', ''),
-                    "Lifecycle_Stage": p.lifecycle_stage or "",
-                    "Launch_Date": p.launch_date or "",
-                    "Discontinue_Status": p.discontinue_status or "",
-                })
-                
-                # ✅ FILL CATEGORY FIELDS
-                row.update({
+                    "Prod ID": str(p.id) if p.id else "",
+                    "SKU": row.get("SKU") or p.sku or "",
+                    "Product_Type": row.get("Product_Type") or getattr(p, 'product_type', '') or "",
+                    "Parent_SKU": row.get("Parent_SKU") or getattr(p, 'parent_sku', '') or "",
+                    "Product_Name": row.get("Product_Name") or p.product_name or "",
+                    "Brand": row.get("Brand") or p.brand_name or "",
+                    "GTIN": row.get("GTIN") or getattr(p, 'gtin', '') or "",
+                    "ean": row.get("ean") or getattr(p, 'ean', '') or "",
+                    "upc": row.get("upc") or getattr(p, 'upc', '') or "",
+                    "unspc": row.get("unspc") or getattr(p, 'unspc', '') or "",
+                    "MPN": row.get("MPN") or p.product_code or "",
+                    "Status": row.get("Status") or getattr(p, 'status', '') or "",
+                    "Lifecycle_Stage": row.get("Lifecycle_Stage") or getattr(p, 'lifecycle_stage', '') or "",
+                    "Launch_Date": row.get("Launch_Date") or getattr(p, 'launch_date', '') or "",
+                    "Discontinue_Status": row.get("Discontinue_Status") or getattr(p, 'discontinue_status', '') or "",
                     "industry_name": p.industry_name or "",
                     "category 1": p.category_1 or "",
                     "category 2": p.category_2 or "",
@@ -408,127 +385,92 @@ async def download_file(
                     "category 6": p.category_6 or "",
                     "category 7": p.category_7 or "",
                     "category 8": p.category_8 or "",
-                    "Taxonomy": p.taxonomy or "",
+                    "Taxonomy": taxonomy,
+                    "Country_of_Origin": row.get("Country_of_Origin") or getattr(p, 'country_of_origin', '') or "",
+                    "Warranty": row.get("Warranty") or p.warranty or "",
+                    "Weight": row.get("Weight") or (str(p.weight) if p.weight else ""),
+                    "Weight_Unit": row.get("Weight_Unit") or p.weight_unit or "",
+                    "Length": row.get("Length") or (str(getattr(p, 'length', '')) if getattr(p, 'length', None) else ""),
+                    "Width": row.get("Width") or (str(getattr(p, 'width', '')) if getattr(p, 'width', None) else ""),
+                    "Height": row.get("Height") or (str(getattr(p, 'height', '')) if getattr(p, 'height', None) else ""),
+                    "Currency": row.get("Currency") or p.currency or "",
+                    "Base Price": row.get("Base Price") or (str(p.base_price) if p.base_price else ""),
+                    "Vendor_Name": row.get("Vendor_Name") or p.vendor_name or "",
+                    "Short_Description": row.get("Short_Description") or p.short_description or "",
+                    "Long_Description": row.get("Long_Description") or p.long_description or "",
+                    "Meta_Title": row.get("Meta_Title") or p.meta_title or "",
+                    "Meta_Description": row.get("Meta_Description") or getattr(p, 'meta_description', '') or "",
+                    "Search_Keywords": row.get("Search_Keywords") or getattr(p, 'search_keywords', '') or "",
                 })
-                
-                # ✅ FILL PHYSICAL FIELDS
-                row.update({
-                    "Country_of_Origin": getattr(p, 'country_of_origin', ''),
-                    "Warranty": p.warranty or "",
-                    "Weight": p.weight or "",
-                    "Weight_Unit": p.weight_unit or "",
-                    "Length": getattr(p, 'length', ''),
-                    "Width": getattr(p, 'width', ''),
-                    "Height": getattr(p, 'height', ''),
-                    "Dimension_Unit": getattr(p, 'dimension_unit', ''),
-                    "Variant_Status": getattr(p, 'variant_status', ''),
-                })
-                
-                # ✅ FILL PRICING FIELDS
-                row.update({
-                    "Currency": p.currency or "",
-                    "Base Price": p.base_price or "",
-                    "Sale Price": getattr(p, 'sale_price', ''),
-                    "Selling_Price": getattr(p, 'selling_price', ''),
-                    "Special_Price": getattr(p, 'special_price', ''),
-                    "Stock_Qty": getattr(p, 'stock_qty', ''),
-                    "Stock_Status": getattr(p, 'stock_status', ''),
-                    "Vendor_Name": p.vendor_name or "",
-                    "Vendor_SKU": getattr(p, 'vendor_sku', ''),
-                })
-                
-                # ✅ FILL MEDIA FIELDS (if stored in product.images, product.videos, product.documents)
-                if hasattr(p, 'images') and p.images:
-                    for idx, (key, img) in enumerate(list(p.images.items())[:8], 1):
-                        row[f"image_name_{idx}"] = img.get('name', '')
-                        row[f"image_url_{idx}"] = img.get('url', '')
-                
-                # ✅ FILL CONTENT FIELDS
-                row.update({
-                    "Short_Description": p.short_description or "",
-                    "Long_Description": p.long_description or "",
-                    "Meta_Title": p.meta_title or "",
-                    "Meta_Description": getattr(p, 'meta_description', ''),
-                    "Search_Keywords": getattr(p, 'search_keywords', ''),
-                })
-                
-                # ✅ FILL FEATURES (if stored as list)
-                if hasattr(p, 'features') and p.features:
-                    for idx, feature in enumerate(p.features[:10], 1):
-                        row[f"features_{idx}"] = feature
-
-                # ═══════════════════════════════════════════════════════════
-                # ✅ CRITICAL: DYNAMIC ATTRIBUTES (FIXED LOGIC)
-                # ═══════════════════════════════════════════════════════════
-                
-                ai_data = p.attributes or {}
-                user_defined = p.dynamic_attributes or [] 
+                features_data = ai_data.pop("features", None) or p.features or []
+                if isinstance(features_data, str):
+                    try:
+                        import json
+                        features_data = json.loads(features_data)
+                    except:
+                        features_data = [features_data]
+                if isinstance(features_data, list):
+                    for i, feat in enumerate(features_data[:10], 1):
+                        row[f"features_{i}"] = clean_for_excel(feat)
+                if not row.get("image_url_1"):
+                    if hasattr(p, 'images') and p.images:
+                        images_list = list(p.images.values()) if isinstance(p.images, dict) else (p.images if isinstance(p.images, list) else [])
+                        for i, img in enumerate(images_list[:8], 1):
+                            if isinstance(img, dict):
+                                row[f"image_name_{i}"] = img.get("name", "")
+                                row[f"image_url_{i}"] = img.get("url", "")
+                            else:
+                                row[f"image_url_{i}"] = str(img) if img else ""
                 used_ai_keys = set()
-
-                # --- PHASE 1: Fill Priority Slots 1-5 (User-defined names from CSV) ---
-                for i in range(1, 6):
-                    target_name = user_defined[i-1].get("name", "").strip() if len(user_defined) >= i else ""
-                    if not target_name: continue
-
-                    row[f"attribute_name{i}"] = target_name
-                    
-                    # Search AI results for a semantic match (e.g. "Watts" -> "wattage")
-                    match_key = semantic_match_key(target_name, list(ai_data.keys()))
-                    
+                for i, template_attr_name in enumerate(attribute_template, 1):
+                    if i > 20:
+                        break
+                    row[f"attribute_name{i}"] = template_attr_name
+                    match_key = None
+                    template_norm = template_attr_name.lower().replace(' ', '').replace('_', '').replace('-', '')
+                    for ai_key in ai_data.keys():
+                        if ai_key in used_ai_keys or ai_key.lower() in IGNORED_KEYS:
+                            continue
+                        ai_norm = ai_key.lower().replace(' ', '').replace('_', '').replace('-', '')
+                        if template_norm == ai_norm or (template_norm in ai_norm and len(template_norm) > 3):
+                            match_key = ai_key
+                            break
                     if match_key:
-                        val_obj = ai_data[match_key]
-                        row[f"attribute_value{i}"] = clean_for_excel(val_obj, target_name)
-                        # Extract UOM if AI returned it in a structured dict
-                        if isinstance(val_obj, dict) and "uom" in val_obj:
-                            row[f"attribute_uom{i}"] = val_obj["uom"]
+                        val = ai_data[match_key]
+                        row[f"attribute_value{i}"] = clean_for_excel(val, template_attr_name)
+                        if isinstance(val, dict):
+                            uom = val.get("uom", "")
+                            if uom and uom.lower() not in ["n/a", "na", "none", "null"]:
+                                row[f"attribute_uom{i}"] = clean_for_excel(uom)
                         used_ai_keys.add(match_key)
-
-                # --- PHASE 2: Fill ALL empty slots with Discovered AI data ---
-                remaining_ai_keys = [
-                    k for k in ai_data.keys() 
-                    if k not in used_ai_keys and k.lower() not in IGNORED_OUTPUT_KEYS
-                ]
-                
-                current_ai_idx = 0
-                for i in range(1, 21):
-                    # If slot is empty (no priority name or match failed), fill it with a discovery
-                    if not row[f"attribute_name{i}"] and current_ai_idx < len(remaining_ai_keys):
-                        key = remaining_ai_keys[current_ai_idx]
-                        val_obj = ai_data[key]
-                        
-                        row[f"attribute_name{i}"] = key.replace('_', ' ').title()
-                        row[f"attribute_value{i}"] = clean_for_excel(val_obj, key)
-                        if isinstance(val_obj, dict) and "uom" in val_obj:
-                            row[f"attribute_uom{i}"] = val_obj["uom"]
-                            
-                        current_ai_idx += 1
-
-                export_rows.append(row)
-
-            # ✅ CREATE EXCEL
+                remaining_attrs = [k for k in ai_data.keys() if k not in used_ai_keys and k.lower() not in IGNORED_KEYS]
+                current_slot = len(attribute_template) + 1
+                for ai_key in remaining_attrs:
+                    if current_slot > 20:
+                        break
+                    row[f"attribute_name{current_slot}"] = ai_key.replace('_', ' ').title()
+                    row[f"attribute_value{current_slot}"] = clean_for_excel(ai_data[ai_key], ai_key)
+                    if isinstance(ai_data[ai_key], dict):
+                        uom = ai_data[ai_key].get("uom", "")
+                        if uom and uom.lower() not in ["n/a", "na", "none", "null"]:
+                            row[f"attribute_uom{current_slot}"] = clean_for_excel(uom)
+                    current_slot += 1
+                sanitized_row = {str(k): sanitize_for_excel(v) for k, v in row.items()}
+                export_rows.append(sanitized_row)
             df = pd.DataFrame(export_rows, columns=all_headers)
-            
             excel_buffer = io.BytesIO()
             with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
                 df.to_excel(writer, index=False, sheet_name='Enriched Data')
-            
             excel_buffer.seek(0)
-            
-            filename = f"Enriched_Data_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
-            
+            filename = f"Enriched_Export_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
             return StreamingResponse(
                 excel_buffer,
                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 headers={"Content-Disposition": f"attachment; filename={filename}"}
             )
-
     except Exception as e:
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Error generating download")
-
-ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
-MAX_FILE_SIZE = 10 * 1024 * 1024
-MAX_ROWS = 1000
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
     request: Request,
@@ -539,37 +481,46 @@ async def batch_aggregate(
 ):
     try:
         if not projectId or not projectId.strip():
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Project ID is required.")
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                "Project ID is required.")
         project = await db.get(Project, projectId)
         if not project:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Project {projectId} not found")
+            raise HTTPException(status.HTTP_404_NOT_FOUND,
+                                f"Project {projectId} not found")
         file_ext = os.path.splitext(file.filename)[1].lower()
         if file_ext not in ALLOWED_EXTENSIONS:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid file type.")
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                "Invalid file type.")
         content = bytearray()
         chunk_size = 1024 * 1024
         while True:
             chunk = await file.read(chunk_size)
-            if not chunk: break
+            if not chunk:
+                break
             content.extend(chunk)
             if len(content) > MAX_FILE_SIZE:
-                raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "File too large")
+                raise HTTPException(
+                    status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "File too large")
         content = bytes(content)
         file_hash = hashlib.sha256(content).hexdigest()
         recent_cutoff = datetime.utcnow() - timedelta(hours=24)
         duplicate_check = select(Source).where(
             Source.project_id == projectId,
-            func.json_extract_path_text(Source.source_metadata, 'file_hash') == file_hash,
+            func.json_extract_path_text(
+                Source.source_metadata, 'file_hash') == file_hash,
             Source.created_at > recent_cutoff
         )
         if await db.scalar(duplicate_check):
-            raise HTTPException(status.HTTP_409_CONFLICT, "File already uploaded recently.")
+            raise HTTPException(status.HTTP_409_CONFLICT,
+                                "File already uploaded recently.")
         rows = parse_import_file(content, file.filename)
         total_rows = len(rows)
         if total_rows == 0:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "File is empty or invalid format")
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                "File is empty or invalid format")
         if total_rows > MAX_ROWS:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Too many rows ({total_rows}). Max {MAX_ROWS}.")
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                f"Too many rows ({total_rows}). Max {MAX_ROWS}.")
         inferred_count = 0
         for row in rows:
             if not row.get("taxonomy"):
@@ -581,7 +532,7 @@ async def batch_aggregate(
             source_type="excel" if file_ext in ['.xlsx', '.xls'] else "csv",
             source_url=f"Import_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             project_id=projectId,
-            status="completed", 
+            status="completed",
             uploaded_at=datetime.utcnow(),
             source_metadata={
                 "file_hash": file_hash,
@@ -651,7 +602,7 @@ async def batch_aggregate(
                 product.brand_id = brand.id
                 product.brand_name = brand.name
                 if row.get('country_of_origin'):
-                    brand.country_of_origin=row.get('country_of_origin')
+                    brand.country_of_origin = row.get('country_of_origin')
                     db.add(brand)
             vendor = await get_or_create_vendor(db, row.get("vendor"))
             if vendor:
@@ -663,14 +614,16 @@ async def batch_aggregate(
                 product.industry_name = industry.name
             try:
                 if row.get("base_price"):
-                    product.base_price = float(str(row["base_price"]).replace(',', ''))
+                    product.base_price = float(
+                        str(row["base_price"]).replace(',', ''))
                     product.currency = row.get("currency", "USD")
             except ValueError:
                 pass
             product.enrichment_status = "pending"
             db.add(product)
         await db.commit()
-        logger.info(f"Batch import saved: {created_count} new, {updated_count} updated. Waiting for manual aggregation.")
+        logger.info(
+            f"Batch import saved: {created_count} new, {updated_count} updated. Waiting for manual aggregation.")
         return {
             "status": "accepted",
             "batch_id": str(new_source.id),
@@ -878,7 +831,6 @@ async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks,
         logger.error(f"Failed to trigger aggregation:{str(e)}")
         raise HTTPException(
             status_code=500, detail="Failed to start aggregation")
-        
 async def run_aggregation_task(source_id: str):
     async with async_session_factory() as db_session:
         try:
@@ -887,58 +839,61 @@ async def run_aggregation_task(source_id: str):
                 return
             stmt = select(Product).where(
                 Product.project_id == source.project_id,
-                Product.enrichment_status == 'pending' 
+                Product.enrichment_status == 'pending'
             )
             result = await db_session.execute(stmt)
             products = result.scalars().all()
             successful = 0
             failed = 0
             total = len(products)
-            logger.info(f"Starting aggregation task for source {source_id}, found {total} pending products.")
+            logger.info(
+                f"Starting aggregation task for source {source_id}, found {total} pending products.")
             for product in products:
-                # 🧪 DEBUG LOG 1: Check what is actually in the DB
-                logger.info(f"🔍 DB CHECK [{product.product_code}]: Taxonomy='{product.taxonomy}', Attrs={product.dynamic_attributes}")
-
+                logger.info(
+                    f"🔍 DB CHECK [{product.product_code}]: Taxonomy='{product.taxonomy}', Attrs={product.dynamic_attributes}")
                 primary_attr_names = []
                 if product.dynamic_attributes:
                     primary_attr_names = [
-                        attr['name'] for attr in product.dynamic_attributes 
+                        attr['name'] for attr in product.dynamic_attributes
                         if isinstance(attr, dict) and attr.get('name')
                     ]
-                
-                # 🧪 DEBUG LOG 2: Check if extraction worked
-                logger.info(f"🎯 PRIORITY LIST: {primary_attr_names}")
-
-            
+                logger.info(f"PRIORITY LIST: {primary_attr_names}")
             for idx, product in enumerate(products):
                 try:
-                    logger.info(f"Aggregating {idx+1}/{total}: {product.product_code}")
+                    logger.info(
+                        f"Aggregating {idx+1}/{total}: {product.product_code}")
                     primary_attr_names = []
                     if product.dynamic_attributes:
                         primary_attr_names = [
-                            attr['name'] for attr in product.dynamic_attributes 
+                            attr['name'] for attr in product.dynamic_attributes
                             if isinstance(attr, dict) and attr.get('name')
                         ]
-                    logger.info(f"Primary attributes found in DB: {primary_attr_names}")
-                    
+                    logger.info(
+                        f"Primary attributes found in DB: {primary_attr_names}")
                     aggregation_result = await aggregate_product(
                         mpn=product.product_code,
                         title=product.product_name,
                         brand=product.brand_name,
-                        taxonomy=product.taxonomy,       
+                        taxonomy=product.taxonomy,
                         primary_attributes=primary_attr_names,
                         db=db_session
                     )
                     if aggregation_result.get('status') == 'success':
-                        ai_data = aggregation_result.get('golden_record', {}).get('attributes', {})
-                        product.attributes = {**product.attributes, **ai_data}
+                        golden = aggregation_result.get('golden_record', {})
+                        ai_attributes = golden.get('attributes', {})
                         product.enrichment_status = 'completed'
-                        product.completeness_score = min(len(ai_data) * 5, 100)
+                        product.short_description = sanitize_ai_data(golden.get('short_description')) or product.short_description
+                        product.long_description = sanitize_ai_data(golden.get('long_description')) or product.long_description
+                        product.features = sanitize_ai_data(golden.get('features')) or product.features
+                        product.attributes = {**product.attributes, **sanitize_ai_data(ai_attributes)}
+                        product.completeness_score = min(len(ai_attributes) * 5, 100)
                         db_session.add(RawExtraction(
                             source_id=source.id,
-                            product_keys={"sku": product.product_code, "mpn": product.mpn},
-                            raw_attributes=ai_data,
-                            confidence=aggregation_result.get('golden_record', {}).get('confidence', 0.9),
+                            product_keys={
+                                "sku": product.product_code, "mpn": product.mpn},
+                            raw_attributes=ai_attributes,
+                            confidence=aggregation_result.get(
+                                'golden_record', {}).get('confidence', 0.9),
                             extracted_at=datetime.utcnow()
                         ))
                         db_session.add(product)
@@ -948,7 +903,8 @@ async def run_aggregation_task(source_id: str):
                         product.enrichment_status = 'failed'
                         db_session.add(product)
                 except Exception as e:
-                    logger.error(f"Aggregation loop error for {product.product_code}: {e}")
+                    logger.error(
+                        f"Aggregation loop error for {product.product_code}: {e}")
                     failed += 1
                     continue
             meta = dict(source.metadata or {})
@@ -961,7 +917,8 @@ async def run_aggregation_task(source_id: str):
             source.metadata = meta
             db_session.add(source)
             await db_session.commit()
-            logger.info(f"Aggregation complete: {successful}/{total} successful, {failed} failed")
+            logger.info(
+                f"Aggregation complete: {successful}/{total} successful, {failed} failed")
         except Exception as e:
             await db_session.rollback()
             logger.error(f"Aggregation task failed for {source_id}: {str(e)}")

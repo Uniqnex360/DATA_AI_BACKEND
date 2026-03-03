@@ -114,17 +114,34 @@ class AggregationPipeline:
         logger.info(f"[{request_id}] Found {len(unique_keys)} unique attribute names")
         standardized = {}
         canonical_map = mapping.get("canonical_attributes", {})
+        if not canonical_map and "schema" in mapping:
+            canonical_map = mapping["schema"].get("canonical_attributes", {})
+        if not canonical_map:
+            logger.warning(f"[{request_id}] Mapping empty, treating unique keys as canonical")
+            canonical_map = {k: {"synonyms": [k]} for k in unique_keys}
         for canonical, info in canonical_map.items():
             values = []
+            synonyms = [s.lower().strip() for s in info.get("synonyms", [])]
             for e in extracted:
-                for syn in info.get("synonyms", []):
-                    if syn in e.get("attributes", {}):
-                        values.append(e["attributes"][syn])
+                raw_attrs = e.get("attributes", {})
+                norm_attrs = {str(k).lower().strip(): v for k, v in raw_attrs.items()}
+                for syn in synonyms:
+                    if syn in norm_attrs:
+                        val = norm_attrs[syn]
+                        if val not in [None, "", "N/A", "null", "None"]:
+                            values.append(val)
             if values:
-                standardized[canonical] = await asyncio.to_thread(
-                    standardize_with_llm, canonical, values
+                unique_vals = list(set(str(v) for v in values))
+                std_result = await asyncio.to_thread(
+                    standardize_with_llm, canonical, unique_vals
                 )
-
+                if std_result and std_result.get("standard_value") is not None:
+                    standardized[canonical] = std_result
+                else:
+                    standardized[canonical] = {"standard_value": values[0], "derived_from": values}
+        if not standardized:
+            logger.error(f"[{request_id}] No valid data survived standardization")
+                         
         golden = await asyncio.to_thread(
             build_golden_record, 
             standardized, 

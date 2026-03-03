@@ -5,15 +5,6 @@ import time
 from app.core.config import settings
 client = OpenAI(api_key=settings.openai_api_key)
 genai.configure(api_key=settings.gemini_api_key)
-# def parse_response(content:str)->dict:
-#     content=content.strip()
-#     print(f"Raw content: {repr(content)}")
-#     if content.startswith("```json"):
-#         content = content[7:-3]
-#     elif content.startswith("```"):
-#         content = content[3:-3]
-#     print(f"After stripping: {repr(content)}")
-#     return json.loads(content)
 
 def parse_response(content: str) -> dict:
     content = content.strip()
@@ -32,13 +23,16 @@ def parse_response(content: str) -> dict:
 def call_llm(prompt: str, schema: dict) -> dict:
     # time.sleep(4)
     try:
+        if "json" not in prompt.lower():
+            prompt += "\n\nCRITICAL: Return the result in valid JSON format."
+        full_prompt = f"{prompt}\n\nREQUIRED SCHEMA:\n{json.dumps(schema, indent=2)}"
         print(f"Using model: {settings.llm_model}")
         print(f"API key exists: {bool(settings.openai_api_key)}")
     
         response = client.chat.completions.create(
         model=settings.llm_model,
         messages=[
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": full_prompt}
         ],
         response_format={"type": "json_object"},
         max_completion_tokens=8000
