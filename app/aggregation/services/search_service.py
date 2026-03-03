@@ -73,7 +73,7 @@ class SerpApiSearchService(ISearchService):
                     if self._is_valid_product_url(url)
                 ]
 
-                logger.info(f"✅ {len(filtered)} URLs after filtering")
+                logger.info(f"{len(filtered)} URLs after filtering")
 
                 
                 ranked = self._rank_urls(filtered)

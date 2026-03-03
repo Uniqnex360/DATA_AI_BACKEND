@@ -1,6 +1,6 @@
-from .utils import extract_number, is_invalid, normalize_text
 from typing import List
 from app.schemas.enrichment import CleaningResult, RawValue
+from app.utils.validators import is_invalid, normalize_text
 def clean_attribute(values:List[RawValue])->CleaningResult:
     valid=[]
     removed=[]

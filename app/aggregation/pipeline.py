@@ -3,7 +3,7 @@ import asyncio
 import logging
 import hashlib
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional,Any
 
 from app.sacred import (
     generate_search_queries,
@@ -38,25 +38,30 @@ class AggregationPipeline:
         self,
         mpn: str = None,
         upc: str = None,
-        title: str = None
+        title: str = None,
+        brand: Optional[str] = None, 
+        taxonomy: Optional[str] = None, 
+        prompt_config: Optional[Dict[str, Any]] = None
     ) -> Dict:
-        request_id = hashlib.sha256(
-            f"{mpn}{title}{time.time()}".encode()
-        ).hexdigest()[:12]
+        request_id = hashlib.sha256(f"{mpn}{title}{time.time()}".encode()).hexdigest()[:12]
 
         logger.info(f"[{request_id}] Pipeline started for {mpn or title}")
+        if prompt_config:
+            logger.info(f"[{request_id}] Mode: {prompt_config.get('mode', 'unknown')}")
+            logger.info(f"[{request_id}] Expected attributes: {prompt_config.get('expected_attributes', [])[:5]}")
 
         identifiers = {
             "mpn": mpn or "",
             "upc": upc or "",
             "title": title or "",
-            "brand": (title or "").split(maxsplit=1)[0] if title else "",
+            "brand": brand or (title or "").split(maxsplit=1)[0] if title else ""
+
         }
 
         queries = generate_search_queries(mpn, identifiers["brand"], title)
         if not queries:
             queries = [f"{mpn} datasheet pdf", f"{title} specifications"]
-
+        logger.info(f"[{request_id}] Search queries: {queries}")
         urls: List[str] = []
         for q in queries:
             found = await self.search.get_urls(q)
@@ -64,7 +69,7 @@ class AggregationPipeline:
             if len(urls)>MAX_SOURCES:
                 break
             await asyncio.sleep(0.1)
-
+        logger.info(f"[{request_id}] Found {len(urls)} URLs")
         download_tasks = [self.downloader.download(url) for url in urls]
         results = await asyncio.gather(*download_tasks, return_exceptions=True)
 
@@ -75,19 +80,25 @@ class AggregationPipeline:
             if isinstance(result, Exception) or not result:
                 continue
             sources.append(result)
-
+        logger.info(f"[{request_id}] Downloaded {len(sources)} sources")
         final_image_url = await self.image_service.extract_best_image(
             sources, request_id
         )
 
-        extract_tasks = [self.extractor.extract(src) for src in sources]
+        extract_tasks = [
+            self.extractor.extract(
+                src,
+                prompt_config=prompt_config 
+            ) 
+            for src in sources
+        ]
         extracted_results = await asyncio.gather(*extract_tasks, return_exceptions=True)
 
         extracted = [
             r for r in extracted_results
             if r and not isinstance(r, Exception)
         ]
-
+        logger.info(f"[{request_id}] Extracted data from {len(extracted)}/{len(sources)} sources")
         if not extracted:
             if final_image_url:
                 return {
@@ -98,8 +109,9 @@ class AggregationPipeline:
             return {"status": "failed", "reason": "No specifications found"}
 
         keys = [k for e in extracted for k in e.get("attributes", {}).keys()]
-        mapping = await asyncio.to_thread(unify_attributes, list(set(keys)))
-
+        unique_keys = list(set(keys))
+        mapping = await asyncio.to_thread(unify_attributes, unique_keys)
+        logger.info(f"[{request_id}] Found {len(unique_keys)} unique attribute names")
         standardized = {}
         canonical_map = mapping.get("canonical_attributes", {})
         for canonical, info in canonical_map.items():
@@ -114,8 +126,25 @@ class AggregationPipeline:
                 )
 
         golden = await asyncio.to_thread(
-            build_golden_record, standardized, identifiers
+            build_golden_record, 
+            standardized, 
+            identifiers,
+            taxonomy=taxonomy,
+            primary_attributes=prompt_config.get('expected_attributes') if prompt_config else None
         )
+        if prompt_config and prompt_config.get('mode') == 'constrained':
+            expected = prompt_config.get('expected_attributes', [])
+            found_attrs = set(golden.get('attributes', {}).keys())
+            missing_primary = [
+                attr for attr in expected 
+                if attr != "*additional*" and attr not in found_attrs
+            ]
+            
+            if missing_primary:
+                logger.warning(
+                    f"[{request_id}] Missing primary attributes: {missing_primary}"
+                )
+                golden['missing_primary_attributes'] = missing_primary
 
         return {
             "request_id": request_id,

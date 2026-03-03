@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Dict, List, Any, Optional
 from .llm import call_llm
-import httpx 
+import httpx
 from typing import Optional
 import re
 logging.basicConfig(level=logging.INFO)
@@ -43,13 +43,13 @@ def safe_call_llm(prompt: str, schema: dict, context: str = "") -> dict:
 #     prompt = f"""
 #     Generate 5 highly targeted Google search queries for this product.
 #     Input: {json.dumps({"mpn": mpn, "brand": brand, "title": title}, ensure_ascii=False)}
-    
+
 #     Goal: Find technical specifications and high-resolution official images.
 #     Include:
 #     - Official product pages for [brand] [mpn]
 #     - Technical specification PDFs or Datasheets
 #     - Official image galleries or high-res product photos
-    
+
 #     Output ONLY valid JSON with key 'queries' as an array of strings.
 #     """
 #     schema = {
@@ -59,30 +59,39 @@ def safe_call_llm(prompt: str, schema: dict, context: str = "") -> dict:
 #     }
 #     result = safe_call_llm(prompt, schema, "generate_search_queries")
 #     return result.get("queries", [])
-
 def generate_search_queries(mpn: str = None, brand: str = None, title: str = None) -> List[str]:
+    # 1. Guard against empty inputs
     if not any([mpn, brand, title]):
         logger.warning("No identifiers provided for search queries")
         return []
 
-    base_terms = []
-    if brand:
-        base_terms.append(brand)
+    # 2. Safely create a short title (Take first 5 words)
+    # FIX: changed split('') to split()
+    short_title = ""
     if title:
-        base_terms.append(title)
-    if mpn:
-        base_terms.append(mpn)
+        words = str(title).split() 
+        short_title = " ".join(words[:5])
 
-    base_query = " ".join(base_terms)
+    # 3. Build the Core Search Term
+    # Priority: Brand + MPN > MPN > Brand + Short Title
+    if mpn and brand:
+        core = f"{brand} {mpn}"
+    elif mpn:
+        core = mpn
+    else:
+        core = f"{brand or ''} {short_title}".strip()
 
+    logger.info(f"🔎 Generating queries for core term: {core}")
+
+    # 4. Targeted Queries to avoid retail noise
     queries = [
-        f"{base_query} technical specifications PDF",
-        f"{base_query} datasheet download",
-        f"{base_query} product specifications",
-        f"{base_query} high resolution images",
-        f"{base_query} official product page",
+        f"{core} technical specifications",
+        f"{core} datasheet pdf",
+        f"{core} official product page",
+        f"{core} features and dimensions"
     ]
 
+    # 5. Domain Specific Search (Case-Insensitive)
     known_domains = {
         "Sony": "sony.com",
         "Logitech": "logitech.com",
@@ -91,9 +100,11 @@ def generate_search_queries(mpn: str = None, brand: str = None, title: str = Non
         "Samsung": "samsung.com",
     }
 
-    if brand in known_domains:
-        domain = known_domains[brand]
-        queries.insert(0, f"site:{domain} {base_query}")
+    # Normalize brand for lookup (e.g., "SAMSUNG" -> "Samsung")
+    brand_key = str(brand).strip().title() if brand else ""
+    if brand_key in known_domains:
+        domain = known_domains[brand_key]
+        queries.insert(0, f"site:{domain} {core}")
 
     return queries
 
@@ -123,6 +134,8 @@ def generate_search_queries(mpn: str = None, brand: str = None, title: str = Non
 #     }
 #     result = safe_call_llm(prompt, schema, "extract_from_web")
 #     return result if "attributes" in result else {"source": "web", "attributes": {}, "error": "extraction_failed"}
+
+
 def fallback_extraction(html: str) -> Dict:
     from bs4 import BeautifulSoup
     import re
@@ -188,12 +201,13 @@ def fallback_extraction(html: str) -> Dict:
         return {}
 
 
-
 async def extract_image_from_source(source_html: str, source_url: str) -> Optional[str]:
-    match = re.search(r'<meta[^>]*property=["\']og:image["\'][^>]*content=["\']([^"\']+)["\']', source_html)
+    match = re.search(
+        r'<meta[^>]*property=["\']og:image["\'][^>]*content=["\']([^"\']+)["\']', source_html)
     if not match:
-        match = re.search(r'<meta[^>]*name=["\']twitter:image["\'][^>]*content=["\']([^"\']+)["\']', source_html)
-    
+        match = re.search(
+            r'<meta[^>]*name=["\']twitter:image["\'][^>]*content=["\']([^"\']+)["\']', source_html)
+
     if not match:
         return None
 
@@ -201,19 +215,20 @@ async def extract_image_from_source(source_html: str, source_url: str) -> Option
 
     if image_url.startswith('//'):
         image_url = 'https:' + image_url
-    
+
     if image_url.startswith('/'):
         from urllib.parse import urljoin
         image_url = urljoin(source_url, image_url)
 
-    junk_keywords = ['logo', 'icon', 'pixel', 'banner', 'avatar', 'button', 'spacer', 'loading']
+    junk_keywords = ['logo', 'icon', 'pixel', 'banner',
+                     'avatar', 'button', 'spacer', 'loading']
     if any(junk in image_url.lower() for junk in junk_keywords):
         return None
 
     try:
         async with httpx.AsyncClient(follow_redirects=True, timeout=5.0) as client:
             response = await client.head(image_url)
-            
+
             if response.status_code == 200:
                 content_type = response.headers.get("content-type", "").lower()
                 if "image" in content_type:
@@ -224,16 +239,112 @@ async def extract_image_from_source(source_html: str, source_url: str) -> Option
                     return image_url
     except Exception as e:
         import logging
-        logging.getLogger("truth_engine").warning(f"Image validation failed for {image_url}: {e}")
+        logging.getLogger("truth_engine").warning(
+            f"Image validation failed for {image_url}: {e}")
         return None
 
     return None
-def extract_from_web(html: str, sku: str = "") -> Dict:
+
+
+# def extract_from_web(html: str, sku: str = "", taxonomy: str = None) -> Dict:
+#     if not html or len(html.strip()) < 100:
+#         logger.warning("Web HTML too short or empty")
+#         return {"source": "web", "attributes": {}, "error": "empty_html"}
+
+#     discovery_result = discover_attributes(html, sku, taxonomy)
+
+#     if not discovery_result or not discovery_result.get("found_attributes"):
+#         logger.warning(f"No attributes discovered for {sku}, using fallback")
+#         return {
+#             "source": "web",
+#             "attributes": fallback_extraction(html),
+#             "extraction_method": "fallback"
+#         }
+
+#     extraction_result = extract_discovered_attributes(
+#         html,
+#         discovery_result["found_attributes"],
+#         sku
+#     )
+
+#     return extraction_result
+
+def extract_from_web(
+    html: str, 
+    sku: str = "", 
+    taxonomy: str = None,
+    custom_prompt: Optional[str] = None  # ✅ NEW PARAMETER
+) -> Dict:
+    """
+    Extract product data from HTML using custom or default prompt
+    
+    Args:
+        html: HTML content
+        sku: Product SKU/MPN
+        taxonomy: Product category
+        custom_prompt: Targeted extraction prompt (from prompt_builder)
+    """
+    
     if not html or len(html.strip()) < 100:
         logger.warning("Web HTML too short or empty")
         return {"source": "web", "attributes": {}, "error": "empty_html"}
 
-    discovery_result = discover_attributes(html, sku)
+    # ═══════════════════════════════════════════════════════════
+    # CASE 1: CUSTOM PROMPT PROVIDED (Constrained/Taxonomy-Guided Mode)
+    # ═══════════════════════════════════════════════════════════
+    if custom_prompt:
+        logger.info(f"🎯 Using CUSTOM prompt for {sku}")
+        
+        # Build full prompt with HTML content
+        full_prompt = f"""{custom_prompt}
+
+HTML CONTENT TO EXTRACT FROM:
+{html[:12000]}  # Limit to prevent token overflow
+
+Extract the requested attributes from this HTML content.
+"""
+        
+        try:
+            # Call LLM directly with targeted prompt
+            result = safe_call_llm(
+                prompt=full_prompt,
+                schema={
+                    "type": "object",
+                    "properties": {
+                        "attributes": {
+                            "type": "object",
+                            "additionalProperties": True
+                        },
+                        "discovered_taxonomy": {"type": "string"}
+                    },
+                    "required": ["attributes"]
+                },
+                context="extract_from_web_custom"
+            )
+            
+            if result and result.get("attributes"):
+                logger.info(f"✅ Custom prompt extraction: {len(result['attributes'])} attributes found")
+                return {
+                    "source": "web",
+                    "attributes": result["attributes"],
+                    "extraction_method": "custom_prompt",
+                    "discovered_taxonomy": result.get("discovered_taxonomy", taxonomy)
+                }
+            else:
+                logger.warning(f"⚠️ Custom prompt returned no attributes, falling back")
+                # Fall through to default method
+        
+        except Exception as e:
+            logger.error(f"❌ Custom prompt extraction failed: {e}, falling back")
+            # Fall through to default method
+    
+    # ═══════════════════════════════════════════════════════════
+    # CASE 2: NO CUSTOM PROMPT (Default Discovery Mode)
+    # ═══════════════════════════════════════════════════════════
+    logger.info(f"🔍 Using DEFAULT discovery for {sku}")
+    
+    # Phase 1: Discover attributes
+    discovery_result = discover_attributes(html, sku, taxonomy)
 
     if not discovery_result or not discovery_result.get("found_attributes"):
         logger.warning(f"No attributes discovered for {sku}, using fallback")
@@ -243,6 +354,7 @@ def extract_from_web(html: str, sku: str = "") -> Dict:
             "extraction_method": "fallback"
         }
 
+    # Phase 2: Extract discovered attributes
     extraction_result = extract_discovered_attributes(
         html,
         discovery_result["found_attributes"],
@@ -250,19 +362,22 @@ def extract_from_web(html: str, sku: str = "") -> Dict:
     )
 
     return extraction_result
+def discover_attributes(html: str, sku: str = "", taxonomy: str = None) -> Dict:
+    """Pass 1: Discover what attributes exist in the HTML, guided by Taxonomy"""
 
-
-def discover_attributes(html: str, sku: str = "") -> Dict:
-    """Pass 1: Discover what attributes exist in the HTML"""
+    taxonomy_context = ""
+    if taxonomy:
+        taxonomy_context = f"CONTEXT: This product belongs to the category: '{taxonomy}'. Prioritize finding attributes standard for this category."
 
     prompt = f"""
 You are analyzing an HTML product page to discover what technical specifications exist.
+{taxonomy_context}
 
 Your job: Identify ALL attribute names/labels that appear in the HTML, especially in:
 - Table headers or row labels
 - Definition list terms (<dt>)
-- Labels before colons (e.g., "Battery Capacity:", "Material:", "Dimensions:")
-- Section headings containing "specifications", "details", "features", "tech specs"
+- Labels before colons (e.g., "Battery Capacity:", "Material:")
+- Section headings containing "specifications", "details"
 
 Do NOT extract values yet - only find the attribute NAMES.
 
@@ -274,17 +389,12 @@ Output ONLY JSON:
   "found_attributes": ["attribute name 1", "attribute name 2", ...],
   "product_type_hint": "brief description of what this product appears to be"
 }}
-
-Examples of attribute names: "Battery Capacity", "Weight", "Material", "Color", "SKU", "Warranty Period"
 """
 
     schema = {
         "type": "object",
         "properties": {
-            "found_attributes": {
-                "type": "array",
-                "items": {"type": "string"}
-            },
+            "found_attributes": {"type": "array", "items": {"type": "string"}},
             "product_type_hint": {"type": "string"}
         },
         "required": ["found_attributes"]
@@ -292,8 +402,6 @@ Examples of attribute names: "Battery Capacity", "Weight", "Material", "Color", 
 
     try:
         result = safe_call_llm(prompt, schema, "discover_attributes")
-        logger.info(
-            f"Discovered {len(result.get('found_attributes', []))} attributes for {sku}: {result.get('product_type_hint', 'unknown')}")
         return result
     except Exception as e:
         logger.error(f"Schema discovery failed for {sku}: {e}")
@@ -317,8 +425,8 @@ Rules:
 - If an attribute is not found, omit it (don't include null values)
 - Look in tables, lists, divs, and any structured data
 - Return a FLAT JSON object.
-- Example: {"Battery Capacity": "3,349 mAh"}
--  DO NOT DO THIS: {"Battery Capacity": {"Battery Capacity": "3,349 mAh"}}
+- Example: {{ "Battery Capacity": "3,349 mAh" }}
+- DO NOT DO THIS: {{ "Battery Capacity": {{ "Battery Capacity": "3,349 mAh" }} }}
 - Ignore all technical metadata such as 'Ray ID', 'Cloudflare', 'Access Denied', or 'Cookies Consent'. Only extract product specifications.
 HTML (first 15000 chars):
 {html[:15000]}
@@ -354,10 +462,8 @@ Output ONLY JSON: {{"source": "web", "attributes": {{"Attribute Name": "value"}}
 
         result["attributes"] = {
             k: v for k, v in attrs.items() if v is not None and v != ""}
-        logger.info("Successfully extracted %d attributes for %s", len(result['attributes']), sku)
-
-
-
+        logger.info("Successfully extracted %d attributes for %s",
+                    len(result['attributes']), sku)
 
         return result
 
@@ -527,69 +633,134 @@ Example output:
     return result
 
 
-# def build_golden_record(standarized_data: Dict, identifiers: Dict) -> Dict:
-#     if not identifiers or 'mpn' not in identifiers:
-#         logger.error("Golder record failed:missing identifiers")
-#         return {
-#             'sku': identifiers.get('mpn', 'UNKNOWN'),
-#             'brand': identifiers.get('brand', 'UNKNOWN'),
-#             'attributes': {},
-#             "ready_for_publish": False,
-#             "error": 'missing_identifiers',
-#             'sources': []
-#         }
-#     if not standarized_data:
-#         logger.warning("Golden record:no standarized data")
-#         return {
-#             'sku': identifiers.get('mpn', 'UNKNOWN'),
-#             'brand': identifiers.get('brand', 'UNKNOWN'),
-#             'attributes': {},
-#             "ready_for_publish": False,
-#             "error": 'missing_identifiers',
-#             'sources': []
-#         }
-#     prompt = f"""
-#     You are the final arbiter of truth.
-#     Create a clean JSON Golden record using ONLY the provided standardized data.
-#     NEVER invent information.
-#     Identifiers:{json.dumps(identifiers)}
-#     Standarized attributes (TRUTH):{json.dumps(standarized_data, indent=2)}
-#     Rules:
-#     - Use ONLY data from above
-#     - ready_for_publish = true IF you have the Brand AND at least 4 other valid technical specifications.
-#     - If uncertain -> ready_for_publish=false
 
-#     Return exactly this structure
-#     """
+# def build_golden_record(standardized_data: Dict, identifiers: Dict, taxonomy: Optional[str] = None) -> Dict:
+
+#     if not identifiers or 'mpn' not in identifiers:
+#         logger.error("Golden record failed: missing identifiers")
+#         return {
+#             'sku': identifiers.get('mpn', 'UNKNOWN'),
+#             'brand': identifiers.get('brand', 'UNKNOWN'),
+#             'attributes': {},
+#             'ready_for_publish': False,
+#             'error': 'missing_identifiers'
+#         }
+
+#     if not standardized_data:
+#         logger.warning("Golden record: no standardized data")
+#         return {
+#             'sku': identifiers.get('mpn', 'UNKNOWN'),
+#             'brand': identifiers.get('brand', 'UNKNOWN'),
+#             'attributes': {},
+#             'ready_for_publish': False,
+#             'error': 'no_standardized_data'
+#         }
+
+#     tech_spec_count = len(standardized_data)
+#     has_brand = bool(identifiers.get('brand'))
+#     taxonomy_input_line = f"Category: {taxonomy}" if taxonomy else ""
+#     taxonomy_instruction_line = f"3. Include the taxonomy: {taxonomy}" if taxonomy else ""
+#     taxonomy_json_line = f'"taxonomy": "{taxonomy}",' if taxonomy else ""
+#     prompt = f"""
+# Create a product Golden Record and return the result as JSON.
+
+# INPUT DATA:
+# SKU/MPN: {identifiers.get('mpn')}
+# Brand: {identifiers.get('brand')}
+# {taxonomy_input_line}
+
+# STANDARDIZED ATTRIBUTES:
+# {json.dumps(standardized_data, indent=2)}
+
+# YOUR TASK:
+# Create a clean JSON object with:
+# 1. Copy the SKU and brand from above
+# 2. Include ALL standardized attributes 
+# 3. {"Include the taxonomy: " + taxonomy if taxonomy else ""}
+# 4. Set ready_for_publish based on: has brand ({has_brand}) AND at least 4 specs ({tech_spec_count} found)
+# 5. Assign confidence 0.0-1.0 based on data completeness
+
+# Return ONLY this JSON structure (no markdown, no extra text):
+# {{
+#   "sku": "the SKU value",
+#   "brand": "the brand value",
+#   {"taxonomy": " + f'"{taxonomy}",' if taxonomy else ""}
+#   "attributes": {{
+#     "attribute_name": "value",
+#     ...all attributes from STANDARDIZED ATTRIBUTES...
+#   }},
+#   "ready_for_publish": true or false,
+#   "confidence": 0.0 to 1.0
+# }}
+
+# CRITICAL: The response must be valid JSON only. Do not add "identifiers" or "standardized_attributes" as keys.
+# """
+
 #     schema = {
 #         'type': 'object',
 #         'properties': {
 #             'sku': {'type': 'string'},
 #             'brand': {'type': 'string'},
-#             'attributes': {"type": "object"},
-#             "ready_for_publish": {'type': 'boolean'},
-#             'sources': {'type': "array", 'items': {"type": 'string'}},
-#             'confidence': {'type': "number", 'minimum': 0, "maximum": 1}
+#             'taxonomy': {'type': 'string'},
+#             'attributes': {'type': 'object'},
+#             'ready_for_publish': {'type': 'boolean'},
+#             'confidence': {'type': 'number', 'minimum': 0, 'maximum': 1}
 #         },
 #         'required': ['sku', 'brand', 'attributes', 'ready_for_publish'],
-#         "additionalProperties": False
+#         'additionalProperties': False
 #     }
-#     result = safe_call_llm(prompt, schema, 'built_golden_record')
-#     if 'error' in result or not result.get('attributes'):
+
+#     try:
+#         result = safe_call_llm(prompt, schema, 'build_golden_record')
+
+#         if not result or 'error' in result:
+#             raise ValueError(
+#                 f"LLM returned error: {result.get('error', 'unknown')}")
+
+#         missing = [f for f in ['sku', 'brand', 'attributes', 'ready_for_publish']
+#                    if f not in result]
+#         if missing:
+#             raise ValueError(f"Missing required fields: {missing}")
+
+#         if not result.get('attributes'):
+#             raise ValueError("Empty attributes")
+
+#         if any(k in result for k in ['identifiers', 'standardized_attributes', 'product_attributes']):
+#             raise ValueError("LLM returned nested structure")
+#         if taxonomy and 'taxonomy' not in result:
+#             result['taxonomy'] = taxonomy
+
+#         logger.info(
+#             f"✓ Golden record for {result['sku']}: "
+#             f"{len(result['attributes'])} attrs, "
+#             f"ready={result['ready_for_publish']}"
+#         )
+
+#         return result
+
+#     except Exception as e:
 #         logger.warning(
-#             f"Golden record LLM failed,using deterministic fallback for {identifiers.get('mpn')}")
+#             f"Golden record LLM failed for {identifiers.get('mpn')}: {e}, "
+#             f"using deterministic fallback"
+#         )
+
+#         # Deterministic fallback
 #         return {
 #             'sku': identifiers.get('mpn', 'UNKNOWN'),
 #             'brand': identifiers.get('brand', 'UNKNOWN'),
-#             'attributes': standarized_data,
-#             "ready_for_publish": len(standarized_data) >= 4,
-#             "error": 'missing_identifiers',
-#             'sources': [],
-#             'confidence': 0.5,
-#             'generated_by': 'deterministic_fallback'
+#             'attributes': standardized_data,
+#             'ready_for_publish': has_brand and tech_spec_count >= 4,
+#             'confidence': 0.7 if tech_spec_count >= 5 else 0.5,
+#             'generated_by': 'deterministic_fallback',
+#             'reason': str(e)
 #         }
-#     return result
-def build_golden_record(standardized_data: Dict, identifiers: Dict) -> Dict:
+
+def build_golden_record(
+    standardized_data: Dict,
+    identifiers: Dict,
+    taxonomy: Optional[str] = None,
+    primary_attributes: Optional[List[str]] = None
+) -> Dict:
 
     if not identifiers or 'mpn' not in identifiers:
         logger.error("Golden record failed: missing identifiers")
@@ -614,36 +785,57 @@ def build_golden_record(standardized_data: Dict, identifiers: Dict) -> Dict:
     tech_spec_count = len(standardized_data)
     has_brand = bool(identifiers.get('brand'))
 
+    taxonomy_input_line = f"Category: {taxonomy}" if taxonomy else ""
+    taxonomy_instruction_line = f"3. Include the taxonomy: {taxonomy}" if taxonomy else ""
+    taxonomy_json_line = f'"taxonomy": "{taxonomy}",' if taxonomy else ""
+    priority_instruction = ""
+    if primary_attributes:
+        attrs_list = "\n".join([f"- {a}" for a in primary_attributes])
+        priority_instruction = f"""
+USER-REQUESTED ATTRIBUTE NAMES (PRIORITY):
+{attrs_list}
+
+TASK: If any data in 'STANDARDIZED ATTRIBUTES' matches the meaning of a 'USER-REQUESTED' name above (e.g. 'color_temp' matches 'Color Temperature'), you MUST use the 'USER-REQUESTED' name as your JSON key.
+"""
+
     prompt = f"""
 Create a product Golden Record and return the result as JSON.
 
 INPUT DATA:
 SKU/MPN: {identifiers.get('mpn')}
 Brand: {identifiers.get('brand')}
+{taxonomy_input_line}
 
-STANDARDIZED ATTRIBUTES:
+STANDARDIZED ATTRIBUTES (Found Data):
 {json.dumps(standardized_data, indent=2)}
-
+{priority_instruction}
 YOUR TASK:
 Create a clean JSON object with:
 1. Copy the SKU and brand from above
-2. Include ALL standardized attributes 
-3. Set ready_for_publish based on: has brand ({has_brand}) AND at least 4 specs ({tech_spec_count} found)
-4. Assign confidence 0.0-1.0 based on data completeness
+2. Include ALL standardized attributes
+{taxonomy_instruction_line}
+3. If specific attribute names were provided in STANDARDIZED ATTRIBUTES, 
+   you MUST use those EXACT names as keys in the "attributes" object 
+   when providing their values.
+4. DATA SANITY CHECK: Ensure the attributes extracted belong to the product type. 
+   Example: If the product is a "Light Fixture", do not return "Screen Size" or "Operating System". 
+   If you find data that clearly belongs to a different product, ignore it.
+5. Set ready_for_publish based on: has brand ({has_brand}) AND at least 4 specs ({tech_spec_count} found)
+6. Assign confidence 0.0-1.0 based on data completeness
 
 Return ONLY this JSON structure (no markdown, no extra text):
 {{
   "sku": "the SKU value",
   "brand": "the brand value",
+  {taxonomy_json_line}
   "attributes": {{
-    "attribute_name": "value",
-    ...all attributes from STANDARDIZED ATTRIBUTES...
+    "attribute_name": "value"
   }},
   "ready_for_publish": true or false,
   "confidence": 0.0 to 1.0
 }}
 
-CRITICAL: The response must be valid JSON only. Do not add "identifiers" or "standardized_attributes" as keys.
+CRITICAL: The response must be valid JSON only.
 """
 
     schema = {
@@ -651,6 +843,7 @@ CRITICAL: The response must be valid JSON only. Do not add "identifiers" or "sta
         'properties': {
             'sku': {'type': 'string'},
             'brand': {'type': 'string'},
+            'taxonomy': {'type': 'string'},
             'attributes': {'type': 'object'},
             'ready_for_publish': {'type': 'boolean'},
             'confidence': {'type': 'number', 'minimum': 0, 'maximum': 1}
@@ -664,7 +857,8 @@ CRITICAL: The response must be valid JSON only. Do not add "identifiers" or "sta
 
         if not result or 'error' in result:
             raise ValueError(
-                f"LLM returned error: {result.get('error', 'unknown')}")
+                f"LLM returned error: {result.get('error', 'unknown')}"
+            )
 
         missing = [f for f in ['sku', 'brand', 'attributes', 'ready_for_publish']
                    if f not in result]
@@ -674,8 +868,8 @@ CRITICAL: The response must be valid JSON only. Do not add "identifiers" or "sta
         if not result.get('attributes'):
             raise ValueError("Empty attributes")
 
-        if any(k in result for k in ['identifiers', 'standardized_attributes', 'product_attributes']):
-            raise ValueError("LLM returned nested structure")
+        if taxonomy and 'taxonomy' not in result:
+            result['taxonomy'] = taxonomy
 
         logger.info(
             f"✓ Golden record for {result['sku']}: "
@@ -691,7 +885,6 @@ CRITICAL: The response must be valid JSON only. Do not add "identifiers" or "sta
             f"using deterministic fallback"
         )
 
-        # Deterministic fallback
         return {
             'sku': identifiers.get('mpn', 'UNKNOWN'),
             'brand': identifiers.get('brand', 'UNKNOWN'),
