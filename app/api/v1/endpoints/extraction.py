@@ -283,6 +283,7 @@ async def download_file(
                 "main_image": "image_url_1",
                 "3d_model": "3D_Model_URL",
                 "model_3d": "3D_Model_URL",
+                "images": "image_url_1"
             }
             IGNORED_KEYS = {
                 "share", "latest_news", "search_for", "error_ref", "important",

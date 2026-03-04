@@ -32,15 +32,7 @@ class StandarizationAttribute(UUIDModel,table=True):
     derived_from:str=Field(default='[]')
     standarized_at:datetime=Field(default_factory=datetime.utcnow)
 
-class BusinessRule(UUIDModel, table=True):
-    __tablename__ = 'business_rules'
-    rule_id: str = Field(index=True, unique=True)
-    attribute_name: str
-    rule_type: str  
-    rule_config: Dict = Field(default={}, sa_column=Column(JSON))
-    active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    
+
 class Source(UUIDModel,table=True):
     __tablename__='sources'
     source_type:str

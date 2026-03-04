@@ -35,11 +35,11 @@ class AutoMigration:
         from app.models.project import Project
         from app.models.user import User
         from app.models.pipeline import (
-            AuditTrail, CleansingIssue, StandardizedAttribute,
-            BusinessRule, Source, ReviewItem, SourcePriority,
+            AuditTrail, CleansingIssue, StandardizedAttribute, Source, ReviewItem, SourcePriority,
             Enrichment, RawExtraction, PublishTarget,
             AggregationJob
         )
+        from app.models.business_rule import BusinessRule
         logger.info(f" Loaded {len(self.metadata.tables)} table definitions")
 
     async def _safe_migration(self):

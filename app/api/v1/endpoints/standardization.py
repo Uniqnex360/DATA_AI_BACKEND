@@ -3,12 +3,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, delete
 from app.core.database import get_session
 from app.models.product import Product
-from app.models.pipeline import BusinessRule, ReviewItem, StandardizedAttribute
+from app.models.pipeline import  ReviewItem, StandardizedAttribute
 from app.schemas.enrichment import RawValue 
 from app.core.config import settings
 
 from app.standardization import standardize_attribute 
 import logging
+from app.models.business_rule import BusinessRule
 logger = logging.getLogger("standardization_router")
 router = APIRouter()
 @router.get("/{product_id}")

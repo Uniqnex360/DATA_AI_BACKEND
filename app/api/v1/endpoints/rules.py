@@ -2,13 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from app.core.database import get_session
-from app.models.pipeline import BusinessRule 
 from typing import Dict
 import logging
+from app.models.business_rule import BusinessRule
 logger = logging.getLogger("rules")
 router = APIRouter()
 from sqlalchemy.dialects.postgresql import insert 
-from app.models.pipeline import BusinessRule
 from datetime import datetime
 
 @router.post("/seed")
