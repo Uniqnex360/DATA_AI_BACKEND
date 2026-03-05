@@ -119,31 +119,31 @@ def sanitize_for_excel(val):
     if not isinstance(val, str):
         return val
     return re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', val)
+
 def clean_for_excel(val, attr_name=None):
-    """
-    Production-ready cleaner. 
-    Extracts 'standard_value', handles nesting, and removes N/A noise.
-    """
+    
     if val is None or val == "": 
         return ""
     if isinstance(val, dict):
         if "standard_value" in val:
-            return clean_for_excel(val["standard_value"])
+            return clean_for_excel(val["standard_value"], attr_name)
         if "value" in val:
-            return clean_for_excel(val["value"])
+            return clean_for_excel(val["value"], attr_name)
         if attr_name:
             target = str(attr_name).lower().replace("_", "").replace(" ", "")
             for k, v in val.items():
                 if target in k.lower().replace("_", ""): 
-                    return clean_for_excel(v)
-        vals = [clean_for_excel(v) for v in val.values() if v is not None]
+                    return clean_for_excel(v, attr_name)
+        vals = [str(clean_for_excel(v, attr_name)) for v in val.values() if v is not None and v != ""]
         return ", ".join([v for v in vals if v])
     if isinstance(val, list):
-        return " | ".join([clean_for_excel(i) for i in val if i])
+        cleaned_list = [str(clean_for_excel(i, attr_name)) for i in val if i is not None and i != ""]
+        return " | ".join(i for i in cleaned_list if i)
     val_str = str(val).strip()
     if val_str.lower() in ["n/a", "none", "null", "nan", "not available", "increase", "*"]:
         return ""
     return sanitize_for_excel(val_str)
+    
 def semantic_match_key(target_name: str, ai_keys: list) -> str:
     import re
     from difflib import SequenceMatcher
@@ -360,7 +360,16 @@ async def download_file(
                         if ai_key_norm == map_key_norm:
                             value = ai_data.pop(ai_key)
                             row[target_col] = clean_for_excel(value)
-                            logger.info(f"✅ Mapped AI '{ai_key}' → Column '{target_col}'")
+                            logger.info(f"Mapped AI '{ai_key}' → Column '{target_col}'")
+                            if isinstance(value,dict):
+                                uom=value.get('uom') or value.get('unit')
+                                if uom:
+                                    uom_clean=clean_for_excel(uom)
+                                    if target_col=='Weight':
+                                        row['Weight_Unit']=uom_clean
+                                    elif target_col in ['Length','Width','Height']:
+                                        if not row['Dimension_Unit']:
+                                            row['Dimension_Unit']=uom_clean
                             break
                 row.update({
                     "Prod ID": str(p.id) if p.id else "",
@@ -441,9 +450,10 @@ async def download_file(
                         val = ai_data[match_key]
                         row[f"attribute_value{i}"] = clean_for_excel(val, template_attr_name)
                         if isinstance(val, dict):
-                            uom = val.get("unit", "")
-                            if uom and uom.lower() not in ["n/a", "na", "none", "null"]:
-                                row[f"attribute_uom{i}"] = clean_for_excel(uom)
+                            uom_obj = val.get("uom") or val.get("unit")
+                            uom = clean_for_excel(uom_obj)
+                            if uom:
+                                  row[f"attribute_uom{i}"] = uom
                         used_ai_keys.add(match_key)
                 remaining_attrs = [k for k in ai_data.keys() if k not in used_ai_keys and k.lower() not in IGNORED_KEYS]
                 current_slot = len(attribute_template) + 1
@@ -473,6 +483,7 @@ async def download_file(
     except Exception as e:
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Error generating download")
+    
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
     request: Request,

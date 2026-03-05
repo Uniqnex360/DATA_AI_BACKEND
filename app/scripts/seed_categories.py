@@ -1,30 +1,28 @@
-# scripts/seed_categories.py
 
 import asyncio
 import sys
 from pathlib import Path
 
-# Add parent directory to path so we can import from app
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.core.database import async_session_factory
 from app.models.industry import Industry
 from app.models.category import Category
 from app.models.attribute import Attribute, CategoryAttribute
-from app.models.attribute import Attribute, CategoryAttribute, AttributeValue  # ✅ Add AttributeValue
-from app.models.product import Product  # ✅ ADD THIS - Critical!
-from app.models.brand import Brand  # ✅ ADD THIS if it exists
+from app.models.attribute import Attribute, CategoryAttribute, AttributeValue  
+from app.models.product import Product  
+from app.models.brand import Brand  
 from app.models.vendor import Vendor 
 from uuid import uuid4
 
 async def seed_categories():
     async with async_session_factory() as db:
         
-        print("🌱 Starting taxonomy seed...")
+        print(" Starting taxonomy seed...")
         
-        # ═══════════════════════════════════════════════════════════
-        # 1. CREATE INDUSTRIES
-        # ═══════════════════════════════════════════════════════════
+        
+        
+        
         lighting = Industry(name="Lighting", code="LIGHT")
         tools = Industry(name="Tools and Test Equipment", code="TOOLS")
         safety = Industry(name="Safety", code="SAFETY")
@@ -35,13 +33,13 @@ async def seed_categories():
         await db.refresh(tools)
         await db.refresh(safety)
         
-        print(f"✅ Created industries: {lighting.name}, {tools.name}, {safety.name}")
+        print(f" Created industries: {lighting.name}, {tools.name}, {safety.name}")
         
-        # ═══════════════════════════════════════════════════════════
-        # 2. CREATE CATEGORIES
-        # ═══════════════════════════════════════════════════════════
         
-        # Lighting categories
+        
+        
+        
+        
         lighting_cat = Category(
             name="High Bay Lighting",
             industry_id=lighting.id,
@@ -51,7 +49,7 @@ async def seed_categories():
         )
         db.add(lighting_cat)
         
-        # Tools categories
+        
         saw_blades_cat = Category(
             name="Saw Blades",
             industry_id=tools.id,
@@ -61,7 +59,7 @@ async def seed_categories():
         )
         db.add(saw_blades_cat)
         
-        # Safety categories
+        
         harnesses_cat = Category(
             name="Harnesses",
             industry_id=safety.id,
@@ -76,16 +74,16 @@ async def seed_categories():
         await db.refresh(saw_blades_cat)
         await db.refresh(harnesses_cat)
         
-        print(f"✅ Created categories:")
+        print(f"Created categories:")
         print(f"   - {lighting_cat.full_path}")
         print(f"   - {saw_blades_cat.full_path}")
         print(f"   - {harnesses_cat.full_path}")
         
-        # ═══════════════════════════════════════════════════════════
-        # 3. CREATE ATTRIBUTES
-        # ═══════════════════════════════════════════════════════════
         
-        # Lighting attributes
+        
+        
+        
+        
         color_temp = Attribute(
             name="color_temperature",
             display_name="Color Temperature",
@@ -117,7 +115,7 @@ async def seed_categories():
         
         db.add_all([color_temp, lumens, input_watts, distribution, light_tech])
         
-        # Tools attributes
+        
         blade_material = Attribute(
             name="blade_material",
             display_name="Blade Material",
@@ -148,7 +146,7 @@ async def seed_categories():
         
         db.add_all([blade_material, diameter, length, teeth_count, application])
         
-        # Safety attributes
+        
         buckle_type = Attribute(
             name="buckle_type_chest",
             display_name="Buckle Type - Chest",
@@ -178,13 +176,13 @@ async def seed_categories():
         db.add_all([buckle_type, d_rings, d_ring_location, harness_style, webbing_material])
         
         await db.commit()
-        print(f"✅ Created 15 attributes")
+        print(f"Created 15 attributes")
         
-        # ═══════════════════════════════════════════════════════════
-        # 4. LINK ATTRIBUTES TO CATEGORIES (PRIMARY)
-        # ═══════════════════════════════════════════════════════════
         
-        # Lighting -> High Bay
+        
+        
+        
+        
         await db.refresh(color_temp)
         await db.refresh(lumens)
         await db.refresh(input_watts)
@@ -201,7 +199,7 @@ async def seed_categories():
             )
             db.add(cat_attr)
         
-        # Tools -> Saw Blades
+        
         await db.refresh(blade_material)
         await db.refresh(diameter)
         await db.refresh(length)
@@ -217,7 +215,7 @@ async def seed_categories():
             )
             db.add(cat_attr)
         
-        # Safety -> Harnesses
+        
         await db.refresh(buckle_type)
         await db.refresh(d_rings)
         await db.refresh(d_ring_location)
@@ -234,14 +232,14 @@ async def seed_categories():
             db.add(cat_attr)
         
         await db.commit()
-        print(f"✅ Linked attributes to categories")
+        print(f" Linked attributes to categories")
         
-        print("\n🎉 Seed complete!")
-        print("✅ 3 industries")
-        print("✅ 3 categories")
-        print("✅ 15 attributes")
-        print("✅ 15 category-attribute links")
-        print("\n📊 Database is ready for aggregation with taxonomy hints!")
+        print("\n Seed complete!")
+        print(" 3 industries")
+        print(" 3 categories")
+        print("15 attributes")
+        print(" 15 category-attribute links")
+        print("\n Database is ready for aggregation with taxonomy hints!")
 
 if __name__ == "__main__":
     asyncio.run(seed_categories())
