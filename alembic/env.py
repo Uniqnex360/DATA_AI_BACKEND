@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from app.models.attribute import AttributeValue,Attribute,CategoryAttribute
 from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
+import alembic_autogenerate_enums
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -54,6 +55,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
         compare_server_default=True,
+        process_revision_directives=alembic_autogenerate_enums.add_alembic_autogenerate_enums,
     )
 
     with context.begin_transaction():

@@ -23,3 +23,4 @@ alembic
 python-jose[cryptography]
 passlib[bcrypt]
 psycopg2-binary
+alembic-autogenerate-enums

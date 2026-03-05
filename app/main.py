@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 from pathlib import Path
 from app.core.database import init_db
+from app.core.smart_migration import smart_init_db
 from app.api.v1.endpoints import auth,audit,users,golden_records,dashboard,products,rules,projects,extraction,cleansing,aggregation,standardization,enrichment,hitl,publishing,business_rules
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api_main")
@@ -35,7 +36,7 @@ app.include_router(business_rules.router, prefix=f"{settings.API_V1_STR}/busines
 
 @app.on_event("startup")
 async def on_startup():
-    await init_db()
+    await smart_init_db()
 @app.get('/health')
 def health():
     return {'status': 'healthy'}
