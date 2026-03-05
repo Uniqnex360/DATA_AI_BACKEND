@@ -12,48 +12,56 @@ from sqlalchemy.orm import selectinload
 logger = logging.getLogger("business_rules")
 router = APIRouter()
 
-
 @router.post("/", response_model=BusinessRuleResponse, status_code=status.HTTP_201_CREATED)
 async def create_business_rule(
     rule: BusinessRuleCreate,
     db: AsyncSession = Depends(get_session)
 ):
     try:
+        
         base_rule_id = BusinessRule.generate_rule_id(rule.title)
         rule_id = base_rule_id
         counter = 1
+        
         while True:
             stmt = select(BusinessRule).where(BusinessRule.rule_id == rule_id)
             existing = await db.execute(stmt)
-            if existing.scalars().first():
-                break
-            rule_id = f"{base_rule_id}_counter"
+            if not existing.scalars().first():
+                
+                break 
+            
+            
             counter += 1
-            new_rule = BusinessRule(
-                **rule.dict(),
-                rule_id=rule_id,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
-            )
-            db.add(new_rule)
-            await db.commit()
-            # await db.refresh(new_rule)
-            stmt = select(BusinessRule).options(selectinload(BusinessRule.prompts)).where(BusinessRule.id == new_rule.id)
-            result = await db.execute(stmt)
-            created_rule_with_prompts = result.scalars().one()
-            logger.info(f"Created business rule: {new_rule.rule_id}")   
-            return created_rule_with_prompts
-    except HTTPException:
-        raise
+            rule_id = f"{base_rule_id}_{counter}"
+
+        
+        new_rule = BusinessRule(
+            **rule.dict(),
+            rule_id=rule_id,  
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        
+        db.add(new_rule)
+        await db.commit()
+        
+        
+        stmt = select(BusinessRule).options(selectinload(BusinessRule.prompts)).where(BusinessRule.id == new_rule.id)
+        result = await db.execute(stmt)
+        created_rule_with_prompts = result.scalars().one()
+        
+        logger.info(f"Created business rule: {created_rule_with_prompts.rule_id}")   
+        return created_rule_with_prompts
+
     except Exception as e:
         await db.rollback()
-        logger.error(f"Failed to create rule: {str(e)}")
+        
+        logger.error(f"Failed to create rule: {str(e)}", exc_info=True)
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create rule: {str(e)}"
+            detail="An internal error occurred while creating the rule."
         )
-
-
 @router.get("/", response_model=BusinessRuleListResponse)
 async def get_all_business_rules(
     category: Optional[RuleCategory] = None,
@@ -62,52 +70,63 @@ async def get_all_business_rules(
     db: AsyncSession = Depends(get_session)
 ):
     try:
+        
         stmt = select(BusinessRule).options(selectinload(BusinessRule.prompts))
+        
         conditions = []
         if category:
             conditions.append(BusinessRule.category == category)
         if status:
             conditions.append(BusinessRule.status == status)
+        
+        
         if search:
-            search_pattern = f"%{search}%"
+            search_term = search.lower()
             conditions.append(
                 or_(
-                    BusinessRule.title.ilike(search_pattern),
-                    BusinessRule.description.ilike(search_pattern),
+                    func.lower(BusinessRule.title).contains(search_term),
+                    func.lower(BusinessRule.description).contains(search_term),
+                    
+                    BusinessRule.prompts.any(
+                        or_(
+                            func.lower(RulePrompt.prompt_name).contains(search_term),
+                            func.lower(RulePrompt.prompt_text).contains(search_term)
+                        )
+                    )
                 )
             )
+        
+
         if conditions:
             stmt = stmt.where(and_(*conditions))
+        
+        
+        stmt = stmt.order_by(BusinessRule.created_at.desc())
+
         result = await db.execute(stmt)
         rules = result.scalars().unique().all()
-        for rule in rules:
-            prompt_stmt = select(RulePrompt).where(
-                RulePrompt.rule_id == rule.id).order_by(RulePrompt.priority.desc())
-            prompt_result = await db.execute(prompt_stmt)
-            rule.prompts = prompt_result.scalars().all()
-        count_stmt = select(func.count(BusinessRule.id))
-        if conditions:
-            count_stmt = count_stmt.where(and_(*conditions))
-        total_result = await db.execute(count_stmt)
-        total = total_result.scalar_one()
-        category_stmt = select(
-            BusinessRule.category,
-            func.count(BusinessRule.id).label('count')
-        ).group_by(BusinessRule.category)
-        category_result = await db.execute(category_stmt)
-        category_counts = {row[0]: row[1] for row in category_result.all()}
+        
+
+        total = len(rules) 
+        
+        category_counts = {}
+        all_rules_result = await db.execute(select(BusinessRule.category))
+        all_categories = all_rules_result.scalars().all()
+        for cat in all_categories:
+            category_counts[cat] = category_counts.get(cat, 0) + 1
+
         return BusinessRuleListResponse(
             rules=rules,
             total=total,
             category_counts=category_counts
         )
-    except Exception as e:
-        logger.error(f"Failed to fetch rules: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch rules: {str(e)}"
-        )
 
+    except Exception as e:
+        logger.error(f"Failed to fetch rules: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch rules."
+        )
 
 @router.get("/{rule_id}", response_model=BusinessRuleResponse)
 async def get_business_rule(
