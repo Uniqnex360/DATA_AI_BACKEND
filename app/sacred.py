@@ -13,7 +13,6 @@ def safe_call_llm(prompt: str, schema: dict, context: str = "") -> dict:
     if not prompt.strip():
         logger.warning(f"Empty prompt in {context}")
         return {"error": "empty_prompt", "context": context}
-
     try:
         result = call_llm(prompt, schema)
         if not isinstance(result, dict):
@@ -25,66 +24,27 @@ def safe_call_llm(prompt: str, schema: dict, context: str = "") -> dict:
         return {"error": "llm_exception", "details": str(e)}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def generate_search_queries(mpn: str = None, brand: str = None, title: str = None) -> List[str]:
     if not any([mpn, brand, title]):
         logger.warning("No identifiers provided for search queries")
         return []
-
     short_title = ""
     if title:
-        words = str(title).split() 
+        words = str(title).split()
         short_title = " ".join(words[:5])
-
     if mpn and brand:
         core = f"{brand} {mpn}"
     elif mpn:
         core = mpn
     else:
         core = f"{brand or ''} {short_title}".strip()
-
     logger.info(f"🔎 Generating queries for core term: {core}")
-
     queries = [
         f"{core} technical specifications",
         f"{core} datasheet pdf",
         f"{core} official product page",
         f"{core} features and dimensions"
     ]
-
     known_domains = {
         "Sony": "sony.com",
         "Logitech": "logitech.com",
@@ -92,51 +52,19 @@ def generate_search_queries(mpn: str = None, brand: str = None, title: str = Non
         "Apple": "apple.com",
         "Samsung": "samsung.com",
     }
-
     brand_key = str(brand).strip().title() if brand else ""
     if brand_key in known_domains:
         domain = known_domains[brand_key]
         queries.insert(0, f"site:{domain} {core}")
-
     return queries
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def fallback_extraction(html: str) -> Dict:
     from bs4 import BeautifulSoup
     import re
-
     attributes = {}
-
     try:
         soup = BeautifulSoup(html, 'html.parser')
-
         for table in soup.find_all('table'):
             for row in table.find_all('tr'):
                 cells = row.find_all(['td', 'th'])
@@ -145,7 +73,6 @@ def fallback_extraction(html: str) -> Dict:
                     val = cells[1].get_text(strip=True)
                     if key and val and 2 < len(key) < 100 and len(val) < 500:
                         attributes[key] = val
-
         for dl in soup.find_all('dl'):
             dts = dl.find_all('dt')
             dds = dl.find_all('dd')
@@ -154,7 +81,6 @@ def fallback_extraction(html: str) -> Dict:
                 val = dd.get_text(strip=True)
                 if key and val and len(key) < 100:
                     attributes[key] = val
-
         text_blocks = soup.find_all(['p', 'li', 'div', 'span'])
         for block in text_blocks:
             text = block.get_text()
@@ -165,14 +91,12 @@ def fallback_extraction(html: str) -> Dict:
                 val = val.strip()
                 if key and val and not key.lower().startswith(('http', 'www')):
                     attributes[key] = val
-
         for meta in soup.find_all('meta'):
             if meta.get('property') and meta.get('content'):
                 prop = meta['property']
                 if 'product' in prop.lower():
                     key = prop.split(':')[-1].replace('_', ' ').title()
                     attributes[key] = meta['content']
-
         for script in soup.find_all('script', type='application/ld+json'):
             try:
                 import json
@@ -184,10 +108,8 @@ def fallback_extraction(html: str) -> Dict:
                                 attributes[key.title()] = str(val)
             except:
                 pass
-
         logger.info(f"Fallback extraction found {len(attributes)} attributes")
         return attributes
-
     except Exception as e:
         logger.error(f"Fallback extraction error: {e}")
         return {}
@@ -199,28 +121,21 @@ async def extract_image_from_source(source_html: str, source_url: str) -> Option
     if not match:
         match = re.search(
             r'<meta[^>]*name=["\']twitter:image["\'][^>]*content=["\']([^"\']+)["\']', source_html)
-
     if not match:
         return None
-
     image_url = match.group(1)
-
     if image_url.startswith('//'):
         image_url = 'https:' + image_url
-
     if image_url.startswith('/'):
         from urllib.parse import urljoin
         image_url = urljoin(source_url, image_url)
-
     junk_keywords = ['logo', 'icon', 'pixel', 'banner',
                      'avatar', 'button', 'spacer', 'loading']
     if any(junk in image_url.lower() for junk in junk_keywords):
         return None
-
     try:
         async with httpx.AsyncClient(follow_redirects=True, timeout=5.0) as client:
             response = await client.head(image_url)
-
             if response.status_code == 200:
                 content_type = response.headers.get("content-type", "").lower()
                 if "image" in content_type:
@@ -234,57 +149,25 @@ async def extract_image_from_source(source_html: str, source_url: str) -> Option
         logging.getLogger("truth_engine").warning(
             f"Image validation failed for {image_url}: {e}")
         return None
-
     return None
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def extract_from_web(
-    html: str, 
-    sku: str = "", 
+    html: str,
+    sku: str = "",
     taxonomy: str = None,
-    custom_prompt: Optional[str] = None  
+    custom_prompt: Optional[str] = None
 ) -> Dict:
-    
-    
     if not html or len(html.strip()) < 100:
         logger.warning("Web HTML too short or empty")
         return {"source": "web", "attributes": {}, "error": "empty_html"}
-
- 
     if custom_prompt:
         logger.info(f" Using CUSTOM prompt for {sku}")
-        
         full_prompt = f"""{custom_prompt}
-
 HTML CONTENT TO EXTRACT FROM:
 {html[:12000]}  
-
 Extract the requested attributes from this HTML content.
 """
-        
         try:
             result = safe_call_llm(
                 prompt=full_prompt,
@@ -301,9 +184,9 @@ Extract the requested attributes from this HTML content.
                 },
                 context="extract_from_web_custom"
             )
-            
             if result and result.get("attributes"):
-                logger.info(f" Custom prompt extraction: {len(result['attributes'])} attributes found")
+                logger.info(
+                    f" Custom prompt extraction: {len(result['attributes'])} attributes found")
                 return {
                     "source": "web",
                     "attributes": result["attributes"],
@@ -311,16 +194,13 @@ Extract the requested attributes from this HTML content.
                     "discovered_taxonomy": result.get("discovered_taxonomy", taxonomy)
                 }
             else:
-                logger.warning(f" Custom prompt returned no attributes, falling back")
-        
+                logger.warning(
+                    f" Custom prompt returned no attributes, falling back")
         except Exception as e:
-            logger.error(f" Custom prompt extraction failed: {e}, falling back")
-    
-
+            logger.error(
+                f" Custom prompt extraction failed: {e}, falling back")
     logger.info(f" Using DEFAULT discovery for {sku}")
-    
     discovery_result = discover_attributes(html, sku, taxonomy)
-
     if not discovery_result or not discovery_result.get("found_attributes"):
         logger.warning(f"No attributes discovered for {sku}, using fallback")
         return {
@@ -328,42 +208,35 @@ Extract the requested attributes from this HTML content.
             "attributes": fallback_extraction(html),
             "extraction_method": "fallback"
         }
-
     extraction_result = extract_discovered_attributes(
         html,
         discovery_result["found_attributes"],
         sku
     )
-
     return extraction_result
-def discover_attributes(html: str, sku: str = "", taxonomy: str = None) -> Dict:
 
+
+def discover_attributes(html: str, sku: str = "", taxonomy: str = None) -> Dict:
     taxonomy_context = ""
     if taxonomy:
         taxonomy_context = f"CONTEXT: This product belongs to the category: '{taxonomy}'. Prioritize finding attributes standard for this category."
-
     prompt = f"""
 You are analyzing an HTML product page to discover what technical specifications exist.
 {taxonomy_context}
-
 Your job: Identify ALL attribute names/labels that appear in the HTML, especially in:
 - Table headers or row labels
 - Definition list terms (<dt>)
 - Labels before colons (e.g., "Battery Capacity:", "Material:")
 - Section headings containing "specifications", "details"
-
 Do NOT extract values yet - only find the attribute NAMES.
-
 HTML (first 10000 chars):
 {html[:10000]}
-
 Output ONLY JSON:
 {{
   "found_attributes": ["attribute name 1", "attribute name 2", ...],
   "product_type_hint": "brief description of what this product appears to be"
 }}
 """
-
     schema = {
         "type": "object",
         "properties": {
@@ -372,7 +245,6 @@ Output ONLY JSON:
         },
         "required": ["found_attributes"]
     }
-
     try:
         result = safe_call_llm(prompt, schema, "discover_attributes")
         return result
@@ -382,16 +254,12 @@ Output ONLY JSON:
 
 
 def extract_discovered_attributes(html: str, attribute_names: list, sku: str = "") -> Dict:
-
     if not attribute_names:
         return {"source": "web", "attributes": {}, "error": "no_attributes_discovered"}
-
     prompt = f"""
 You are extracting specific technical specifications from HTML.
-
 Extract the VALUES for these attributes (if they exist in the HTML):
 {', '.join(attribute_names[:50])}  
-
 Rules:
 - Extract EXACTLY as written (preserve units, formatting, capitalization)
 - If an attribute appears multiple times, use the most detailed/complete value
@@ -403,10 +271,8 @@ Rules:
 - Ignore all technical metadata such as 'Ray ID', 'Cloudflare', 'Access Denied', or 'Cookies Consent'. Only extract product specifications.
 HTML (first 15000 chars):
 {html[:15000]}
-
 Output ONLY JSON: {{"source": "web", "attributes": {{"Attribute Name": "value"}}}}
 """
-
     schema = {
         "type": "object",
         "properties": {
@@ -415,14 +281,11 @@ Output ONLY JSON: {{"source": "web", "attributes": {{"Attribute Name": "value"}}
         },
         "required": ["source", "attributes"]
     }
-
     try:
         result = safe_call_llm(prompt, schema, "extract_discovered_attributes")
-
         if not result or "attributes" not in result:
             logger.warning(f"Extraction failed for {sku}")
             return {"source": "web", "attributes": {}, "error": "extraction_failed"}
-
         attrs = result["attributes"]
         if not attrs or all(v is None or v == "" for v in attrs.values()):
             logger.warning(
@@ -432,14 +295,11 @@ Output ONLY JSON: {{"source": "web", "attributes": {{"Attribute Name": "value"}}
                 "attributes": fallback_extraction(html),
                 "extraction_method": "fallback"
             }
-
         result["attributes"] = {
             k: v for k, v in attrs.items() if v is not None and v != ""}
         logger.info("Successfully extracted %d attributes for %s",
                     len(result['attributes']), sku)
-
         return result
-
     except Exception as e:
         logger.exception(f"Attribute extraction failed for {sku}: {e}")
         return {"source": "web", "attributes": {}, "error": str(e)}
@@ -448,13 +308,11 @@ Output ONLY JSON: {{"source": "web", "attributes": {{"Attribute Name": "value"}}
 def extract_from_pdf(text: str) -> Dict:
     if not text.strip():
         return {"source": "pdf", "attributes": {}, "error": "empty_pdf"}
-
     prompt = f"""
 Extract technical specifications from this PDF text.
 Rules: - Extract tables, bullet specs, compliance data - Keep original wording - No assumptions
 Text (first 12000 chars):
 {text[:12000]}
-
 Output ONLY JSON: {{"source": "pdf", "attributes": {{"Spec Name": "Value"}}}}
 """
     schema = {
@@ -472,12 +330,10 @@ Output ONLY JSON: {{"source": "pdf", "attributes": {{"Spec Name": "Value"}}}}
 def extract_from_image(description: str) -> Dict:
     if not description.strip():
         return {"source": "image", "metadata": {"text_detected": []}, "error": "no_description"}
-
     prompt = f"""
 Analyze this product image description. Extract only visible text.
 Do not guess specifications.
 Description: {description}
-
 Output ONLY JSON.
 """
     schema = {
@@ -501,17 +357,14 @@ Output ONLY JSON.
 def aggregate_per_canonical(canonical: str, values: List[Dict]) -> Dict:
     if not values:
         return {canonical: {"values": [], "conflict": False}}
-
     prompt = f"""
 Aggregate values for canonical attribute '{canonical}'.
 Raw values: {json.dumps(values)}
-
 Rules:
 - Keep all raw values
 - Preserve source
 - conflict = True only if values differ meaningfully (e.g. 12 vs 13)
 - "12 inch" vs "12\"" → conflict = False
-
 Return ONLY JSON.
 """
     schema = {
@@ -535,7 +388,6 @@ Return ONLY JSON.
 def standardize_with_llm(attribute: str, values: List[str]) -> dict:
     if not values:
         return {"standard_value": None, "unit": None, "derived_from": []}
-
     prompt = f"""
 Standardize attribute: {attribute}
 Values: {json.dumps(values)}
@@ -559,13 +411,11 @@ def unify_attributes(attributes: List[str]):
 You are a semantic attribute harmonization engine.
 Raw attribute names from multiple sources:
 {attributes}
-
 Task:
 - Identify which attributes mean the same thing
 - Group them under ONE canonical attribute in snake_case
 - Do NOT invent new attributes
 - Return only valid JSON
-
 Example output:
 {{
   "canonical_attributes": {{
@@ -580,7 +430,6 @@ Example output:
   }}
 }}
 """
-
     schema = {
         "name": "unification",
         "schema": {
@@ -601,10 +450,8 @@ Example output:
             "required": ["canonical_attributes"]
         }
     }
-
     result = call_llm(prompt, schema)
     return result
-
 
 
 def build_golden_record(
@@ -613,7 +460,6 @@ def build_golden_record(
     taxonomy: Optional[str] = None,
     primary_attributes: Optional[List[str]] = None
 ) -> Dict:
-
     if not identifiers or 'mpn' not in identifiers:
         logger.error("Golden record failed: missing identifiers")
         return {
@@ -623,7 +469,6 @@ def build_golden_record(
             'ready_for_publish': False,
             'error': 'missing_identifiers'
         }
-
     if not standardized_data:
         logger.warning("Golden record: no standardized data")
         return {
@@ -633,10 +478,8 @@ def build_golden_record(
             'ready_for_publish': False,
             'error': 'no_standardized_data'
         }
-
     tech_spec_count = len(standardized_data)
     has_brand = bool(identifiers.get('brand'))
-
     taxonomy_input_line = f"Category: {taxonomy}" if taxonomy else ""
     taxonomy_instruction_line = f"3. Include the taxonomy: {taxonomy}" if taxonomy else ""
     taxonomy_json_line = f'"taxonomy": "{taxonomy}",' if taxonomy else ""
@@ -646,10 +489,10 @@ def build_golden_record(
         priority_instruction = f"""
 USER-REQUESTED ATTRIBUTE NAMES (PRIORITY):
 {attrs_list}
-
 TASK: If any data in 'STANDARDIZED ATTRIBUTES' matches the meaning of a 'USER-REQUESTED' name above (e.g. 'color_temp' matches 'Color Temperature'), you MUST use the 'USER-REQUESTED' name as your JSON key.
 """
-    attribute_names_list = ", ".join([f'"{k}"' for k in standardized_data.keys()])
+    attribute_names_list = ", ".join(
+        [f'"{k}"' for k in standardized_data.keys()])
     feature_rules = f"""
  CRITICAL: FEATURES RULES:
 - Features should be BENEFIT-ORIENTED descriptions, NOT raw specifications
@@ -661,7 +504,6 @@ TASK: If any data in 'STANDARDIZED ATTRIBUTES' matches the meaning of a 'USER-RE
 - GOOD Feature: "Durable aluminum construction withstands harsh conditions"
 - Format: Convert specs into benefits/advantages/use cases
 - Focus on: What makes this product valuable? Why would someone buy it?
-
 GOOD FEATURE EXAMPLES:
 - "High output of 18,000 lumens illuminates large spaces effectively"
 - "Energy-efficient LED technology reduces utility costs by up to 60%"
@@ -670,17 +512,13 @@ GOOD FEATURE EXAMPLES:
 """
     prompt = f"""
 Create a product Golden Record and return the result as JSON.
-
 INPUT DATA:
 SKU/MPN: {identifiers.get('mpn')}
 Brand: {identifiers.get('brand')}
 {taxonomy_input_line}
-
 STANDARDIZED ATTRIBUTES (Found Data):
 {json.dumps(standardized_data, indent=2)}
-
 {priority_instruction}
-
 YOUR TASK:
 Create a clean JSON object with:
 1. Copy the SKU and brand from above
@@ -694,12 +532,9 @@ Create a clean JSON object with:
    - short_description: Write 1-2 sentences summarizing the product
    - long_description: Write 2-3 paragraphs of detailed marketing copy  
    - features: Generate 5-10 benefit-oriented bullet points (see rules below)
-
 {feature_rules}
-
 6. Set ready_for_publish based on: has brand ({has_brand}) AND at least 4 specs ({tech_spec_count} found)
 7. Assign confidence 0.0-1.0 based on data completeness
-
 Return ONLY this JSON structure (no markdown, no extra text):
 {{
   "sku": "the SKU value",
@@ -718,13 +553,11 @@ Return ONLY this JSON structure (no markdown, no extra text):
   "ready_for_publish": true or false,
   "confidence": 0.0 to 1.0
 }}
-
 CRITICAL: 
 - Response must be valid JSON only
 - Features must be benefits, NOT specs repetition
 - Do not repeat attribute data in features
 """
-
     schema = {
         'type': 'object',
         'properties': {
@@ -737,8 +570,8 @@ CRITICAL:
             'features': {
                 'type': 'array',
                 'items': {'type': 'string'},
-                'minItems': 5,      
-                'maxItems': 10      
+                'minItems': 5,
+                'maxItems': 10
             },
             'ready_for_publish': {'type': 'boolean'},
             'confidence': {'type': 'number', 'minimum': 0, 'maximum': 1}
@@ -746,34 +579,26 @@ CRITICAL:
         'required': ['sku', 'brand', 'attributes', 'ready_for_publish'],
         'additionalProperties': False
     }
-
     try:
         result = safe_call_llm(prompt, schema, 'build_golden_record')
-
         if not result or 'error' in result:
             raise ValueError(
                 f"LLM returned error: {result.get('error', 'unknown')}"
             )
-
         missing = [f for f in ['sku', 'brand', 'attributes', 'ready_for_publish']
                    if f not in result]
         if missing:
             raise ValueError(f"Missing required fields: {missing}")
-
         if not result.get('attributes'):
             raise ValueError("Empty attributes")
-
         if taxonomy and 'taxonomy' not in result:
             result['taxonomy'] = taxonomy
-
         logger.info(
             f"✓ Golden record for {result['sku']}: "
             f"{len(result['attributes'])} attrs, "
             f"ready={result['ready_for_publish']}"
         )
-
         return result
-
     except Exception as e:
         logger.warning(
             f"Golden record LLM failed for {identifiers.get('mpn')}: {e}, "
@@ -789,11 +614,11 @@ CRITICAL:
         return {
             'sku': identifiers.get('mpn', 'UNKNOWN'),
             'brand': identifiers.get('brand', 'UNKNOWN'),
-            'taxonomy': taxonomy,  
+            'taxonomy': taxonomy,
             'attributes': standardized_data,
-            'short_description': f"{identifiers.get('brand', 'Quality')} {identifiers.get('mpn', 'product')}",  
-            'long_description': f"Professional grade product from {identifiers.get('brand', 'leading manufacturer')}.",  
-            'features': fallback_features,  
+            'short_description': f"{identifiers.get('brand', 'Quality')} {identifiers.get('mpn', 'product')}",
+            'long_description': f"Professional grade product from {identifiers.get('brand', 'leading manufacturer')}.",
+            'features': fallback_features,
             'ready_for_publish': has_brand and tech_spec_count >= 4,
             'confidence': 0.7 if tech_spec_count >= 5 else 0.5,
             'generated_by': 'deterministic_fallback',

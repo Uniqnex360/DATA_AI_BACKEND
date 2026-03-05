@@ -4,6 +4,8 @@ from alembic import context
 from sqlmodel import SQLModel
 import sys
 from pathlib import Path
+from app.models.attribute import AttributeValue,Attribute,CategoryAttribute
+from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -11,13 +13,13 @@ from app.core.config import settings
 
 from app.models.base import UUIDModel
 from app.models.product import Product
+from app.models.category import Category
 from app.models.project import Project
 from app.models.user import User
 from app.models.pipeline import (
     AuditTrail,
     CleansingIssue,
     StandardizedAttribute,
-    BusinessRule,
     Source,
     ReviewItem,
     SourcePriority,
@@ -26,6 +28,7 @@ from app.models.pipeline import (
     PublishTarget,
     AggregationJob 
 )
+from app.models.business_rule import BusinessRule,RulePrompt
 
 config = context.config
 

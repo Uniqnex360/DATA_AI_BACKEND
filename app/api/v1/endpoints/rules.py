@@ -16,23 +16,23 @@ async def seed_rules(payload: Dict, db: AsyncSession = Depends(get_session)):
         rules_data = payload.get("rules", [])
         
         for item in rules_data:
+            title = item.get("title", item.get("rule_id", "").replace("_", " ").title())
+            category = item.get("category", "enrichment")
             stmt = insert(BusinessRule).values(
                 rule_id=item["rule_id"],
-                attribute_name=item["attribute_name"],
-                rule_type=item["rule_type"],
-                rule_config=item["rule_config"],
-                active=item.get("active", True),
+                title=title,
+                category=category,
+                status='active' if item.get("active", True) else 'inactive',
                 updated_at=datetime.utcnow()
             )
 
             stmt = stmt.on_conflict_do_update(
                 index_elements=['rule_id'],
                 set_={
-                    "attribute_name": item["attribute_name"],
-                    "rule_type": item["rule_type"],
-                    "rule_config": item["rule_config"],
-                    "active": item.get("active", True),
-                    "updated_at": datetime.utcnow()
+                    "title": title,
+                    "category": category,
+                    "status": 'active' if item.get("active", True) else 'inactive',
+                    "updated_at": datetime.utcnow(),
                 }
             )
             

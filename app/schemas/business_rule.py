@@ -2,29 +2,49 @@
 from pydantic import BaseModel, Field, validator
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-from app.models.business_rule import RuleCategory, RuleStatus
+from app.models.enums import RuleCategory, RuleStatus
 
+class RulePromptBase(BaseModel):
+    prompt_name:str
+    prompt_text:str
+    description:Optional[str]=None
+    priority:int=100
+    variables:Optional[List[str]]=None
+    status:RuleStatus=RuleStatus.ACTIVE
+class RulePromptCreate(RulePromptBase)  :
+    pass
+class RulePromptUpdate(BaseModel):
+    prompt_name:Optional[str]=None
+    prompt_text:Optional[str]=None
+    description:Optional[str]=None
+    priority: Optional[int] = None
+    variables:Optional[List[str]]=None
+    status:RuleStatus=RuleStatus.ACTIVE
+    
+class RulePromptResponse(RulePromptBase):
+    id:str
+    rule_id:str
+    execution_count:int
+    last_executed_at:Optional[datetime]
+    created_at:datetime
+    updated_at:datetime
+    
+    class Config:
+        from_attributes=True
 class BusinessRuleBase(BaseModel):
-    rule_id: str = Field(..., min_length=3, max_length=100)
     title: str = Field(..., min_length=1, max_length=255)
     category: RuleCategory
     description: Optional[str] = None
-    prompt: str = Field(..., min_length=10)
-    variables: Optional[List[str]] = None
     status: RuleStatus = RuleStatus.ACTIVE
-    priority: int = Field(default=100, ge=0, le=1000)
-    
-    @validator('rule_id')
-    def validate_rule_id(cls, v):
-        if not v.replace('_', '').isalnum():
-            raise ValueError('rule_id must be alphanumeric with underscores')
-        return v.lower()
-    
-    @validator('prompt')
-    def validate_prompt(cls, v):
-        if len(v.strip()) < 10:
-            raise ValueError('Prompt must be at least 10 characters')
+    @validator('title')
+    def validate_title(cls,v):
+        if not v  or not v.strip():
+            raise ValueError('Title is required')
+        if len(v.strip())<3:
+            raise ValueError("Title must be atleast 3 characters")
         return v.strip()
+    
+   
 
 class BusinessRuleCreate(BusinessRuleBase):
     pass
@@ -32,16 +52,14 @@ class BusinessRuleCreate(BusinessRuleBase):
 class BusinessRuleUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
-    prompt: Optional[str] = None
-    variables: Optional[List[str]] = None
+    category:Optional[str]=None
     status: Optional[RuleStatus] = None
-    priority: Optional[int] = None
 
 class BusinessRuleResponse(BusinessRuleBase):
     id: str
+    rule_id:str
+    prompts:List[RulePromptResponse]=[]
     is_system: bool
-    execution_count: int
-    last_executed_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
     created_by: Optional[str]

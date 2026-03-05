@@ -1,70 +1,49 @@
-from sqlmodel import SQLModel, Field, Column, JSON
+from sqlmodel import SQLModel, Field, Column, JSON, Relationship
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-from uuid import uuid4, UUID
+from uuid import uuid4
 import enum
+import re
+from app.models.enums import RuleCategory, RuleStatus
 
-class RuleCategory(str,enum.Enum):
-    ENRICHMENT='enrichment'
-    AGGREGATION='aggregation'
-    VALIDATION='validation'
-    CLEANSING='cleansing'
 
-class RuleStatus(str,enum.Enum):
-    ACTIVE='active'
-    INACTIVE='inactive'
-    DRAFT='draft'
-
-class BusinessRule(SQLModel,table=True):
-    __tablename__='business_rules'
+class BusinessRule(SQLModel, table=True):
+    __tablename__ = "business_rules"
     id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
-    rule_id:str=Field(index=True,unique=True)
-    title:str=Field(max_length=255)
-    category:RuleCategory
-    description:Optional[str]=None
-    prompt:str=Field(sa_column=Column(JSON))
-    variables:Optional[Dict[str,Any]]=Field(default=None,sa_column=Column(JSON))
+    rule_id: str = Field(index=True, unique=True)
+    title: str = Field(max_length=255)
+    category: RuleCategory
+    description: Optional[str] = None
     status: RuleStatus = Field(default=RuleStatus.ACTIVE)
-    priority:int=Field(default=100)
-    created_by:Optional[str]=None
-    updated_by:Optional[str]=None
-    created_at:datetime=Field(default_factory=datetime.utcnow)
-    updated_at:datetime=Field(default_factory=datetime.utcnow)
+    prompts: List["RulePrompt"] = Relationship(
+        back_populates="rule", cascade_delete=True)
+    created_by: Optional[str] = None
+    updated_by: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    is_system: bool = Field(default=False)
+
+    @staticmethod
+    def generate_rule_id(title: str) -> str:
+        rule_id = title.lower()
+        rule_id = re.sub(r'[^a-z0-9\s]', '', rule_id)
+        rule_id = re.sub(r'\s+', '_', rule_id)
+        return rule_id
+
+
+class RulePrompt(SQLModel, table=True):
+    __tablename__ = "rule_prompts"
+    id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
+    rule_id: str = Field(foreign_key="business_rules.id", index=True)
+    prompt_name: str = Field(max_length=255)
+    prompt_text: str
+    description: Optional[str] = None
+    variables: Optional[List[str]] = Field(
+        default=None, sa_column=Column(JSON))
+    priority: int = Field(default=100)
+    status: RuleStatus = Field(default=RuleStatus.ACTIVE)
+    rule: BusinessRule = Relationship(back_populates="prompts")
     execution_count: int = Field(default=0)
     last_executed_at: Optional[datetime] = None
-    is_system: bool = Field(default=False)
-    
-    class Config:
-        json_schema_extra={
-            'example':{
-                'rule_id':'enrich_product_v1',
-                'title':'Enrich Product',
-                'category':'enrichment',
-                'description':"Generate  SEO from attributes",
-                'prompt':'You are an expert copywriter...',
-                'variables':['brand','category','attributes'],
-                'status':'active',
-                'priority':100
-            }
-        }
-    
-class RuleExecutionLog(SQLModel,table=True):
-    __tablename__='rule_execution_log'
-    id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
-    rule_id:str=Field(index=True,unique=True)
-    product_id:Optional[str]=Field(index=True)
-    input_data:Optional[Dict[str,Any]]=Field(sa_column=Column(JSON))
-    output_data:Optional[Dict[str,Any]]=Field(sa_column=Column(JSON))
-    status:str=Field(default='success')
-    error_message:Optional[str]=None
-    execution_time_ms:Optional[str]=None
-    executed_at:datetime=Field(default_factory=datetime.utcnow)
-    class Config:
-        json_schema_extra={
-            'example':{
-                'rule_id':'uuid',
-                'product_id':'uuid',
-                'status':'success',
-                'execution_time_ms':1250
-            }
-        }
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)

@@ -166,6 +166,7 @@ def semantic_match_key(target_name: str, ai_keys: list) -> str:
         if score > highest_score and score > 75:
             highest_score, best_key = score, key
     return best_key
+
 @router.get("/{source_id}/download")
 async def download_file(
     source_id: str,
@@ -440,7 +441,7 @@ async def download_file(
                         val = ai_data[match_key]
                         row[f"attribute_value{i}"] = clean_for_excel(val, template_attr_name)
                         if isinstance(val, dict):
-                            uom = val.get("uom", "")
+                            uom = val.get("unit", "")
                             if uom and uom.lower() not in ["n/a", "na", "none", "null"]:
                                 row[f"attribute_uom{i}"] = clean_for_excel(uom)
                         used_ai_keys.add(match_key)
