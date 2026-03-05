@@ -6,7 +6,7 @@ from alembic.script import ScriptDirectory
 from alembic.runtime.environment import EnvironmentContext
 from sqlalchemy.ext.asyncio import create_async_engine
 import logging
-
+from sqlalchemy import create_engine
 from app.core.config import settings
 
 logger = logging.getLogger("smart_migration")
@@ -20,7 +20,7 @@ async def run_migrations():
     
     
     sync_db_url = str(settings.DATABASE_URL).replace("postgresql+asyncpg", "postgresql")
-    engine = create_async_engine(sync_db_url).sync_engine
+    engine = create_engine(sync_db_url)
 
     script = ScriptDirectory.from_config(alembic_cfg)
     
