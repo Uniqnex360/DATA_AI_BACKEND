@@ -57,6 +57,7 @@ class Product(UUIDModel,table=True):
     attribute_values: List["AttributeValue"] = Relationship(
         back_populates="products", link_model=ProductAttributeValueLinkModel
     )
+    sources_consulted: Optional[List[str]] = Field(default=None, sa_column=Column(JSON))
     published_at: Optional[datetime] = Field(default=None, nullable=True)
     gtin:Optional[str]=None
     upc:Optional[str]=None

@@ -8,6 +8,7 @@ from app.core.database import get_session, async_session_factory
 from app.models.product import Product
 from typing import List
 import logging
+from sqlalchemy.orm.attributes import flag_modified
 import json
 import io
 import hashlib
@@ -210,7 +211,8 @@ async def download_file(
             attr_headers = []
             for i in range(1, 21):
                 attr_headers.extend([f"attribute_name{i}", f"attribute_value{i}", f"attribute_uom{i}", f"validation_value{i}", f"validation_uom{i}"])
-            all_headers = core_headers + cat_headers + phys_headers + price_headers + media_headers + content_headers + attr_headers
+            source_url_headers = [f"source_url_{i}" for i in range(1, 6)]
+            all_headers = core_headers + cat_headers + phys_headers + price_headers + media_headers + content_headers + attr_headers+source_url_headers
             DEDICATED_COLUMN_MAPPING = {
                 "name": "Product_Name",
                 "product_name": "Product_Name",
@@ -482,6 +484,9 @@ async def download_file(
                         if uom and uom.lower() not in ["n/a", "na", "none", "null"]:
                             row[f"attribute_uom{current_slot}"] = clean_for_excel(uom)
                     current_slot += 1
+                if p.sources_consulted and isinstance(p.sources_consulted, list):
+                    for i, url in enumerate(p.sources_consulted[:5], 1):
+                        row[f"source_url_{i}"] = url
                 sanitized_row = {str(k): sanitize_for_excel(v) for k, v in row.items()}
                 export_rows.append(sanitized_row)
             df = pd.DataFrame(export_rows, columns=all_headers)
@@ -914,6 +919,8 @@ async def run_aggregation_task(source_id: str):
                         product.long_description = sanitize_ai_data(golden.get('long_description')) or product.long_description
                         product.features = sanitize_ai_data(golden.get('features')) or product.features
                         product.attributes = {**product.attributes, **sanitize_ai_data(ai_attributes)}
+                        sources = golden.get('sources_consulted', [])
+                        product.sources_consulted = sources
                         product.completeness_score = min(len(ai_attributes) * 5, 100)
                         db_session.add(RawExtraction(
                             source_id=source.id,
@@ -924,6 +931,7 @@ async def run_aggregation_task(source_id: str):
                                 'golden_record', {}).get('confidence', 0.9),
                             extracted_at=datetime.utcnow()
                         ))
+                        flag_modified(product, "sources_consulted") 
                         db_session.add(product)
                         successful += 1
                     else:

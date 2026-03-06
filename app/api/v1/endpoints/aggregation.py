@@ -512,6 +512,8 @@ async def run_project_aggregation_task(job_id: str) -> None:
                             product.image_url_1 = found_image
                         product.enrichment_status = 'completed'
                         product.completeness_score = min(len(ai_attributes) * 5, 100)
+                        product.sources_consulted = golden.get('sources_consulted', [])
+                        logger.info(f"Saving product {product.product_code} with sources: {product.sources_consulted}")
                         db_session.add(product)
 
                         await check_data_quality(db_session, product.product_code, ai_attributes)
@@ -645,6 +647,7 @@ async def run_single_product_aggregation(product_id: str) -> None:
                         f" No valid image for {product.product_code}")
                 product.enrichment_status = 'completed'
                 product.completeness_score = min(len(ai_data) * 5, 100)
+                product.sources_consulted = golden.get('sources_consulted', [])
                 await check_data_quality(db_session, product.product_code, ai_data)
                 remaining_stmt = select(func.count(Product.id)).where(
                     and_(

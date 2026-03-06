@@ -1,3 +1,4 @@
+from __future__ import annotations
 from sqlmodel import Field,LargeBinary
 from datetime import datetime
 from app.models.base import UUIDModel

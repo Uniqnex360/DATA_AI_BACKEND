@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import logging
 from typing import Dict, List, Any, Optional
@@ -164,10 +165,10 @@ def extract_from_web(
     if custom_prompt:
         logger.info(f" Using CUSTOM prompt for {sku}")
         full_prompt = f"""{custom_prompt}
-HTML CONTENT TO EXTRACT FROM:
-{html[:12000]}  
-Extract the requested attributes from this HTML content.
-"""
+        HTML CONTENT TO EXTRACT FROM:
+        {html[:12000]}  
+        Extract the requested attributes from this HTML content.
+        """
         try:
             result = safe_call_llm(
                 prompt=full_prompt,
@@ -220,23 +221,23 @@ def discover_attributes(html: str, sku: str = "", taxonomy: str = None) -> Dict:
     taxonomy_context = ""
     if taxonomy:
         taxonomy_context = f"CONTEXT: This product belongs to the category: '{taxonomy}'. Prioritize finding attributes standard for this category."
-    prompt = f"""
-You are analyzing an HTML product page to discover what technical specifications exist.
-{taxonomy_context}
-Your job: Identify ALL attribute names/labels that appear in the HTML, especially in:
-- Table headers or row labels
-- Definition list terms (<dt>)
-- Labels before colons (e.g., "Battery Capacity:", "Material:")
-- Section headings containing "specifications", "details"
-Do NOT extract values yet - only find the attribute NAMES.
-HTML (first 10000 chars):
-{html[:10000]}
-Output ONLY JSON:
-{{
-  "found_attributes": ["attribute name 1", "attribute name 2", ...],
-  "product_type_hint": "brief description of what this product appears to be"
-}}
-"""
+        prompt = f"""
+    You are analyzing an HTML product page to discover what technical specifications exist.
+    {taxonomy_context}
+    Your job: Identify ALL attribute names/labels that appear in the HTML, especially in:
+    - Table headers or row labels
+    - Definition list terms (<dt>)
+    - Labels before colons (e.g., "Battery Capacity:", "Material:")
+    - Section headings containing "specifications", "details"
+    Do NOT extract values yet - only find the attribute NAMES.
+    HTML (first 10000 chars):
+    {html[:10000]}
+    Output ONLY JSON:
+    {{
+    "found_attributes": ["attribute name 1", "attribute name 2", ...],
+    "product_type_hint": "brief description of what this product appears to be"
+    }}
+    """
     schema = {
         "type": "object",
         "properties": {
@@ -457,6 +458,7 @@ Example output:
 def build_golden_record(
     standardized_data: Dict,
     identifiers: Dict,
+    scraped_urls:List[str],
     taxonomy: Optional[str] = None,
     primary_attributes: Optional[List[str]] = None
 ) -> Dict:
@@ -598,6 +600,12 @@ CRITICAL:
             f"{len(result['attributes'])} attrs, "
             f"ready={result['ready_for_publish']}"
         )
+        result['sources_consulted'] = scraped_urls
+        logger.info(
+            f"✓ Golden record for {result['sku']}: "
+            f"{len(result['attributes'])} attrs, "
+            f"ready={result['ready_for_publish']}"
+        )
         return result
     except Exception as e:
         logger.warning(
@@ -621,6 +629,7 @@ CRITICAL:
             'features': fallback_features,
             'ready_for_publish': has_brand and tech_spec_count >= 4,
             'confidence': 0.7 if tech_spec_count >= 5 else 0.5,
+            'sources_consulted': scraped_urls,
             'generated_by': 'deterministic_fallback',
             'reason': str(e)
         }

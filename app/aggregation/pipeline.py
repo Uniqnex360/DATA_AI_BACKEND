@@ -57,7 +57,7 @@ class AggregationPipeline:
             "brand": brand or (title or "").split(maxsplit=1)[0] if title else ""
 
         }
-
+    
         queries = generate_search_queries(mpn, identifiers["brand"], title)
         if not queries:
             queries = [f"{mpn} datasheet pdf", f"{title} specifications"]
@@ -104,7 +104,7 @@ class AggregationPipeline:
                 return {
                     "status": "success",
                     "image_url": final_image_url,
-                    "golden_record": {"attributes": {}, "ready_for_publish": False},
+                    "golden_record": {"attributes": {}, "ready_for_publish": False,"sources_consulted": urls },
                 }
             return {"status": "failed", "reason": "No specifications found"}
 
@@ -146,6 +146,7 @@ class AggregationPipeline:
             build_golden_record, 
             standardized, 
             identifiers,
+            scraped_urls=urls,
             taxonomy=taxonomy,
             primary_attributes=prompt_config.get('expected_attributes') if prompt_config else None
         )
