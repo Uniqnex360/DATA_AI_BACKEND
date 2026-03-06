@@ -284,7 +284,7 @@ async def download_file(
                 "main_image": "image_url_1",
                 "3d_model": "3D_Model_URL",
                 "model_3d": "3D_Model_URL",
-                "images": "image_url_1"
+                # "images": "image_url_1"
             }
             IGNORED_KEYS = {
                 "share", "latest_news", "search_for", "error_ref", "important",
@@ -353,6 +353,21 @@ async def download_file(
                 ai_data = dict(p.attributes or {})
                 taxonomy = p.taxonomy or "Unknown"
                 attribute_template = taxonomy_templates.get(taxonomy, [])
+                if 'images' in ai_data and isinstance(ai_data['images'], list):
+                    images_list=ai_data.pop('images')
+                    for i, img_url in enumerate(images_list[:8], 1):
+                        row[f'image_url_{i}'] = clean_for_excel(img_url)
+                    logger.info(f"Mapped {len(images_list)} URLs from 'images' key.")
+                elif 'image_url' in ai_data:
+                    row['image_url_1'] = clean_for_excel(ai_data.pop('image_url'))
+                elif 'main_image' in ai_data:
+                    row['image_url_1'] = clean_for_excel(ai_data.pop('main_image'))
+                elif 'image' in ai_data:
+                    row['image_url_1'] = clean_for_excel(ai_data.pop('image'))
+                if not row.get("image_url_1") and p.image_url_1:
+                    row["image_url_1"] = p.image_url_1
+                    
+                        
                 for ai_key in list(ai_data.keys()):
                     ai_key_norm = ai_key.lower().replace('_', '').replace(' ', '').replace('-', '')
                     for map_key, target_col in DEDICATED_COLUMN_MAPPING.items():
