@@ -449,29 +449,84 @@ async def download_file(
                                 row[f"image_url_{i}"] = img.get("url", "")
                             else:
                                 row[f"image_url_{i}"] = str(img) if img else ""
+                # used_ai_keys = set()
+                # for i, template_attr_name in enumerate(attribute_template, 1):
+                #     if i > 20:
+                #         break
+                #     row[f"attribute_name{i}"] = template_attr_name
+                #     match_key = None
+                #     template_norm = template_attr_name.lower().replace(' ', '').replace('_', '').replace('-', '')
+                #     for ai_key in ai_data.keys():
+                #         if ai_key in used_ai_keys or ai_key.lower() in IGNORED_KEYS:
+                #             continue
+                #         ai_norm = ai_key.lower().replace(' ', '').replace('_', '').replace('-', '')
+                #         if template_norm == ai_norm or (template_norm in ai_norm and len(template_norm) > 3):
+                #             match_key = ai_key
+                #             break
+                #     if match_key:
+                #         val = ai_data[match_key]
+                #         row[f"attribute_value{i}"] = clean_for_excel(val, template_attr_name)
+                #         if isinstance(val, dict):
+                #             uom_obj = val.get("uom") or val.get("unit")
+                #             uom = clean_for_excel(uom_obj)
+                #             if uom:
+                #                   row[f"attribute_uom{i}"] = uom
+                #         used_ai_keys.add(match_key)
+                                # 1. Map Original Data for Lookup (Backfilling/Validation source)
+                original_data_map = {}
+                if p.dynamic_attributes:
+                    for attr in p.dynamic_attributes:
+                        if isinstance(attr, dict) and attr.get('name'):
+                            k_norm = attr['name'].strip().lower().replace('_', '').replace(' ', '').replace('-', '')
+                            original_data_map[k_norm] = attr
+
                 used_ai_keys = set()
+                
                 for i, template_attr_name in enumerate(attribute_template, 1):
                     if i > 20:
                         break
+                    
                     row[f"attribute_name{i}"] = template_attr_name
-                    match_key = None
                     template_norm = template_attr_name.lower().replace(' ', '').replace('_', '').replace('-', '')
+                    
+                    ai_match_key = None
                     for ai_key in ai_data.keys():
                         if ai_key in used_ai_keys or ai_key.lower() in IGNORED_KEYS:
                             continue
                         ai_norm = ai_key.lower().replace(' ', '').replace('_', '').replace('-', '')
                         if template_norm == ai_norm or (template_norm in ai_norm and len(template_norm) > 3):
-                            match_key = ai_key
+                            ai_match_key = ai_key
                             break
-                    if match_key:
-                        val = ai_data[match_key]
-                        row[f"attribute_value{i}"] = clean_for_excel(val, template_attr_name)
-                        if isinstance(val, dict):
-                            uom_obj = val.get("uom") or val.get("unit")
-                            uom = clean_for_excel(uom_obj)
-                            if uom:
-                                  row[f"attribute_uom{i}"] = uom
-                        used_ai_keys.add(match_key)
+                    
+                    ai_val_str = ""
+                    ai_uom_str = ""
+                    
+                    if ai_match_key:
+                        raw_val = ai_data[ai_match_key]
+                        ai_val_str = clean_for_excel(raw_val, template_attr_name)
+                        if isinstance(raw_val, dict):
+                            uom_obj = raw_val.get("uom") or raw_val.get("unit")
+                            ai_uom_str = clean_for_excel(uom_obj)
+                        used_ai_keys.add(ai_match_key)
+
+                    orig_match = original_data_map.get(template_norm)
+                    orig_val_str = ""
+                    orig_uom_str = ""
+                    if orig_match:
+                        orig_val_str = clean_for_excel(orig_match.get('value'))
+                        orig_uom_str = clean_for_excel(orig_match.get('uom') or orig_match.get('unit'))
+
+                    
+                    final_val = ai_val_str if ai_val_str else orig_val_str
+                    final_uom = ai_uom_str if ai_val_str else orig_uom_str
+                    
+                    row[f"attribute_value{i}"] = final_val
+                    row[f"attribute_uom{i}"] = final_uom
+
+                    if ai_val_str and orig_val_str:
+                        if ai_val_str.lower().strip() != orig_val_str.lower().strip():
+                            row[f"validation_value{i}"] = orig_val_str
+                            row[f"validation_uom{i}"] = orig_uom_str
                 remaining_attrs = [k for k in ai_data.keys() if k not in used_ai_keys and k.lower() not in IGNORED_KEYS]
                 current_slot = len(attribute_template) + 1
                 for ai_key in remaining_attrs:
@@ -503,7 +558,7 @@ async def download_file(
     except Exception as e:
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Error generating download")
-    
+
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
     request: Request,
@@ -547,6 +602,12 @@ async def batch_aggregate(
             raise HTTPException(status.HTTP_409_CONFLICT,
                                 "File already uploaded recently.")
         rows = parse_import_file(content, file.filename)
+        valid_rows = []
+        for r in rows:
+            if str(r.get('sku', '')).strip() or str(r.get('mpn', '')).strip() or str(r.get('product_name', '')).strip():
+                valid_rows.append(r)
+                
+        rows = valid_rows
         total_rows = len(rows)
         if total_rows == 0:
             raise HTTPException(status.HTTP_400_BAD_REQUEST,
@@ -554,6 +615,39 @@ async def batch_aggregate(
         if total_rows > MAX_ROWS:
             raise HTTPException(status.HTTP_400_BAD_REQUEST,
                                 f"Too many rows ({total_rows}). Max {MAX_ROWS}.")
+        use_case=project.use_case or ""
+        has_taxonomy_col = len(rows) > 0 and ('taxonomy' in rows[0] or 'category_1' in rows[0])
+        has_attr_col = len(rows) > 0 and 'dynamic_attributes' in rows[0]
+        all_have_taxonomy = all(str(row.get('taxonomy', '')).strip() or str(row.get('category_1', '')).strip() for row in rows) if has_taxonomy_col else False
+        def row_has_attr_name(r):
+            dyn_attrs = r.get("dynamic_attributes", [])
+            return any(str(attr.get('name', '')).strip() for attr in dyn_attrs)
+
+        def row_has_attr_val(r):
+            dyn_attrs = r.get("dynamic_attributes", [])
+            return any(str(attr.get('value', '')).strip() for attr in dyn_attrs)
+        all_have_attributes = all(row_has_attr_name(row) for row in rows) if has_attr_col else False
+        all_have_values = all(row_has_attr_val(row) for row in rows) if has_attr_col else False
+        if use_case == "With categories without attribute":
+            if not all_have_taxonomy:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Strict Validation Failed: EVERY row must have a Taxonomy/Category.')
+        
+        # elif use_case == "With categories with attributes":
+        #     if not all_have_taxonomy:
+        #         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Strict Validation Failed: EVERY row must have a Taxonomy/Category.')
+        #     if not all_have_attributes:
+        #         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to upload products, Every row must have at least 'attribute_name1' filled.")
+        
+        elif use_case in [
+            "With Categories with attribute (back filling)", 
+            "With Categories with attribute (back filling) and existing attribute validation"
+        ]:
+            if not all_have_taxonomy:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Strict Validation Failed: EVERY row must have a Taxonomy/Category.")
+            if not all_have_attributes:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Strict Validation Failed: EVERY row must have at least 'attribute_name1' filled.")
+            if not all_have_values:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Strict Validation Failed: EVERY row must have at least 'attribute_value1' filled for backfilling/validation.")
         inferred_count = 0
         for row in rows:
             if not row.get("taxonomy"):
@@ -909,7 +1003,8 @@ async def run_aggregation_task(source_id: str):
                         brand=product.brand_name,
                         taxonomy=product.taxonomy,
                         primary_attributes=primary_attr_names,
-                        db=db_session
+                        db=db_session,
+                        project_id=source.project_id
                     )
                     if aggregation_result.get('status') == 'success':
                         golden = aggregation_result.get('golden_record', {})

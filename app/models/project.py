@@ -10,7 +10,4 @@ class Project(UUIDModel, table=True):
     name: str = Field(index=True)
     client: Optional[str] = None
     status: str = Field(default="draft") 
-    use_cases: Optional[List[str]] = Field(
-        default=None,
-        sa_column=Column(JSON)
-    )
+    use_case: Optional[str] = Field(default=None)

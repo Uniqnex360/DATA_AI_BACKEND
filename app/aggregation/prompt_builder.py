@@ -1,3 +1,4 @@
+from __future__ import annotations
 from sqlmodel import select, and_
 from app.models.attribute import Attribute, CategoryAttribute
 from app.models.category import Category
@@ -14,7 +15,8 @@ async def build_aggregation_prompt(
     taxonomy: Optional[str] = None,
     primary_attributes: Optional[List[str]] = None,
     existing_data: Optional[Dict[str, Any]] = None,
-    db: Optional[AsyncSession] = None
+    db: Optional[AsyncSession] = None,
+    use_case: Optional[str] = None,
 ) -> Dict[str, Any]:
     has_primary_attrs = primary_attributes and len(primary_attributes) > 0
     has_taxonomy = taxonomy and taxonomy.strip()
@@ -27,14 +29,67 @@ async def build_aggregation_prompt(
         context_parts.append(f"Category: {taxonomy}")
     context = "\n".join(context_parts)
     naming_rules = """
+    
 ATTRIBUTE NAMING RULES:
 - Use SINGULAR forms: "Material" not "Materials", "Certification" not "Certifications"
 - Use Title Case: "Color Temperature" not "color temperature"
 - Be consistent: Always use the same name for the same concept
 - Common attributes: Material, Dimension, Weight, Color, Certification, Feature, Standard
 """
+    strict_extraction_rules = """
+STRICT REJECTION RULES (CRITICAL):
+1. Do NOT extract website metadata, HTML attributes, file access dates, or server timestamps.
+2. Do NOT extract user comments, forum posts, or email headers (e.g., 'subject', 'received').
+3. If a requested attribute (like 'Internal Bin Code' or 'Custom ID') is clearly a proprietary internal tracking number and NOT a public specification, you MUST ignore it. Do not invent or guess a value.
+4. If the page content is clearly NOT a product page (e.g., it is a forum, a blog about a different topic, or an error page), return an empty attributes object {}.
+"""
+    has_existing_values=False
+    existing_list=[]
+    if existing_data and has_primary_attrs:
+        for attr in primary_attributes:
+            if existing_data.get(attr):
+                has_existing_values=True
+                break
+    if has_primary_attrs and has_existing_values:
+        existing_list=[]    
+        for attr in primary_attributes:
+            val=existing_data.get(attr,'MISSING')
+            existing_list.append(f"  • {attr}: {val}")
+        existing_text = "\n".join(existing_list)
+        prompt=f"""
+        You are extracting product specifications from web searches and data sources.
+        {context}
+        CURRENT DATA (Verify & Enrich):
+        {existing_text}
 
-    if has_primary_attrs:
+        TASK:
+        1. VALIDATE: Check if the "CURRENT DATA" is correct based on official sources. 
+        - CRITICAL: If you cannot find information about an attribute (e.g., it is an internal code like a Bin Number), DO NOT change it. Leave it out of your response entirely so we know to keep the original.
+        - Only return a value for a 'CURRENT DATA' attribute if you find a definitively DIFFERENT, more accurate value.
+        2. DISCOVER: Find technical specifications NOT in the list above.
+        {strict_extraction_rules} 
+
+        EXTRACTION RULES:
+        1. Extract EXACT values with units.
+        2. Return attributes that are NEW or CORRECTED.
+        3. Do not simply repeat correct existing data.
+        
+
+        OUTPUT FORMAT:
+        {{
+        "attributes": {{
+        "new_attribute": {{"value": "val", "uom": "unit", "confidence": 0.95}},
+        "corrected_attribute": {{"value": "new_val", "uom": "unit", "confidence": 0.90}}
+        }}
+        }}
+        Search the web, validate existing data, and discover new specifications."""
+        return {
+            'prompt':prompt,
+            "expected_attributes": primary_attributes + ["*discover*"],
+            'mode':'enrichment_validation',
+            'primary_count':len(primary_attributes)
+        }
+    elif has_primary_attrs:
         primary_list = "\n".join(
             [f"  {i+1}. {attr}" for i, attr in enumerate(primary_attributes)])
         prompt = f"""You are extracting product specifications from web searches and data sources.
@@ -51,6 +106,7 @@ ADDITIONAL ATTRIBUTES (Extract any others you discover):
   • Certifications and compliance
   • Material composition
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{strict_extraction_rules}  
 EXTRACTION RULES:
 1. Extract EXACT values as they appear (preserve units, formatting)
 2. If a primary attribute is not found, leave it blank (do NOT guess)
@@ -95,6 +151,7 @@ COMMON ATTRIBUTES FOR THIS CATEGORY:
 TASK: Discover and extract ALL relevant technical specifications for this product.
 {hints_text}
 {naming_rules}
+{strict_extraction_rules}
 EXTRACTION GUIDELINES:
 1. Start with category-typical attributes (listed above)
 2. Then extract ANY other specifications you find
@@ -139,6 +196,7 @@ Determine the product category/taxonomy:
 PHASE 2 - EXTRACT:
 Extract ALL relevant specifications (aim for 15-20 attributes):
 {naming_rules} 
+{strict_extraction_rules} 
 MUST INCLUDE (if applicable):
   • Physical: Dimensions, Weight, Material
   • Technical: Power, Voltage, Capacity, Performance specs
@@ -169,7 +227,6 @@ Search the web and perform comprehensive product discovery."""
             "expected_attributes": ["*discover*"],
             "mode": "full_discovery"
         }
-logger = logging.getLogger("prompt_builder")
 
 
 async def get_taxonomy_attribute_hints(
@@ -182,7 +239,7 @@ async def get_taxonomy_attribute_hints(
         clean_path = " > ".join([part.strip()
                                 for part in taxonomy.split(">") if part.strip()])
         stmt = (
-            select(Attribute.display_name) 
+            select(Attribute.display_name)
             .join(CategoryAttribute, Attribute.id == CategoryAttribute.attribute_id)
             .join(Category, CategoryAttribute.category_id == Category.id)
             .where(
@@ -202,7 +259,7 @@ async def get_taxonomy_attribute_hints(
             path_parts.pop()
             parent_path = " > ".join(path_parts)
             parent_stmt = (
-                select(Attribute.display_name) 
+                select(Attribute.display_name)
                 .join(CategoryAttribute, Attribute.id == CategoryAttribute.attribute_id)
                 .join(Category, CategoryAttribute.category_id == Category.id)
                 .where(and_(Category.full_path == parent_path, CategoryAttribute.is_primary == True))
@@ -214,7 +271,7 @@ async def get_taxonomy_attribute_hints(
                 return parent_hints
         leaf_name = clean_path.split(" > ")[-1]
         leaf_stmt = (
-            select(Attribute.display_name) 
+            select(Attribute.display_name)
             .join(CategoryAttribute, Attribute.id == CategoryAttribute.attribute_id)
             .join(Category, CategoryAttribute.category_id == Category.id)
             .where(and_(Category.name == leaf_name, CategoryAttribute.is_primary == True))

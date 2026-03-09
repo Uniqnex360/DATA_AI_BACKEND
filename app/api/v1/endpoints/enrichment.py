@@ -17,6 +17,7 @@ async def get_enrichment(product_id: str, db: AsyncSession = Depends(get_session
     except Exception as e:
         logger.error(f"Failed to fetch enrichment: {e}")
         return None
+    
 @router.post("/run/{product_id}")
 async def run_enrichment(product_id: str, db: AsyncSession = Depends(get_session)):
     try:

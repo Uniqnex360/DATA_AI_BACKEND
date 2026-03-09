@@ -6,6 +6,8 @@ from app.aggregation.services.search_service import SerpApiSearchService
 from app.aggregation.services.download_service import HttpDownloadService
 from app.aggregation.services.extraction_service import (
     ExtractionService, HtmlExtractor, PdfExtractor, PlaywrightExtractor, StructuredDataExtractor)
+from app.models.project import Project
+
 from app.aggregation.services.image_service import ImageService
 from app.aggregation.prompt_builder import build_aggregation_prompt
 import logging
@@ -32,16 +34,26 @@ async def aggregate_product(
     brand: Optional[str] = None,
     taxonomy: Optional[str] = None,
     primary_attributes: Optional[List[str]] = None,
-    db: Optional[AsyncSession] = None
+    db: Optional[AsyncSession] = None,
+    project_id:str=None
 ) -> Dict:
     try:
+        if not project_id:
+            raise ValueError("project_id is required for aggregation.")
+        project=await db.get(Project,project_id)
+        if not project:
+            raise ValueError(f"Project {project_id} not found!")
+        use_case = project.use_case
+        if not use_case:
+            raise ValueError(f"No use case defined for project {project_id}.")
         prompt_config = await build_aggregation_prompt(
             mpn=mpn or "",
             product_name=title or "",
             brand=brand,
             taxonomy=taxonomy,
             primary_attributes=primary_attributes,
-            db=db
+            db=db,
+            use_case=use_case  
         )
         logger.info(f"Aggregating {mpn} in '{prompt_config['mode']}' mode")
         logger.info(
@@ -67,6 +79,7 @@ async def aggregate_product(
             'golden_record': {
                 'attributes': {},
                 'confidence': 0.0,
+                'sources_consulted': [] 
                 
             }
         }

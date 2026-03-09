@@ -221,7 +221,7 @@ def discover_attributes(html: str, sku: str = "", taxonomy: str = None) -> Dict:
     taxonomy_context = ""
     if taxonomy:
         taxonomy_context = f"CONTEXT: This product belongs to the category: '{taxonomy}'. Prioritize finding attributes standard for this category."
-        prompt = f"""
+    prompt = f"""
     You are analyzing an HTML product page to discover what technical specifications exist.
     {taxonomy_context}
     Your job: Identify ALL attribute names/labels that appear in the HTML, especially in:

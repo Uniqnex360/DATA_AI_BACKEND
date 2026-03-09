@@ -480,12 +480,14 @@ async def run_project_aggregation_task(job_id: str) -> None:
                     await db_session.commit()
 
                     aggregation_result = await aggregate_with_retry(
+                        db_session=db_session,
                         mpn=product.product_code,
                         title=product.product_name,
                         brand=product.brand_name,
                         taxonomy=product.taxonomy,
                         primary_attributes=primary_attrs,
                         db=db_session,
+                        project_id=job.project_id,
                         max_retries=2
                     )
 
@@ -607,7 +609,6 @@ async def run_single_product_aggregation(product_id: str) -> None:
             if not product:
                 logger.error(f"Product {product_id} not found")
                 return
-
             logger.info(
                 f"Starting single product aggregation: {product.product_code}")
             primary_attrs = []
@@ -626,6 +627,8 @@ async def run_single_product_aggregation(product_id: str) -> None:
                 brand=product.brand_name,
                 taxonomy=product.taxonomy,
                 primary_attributes=primary_attrs,
+                db_session=db_session,
+                project_id=product.project_id
             )
 
             if result.get('status') == 'success':
@@ -686,7 +689,7 @@ async def run_single_product_aggregation(product_id: str) -> None:
 
                     db_session.add(source)
                     logger.info(
-                        f"📝 Updated source {source.id} metadata: {new_metadata}")
+                        f" Updated source {source.id} metadata: {new_metadata}")
 
                 db_session.add(AuditTrail(
                     product_id=f"PROJECT_{product.project_id}",
@@ -708,7 +711,7 @@ async def run_single_product_aggregation(product_id: str) -> None:
             await db_session.commit()
             await db_session.refresh(product)
             logger.info(
-                f"💾 Single product saved with image: {product.image_url_1}")
+                f" Single product saved with image: {product.image_url_1}")
 
         except Exception as e:
             await db_session.rollback()
@@ -726,12 +729,14 @@ async def run_single_product_aggregation(product_id: str) -> None:
 
 
 async def aggregate_with_retry(
+    db_session, 
     mpn: str,
     title: str,
     brand: Optional[str] = None,
     taxonomy: Optional[str] = None,
     primary_attributes: Optional[List[str]] = None,
     db: Optional[AsyncSession] = None,
+    project_id:str=None,
     max_retries: int = 2,
     retry_delay: float = 2.0
 ) -> Dict[str, Any]:
@@ -741,12 +746,13 @@ async def aggregate_with_retry(
     for attempt in range(max_retries + 1):
         try:
             result = await aggregate_product(
+                db=db_session,
                 mpn=mpn,
                 title=title,
                 brand=brand,
                 taxonomy=taxonomy,
                 primary_attributes=primary_attributes,
-                db=db
+                project_id=project_id
             )
             logger.info(f"Aggregation result for {mpn}: {result}")
             image_url = result.get('golden_record', {}).get('image_url')
