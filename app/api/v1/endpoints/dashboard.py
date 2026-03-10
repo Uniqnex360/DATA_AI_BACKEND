@@ -6,11 +6,66 @@ from app.core.database import get_session
 from app.models.product import Product
 from app.models.project import Project
 from app.schemas.dashboard import DashboardMetricsResponse
+from typing import Dict, Any
 logger = logging.getLogger("dashboard_metrics")
 router = APIRouter()
 
+@router.get("/debug/{project_id}", response_model=Dict[str, Any])
+async def debug_project_products(project_id: str, db: AsyncSession = Depends(get_session)):
+    """DEBUG ENDPOINT: Shows detailed info about products for a project"""
+    try:
+        logger.info(f"[DEBUG] Checking products for project_id: '{project_id}'")
+        
+        # Check if project exists
+        project = await db.get(Project, project_id)
+        logger.info(f"[DEBUG] Project found: {project is not None}")
+        
+        # Count all products in database
+        total_products = await db.execute(select(func.count(Product.id)))
+        total_count = total_products.scalar() or 0
+        logger.info(f"[DEBUG] Total products in database: {total_count}")
+        
+        # Count products for this project
+        project_products = await db.execute(
+            select(func.count(Product.id)).where(Product.project_id == project_id)
+        )
+        project_count = project_products.scalar() or 0
+        logger.info(f"[DEBUG] Products with project_id == '{project_id}': {project_count}")
+        
+        # Get all unique project_ids in database
+        unique_pids = await db.execute(select(Product.project_id).distinct())
+        pids = unique_pids.scalars().all()
+        logger.info(f"[DEBUG] Unique project_ids in Product table: {pids}")
+        
+        # Get actual products for this project
+        products_stmt = select(Product.product_code, Product.project_id).where(
+            Product.project_id == project_id
+        ).limit(10)
+        products_result = await db.execute(products_stmt)
+        products = products_result.all()
+        
+        return {
+            "project_id_searched": project_id,
+            "project_exists": project is not None,
+            "total_products_in_db": total_count,
+            "products_for_this_project": project_count,
+            "sample_products": [{"code": p[0], "project_id": p[1]} for p in products],
+            "unique_project_ids_in_db": pids,
+            "debug_message": "Check the app logs for detailed debug output"
+        }
+    except Exception as e:
+        logger.error(f"Debug endpoint error: {e}", exc_info=True)
+        return {
+            "error": str(e),
+            "project_id_searched": project_id,
+            "debug_message": "Check the app logs for detailed error info"
+        }
+
+
 async def calculate_metrics(db:AsyncSession,project_id:str|None)->dict:
     try:
+        if project_id:
+            logger.info(f"[DEBUG] calculate_metrics for project_id: '{project_id}'")
         product_filters=[]
         if project_id:
             product_filters.append(Product.project_id==project_id)
@@ -23,8 +78,10 @@ async def calculate_metrics(db:AsyncSession,project_id:str|None)->dict:
     )
         if project_id:
             stmt=stmt.where(Product.project_id==project_id)
+            logger.info(f"[DEBUG] Query filter: Product.project_id == '{project_id}'")
         result=await db.execute(stmt)
         stats=result.first()
+        logger.info(f"[DEBUG] Query result stats: total={stats.total}, aggregated={stats.aggregated}")
         cat_expression = func.json_extract_path_text(Product.attributes, 'taxonomy')
         cat_stmt = (select(cat_expression, func.count(Product.id)).where(*product_filters).group_by(cat_expression).order_by(func.count(Product.id).desc()).limit(5))
         cat_result=await db.execute(cat_stmt)
@@ -83,12 +140,12 @@ async def get_dashboard_metrics(db: AsyncSession = Depends(get_session)):
 @router.get('/metrics/{project_id}',response_model=DashboardMetricsResponse)
 async def get_project_metrics(project_id:str,db:AsyncSession=Depends(get_session)):
     try:
-        
+        logger.info(f"[DEBUG] get_project_metrics called with project_id: '{project_id}' (type: {type(project_id).__name__})")
         data = await calculate_metrics(db, project_id)
-        logger.info(f"Project metrics loaded for {project_id}")
+        logger.info(f"[DEBUG] Project metrics loaded for {project_id}: totalProducts={data.get('totalProducts', 0)}")
         return data
     except Exception as e:
-        logger.error(f"Failed to fetch project metrics for  {project_id}:{str(e)}")
+        logger.error(f"Failed to fetch project metrics for {project_id}:{str(e)}", exc_info=True)
         return {
             "totalProjects": 0, "activeProjects": 0, "totalProducts": 0,
             "publishedProducts": 0, "catalogHealth": 0, "categoryDistribution": []

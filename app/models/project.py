@@ -11,3 +11,4 @@ class Project(UUIDModel, table=True):
     client: Optional[str] = None
     status: str = Field(default="draft") 
     use_case: Optional[str] = Field(default=None)
+    products: List["Product"] = Relationship(back_populates="project")

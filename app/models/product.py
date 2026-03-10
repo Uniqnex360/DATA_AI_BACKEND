@@ -66,7 +66,8 @@ class Product(UUIDModel,table=True):
     gtin:Optional[str]=None
     upc:Optional[str]=None
     source_url: Optional[str] = Field(default=None) 
-    project_id:Optional[str]=Field(default=None,index=True)
+    project_id: Optional[UUID] = Field(default=None, index=True, foreign_key="catalog_projects.id")
+    project: Optional["Project"] = Relationship(back_populates="products")
     description:Optional[str]=None
     image_url_1:Optional[str]=None
     enrichment_status:str=Field(default='pending')

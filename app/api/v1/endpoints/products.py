@@ -6,7 +6,9 @@ from app.services.product_service import product_service
 from sqlmodel import select,func
 from app.schemas.product import ProductCreate, ProductResponse
 import logging
+import uuid
 from app.models.project import Project
+from app.models.product import Product
 logger=logging.getLogger('products')
 router=APIRouter()
 @router.get("/", response_model=Dict[str, Any]) 
@@ -19,11 +21,15 @@ async def read_products(
 ):
     try:
         
-        statement = select(product_service.model)
+        statement = select(Product)
 
         
         if project_id:
-            statement = statement.where(product_service.model.project_id == project_id)
+            try:
+                target_uuid=uuid.UUID(project_id)
+                statement = statement.where(Product.project_id == target_uuid)
+            except ValueError:
+                statement = statement.where(Product.project_id == project_id)
         
         if enrichment_status and enrichment_status != 'all':
             statement = statement.where(product_service.model.enrichment_status == enrichment_status)
