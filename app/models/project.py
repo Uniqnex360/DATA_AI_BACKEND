@@ -1,9 +1,9 @@
 from app.models.base import UUIDModel
-from sqlmodel import Field
 from typing import Optional,List
 from datetime import datetime
 from datetime import datetime
 from sqlalchemy import Column, JSON
+from sqlmodel import  Field, Relationship
 
 class Project(UUIDModel, table=True):
     __tablename__ = 'catalog_projects'
