@@ -781,6 +781,7 @@ async def batch_aggregate(
                 )
                 created_count += 1
             else:
+                product.project_id = projectId
                 updated_count += 1
             product.product_name = row.get("product_name", "Unknown")
             product.mpn = row.get("mpn")
