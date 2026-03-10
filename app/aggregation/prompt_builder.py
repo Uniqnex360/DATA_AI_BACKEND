@@ -7,7 +7,6 @@ import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 logger = logging.getLogger("prompt_builder")
 
-
 async def build_aggregation_prompt(
     mpn: str,
     product_name: str,
@@ -29,7 +28,6 @@ async def build_aggregation_prompt(
         context_parts.append(f"Category: {taxonomy}")
     context = "\n".join(context_parts)
     naming_rules = """
-    
 ATTRIBUTE NAMING RULES:
 - Use SINGULAR forms: "Material" not "Materials", "Certification" not "Certifications"
 - Use Title Case: "Color Temperature" not "color temperature"
@@ -45,190 +43,328 @@ STRICT REJECTION RULES (CRITICAL):
 """
     has_existing_values=False
     existing_list=[]
+    use_case_lower = (use_case or "").lower() if use_case else ""    
     if existing_data and has_primary_attrs:
         for attr in primary_attributes:
             if existing_data.get(attr):
                 has_existing_values=True
                 break
-    if has_primary_attrs and has_existing_values:
-        existing_list=[]    
-        for attr in primary_attributes:
-            val=existing_data.get(attr,'MISSING')
-            existing_list.append(f"  • {attr}: {val}")
-        existing_text = "\n".join(existing_list)
-        prompt=f"""
-        You are extracting product specifications from web searches and data sources.
+        if "validation" in use_case_lower and has_primary_attrs and existing_data:
+            existing_list = []
+            for attr in primary_attributes:
+                val = existing_data.get(attr, 'MISSING')
+                if val != 'MISSING':
+                    existing_list.append(f"  • {attr}: {val}")
+            if existing_list:  
+                existing_text = "\n".join(existing_list)
+                prompt = f"""
+        You are extracting and VALIDATING product specifications from web searches.
         {context}
-        CURRENT DATA (Verify & Enrich):
+        EXCEL-PROVIDED DATA (VERIFY AGAINST WEB):
         {existing_text}
-
-        TASK:
-        1. VALIDATE: Check if the "CURRENT DATA" is correct based on official sources. 
-        - CRITICAL: If you cannot find information about an attribute (e.g., it is an internal code like a Bin Number), DO NOT change it. Leave it out of your response entirely so we know to keep the original.
-        - Only return a value for a 'CURRENT DATA' attribute if you find a definitively DIFFERENT, more accurate value.
-        2. DISCOVER: Find technical specifications NOT in the list above.
-        {strict_extraction_rules} 
-
-        EXTRACTION RULES:
-        1. Extract EXACT values with units.
-        2. Return attributes that are NEW or CORRECTED.
-        3. Do not simply repeat correct existing data.
-        
-
+        {strict_extraction_rules}
+        CRITICAL VALIDATION TASK:
+        1. Search official manufacturer websites for these attributes
+        2. For EACH Excel attribute, compare with web value
+        3. Return in validation format showing matches/conflicts
+        4. You may return up to 40 total attributes for thorough validation
+        VALIDATION RULES:
+        - If web matches Excel → "matches_excel": true
+        - If web differs from Excel → "matches_excel": false
+        - For internal codes (Bin Code, etc.) → skip entirely
+        - For NEW attributes not in Excel → "is_new": true
         OUTPUT FORMAT:
         {{
         "attributes": {{
-        "new_attribute": {{"value": "val", "uom": "unit", "confidence": 0.95}},
-        "corrected_attribute": {{"value": "new_val", "uom": "unit", "confidence": 0.90}}
+            "voltage": {{
+            "web_value": "24",
+            "web_unit": "VDC",
+            "excel_value": "12",
+            "excel_unit": "V",
+            "matches_excel": false,
+            "source_url": "https://...",
+            "confidence": 0.95
+            }},
+            "lumens": {{
+            "web_value": "5000",
+            "web_unit": "lm",
+            "is_new": true,
+            "source_url": "https://...",
+            "confidence": 0.90
+            }}
         }}
         }}
-        Search the web, validate existing data, and discover new specifications."""
-        return {
-            'prompt':prompt,
-            "expected_attributes": primary_attributes + ["*discover*"],
-            'mode':'enrichment_validation',
-            'primary_count':len(primary_attributes)
-        }
+        Search and validate ALL Excel attributes against official sources.
+        """
+                return {
+                    'prompt': prompt,
+                    'expected_attributes': primary_attributes + ["*discover*"],
+                    'mode': 'validate',
+                    'use_case': use_case
+                }
+        elif "back filling" in use_case_lower and "validation" not in use_case_lower:
+            if has_primary_attrs and existing_data:
+                existing_list = []
+                missing_list = []
+                for attr in primary_attributes:
+                    val = existing_data.get(attr)
+                    if val and val != 'MISSING':
+                        existing_list.append(f"  • {attr}: {val}")
+                    else:
+                        missing_list.append(f"  • {attr}")
+                existing_text = "\n".join(existing_list) if existing_list else "(None)"
+                missing_text = "\n".join(missing_list) if missing_list else "(All provided)"
+                prompt = f"""
+                You are extracting product specifications from web searches.
+
+                {context}
+
+                EXISTING ATTRIBUTES (ALREADY PROVIDED - DO NOT TOUCH):
+                {existing_text}
+
+                MISSING ATTRIBUTES (SEARCH FOR THESE ONLY):
+                {missing_text}
+
+                {strict_extraction_rules}
+
+                CRITICAL BACKFILL RULES:
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                1. DO NOT search for, extract, or return ANY of the "EXISTING ATTRIBUTES" listed above
+                2. DO NOT rename existing attributes (e.g., do NOT change "Finish" to "Base" or "Color" to "Color Variant")
+                3. ONLY extract attributes from the "MISSING ATTRIBUTES" list
+                4. ONLY discover ADDITIONAL attributes that are NOT in either list
+                5. If you find information related to an existing attribute, IGNORE IT completely
+                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                BACKFILL TASK:
+                1. DO NOT search for existing attributes
+                2. ONLY search for MISSING attributes
+                3. Discover any ADDITIONAL specs not listed
+                4. You may return up to 40 total attributes for comprehensive coverage
+                ATTRIBUTE NAMING FOR NEW ATTRIBUTES:
+                - Use the EXACT names from "MISSING ATTRIBUTES" list if filling those
+                - For new discoveries, use standard industry terms (singular, Title Case)
+                - Do NOT create variations of existing attribute names
+
+                EXAMPLES OF WHAT NOT TO DO:
+                WRONG: Existing has "Color: Green" → You extract "Color Variant: Green"
+                WRONG: Existing has "Finish: Gloss" → You extract "Base: Gloss" or "Surface Finish: Gloss"
+                WRONG: Existing has "Size: 10x10" → You extract "Dimensions: 10x10"
+
+                CORRECT: Existing has "Color: Green" → You extract NOTHING for color
+                CORRECT: Missing has "Weight" → You extract "Weight: 5 lbs"
+                CORRECT: Discover new "Material: Aluminum" (not in either list)
+
+                OUTPUT FORMAT:
+                {{
+                "attributes": {{
+                    "missing_attribute_name": {{"value": "...", "unit": "...", "confidence": 0.95}},
+                    "new_discovered_attribute": {{"value": "...", "unit": "...", "confidence": 0.90}}
+                }}
+                }}
+
+                REMEMBER: Your output should ONLY contain:
+                1. Attributes from the MISSING list (if you found them)
+                2. Completely NEW attributes not in EXISTING or MISSING lists
+                3. NEVER anything related to EXISTING attributes
+
+                Search ONLY for missing and new attributes.
+                """
+                return {
+                    'prompt': prompt,
+                    'expected_attributes': missing_list + ["*discover*"],
+                    'mode': 'backfill',
+                    'use_case': use_case
+                }
+        elif "with categories" in use_case_lower and has_primary_attrs:
+            existing_list=[]    
+            for attr in primary_attributes:
+                val=existing_data.get(attr,'MISSING')
+                existing_list.append(f"  • {attr}: {val}")
+            existing_text = "\n".join(existing_list)
+            prompt=f"""
+            You are extracting product specifications from web searches and data sources.
+            {context}
+            CURRENT DATA (Verify & Enrich):
+            {existing_text}
+            TASK:
+            1. VALIDATE: Check if the "CURRENT DATA" is correct based on official sources. 
+            - CRITICAL: If you cannot find information about an attribute (e.g., it is an internal code like a Bin Number), DO NOT change it. Leave it out of your response entirely so we know to keep the original.
+            - Only return a value for a 'CURRENT DATA' attribute if you find a definitively DIFFERENT, more accurate value.
+            2. DISCOVER: Find technical specifications NOT in the list above.
+            {strict_extraction_rules} 
+            STRICT ATTRIBUTE NAMING:
+        - You are provided with 'CURRENT DATA'. 
+        - You MUST use the EXACT attribute names (keys) provided in 'CURRENT DATA' if the information relates to those attributes.
+        - Do NOT rename "Finish" to "Base". 
+        - Do NOT rename "Color" to "Color Variant".
+        - If you find new information for an existing attribute, use the existing name exactly as it appears in the list.
+            EXTRACTION RULES:
+            1. Extract EXACT values with units.
+            2. Return attributes that are NEW or CORRECTED.
+            3. Do not simply repeat correct existing data.
+            OUTPUT FORMAT:
+            {{
+            "attributes": {{
+            "new_attribute": {{"value": "val", "uom": "unit", "confidence": 0.95}},
+            "corrected_attribute": {{"value": "new_val", "uom": "unit", "confidence": 0.90}}
+            }}
+            }}
+            Search the web, validate existing data, and discover new specifications."""
+            return {
+                'prompt':prompt,
+                "expected_attributes": primary_attributes + ["*discover*"],
+                'mode':'enrichment_validation',
+                'primary_count':len(primary_attributes)
+            }
     elif has_primary_attrs:
         primary_list = "\n".join(
             [f"  {i+1}. {attr}" for i, attr in enumerate(primary_attributes)])
         prompt = f"""You are extracting product specifications from web searches and data sources.
-{context}
-EXTRACTION PRIORITY:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PRIMARY ATTRIBUTES (MUST EXTRACT - These are critical):
-{primary_list}
-ADDITIONAL ATTRIBUTES (Extract any others you discover):
-  • Any other technical specifications
-  • Physical properties (weight, dimensions)
-  • Electrical specifications
-  • Performance characteristics
-  • Certifications and compliance
-  • Material composition
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-{strict_extraction_rules}  
-EXTRACTION RULES:
-1. Extract EXACT values as they appear (preserve units, formatting)
-2. If a primary attribute is not found, leave it blank (do NOT guess)
-3. Extract up to 20 total attributes (5 primary + 15 additional)
-4. Include unit of measurement when applicable
-5. Prefer manufacturer data over retailer data
-6. Use official product pages when available
-STRICT RELEVANCY RULE:
-1. Verify the product type: You are looking for a '{taxonomy or product_name}'.
-2. If the data you are reading is clearly for a DIFFERENT type of product (e.g., you find 'RAM' or 'Camera' for a 'Light Fixture'), you MUST return an empty "attributes" object.
-3. DO NOT mix specifications from different products.
-OUTPUT FORMAT:
-Return JSON with this structure:
-{{
-  "attributes": {{
-    "{primary_attributes[0] if primary_attributes else 'attribute_name'}": {{"value": "extracted_value", "uom": "unit", "confidence": 0.95}},
-    ...
-  }}
-}}
-Search the web and extract these specifications."""
+        {context}
+        EXTRACTION PRIORITY:
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        PRIMARY ATTRIBUTES (MUST EXTRACT - These are critical):
+        {primary_list}
+        ADDITIONAL ATTRIBUTES (Extract any others you discover):
+        • Any other technical specifications
+        • Physical properties (weight, dimensions)
+        • Electrical specifications
+        • Performance characteristics
+        • Certifications and compliance
+        • Material composition
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        {strict_extraction_rules}  
+        EXTRACTION RULES:
+        1. Extract EXACT values as they appear (preserve units, formatting)
+        2. If a primary attribute is not found, leave it blank (do NOT guess)
+        3. Extract up to 20 total attributes (5 primary + 15 additional)
+        4. Include unit of measurement when applicable
+        5. Prefer manufacturer data over retailer data
+        6. Use official product pages when available
+        STRICT RELEVANCY RULE:
+        1. Verify the product type: You are looking for a '{taxonomy or product_name}'.
+        2. If the data you are reading is clearly for a DIFFERENT type of product (e.g., you find 'RAM' or 'Camera' for a 'Light Fixture'), you MUST return an empty "attributes" object.
+        3. DO NOT mix specifications from different products.
+        OUTPUT FORMAT:
+        Return JSON with this structure:
+        {{
+        "attributes": {{
+            "{primary_attributes[0] if primary_attributes else 'attribute_name'}": {{"value": "extracted_value", "uom": "unit", "confidence": 0.95}},
+            ...
+        }}
+        }}
+        Search the web and extract these specifications."""
         return {
             "prompt": prompt,
             "expected_attributes": primary_attributes + ["*additional*"],
-            "mode": "constrained",
-            "priority_count": len(primary_attributes)
+            "mode": "standard",
+            "priority_count": len(primary_attributes),
+            "use_case": use_case
         }
-    elif has_taxonomy:
+    elif ("with categories" in use_case_lower or not use_case_lower) and has_taxonomy:
         taxonomy_hints = []
         if db:
             taxonomy_hints = await get_taxonomy_attribute_hints(taxonomy, db)
         else:
-            logger.warning(
-                "No DB session provided, using empty taxonomy hints")
+            logger.warning("No DB session provided, using empty taxonomy hints")
+        
         hints_text = ""
         if taxonomy_hints:
             hints_text = f"""
-COMMON ATTRIBUTES FOR THIS CATEGORY:
-{chr(10).join([f"  • {attr}" for attr in taxonomy_hints])}
-"""
+    COMMON ATTRIBUTES FOR THIS CATEGORY:
+    {chr(10).join([f"  • {attr}" for attr in taxonomy_hints])}
+    """
+        
         prompt = f"""You are extracting product specifications from web searches and data sources.
-{context}
-TASK: Discover and extract ALL relevant technical specifications for this product.
-{hints_text}
-{naming_rules}
-{strict_extraction_rules}
-EXTRACTION GUIDELINES:
-1. Start with category-typical attributes (listed above)
-2. Then extract ANY other specifications you find
-3. Aim for 15-20 total attributes
-4. Include:
-   • Technical specifications
-   • Physical properties (weight, dimensions, materials)
-   • Electrical/Performance specs
-   • Certifications and standards
-   • Operating conditions
-   • Package contents
-EXTRACTION RULES:
-- Extract EXACT values (preserve units, formatting)
-- Do NOT guess or estimate
-- Prefer official manufacturer data
-- Include unit of measurement
-- Mark confidence level for each attribute
-OUTPUT FORMAT:
-{{
-  "attributes": {{
-    "attribute_name": {{"value": "exact_value", "uom": "unit", "confidence": 0.9}},
-    ...
-  }},
-  "discovered_taxonomy": "{taxonomy}"
-}}
-Search the web and extract comprehensive specifications."""
+    {context}
+
+    TASK: Discover and extract ALL relevant technical specifications for this product.
+    {hints_text}
+    {naming_rules}
+    {strict_extraction_rules}
+
+    EXTRACTION GUIDELINES:
+    1. Start with category-typical attributes (listed above if any)
+    2. Then extract ANY other specifications you find
+    3. Aim for 15-20 total attributes
+    4. Include:
+    • Technical specifications
+    • Physical properties (weight, dimensions, materials)
+    • Electrical/Performance specs
+    • Certifications and standards
+    • Operating conditions
+    • Package contents
+
+    EXTRACTION RULES:
+    - Extract EXACT values (preserve units, formatting)
+    - Do NOT guess or estimate
+    - Prefer official manufacturer data
+    - Include unit of measurement
+    - Mark confidence level for each attribute
+
+    OUTPUT FORMAT:
+    {{
+    "attributes": {{
+        "attribute_name": {{"value": "exact_value", "uom": "unit", "confidence": 0.9}},
+        ...
+    }},
+    "discovered_taxonomy": "{taxonomy}"
+    }}
+
+    Search the web and extract comprehensive specifications."""
+        
         return {
             "prompt": prompt,
             "expected_attributes": taxonomy_hints if taxonomy_hints else ["*discover*"],
-            "mode": "taxonomy_guided",
-            "taxonomy": taxonomy
+            "mode": "standard",
+            "taxonomy": taxonomy,
+            "use_case": use_case
         }
-    else:
-        prompt = f"""You are extracting product specifications from web searches and data sources.
-{context}
-TASK: Perform FULL product discovery and extraction.
-PHASE 1 - CLASSIFY:
-Determine the product category/taxonomy:
-  • What industry? (e.g., Lighting, Tools, Safety, Electronics)
-  • What specific category? (e.g., High Bay Lighting, Power Drills, Fall Protection)
-  • Full taxonomy path: Industry > Category > Subcategory
-PHASE 2 - EXTRACT:
-Extract ALL relevant specifications (aim for 15-20 attributes):
-{naming_rules} 
-{strict_extraction_rules} 
-MUST INCLUDE (if applicable):
-  • Physical: Dimensions, Weight, Material
-  • Technical: Power, Voltage, Capacity, Performance specs
-  • Standards: Certifications, Safety ratings, Compliance
-  • Operational: Operating conditions, Temperature range
-  • Package: What's included, Warranty
-CATEGORY-SPECIFIC ATTRIBUTES:
-  • Extract attributes typical for this product category
-  • Include model/variant details
-  • Include compatibility information
-EXTRACTION RULES:
-- Extract EXACT values (preserve units, formatting)
-- Do NOT guess or estimate
-- Prefer official manufacturer data
-- Include unit of measurement for all numeric values
-- Mark confidence level (0.0-1.0) for each attribute
-OUTPUT FORMAT:
-{{
-  "discovered_taxonomy": "Industry > Category > Subcategory",
-  "attributes": {{
-    "attribute_name": {{"value": "exact_value", "uom": "unit", "confidence": 0.9}},
-    ...
-  }}
-}}
-Search the web and perform comprehensive product discovery."""
-        return {
+    elif "without categories" in use_case_lower or not use_case_lower:
+            prompt = f"""You are extracting product specifications from web searches and data sources.
+            {context}
+            TASK: Perform FULL product discovery and extraction.
+            PHASE 1 - CLASSIFY:
+            Determine the product category/taxonomy:
+            • What industry? (e.g., Lighting, Tools, Safety, Electronics)
+            • What specific category? (e.g., High Bay Lighting, Power Drills, Fall Protection)
+            • Full taxonomy path: Industry > Category > Subcategory
+            PHASE 2 - EXTRACT:
+            Extract ALL relevant specifications (aim for 15-20 attributes):
+            {naming_rules} 
+            {strict_extraction_rules} 
+            MUST INCLUDE (if applicable):
+            • Physical: Dimensions, Weight, Material
+            • Technical: Power, Voltage, Capacity, Performance specs
+            • Standards: Certifications, Safety ratings, Compliance
+            • Operational: Operating conditions, Temperature range
+            • Package: What's included, Warranty
+            CATEGORY-SPECIFIC ATTRIBUTES:
+            • Extract attributes typical for this product category
+            • Include model/variant details
+            • Include compatibility information
+            EXTRACTION RULES:
+            - Extract EXACT values (preserve units, formatting)
+            - Do NOT guess or estimate
+            - Prefer official manufacturer data
+            - Include unit of measurement for all numeric values
+            - Mark confidence level (0.0-1.0) for each attribute
+            OUTPUT FORMAT:
+            {{
+            "discovered_taxonomy": "Industry > Category > Subcategory",
+            "attributes": {{
+                "attribute_name": {{"value": "exact_value", "uom": "unit", "confidence": 0.9}},
+                ...
+            }}
+            }}
+    Search the web and perform comprehensive product discovery."""
+    return {
             "prompt": prompt,
             "expected_attributes": ["*discover*"],
-            "mode": "full_discovery"
+            "mode": "full_discovery",
+            "use_case":use_case
         }
-
-
+    
 async def get_taxonomy_attribute_hints(
     taxonomy: Optional[str],
     db: AsyncSession
@@ -282,8 +418,6 @@ async def get_taxonomy_attribute_hints(
     except Exception as e:
         logger.error(f"Error in get_taxonomy_attribute_hints: {str(e)}")
     return []
-
-
 async def get_taxonomy_attribute_hints_simple(
     taxonomy: str,
     db: AsyncSession

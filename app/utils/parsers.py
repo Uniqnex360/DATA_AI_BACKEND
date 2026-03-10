@@ -34,7 +34,7 @@ def parse_import_file(file_bytes: bytes, filename: str) -> List[Dict[str, Any]]:
     for _, row in df.iterrows():
         r = {k: ("" if pd.isna(v) else str(v).strip())for k, v in row.to_dict().items()}
         dynamic_attrs = []
-        for i in range(1, 21):
+        for i in range(1, 41):
             attr_name = r.get(f'attribute_name{i}')
             if attr_name and str(attr_name).strip():
                 dynamic_attrs.append({

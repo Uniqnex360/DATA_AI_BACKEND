@@ -1,5 +1,5 @@
 from app.models.base import UUIDModel
-from typing import Optional,Dict,List
+from typing import Optional,Dict,List,Any
 from sqlmodel import Field,Column,JSON
 from datetime import datetime
 from typing import List
@@ -53,6 +53,10 @@ class Product(UUIDModel,table=True):
     attribute_objs: List["Attribute"] = Relationship(
         back_populates="products", 
         link_model=ProductAttributeLinkModel
+    )
+    validation_conflicts: Optional[Dict[str, Any]] = Field(
+        default=None,
+        sa_column=Column(JSON)
     )
     attribute_values: List["AttributeValue"] = Relationship(
         back_populates="products", link_model=ProductAttributeValueLinkModel

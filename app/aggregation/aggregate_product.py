@@ -2,10 +2,13 @@
 from typing import Dict, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.aggregation.pipeline import AggregationPipeline
+from sqlmodel import select
 from app.aggregation.services.search_service import SerpApiSearchService
 from app.aggregation.services.download_service import HttpDownloadService
 from app.aggregation.services.extraction_service import (
     ExtractionService, HtmlExtractor, PdfExtractor, PlaywrightExtractor, StructuredDataExtractor)
+from app.models.product import Product
+
 from app.models.project import Project
 
 from app.aggregation.services.image_service import ImageService
@@ -46,12 +49,26 @@ async def aggregate_product(
         use_case = project.use_case
         if not use_case:
             raise ValueError(f"No use case defined for project {project_id}.")
+        existing_data={}
+        if 'back filling' in use_case.lower() or 'validation' in use_case.lower():
+            stmt=select(Product).where(Product.product_code==mpn)
+            result=await db.execute(stmt)
+            product=result.scalars().first()
+            if product and product.dynamic_attributes:
+                for attr in product.dynamic_attributes:
+                    if isinstance(attr, dict):
+                        name=attr.get('name')
+                        value=attr.get('value')
+                        if name and value:
+                            existing_data[name]=value
+            
         prompt_config = await build_aggregation_prompt(
             mpn=mpn or "",
             product_name=title or "",
             brand=brand,
             taxonomy=taxonomy,
             primary_attributes=primary_attributes,
+            existing_data=existing_data,
             db=db,
             use_case=use_case  
         )
@@ -69,6 +86,7 @@ async def aggregate_product(
         )
         result['mode'] = prompt_config['mode']
         result['expected_attributes'] = prompt_config['expected_attributes']
+        result['existing_data'] = existing_data 
         return result
 
     except Exception as e:
