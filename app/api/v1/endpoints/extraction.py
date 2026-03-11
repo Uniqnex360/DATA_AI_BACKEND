@@ -1114,7 +1114,10 @@ async def run_aggregation_task(source_id: str):
                                     'value':attr.get('value'),
                                     'uom':attr.get('uom') or attr.get('unit')
                                 }
-                    logger.info(f"🔍 EXISTING DATA for {product.product_code}:")
+                    logger.info(f"🔍 EXISTING DATA BUILT for {product.product_code}:")
+                    logger.info(f"   dynamic_attributes count: {len(product.dynamic_attributes) if product.dynamic_attributes else 0}")
+                    logger.info(f"   existing_data keys: {list(existing_data.keys())}")
+                    logger.info(f"   existing_data sample: {dict(list(existing_data.items())[:2])}")
                     for k, v in existing_data.items():
                         logger.info(f"  {k}: value='{v.get('value')}', uom='{v.get('uom')}'")
                     if existing_data:
