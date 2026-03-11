@@ -244,12 +244,12 @@ STRICT REJECTION RULES (CRITICAL):
                 }}
                 }}
                 """
-                return {{
+                return {
                     'prompt': prompt,
                     'expected_attributes': primary_attributes + ["*discover*"],
                     'mode': 'backfill',
                     'use_case': use_case
-                }}
+                }
         elif "with categories" in use_case_lower and has_primary_attrs:
             existing_list=[]    
             for attr in primary_attributes:
