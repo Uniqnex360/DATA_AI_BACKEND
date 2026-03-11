@@ -442,6 +442,8 @@ async def run_project_aggregation_task(job_id: str) -> None:
                 try:
                     logger.info(
                         f"[Job {job_id}] Aggregating {idx+1}/{total}: {product.product_code}")
+                    import gc
+                    gc.collect()
                     primary_attrs = []
                     if product.dynamic_attributes:
                         for attr in product.dynamic_attributes:
@@ -596,7 +598,7 @@ async def run_project_aggregation_task(job_id: str) -> None:
                             'error': aggregation_result.get('reason', 'Unknown error')
                         })
                         logger.warning(f" Aggregation failed for {product.product_code}")
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(5)
                 except Exception as e:
                     logger.error(
                         f"Error aggregating {product.product_code}: {e}")
