@@ -593,8 +593,8 @@ async def run_project_aggregation_task(job_id: str) -> None:
                             'sku': product.product_code,
                             'error': aggregation_result.get('reason', 'Unknown error')
                         })
-                        logger.warning(
-                            f" Aggregation failed for {product.product_code}")
+                        logger.warning(f" Aggregation failed for {product.product_code}")
+                    await asyncio.sleep()
                 except Exception as e:
                     logger.error(
                         f"Error aggregating {product.product_code}: {e}")
