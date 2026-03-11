@@ -593,8 +593,8 @@ async def run_project_aggregation_task(job_id: str) -> None:
                             'sku': product.product_code,
                             'error': aggregation_result.get('reason', 'Unknown error')
                         })
-                        logger.warning(
-                            f" Aggregation failed for {product.product_code}")
+                        logger.warning(f" Aggregation failed for {product.product_code}")
+                    await asyncio.sleep(2)
                 except Exception as e:
                     logger.error(
                         f"Error aggregating {product.product_code}: {e}")
@@ -943,3 +943,4 @@ async def export_project_data(project_id: str, db: AsyncSession = Depends(get_se
         logger.error(f"Export failed for project {project_id}: {e}")
         raise HTTPException(
             status_code=500, detail="Failed to generate export file")
+
