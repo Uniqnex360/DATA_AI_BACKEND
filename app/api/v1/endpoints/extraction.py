@@ -1167,6 +1167,8 @@ async def run_aggregation_task(source_id: str):
                         ))
                         flag_modified(product, "sources_consulted")
                         db_session.add(product)
+                        await db_session.commit() 
+                        await db_session.get(Product, product.id) 
                         successful += 1
                     else:
                         failed += 1

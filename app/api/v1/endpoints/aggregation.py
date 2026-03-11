@@ -494,6 +494,8 @@ async def run_project_aggregation_task(job_id: str) -> None:
                                 f"BACKFILL: Kept {len(existing_attrs)} existing, added {len(ai_attributes) - len(existing_attrs)} new")
                             product.enrichment_status = 'completed'
                             db_session.add(product)
+                            await db_session.commit() 
+                            await db_session.get(Product, product.id)
                             found_image = aggregation_result.get('image_url')
                             if found_image:
                                 product.image_url_1 = found_image
