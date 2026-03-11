@@ -14,7 +14,7 @@ router=APIRouter()
 @router.get("/", response_model=Dict[str, Any]) 
 async def read_products(
     db: AsyncSession = Depends(get_session), 
-    project_id: Optional[str] = None,       
+    project_id: Optional[UUID]=None,   
     enrichment_status: Optional[str] = None, 
     skip: int = 0, 
     limit: int = 100

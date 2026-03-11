@@ -25,7 +25,7 @@ class SourceResponse(BaseModel):
     source_type: str
     status: str
     uploaded_at: datetime
-    project_id: Optional[str]
+    project_id: Optional[UUID]=None
     
     metadata: Optional[Dict[str, Any]] = Field(default={}, validation_alias="source_metadata")
 
