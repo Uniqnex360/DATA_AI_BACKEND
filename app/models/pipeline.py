@@ -5,6 +5,7 @@ from app.models.base import UUIDModel
 from sqlmodel import Field, Column, JSON
 from typing import Optional, Dict,Any,List
 import uuid
+from uuid import UUID
 
 class AuditTrail(UUIDModel,table=True):
     __tablename__='audit_trail'
@@ -38,7 +39,7 @@ class Source(UUIDModel,table=True):
     __tablename__='sources'
     source_type:str
     source_url:str
-    project_id: Optional[str] = Field(default=None, index=True)
+    project_id: Optional[UUID] = Field(default=None, foreign_key="catalog_projects.id")
     source_metadata: Dict = Field(
         default={}, 
         sa_column=Column("metadata", JSON),
