@@ -8,6 +8,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from fastapi.responses import StreamingResponse
 import asyncio
 import io
+import gc
 import pandas as pd
 from app.core.database import get_session, async_session_factory
 from app.models.pipeline import AggregationJob, AuditTrail, CleansingIssue, RawExtraction, Source
@@ -546,7 +547,10 @@ async def run_project_aggregation_task(job_id: str) -> None:
                             # Use flush instead of commit so subsequent changes are also saved
                             await db_session.flush()
                             db_session.add(product)
-                            
+                            await db_session.commit()
+                            await db_session.get(Product, product.id)
+                            aggregation_result = None
+                            gc.collect() 
                             found_image = aggregation_result.get('image_url')
                             if found_image:
                                 product.image_url_1 = found_image
@@ -594,7 +598,7 @@ async def run_project_aggregation_task(job_id: str) -> None:
                             'error': aggregation_result.get('reason', 'Unknown error')
                         })
                         logger.warning(f" Aggregation failed for {product.product_code}")
-                    await asyncio.sleep(2)
+                    
                 except Exception as e:
                     logger.error(
                         f"Error aggregating {product.product_code}: {e}")
