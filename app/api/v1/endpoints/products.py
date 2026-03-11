@@ -6,6 +6,7 @@ from app.services.product_service import product_service
 from sqlmodel import select,func
 from app.schemas.product import ProductCreate, ProductResponse
 import logging
+from uuid import UUID
 import uuid
 from app.models.project import Project
 from app.models.product import Product
