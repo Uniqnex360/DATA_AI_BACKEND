@@ -6,7 +6,7 @@ from sqlalchemy import func
 from app.models.pipeline import AuditTrail, CleansingIssue, RawExtraction, Source, SourcePriority
 from app.core.database import get_session, async_session_factory
 from app.models.product import Product
-from typing import List
+from typing import List,Optional
 import logging
 from sqlalchemy.orm.attributes import flag_modified
 from app.utils.usecase_validator import validate_file_against_use_case
@@ -27,6 +27,7 @@ from app.utils.parsers import infer_taxonomy_for_row, parse_import_file
 from app.utils.matching import get_or_create_brand, get_or_create_vendor, get_or_create_industry
 from app.utils.validators import is_invalid
 from app.utils.sanitize import sanitize_ai_data
+from app.api.v1.endpoints.aggregation import extract_ai_value_text
 logger = logging.getLogger("extraction_router")
 router = APIRouter()
 ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
@@ -399,7 +400,6 @@ async def download_file(
             "price_range", "usage", "voc_level"
 }
             def normalize_attr_name(s):
-                """Normalize attribute names for consistent comparison."""
                 return s.strip().lower().replace('_', '').replace(' ', '').replace('-', '')
             
             taxonomy_raw_data = {}
@@ -631,7 +631,34 @@ async def download_file(
 
                     row[f"attribute_value{i}"] = final_val
                     row[f"attribute_uom{i}"] = final_uom
-                    if is_validation_mode:
+                    if orig_match and orig_match.get('validation_value'):
+                        validation_val = clean_for_excel(orig_match.get('validation_value'))
+                        original_val = clean_for_excel(orig_match.get('value'))
+                        def normalize_for_display(val):
+                            if val is None:
+                                return ""
+                            val_str = str(val).lower().strip()
+                            # Remove common unit indicators for comparison only
+                            val_str = re.sub(r'\s*(lbs?|kg|g|in|cm|mm|ft|°[fc]|degrees?)\s*\.?\s*$', '', val_str)
+                            val_str = re.sub(r'[^\d\.\-]', '', val_str)  # Keep only numbers, decimal, minus
+                            return val_str
+                        norm_original = normalize_for_display(original_val)
+                        norm_validation = normalize_for_display(validation_val)
+                        if validation_val and norm_validation != norm_original:
+                            row[f"validation_value{i}"] = validation_val
+                            row[f"validation_uom{i}"] = clean_for_excel(orig_match.get('validation_uom'))
+                    elif p.validation_conflicts:
+                        # Fallback to validation_conflicts if needed
+                        if template_attr_name in p.validation_conflicts:
+                            row[f"validation_value{i}"] = clean_for_excel(p.validation_conflicts[template_attr_name])
+                        else:
+                            temp_norm = normalize_attr_name(template_attr_name)
+                            for conflict_key, conflict_val in p.validation_conflicts.items():
+                                if normalize_attr_name(conflict_key) == temp_norm:
+                                    row[f"validation_value{i}"] = clean_for_excel(conflict_val)
+                                    break
+                                                
+                    if not row.get(f"validation_value{i}") and is_validation_mode:
                         if ai_val_str and orig_val_str:
                             if ai_val_str.lower().strip() != orig_val_str.lower().strip():
                                 row[f"validation_value{i}"] = orig_val_str
@@ -1063,7 +1090,19 @@ async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks,
         raise HTTPException(
             status_code=500, detail="Failed to start aggregation")
 
-
+def normalize_key(key: str) -> str:
+    return str(key).lower().replace("_", "").replace(" ", "").strip()
+def fuzzy_match_key(key: str, key_list: List[str]) -> Optional[str]:
+    def normalize(s):
+        # Remove units in parentheses, spaces, underscores, and lowercase everything
+        s = re.sub(r'\(.*?\)', '', s) 
+        return s.lower().replace("_", "").replace(" ", "").strip()
+    
+    target = normalize(key)
+    for k in key_list:
+        if normalize(k) == target:
+            return k
+    return None
 async def run_aggregation_task(source_id: str):
     async with async_session_factory() as db_session:
         try:
@@ -1148,12 +1187,74 @@ async def run_aggregation_task(source_id: str):
                         # Apply merge logic with order preservation for backfilling/validation
                         use_case = project.use_case.lower() if project and project.use_case else ""
                         if "back filling" in use_case or "validation" in use_case:
-                            merged_attrs = merge_attributes_preserving_order(
+                            conflicts = {}
+                            ai_data_for_merge = {}
+
+                            # for ai_key, ai_val in ai_attributes.items():
+                            #     # FIND THE MATCHING EXCEL COLUMN NAME
+                            #     matched_primary_key = fuzzy_match_key(ai_key, primary_attr_names)
+                                
+                            #     if matched_primary_key:
+                            #         if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
+                            #             # Use our helper to get the clean string fix
+                            #             correction_text = extract_ai_value_text(ai_val)
+                            #             conflicts[matched_primary_key] = correction_text
+                            #             logger.info(f"🚩 Correction found for {matched_primary_key}: {correction_text}")
+                                    
+                            #         # Map the clean web value for the attributes merge
+                            #         ai_data_for_merge[matched_primary_key] = ai_val.get("web_value") if isinstance(ai_val, dict) else ai_val
+                            #     else:
+                            #         # It's a completely new discovery
+                            #         ai_data_for_merge[ai_key] = ai_val
+
+                            # # SAVE TO PRODUCT
+                            # product.attributes = merge_attributes_preserving_order(
+                            #     primary_attributes=primary_attr_names,
+                            #     existing_attrs=existing_data,
+                            #     ai_data=ai_data_for_merge
+                            # )
+                            for ai_key, ai_val in ai_attributes.items():
+                                # FIND THE MATCHING EXCEL COLUMN NAME
+                                matched_primary_key = fuzzy_match_key(ai_key, primary_attr_names)
+                                
+                                if matched_primary_key:
+                                    if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
+                                        # Use our helper to get the clean string fix
+                                        correction_text = extract_ai_value_text(ai_val)
+                                        conflicts[matched_primary_key] = correction_text
+                                        logger.info(f"🚩 Correction found for {matched_primary_key}: {correction_text}")
+                                        
+                                        # 🚨 CRITICAL FIX: Remove the garbage from existing data 
+                                        # so the merge function is forced to use the AI value.
+                                        if matched_primary_key in existing_data:
+                                            del existing_data[matched_primary_key]
+                                    
+                                    # Map the clean web value for the attributes merge
+                                    ai_data_for_merge[matched_primary_key] = ai_val.get("web_value") if isinstance(ai_val, dict) else ai_val
+                                else:
+                                    # It's a completely new discovery
+                                    ai_data_for_merge[ai_key] = ai_val
+
+                            if product.dynamic_attributes and "validation" in use_case:
+                                for attr in product.dynamic_attributes:
+                                    if isinstance(attr, dict) and attr.get('name'):
+                                        attr_name = attr['name']
+                                        if attr_name in ai_data_for_merge:
+                                            ai_val = ai_data_for_merge[attr_name]
+                                            if isinstance(ai_val, dict):
+                                                attr['validation_value'] = ai_val.get('value', '')
+                                                attr['validation_uom'] = ai_val.get('unit', '') or ai_val.get('uom', '')
+                                            else:
+                                                attr['validation_value'] = str(ai_val) if ai_val else ''
+                                                 
+                            product.attributes = merge_attributes_preserving_order(
                                 primary_attributes=primary_attr_names,
                                 existing_attrs=existing_data,
-                                ai_data=sanitize_ai_data(ai_attributes)
+                                ai_data=ai_data_for_merge
                             )
-                            product.attributes = merged_attrs
+                            product.validation_conflicts = conflicts
+                            flag_modified(product, "validation_conflicts") # MANDATORY
+                            logger.info(f"BACKFILL: Saved {len(conflicts)} corrections for {product.product_code}")
                         else:
                             product.attributes = {
                                 **product.attributes, **sanitize_ai_data(ai_attributes)}

@@ -26,8 +26,6 @@ def call_llm(prompt: str, schema: dict) -> dict:
         if "json" not in prompt.lower():
             prompt += "\n\nCRITICAL: Return the result in valid JSON format."
         full_prompt = f"{prompt}\n\nREQUIRED SCHEMA:\n{json.dumps(schema, indent=2)}"
-        print(f"Using model: {settings.llm_model}")
-        print(f"API key exists: {bool(settings.openai_api_key)}")
     
         response = client.chat.completions.create(
         model=settings.llm_model,
@@ -37,7 +35,6 @@ def call_llm(prompt: str, schema: dict) -> dict:
         response_format={"type": "json_object"},
         max_completion_tokens=8000
     )
-        print(f"Full response: {response}")
         content = response.choices[0].message.content.strip()
         return parse_response(content)
     except Exception as e:

@@ -396,8 +396,14 @@ async def get_aggregated_attributes(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch attributes"
         )
-
-
+        
+def extract_ai_value_text(ai_val: Any) -> str:
+    if isinstance(ai_val, dict):
+        val = ai_val.get("web_value") or ai_val.get("standard_value") or ai_val.get("value")
+        unit = ai_val.get("web_unit") or ai_val.get("uom") or ai_val.get("unit") or ""
+        if val is not None:
+            return f"{val} {unit}".strip()
+    return str(ai_val)
 async def run_project_aggregation_task(job_id: str) -> None:
     async with async_session_factory() as db_session:
         job: Optional[AggregationJob] = None
@@ -436,7 +442,7 @@ async def run_project_aggregation_task(job_id: str) -> None:
                         f"[Job {job_id}] Aggregating {idx+1}/{total}: {product.product_code}")
                     primary_attrs = []
                     if product.dynamic_attributes:
-                        for attr in product.dynamic_attributes[:5]:
+                        for attr in product.dynamic_attributes:
                             attr_name = attr.get('name')
                             if attr_name and str(attr_name).strip():
                                 primary_attrs.append(str(attr_name).strip())
@@ -470,32 +476,77 @@ async def run_project_aggregation_task(job_id: str) -> None:
                         project = await db_session.get(Project, job.project_id)
                         use_case = project.use_case.lower() if project and project.use_case else ""
                         if "back filling" in use_case or "validation" in use_case:
-                            existing_attrs = {}
+                            conflicts = {}
+                            ai_data_for_merge = {}
+
+                            # 1. Map existing data for easy lookup
+                            existing_attrs={}
                             if product.dynamic_attributes:
                                 for attr in product.dynamic_attributes:
-                                    if isinstance(attr, dict):
-                                        name = attr.get('name')
-                                        value = attr.get('value')
-                                        uom = attr.get('uom') or attr.get('unit')
-                                        if name:
-                                            # Store complete structure with value and UOM
-                                            existing_attrs[name] = {
-                                                'value': value,
-                                                'uom': uom
-                                            } if uom else value
-                            # Merge attributes while preserving original order
-                            merged_attrs = merge_attributes_preserving_order(
+                                    if isinstance(attr, dict) and attr.get('name'):
+                                        existing_attrs[attr['name']] = {
+                'value': attr.get('value'),
+                'uom': attr.get('uom') or attr.get('unit')
+            }
+
+                            # 2. Match and Compare AI results
+                            for ai_key, ai_val in ai_attributes.items():
+                                ai_key_clean = str(ai_key).lower().replace(" ", "").replace("_", "").replace("-", "")
+                                
+                                # Find matching primary key (Excel column)
+                                target_pk = ai_key
+                                for pk in primary_attrs:
+                                    if str(pk).lower().replace(" ", "").replace("_", "").replace("-", "") == ai_key_clean:
+                                        target_pk = pk
+                                        break
+
+                                ai_text_val = extract_ai_value_text(ai_val)
+                                user_val = existing_attrs.get(target_pk, "")
+
+                                # --- THE SMART CHECK ---
+                                # Check if AI explicitly said it's a mismatch OR if the values are just different
+                                is_mismatch = False
+                                if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
+                                    is_mismatch = True
+                                elif user_val and ai_text_val:
+                                    # If user has a value, compare it to AI result (ignoring case)
+                                    if user_val.lower() != ai_text_val.lower() and user_val.lower() not in ['missing', 'none']:
+                                        is_mismatch = True
+
+                                if is_mismatch:
+                                    conflicts[target_pk] = ai_text_val
+                                    logger.info(f"🚩 Correction found for {target_pk}: '{user_val}' -> '{ai_text_val}'")
+                                
+                                ai_data_for_merge[target_pk] = ai_val
+
+                            product.attributes = merge_attributes_preserving_order(
                                 primary_attributes=primary_attrs,
                                 existing_attrs=existing_attrs,
-                                ai_data=ai_attributes
+                                ai_data=ai_data_for_merge
                             )
-                            product.attributes = merged_attrs
-                            logger.info(
-                                f"BACKFILL: Kept {len(existing_attrs)} existing, added {len(ai_attributes) - len(existing_attrs)} new")
+                            product.validation_conflicts = conflicts
+                            flag_modified(product, "validation_conflicts")
+                            if "validation" in use_case and product.dynamic_attributes:
+                                for attr in product.dynamic_attributes:
+                                    if isinstance(attr, dict) and attr.get('name'):
+                                        attr_name = attr['name']
+                                        if attr_name in ai_data_for_merge:
+                                            ai_val = ai_data_for_merge[attr_name]
+                                            if isinstance(ai_val, dict):
+                                                attr['validation_value'] = ai_val.get('value', '')
+                                                attr['validation_uom'] = ai_val.get('unit', '') or ai_val.get('uom', '')
+                                            else:
+                                                attr['validation_value'] = str(ai_val) if ai_val else ''
+                                flag_modified(product, "dynamic_attributes")
+                                
+                            
+                            # Standard fields update...
                             product.enrichment_status = 'completed'
+                            
+                            # Use flush instead of commit so subsequent changes are also saved
+                            await db_session.flush()
                             db_session.add(product)
-                            await db_session.commit() 
-                            await db_session.get(Product, product.id)
+                            
                             found_image = aggregation_result.get('image_url')
                             if found_image:
                                 product.image_url_1 = found_image
@@ -618,7 +669,7 @@ async def run_single_product_aggregation(product_id: str) -> None:
                 f"Starting single product aggregation: {product.product_code}")
             primary_attrs = []
             if product.dynamic_attributes:
-                for attr in product.dynamic_attributes[:5]:
+                for attr in product.dynamic_attributes:
                     attr_name = attr.get('name')
                     if attr_name and str(attr_name).strip():
                         primary_attrs.append(str(attr_name).strip())
@@ -646,24 +697,41 @@ async def run_single_product_aggregation(product_id: str) -> None:
                 use_case = project.use_case.lower() if project.use_case else ""
                 if 'back filling' in use_case.lower() or 'validation' in use_case.lower():
                     existing_attrs = {}
+                    conflicts = {}
+                    ai_data_for_merge = {}
+
                     if product.dynamic_attributes:
                         for attr in product.dynamic_attributes:
                             if isinstance(attr, dict):
                                 name = attr.get('name')
-                                uom = attr.get('uom')
-                                value = attr.get('value')
-                                if name:
-                                    existing_attrs[name] = {
-                                        'value': value, 'uom': uom}
-                    # Merge attributes while preserving original order
-                    merged_attrs = merge_attributes_preserving_order(
+                                existing_attrs[name] = {'value': attr.get('value'), 'uom': attr.get('uom')}
+
+                    # Separate AI corrections from discovery
+                    for attr_name, ai_val in ai_data.items():
+                        if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
+                            conflicts[attr_name] = extract_ai_value_text(ai_val)
+                        ai_data_for_merge[attr_name] = ai_val
+
+                    product.attributes = merge_attributes_preserving_order(
                         primary_attributes=primary_attrs,
                         existing_attrs=existing_attrs,
-                        ai_data=ai_data
+                        ai_data=ai_data_for_merge
                     )
-                    product.attributes = merged_attrs
-                    logger.info(
-                        f"BACKFILL: Kept {len(existing_attrs)} existing, added {len(ai_data) - len(existing_attrs)} new")
+                    product.validation_conflicts = conflicts # SAVE CORRECTIONS
+                                        # Update dynamic_attributes with AI validation values
+                    if "validation" in use_case and product.dynamic_attributes:
+                        for attr in product.dynamic_attributes:
+                            if isinstance(attr, dict) and attr.get('name'):
+                                attr_name = attr['name']
+                                if attr_name in ai_data_for_merge:
+                                    ai_val = ai_data_for_merge[attr_name]
+                                    if isinstance(ai_val, dict):
+                                        attr['validation_value'] = ai_val.get('value', '')
+                                        attr['validation_uom'] = ai_val.get('unit', '') or ai_val.get('uom', '')
+                                    else:
+                                        attr['validation_value'] = str(ai_val) if ai_val else ''
+                        flag_modified(product, "dynamic_attributes")
+                    
                     product.enrichment_status = 'completed'
                     await db_session.flush() 
                     db_session.add(product)

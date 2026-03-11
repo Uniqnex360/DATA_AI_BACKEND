@@ -111,88 +111,145 @@ STRICT REJECTION RULES (CRITICAL):
             logger.info(f"   'validation' in use_case_lower: {'validation' in use_case_lower}")
 
 
+        # elif "back filling" in use_case_lower and "validation" not in use_case_lower:
+        #     if has_primary_attrs and existing_data:
+        #         existing_list = []
+        #         missing_list = []
+        #         for attr in primary_attributes:
+        #             attr_data = existing_data.get(attr)
+        #             if attr_data and isinstance(attr_data, dict):
+        #                 val_str = attr_data.get('value', '')
+        #                 uom_str = attr_data.get('uom', '')
+        #             else:
+        #                 val_str = str(attr_data) if attr_data else ''
+        #                 uom_str = ''
+        #             if val_str and val_str.strip() and val_str != 'MISSING':
+        #                 if uom_str:
+        #                     existing_list.append(f"  • {attr}: {val_str} {uom_str}")
+        #                 else:
+        #                     existing_list.append(f"  • {attr}: {val_str}")
+        #             else:
+        #                 missing_list.append(f"  • {attr}")
+        #         existing_text = "\n".join(existing_list) if existing_list else "(None)"
+        #         missing_text = "\n".join(missing_list) if missing_list else "(All provided)"
+        #         prompt = f"""
+        #         You are extracting product specifications from web searches.
+
+        #         {context}
+
+        #         EXISTING ATTRIBUTES (ALREADY PROVIDED - DO NOT TOUCH):
+        #         {existing_text}
+
+        #         MISSING ATTRIBUTES (SEARCH FOR THESE ONLY):
+        #         {missing_text}
+
+        #         {strict_extraction_rules}
+
+        #         CRITICAL BACKFILL RULES:
+        #         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        #         1. DO NOT search for, extract, or return ANY of the "EXISTING ATTRIBUTES" listed above
+        #         2. DO NOT rename existing attributes (e.g., do NOT change "Finish" to "Base" or "Color" to "Color Variant")
+        #         3. ONLY extract attributes from the "MISSING ATTRIBUTES" list
+        #         4. ONLY discover ADDITIONAL attributes that are NOT in either list
+        #         5. If you find information related to an existing attribute, IGNORE IT completely
+        #         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        #         BACKFILL TASK:
+        #         1. DO NOT search for existing attributes
+        #         2. ONLY search for MISSING attributes
+        #         3. Discover any ADDITIONAL specs not listed
+        #         4. You may return up to 40 total attributes for comprehensive coverage
+        #         ATTRIBUTE NAMING FOR NEW ATTRIBUTES:
+        #         - Use the EXACT names from "MISSING ATTRIBUTES" list if filling those
+        #         - For new discoveries, use standard industry terms (singular, Title Case)
+        #         - Do NOT create variations of existing attribute names
+
+        #         EXAMPLES OF WHAT NOT TO DO:
+        #         WRONG: Existing has "Color: Green" → You extract "Color Variant: Green"
+        #         WRONG: Existing has "Finish: Gloss" → You extract "Base: Gloss" or "Surface Finish: Gloss"
+        #         WRONG: Existing has "Size: 10x10" → You extract "Dimensions: 10x10"
+
+        #         CORRECT: Existing has "Color: Green" → You extract NOTHING for color
+        #         CORRECT: Missing has "Weight" → You extract "Weight: 5 lbs"
+        #         CORRECT: Discover new "Material: Aluminum" (not in either list)
+
+        #         OUTPUT FORMAT:
+        #         {{
+        #         "attributes": {{
+        #             "missing_attribute_name": {{"value": "...", "unit": "...", "confidence": 0.95}},
+        #             "new_discovered_attribute": {{"value": "...", "unit": "...", "confidence": 0.90}}
+        #         }}
+        #         }}
+
+        #         REMEMBER: Your output should ONLY contain:
+        #         1. Attributes from the MISSING list (if you found them)
+        #         2. Completely NEW attributes not in EXISTING or MISSING lists
+        #         3. NEVER anything related to EXISTING attributes
+
+        #         Search ONLY for missing and new attributes.
+        #         """
+        #         return {
+        #             'prompt': prompt,
+        #             'expected_attributes': missing_list + ["*discover*"],
+        #             'mode': 'backfill',
+        #             'use_case': use_case
+        #         }
+                # --- MODE B: BACK FILLING + AI-DRIVEN VALIDATION ---
         elif "back filling" in use_case_lower and "validation" not in use_case_lower:
             if has_primary_attrs and existing_data:
                 existing_list = []
-                missing_list = []
+                missing_names_only = []
+                
                 for attr in primary_attributes:
                     attr_data = existing_data.get(attr)
-                    if attr_data and isinstance(attr_data, dict):
-                        val_str = attr_data.get('value', '')
-                        uom_str = attr_data.get('uom', '')
+                    if isinstance(attr_data, dict):
+                        val_str = str(attr_data.get('value', '') or '')
+                        uom_str = str(attr_data.get('uom', '') or attr_data.get('unit', '') or '')
                     else:
                         val_str = str(attr_data) if attr_data else ''
                         uom_str = ''
-                    if val_str and val_str.strip() and val_str != 'MISSING':
-                        if uom_str:
-                            existing_list.append(f"  • {attr}: {val_str} {uom_str}")
-                        else:
-                            existing_list.append(f"  • {attr}: {val_str}")
+                    
+                    if val_str and val_str.strip() and val_str.lower() != 'missing':
+                        # Send everything that has a value to the "EXISTING" list for validation
+                        existing_list.append(f"  • {attr}: {val_str} {uom_str}".strip())
                     else:
-                        missing_list.append(f"  • {attr}")
-                existing_text = "\n".join(existing_list) if existing_list else "(None)"
-                missing_text = "\n".join(missing_list) if missing_list else "(All provided)"
-                prompt = f"""
-                You are extracting product specifications from web searches.
+                        # Send empty things to the "MISSING" list
+                        missing_names_only.append(attr)
 
+                existing_text = "\n".join(existing_list) if existing_list else "(None)"
+                missing_text = "\n".join([f"  • {m}" for m in missing_names_only]) if missing_names_only else "(None)"
+                
+                prompt = f"""
+                You are performing a technical specification BACKFILL and VALIDATION task.
                 {context}
 
-                EXISTING ATTRIBUTES (ALREADY PROVIDED - DO NOT TOUCH):
+                PROVIDED DATA (VERIFY AND CORRECT THESE):
                 {existing_text}
 
-                MISSING ATTRIBUTES (SEARCH FOR THESE ONLY):
+                MISSING DATA (SEARCH AND FILL THESE):
                 {missing_text}
 
                 {strict_extraction_rules}
 
-                CRITICAL BACKFILL RULES:
-                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                1. DO NOT search for, extract, or return ANY of the "EXISTING ATTRIBUTES" listed above
-                2. DO NOT rename existing attributes (e.g., do NOT change "Finish" to "Base" or "Color" to "Color Variant")
-                3. ONLY extract attributes from the "MISSING ATTRIBUTES" list
-                4. ONLY discover ADDITIONAL attributes that are NOT in either list
-                5. If you find information related to an existing attribute, IGNORE IT completely
-                ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                BACKFILL TASK:
-                1. DO NOT search for existing attributes
-                2. ONLY search for MISSING attributes
-                3. Discover any ADDITIONAL specs not listed
-                4. You may return up to 40 total attributes for comprehensive coverage
-                ATTRIBUTE NAMING FOR NEW ATTRIBUTES:
-                - Use the EXACT names from "MISSING ATTRIBUTES" list if filling those
-                - For new discoveries, use standard industry terms (singular, Title Case)
-                - Do NOT create variations of existing attribute names
-
-                EXAMPLES OF WHAT NOT TO DO:
-                WRONG: Existing has "Color: Green" → You extract "Color Variant: Green"
-                WRONG: Existing has "Finish: Gloss" → You extract "Base: Gloss" or "Surface Finish: Gloss"
-                WRONG: Existing has "Size: 10x10" → You extract "Dimensions: 10x10"
-
-                CORRECT: Existing has "Color: Green" → You extract NOTHING for color
-                CORRECT: Missing has "Weight" → You extract "Weight: 5 lbs"
-                CORRECT: Discover new "Material: Aluminum" (not in either list)
+                CRITICAL INSTRUCTIONS:
+                1. ANALYZE PROVIDED DATA: Look at the values in "PROVIDED DATA". If a value is obviously placeholder text (like "hello world", "test"), or is factually incorrect based on official manufacturer specs, you MUST provide the correct value in your response.
+                2. FILL MISSING DATA: Search for and provide accurate values for all items in the "MISSING DATA" list.
+                3. DISCOVER ADDITIONAL: Extract any other technical specifications you find that are not mentioned in either list.
+                4. OVERWRITE RULE: If your researched value for an attribute contradicts the "PROVIDED DATA", your researched value takes priority. 
+                5. NAMING: Use the EXACT attribute names provided in the lists above for the JSON keys.
 
                 OUTPUT FORMAT:
                 {{
                 "attributes": {{
-                    "missing_attribute_name": {{"value": "...", "unit": "...", "confidence": 0.95}},
-                    "new_discovered_attribute": {{"value": "...", "unit": "...", "confidence": 0.90}}
+                    "attribute_name": {{"value": "...", "unit": "...", "confidence": 0.95}}
                 }}
                 }}
-
-                REMEMBER: Your output should ONLY contain:
-                1. Attributes from the MISSING list (if you found them)
-                2. Completely NEW attributes not in EXISTING or MISSING lists
-                3. NEVER anything related to EXISTING attributes
-
-                Search ONLY for missing and new attributes.
                 """
-                return {
+                return {{
                     'prompt': prompt,
-                    'expected_attributes': missing_list + ["*discover*"],
+                    'expected_attributes': primary_attributes + ["*discover*"],
                     'mode': 'backfill',
                     'use_case': use_case
-                }
+                }}
         elif "with categories" in use_case_lower and has_primary_attrs:
             existing_list=[]    
             for attr in primary_attributes:
