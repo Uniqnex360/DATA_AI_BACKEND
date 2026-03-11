@@ -7,6 +7,8 @@ import logging
 from sqlalchemy.orm.attributes import flag_modified
 from fastapi.responses import StreamingResponse
 import asyncio
+import traceback
+import sys
 import io
 import pandas as pd
 from app.core.database import get_session, async_session_factory
@@ -811,8 +813,10 @@ async def run_single_product_aggregation(product_id: str) -> None:
                 f" Single product saved with image: {product.image_url_1}")
         except Exception as e:
             await db_session.rollback()
+            
             logger.error(
                 f"Single product aggregation failed: {e}", exc_info=True)
+            logger.error(f"Traceback: {traceback.format_exc()}")
             try:
                 product = await db_session.get(Product, product_id)
                 if product:
