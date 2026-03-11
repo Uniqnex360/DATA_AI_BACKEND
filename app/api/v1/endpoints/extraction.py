@@ -1114,6 +1114,9 @@ async def run_aggregation_task(source_id: str):
                                     'value':attr.get('value'),
                                     'uom':attr.get('uom') or attr.get('unit')
                                 }
+                    logger.info(f"🔍 EXISTING DATA for {product.product_code}:")
+                    for k, v in existing_data.items():
+                        logger.info(f"  {k}: value='{v.get('value')}', uom='{v.get('uom')}'")
                     if existing_data:
                         logger.info(f" Excel attributes: {list(existing_data.keys())[:5]}")
                         

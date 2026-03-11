@@ -107,9 +107,18 @@ STRICT REJECTION RULES (CRITICAL):
                 existing_list = []
                 missing_list = []
                 for attr in primary_attributes:
-                    val = existing_data.get(attr)
-                    if val and val != 'MISSING':
-                        existing_list.append(f"  • {attr}: {val}")
+                    attr_data = existing_data.get(attr)
+                    if attr_data and isinstance(attr_data, dict):
+                        val_str = attr_data.get('value', '')
+                        uom_str = attr_data.get('uom', '')
+                    else:
+                        val_str = str(attr_data) if attr_data else ''
+                        uom_str = ''
+                    if val_str and val_str.strip() and val_str != 'MISSING':
+                        if uom_str:
+                            existing_list.append(f"  • {attr}: {val_str} {uom_str}")
+                        else:
+                            existing_list.append(f"  • {attr}: {val_str}")
                     else:
                         missing_list.append(f"  • {attr}")
                 existing_text = "\n".join(existing_list) if existing_list else "(None)"
