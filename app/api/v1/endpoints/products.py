@@ -13,6 +13,7 @@ from app.models.product import Product
 logger=logging.getLogger('products')
 router=APIRouter()
 @router.get("/", response_model=Dict[str, Any]) 
+
 async def read_products(
     db: AsyncSession = Depends(get_session), 
     project_id: Optional[UUID]=None,   
@@ -27,8 +28,7 @@ async def read_products(
         
         if project_id:
             try:
-                target_uuid=uuid.UUID(project_id)
-                statement = statement.where(Product.project_id == target_uuid)
+                statement = statement.where(Product.project_id == project_id)
             except ValueError:
                 statement = statement.where(Product.project_id == project_id)
         
