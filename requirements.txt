@@ -20,7 +20,7 @@ sqlmodel
 asyncpg
 psycopg2-binary
 alembic
-python-jose[cryptography]
+python-jose[cryptography]   
 passlib[bcrypt]
 psycopg2-binary
 gunicorn
