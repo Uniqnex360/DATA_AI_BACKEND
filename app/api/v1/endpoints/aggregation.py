@@ -816,6 +816,7 @@ async def run_single_product_aggregation(product_id: str) -> None:
                 await db_session.refresh(product)
                 logger.info(
                     f" Single product saved with image: {product.image_url_1}")
+                await asyncio.sleep(2) 
             except Exception as e:
                 await db_session.rollback()
                 
