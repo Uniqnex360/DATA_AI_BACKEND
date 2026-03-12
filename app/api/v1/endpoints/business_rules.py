@@ -11,53 +11,38 @@ import logging
 from sqlalchemy.orm import selectinload
 logger = logging.getLogger("business_rules")
 router = APIRouter()
-
 @router.post("/", response_model=BusinessRuleResponse, status_code=status.HTTP_201_CREATED)
 async def create_business_rule(
     rule: BusinessRuleCreate,
     db: AsyncSession = Depends(get_session)
 ):
     try:
-        
         base_rule_id = BusinessRule.generate_rule_id(rule.title)
         rule_id = base_rule_id
         counter = 1
-        
         while True:
             stmt = select(BusinessRule).where(BusinessRule.rule_id == rule_id)
             existing = await db.execute(stmt)
             if not existing.scalars().first():
-                
                 break 
-            
-            
             counter += 1
             rule_id = f"{base_rule_id}_{counter}"
-
-        
         new_rule = BusinessRule(
             **rule.dict(),
             rule_id=rule_id,  
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow()
         )
-        
         db.add(new_rule)
         await db.commit()
-        
-        
         stmt = select(BusinessRule).options(selectinload(BusinessRule.prompts)).where(BusinessRule.id == new_rule.id)
         result = await db.execute(stmt)
         created_rule_with_prompts = result.scalars().one()
-        
         logger.info(f"Created business rule: {created_rule_with_prompts.rule_id}")   
         return created_rule_with_prompts
-
     except Exception as e:
         await db.rollback()
-        
         logger.error(f"Failed to create rule: {str(e)}", exc_info=True)
-        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An internal error occurred while creating the rule."
@@ -70,23 +55,18 @@ async def get_all_business_rules(
     db: AsyncSession = Depends(get_session)
 ):
     try:
-        
         stmt = select(BusinessRule).options(selectinload(BusinessRule.prompts))
-        
         conditions = []
         if category:
             conditions.append(BusinessRule.category == category)
         if status:
             conditions.append(BusinessRule.status == status)
-        
-        
         if search:
             search_term = search.lower()
             conditions.append(
                 or_(
                     func.lower(BusinessRule.title).contains(search_term),
                     func.lower(BusinessRule.description).contains(search_term),
-                    
                     BusinessRule.prompts.any(
                         or_(
                             func.lower(RulePrompt.prompt_name).contains(search_term),
@@ -95,39 +75,28 @@ async def get_all_business_rules(
                     )
                 )
             )
-        
-
         if conditions:
             stmt = stmt.where(and_(*conditions))
-        
-        
         stmt = stmt.order_by(BusinessRule.created_at.desc())
-
         result = await db.execute(stmt)
         rules = result.scalars().unique().all()
-        
-
         total = len(rules) 
-        
         category_counts = {}
         all_rules_result = await db.execute(select(BusinessRule.category))
         all_categories = all_rules_result.scalars().all()
         for cat in all_categories:
             category_counts[cat] = category_counts.get(cat, 0) + 1
-
         return BusinessRuleListResponse(
             rules=rules,
             total=total,
             category_counts=category_counts
         )
-
     except Exception as e:
         logger.error(f"Failed to fetch rules: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Failed to fetch rules."
         )
-
 @router.get("/{rule_id}", response_model=BusinessRuleResponse)
 async def get_business_rule(
     rule_id: str,
@@ -157,8 +126,6 @@ async def get_business_rule(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch rule: {str(e)}"
         )
-
-
 @router.put("/{rule_id}", response_model=BusinessRuleResponse)
 async def update_business_rule(
     rule_id: str,
@@ -214,7 +181,6 @@ async def update_business_rule(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update rule: {str(e)}"
         )
-
 @router.patch('/prompts/{prompt_id}/status',response_model=RulePromptResponse)
 async def update_prompt_status(prompt_id:str,new_status:RuleStatus,db:AsyncSession=Depends(get_session)):
     try:
@@ -250,7 +216,6 @@ async def update_prompt_status(prompt_id:str,new_status:RuleStatus,db:AsyncSessi
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update prompt status. {str(e)}"
         )
-
 @router.put('/prompts/{prompt_id}', response_model=RulePromptResponse)
 async def update_prompt(prompt_id: str, updates: RulePromptUpdate, db: AsyncSession = Depends(get_session)):
     try:
@@ -270,8 +235,6 @@ async def update_prompt(prompt_id: str, updates: RulePromptUpdate, db: AsyncSess
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update prompt: {str(e)}"
         )
-
-
 @router.get('/{rule_identifier}/prompts', response_model=List[RulePromptResponse])
 async def get_prompts_for_rule(rule_identifier: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -292,8 +255,6 @@ async def get_prompts_for_rule(rule_identifier: str, db: AsyncSession = Depends(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get prompts for the rule: {str(e)}"
         )
-
-
 @router.post('/{rule_identifier}/prompts', response_model=RulePromptResponse, status_code=status.HTTP_201_CREATED)
 async def create_prompt_for_rule(rule_identifier: str, prompt: RulePromptCreate, db: AsyncSession = Depends(get_session)):
     try:

@@ -34,37 +34,22 @@ router = APIRouter()
 ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
 MAX_FILE_SIZE = 10 * 1024 * 1024
 MAX_ROWS = 1000
-
-
 def merge_attributes_preserving_order(
     primary_attributes: List[str],
     existing_attrs: dict,
     ai_data: dict
 ) -> dict:
-    
     merged = {}
-    
-    
     for attr_name in primary_attributes:
         if attr_name in existing_attrs:
-            
             existing_val = existing_attrs[attr_name]
-            
             merged[attr_name] = existing_val if isinstance(existing_val, dict) else existing_val
         elif attr_name in ai_data:
-            
             merged[attr_name] = ai_data[attr_name]
-    
-    
     for attr_name, ai_val in ai_data.items():
         if attr_name not in merged:
             merged[attr_name] = ai_val
-    
     return merged
-
-
-
-
 @router.get("/", response_model=List[SourceResponse])
 async def getAllSources(db: AsyncSession = Depends(get_session)):
     try:
@@ -76,8 +61,6 @@ async def getAllSources(db: AsyncSession = Depends(get_session)):
         logger.error(f"Failed to fetch sources: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Could not retrieve import history")
-
-
 @router.post("/", status_code=status.HTTP_202_ACCEPTED)
 async def extract_from_source(
     payload: ExtractionRequest,
@@ -119,8 +102,6 @@ async def extract_from_source(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="System failed to initialize the extraction pipeline"
         )
-
-
 @router.get("/priorities/{project_id}", response_model=List[SourcePriorityResponse], status_code=status.HTTP_200_OK)
 async def get_project_priorities(project_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -140,8 +121,6 @@ async def get_project_priorities(project_id: str, db: AsyncSession = Depends(get
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal system error while retrieving source rankings"
         )
-
-
 @router.get('/project/{project_id}', response_model=List[SourceResponse])
 async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -156,16 +135,11 @@ async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get
     except Exception as e:
         logger.error(f"Failed to fetch project sources:{e}")
         return []
-
-
 def sanitize_for_excel(val):
     if not isinstance(val, str):
         return val
     return re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', val)
-
-
 def clean_for_excel(val, attr_name=None):
-
     if val is None or val == "":
         return ""
     if isinstance(val, dict):
@@ -189,32 +163,6 @@ def clean_for_excel(val, attr_name=None):
     if val_str.lower() in ["n/a", "none", "null", "nan", "not available", "increase", "*"]:
         return ""
     return sanitize_for_excel(val_str)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @router.get("/{source_id}/download")
 async def download_file(
     source_id: str,
@@ -252,7 +200,6 @@ async def download_file(
             else:
                 MAX_ATTRIBUTES=20
             logger.info(f"Using {MAX_ATTRIBUTES} attribute columns for use case: {project.use_case if project else 'Unknown'}")
-            
             core_headers = ["Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name", "Brand", "GTIN",
                             "ean", "upc", "unspc", "MPN", "Status", "Lifecycle_Stage", "Launch_Date", "Discontinue_Status"]
             cat_headers = ["industry_name", "category 1", "category 2", "category 3",
@@ -359,7 +306,6 @@ async def download_file(
                 "main_image": "image_url_1",
                 "3d_model": "3D_Model_URL",
                 "model_3d": "3D_Model_URL",
-                
             }
             IGNORED_KEYS = {
             "share", "latest_news", "search_for", "error_ref", "important",
@@ -390,7 +336,6 @@ async def download_file(
 }
             def normalize_attr_name(s):
                 return s.strip().lower().replace('_', '').replace(' ', '').replace('-', '')
-            
             taxonomy_raw_data = {}
             for p in products:
                 tax = p.taxonomy or "Unknown"
@@ -407,7 +352,6 @@ async def download_file(
                             name = attr['name'].strip()
                             name_norm = normalize_attr_name(name)
                             if name and name_norm not in data['user_defined_map']:
-                                
                                 data['user_defined'].append(name)
                                 data['user_defined_map'][name_norm] = name
                 if p.attributes:
@@ -429,7 +373,6 @@ async def download_file(
             for tax, data in taxonomy_raw_data.items():
                 final_template = []
                 added_normalized = set()
-
                 def add_if_unique(name):
                     norm = normalize_attr_name(name)
                     if norm not in added_normalized:
@@ -437,10 +380,9 @@ async def download_file(
                         final_template.append(name)
                         return True
                     return False
-                
                 for attr in data['user_defined']:
                     add_if_unique(attr)
-                logger.info(f"📊 {tax}: Added {len(data['user_defined'])} Excel attributes in order")
+                logger.info(f"{tax}: Added {len(data['user_defined'])} Excel attributes in order")
                 if tax != "Unknown":
                     category_attrs = await get_taxonomy_attribute_hints(tax, db)
                     for cat_attr in category_attrs:
@@ -477,7 +419,6 @@ async def download_file(
                     row['image_url_1'] = clean_for_excel(ai_data.pop('image'))
                 if not row.get("image_url_1") and p.image_url_1:
                     row["image_url_1"] = p.image_url_1
-
                 for ai_key in list(ai_data.keys()):
                     ai_key_norm = ai_key.lower().replace('_', '').replace(' ', '').replace('-', '')
                     for map_key, target_col in DEDICATED_COLUMN_MAPPING.items():
@@ -561,7 +502,6 @@ async def download_file(
                                 row[f"image_url_{i}"] = img.get("url", "")
                             else:
                                 row[f"image_url_{i}"] = str(img) if img else ""
-                
                 original_attrs_by_norm = {}  
                 if p.dynamic_attributes:
                     for attr in p.dynamic_attributes:
@@ -570,17 +510,13 @@ async def download_file(
                             if k_norm not in original_attrs_by_norm:
                                 original_attrs_by_norm[k_norm] = []
                             original_attrs_by_norm[k_norm].append(attr)
-
                 used_ai_keys = set()
                 used_original_indexes = {}  
-
                 for i, template_attr_name in enumerate(attribute_template, 1):
                     if i > MAX_ATTRIBUTES:
                         break
-
                     row[f"attribute_name{i}"] = template_attr_name
                     template_norm = normalize_attr_name(template_attr_name)
-
                     ai_match_key = None
                     for ai_key in ai_data.keys():
                         if ai_key in used_ai_keys or ai_key.lower() in IGNORED_KEYS:
@@ -589,10 +525,8 @@ async def download_file(
                         if template_norm == ai_norm or (template_norm in ai_norm and len(template_norm) > 3):
                             ai_match_key = ai_key
                             break
-
                     ai_val_str = ""
                     ai_uom_str = ""
-
                     if ai_match_key:
                         raw_val = ai_data[ai_match_key]
                         ai_val_str = clean_for_excel(
@@ -601,8 +535,6 @@ async def download_file(
                             uom_obj = raw_val.get("uom") or raw_val.get("unit")
                             ai_uom_str = clean_for_excel(uom_obj)
                         used_ai_keys.add(ai_match_key)
-
-                    
                     orig_val_str = ""
                     orig_uom_str = ""
                     if template_norm in original_attrs_by_norm:
@@ -614,10 +546,8 @@ async def download_file(
                             orig_uom_str = clean_for_excel(
                                 orig_match.get('uom') or orig_match.get('unit'))
                             used_original_indexes[template_norm] = next_idx + 1
-
                     final_val = ai_val_str if ai_val_str else orig_val_str
                     final_uom = ai_uom_str if ai_val_str else orig_uom_str
-
                     row[f"attribute_value{i}"] = final_val
                     row[f"attribute_uom{i}"] = final_uom
                     if orig_match and orig_match.get('validation_value'):
@@ -627,7 +557,6 @@ async def download_file(
                             if val is None:
                                 return ""
                             val_str = str(val).lower().strip()
-                            
                             val_str = re.sub(r'\s*(lbs?|kg|g|in|cm|mm|ft|°[fc]|degrees?)\s*\.?\s*$', '', val_str)
                             val_str = re.sub(r'[^\d\.\-]', '', val_str)  
                             return val_str
@@ -637,7 +566,6 @@ async def download_file(
                             row[f"validation_value{i}"] = validation_val
                             row[f"validation_uom{i}"] = clean_for_excel(orig_match.get('validation_uom'))
                     elif p.validation_conflicts:
-                        
                         if template_attr_name in p.validation_conflicts:
                             row[f"validation_value{i}"] = clean_for_excel(p.validation_conflicts[template_attr_name])
                         else:
@@ -646,7 +574,6 @@ async def download_file(
                                 if normalize_attr_name(conflict_key) == temp_norm:
                                     row[f"validation_value{i}"] = clean_for_excel(conflict_val)
                                     break
-                                                
                     if not row.get(f"validation_value{i}") and is_validation_mode:
                         if ai_val_str and orig_val_str:
                             if ai_val_str.lower().strip() != orig_val_str.lower().strip():
@@ -689,8 +616,6 @@ async def download_file(
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Error generating download")
-
-
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
     request: Request,
@@ -738,7 +663,6 @@ async def batch_aggregate(
         for r in rows:
             if str(r.get('sku', '')).strip() or str(r.get('mpn', '')).strip() or str(r.get('product_name', '')).strip():
                 valid_rows.append(r)
-
         rows = valid_rows
         total_rows = len(rows)
         if total_rows == 0:
@@ -878,8 +802,6 @@ async def batch_aggregate(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Batch processing failed: {str(e)}"
         )
-
-
 @router.get("/batch-status/{batch_id}")
 async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -898,8 +820,6 @@ async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_session
         logger.error(f"Error fetching batch status: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Failed to fetch batch status")
-
-
 @router.get("/{source_id}/metrics", response_model=SourceMetricsResponse)
 async def get_source_metrics(source_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -944,8 +864,6 @@ async def get_source_metrics(source_id: str, db: AsyncSession = Depends(get_sess
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Analytics engine failed to calculate metrics"
         )
-
-
 async def run_extraction_task(source_id: str, content: str):
     async with async_session_factory() as db_session:
         try:
@@ -1050,8 +968,6 @@ async def run_extraction_task(source_id: str, content: str):
                         await error_session.commit()
             except:
                 pass
-
-
 @router.post('/aggregate/{source_id}', status_code=status.HTTP_202_ACCEPTED)
 async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_session)):
     try:
@@ -1079,28 +995,23 @@ async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks,
         logger.error(f"Failed to trigger aggregation:{str(e)}")
         raise HTTPException(
             status_code=500, detail="Failed to start aggregation")
-
 def normalize_key(key: str) -> str:
     return str(key).lower().replace("_", "").replace(" ", "").strip()
 def fuzzy_match_key(key: str, key_list: List[str]) -> Optional[str]:
     def normalize(s):
-        
         s = re.sub(r'\(.*?\)', '', s) 
         return s.lower().replace("_", "").replace(" ", "").strip()
-    
     target = normalize(key)
     for k in key_list:
         if normalize(k) == target:
             return k
     return None
-
 async def run_aggregation_task(source_id: str):
     async with async_session_factory() as db_session:
         try:
             source = await db_session.get(Source, source_id)
             if not source:
                 return
-            
             project=await db_session.get(Project,source.project_id)
             if not project or not project.use_case:
                 logger.error(f"Project or use_case not found for source {source_id}")
@@ -1152,40 +1063,32 @@ async def run_aggregation_task(source_id: str):
                         logger.info(f"  {k}: value='{v.get('value')}', uom='{v.get('uom')}'")
                     if existing_data:
                         logger.info(f" Excel attributes: {list(existing_data.keys())[:5]}")
-                        
                     logger.info(f"Primary attributes found in DB: {primary_attr_names}")
-                    # ✅ MULTI-PASS PROCESSING FOR LARGE ATTRIBUTE LISTS
                     if len(primary_attr_names) > 10:
                         logger.info(f"🔄 Product has {len(primary_attr_names)} attributes - using multi-pass processing")
-                        
                         from app.aggregation.aggregate_product import chunk_attributes
                         attr_chunks = chunk_attributes(primary_attr_names, chunk_size=10)
                         merged_ai_data = {}
                         all_sources = []
-                        
                         for idx, chunk in enumerate(attr_chunks, 1):
                             logger.info(f"   └─ Pass {idx}/{len(attr_chunks)}: Processing attributes {chunk}")
-                            
                             chunk_result = await aggregate_product(
                                 mpn=product.product_code,
                                 title=product.product_name,
                                 brand=product.brand_name,
                                 taxonomy=product.taxonomy,
                                 primary_attributes=primary_attr_names,
-                                attribute_chunk=chunk,  # ✅ Only process this chunk
+                                attribute_chunk=chunk, 
                                 db=db_session,
                                 project_id=source.project_id
                             )
-                            
                             if chunk_result.get('status') == 'success':
                                 golden = chunk_result.get('golden_record', {})
                                 chunk_attrs = golden.get('attributes', {})
                                 merged_ai_data.update(chunk_attrs)
                                 sources = golden.get('sources_consulted', [])
                                 all_sources.extend(sources)
-                            
                             await asyncio.sleep(1)
-                        
                         aggregation_result = {
                             'status': 'success' if merged_ai_data else 'failed',
                             'golden_record': {
@@ -1196,9 +1099,9 @@ async def run_aggregation_task(source_id: str):
                                 'features': []
                             }
                         }
-                        logger.info(f"✅ Multi-pass complete: {len(merged_ai_data)} total attributes")
+                        logger.info(f" Multi-pass complete: {len(merged_ai_data)} total attributes")
                     else:
-                        # Single pass for ≤10 attributes
+                        
                         aggregation_result = await aggregate_product(
                             mpn=product.product_code,
                             title=product.product_name,
@@ -1208,16 +1111,16 @@ async def run_aggregation_task(source_id: str):
                             db=db_session,
                             project_id=source.project_id
                         )
-                    # aggregation_result = await aggregate_product(
-                    #     mpn=product.product_code,
-                    #     title=product.product_name,
-                    #     brand=product.brand_name,
-                    #     taxonomy=product.taxonomy,
-                    #     primary_attributes=primary_attr_names,
-                    #     existing_data=existing_data, 
-                    #     db=db_session,
-                    #     project_id=source.project_id
-                    # )
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     if aggregation_result.get('status') == 'success':
                         golden = aggregation_result.get('golden_record', {})
                         ai_attributes = golden.get('attributes', {})
@@ -1228,58 +1131,22 @@ async def run_aggregation_task(source_id: str):
                             golden.get('long_description')) or product.long_description
                         product.features = sanitize_ai_data(
                             golden.get('features')) or product.features
-                        
-                        
                         use_case = project.use_case.lower() if project and project.use_case else ""
                         if "back filling" in use_case or "validation" in use_case:
                             conflicts = {}
                             ai_data_for_merge = {}
-
-                            
-                            
-                            
-                                
-                            
-                            
-                            
-                            
-                            
-                            
-                                    
-                            
-                            
-                            
-                            
-                            
-
-                            
-                            
-                            
-                            
-                            
-                            
                             for ai_key, ai_val in ai_attributes.items():
-                                
                                 matched_primary_key = fuzzy_match_key(ai_key, primary_attr_names)
-                                
                                 if matched_primary_key:
                                     if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
-                                        
                                         correction_text = extract_ai_value_text(ai_val)
                                         conflicts[matched_primary_key] = correction_text
-                                        logger.info(f"🚩 Correction found for {matched_primary_key}: {correction_text}")
-                                        
-                                        
-                                        
+                                        logger.info(f" Correction found for {matched_primary_key}: {correction_text}")
                                         if matched_primary_key in existing_data:
                                             del existing_data[matched_primary_key]
-                                    
-                                    
                                     ai_data_for_merge[matched_primary_key] = ai_val.get("web_value") if isinstance(ai_val, dict) else ai_val
                                 else:
-                                    
                                     ai_data_for_merge[ai_key] = ai_val
-
                             if product.dynamic_attributes and "validation" in use_case:
                                 for attr in product.dynamic_attributes:
                                     if isinstance(attr, dict) and attr.get('name'):
@@ -1291,7 +1158,6 @@ async def run_aggregation_task(source_id: str):
                                                 attr['validation_uom'] = ai_val.get('unit', '') or ai_val.get('uom', '')
                                             else:
                                                 attr['validation_value'] = str(ai_val) if ai_val else ''
-                                                 
                             product.attributes = merge_attributes_preserving_order(
                                 primary_attributes=primary_attr_names,
                                 existing_attrs=existing_data,
@@ -1303,7 +1169,6 @@ async def run_aggregation_task(source_id: str):
                         else:
                             product.attributes = {
                                 **product.attributes, **sanitize_ai_data(ai_attributes)}
-                        
                         sources = golden.get('sources_consulted', [])
                         product.sources_consulted = sources
                         product.completeness_score = min(
@@ -1332,7 +1197,6 @@ async def run_aggregation_task(source_id: str):
                     failed += 1
                     continue
             meta = dict(source.source_metadata or {})
-
             meta.update({
                 "aggregation_status": "completed",
                 "aggregated_successful": successful,

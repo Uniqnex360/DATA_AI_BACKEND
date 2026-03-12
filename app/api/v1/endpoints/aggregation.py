@@ -21,34 +21,22 @@ from app.utils.validators import is_invalid
 from app.utils.sanitize import sanitize_ai_data
 logger = logging.getLogger("aggregation_router")
 router = APIRouter()
-
-
 def merge_attributes_preserving_order(
     primary_attributes: List[str],
     existing_attrs: Dict[str, Any],
     ai_data: Dict[str, Any]
 ) -> Dict[str, Any]:
     merged = {}
-    
-    
     for attr_name in primary_attributes:
         if attr_name in existing_attrs:
-            
             existing_val = existing_attrs[attr_name]
-            
             merged[attr_name] = existing_val if isinstance(existing_val, dict) else existing_val
         elif attr_name in ai_data:
-            
             merged[attr_name] = ai_data[attr_name]
-    
-    
     for attr_name, ai_val in ai_data.items():
         if attr_name not in merged:
             merged[attr_name] = ai_val
-    
     return merged
-
-
 async def get_active_job_for_project(db: AsyncSession, project_id: str) -> Optional[AggregationJob]:
     stmt = select(AggregationJob).where(
         and_(
@@ -58,8 +46,6 @@ async def get_active_job_for_project(db: AsyncSession, project_id: str) -> Optio
     )
     result = await db.execute(stmt)
     return result.scalars().first()
-
-
 async def cleanup_old_jobs(db: AsyncSession, days: int = 7) -> int:
     cutoff_date = datetime.utcnow() - timedelta(days=days)
     stmt = select(AggregationJob).where(
@@ -78,15 +64,11 @@ async def cleanup_old_jobs(db: AsyncSession, days: int = 7) -> int:
         await db.commit()
         logger.info(f"Cleaned up {count} old aggregation jobs")
     return count
-
-
 def calculate_progress(job: AggregationJob) -> float:
     if job.total_products == 0:
         return 0.0
     processed = job.successful + job.failed
     return round((processed / job.total_products) * 100, 2)
-
-
 @router.get("/projects/stats", response_model=List[ProjectStats])
 async def get_projects_with_aggregation_stats(
     db: AsyncSession = Depends(get_session)
@@ -139,8 +121,6 @@ async def get_projects_with_aggregation_stats(
     except Exception as e:
         logger.error(f"Stats Error: {e}", exc_info=True)
         return []
-
-
 @router.post("/project/{project_id}", response_model=AggregationTriggerResponse, status_code=status.HTTP_202_ACCEPTED)
 async def trigger_project_aggregation(
     project_id: str,
@@ -207,8 +187,6 @@ async def trigger_project_aggregation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to start aggregation"
         )
-
-
 @router.get("/project/{project_id}/status", response_model=AggregationJobResponse)
 async def get_project_aggregation_status(
     project_id: str,
@@ -249,8 +227,6 @@ async def get_project_aggregation_status(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch aggregation status"
         )
-
-
 @router.post("/project/{project_id}/cancel")
 async def cancel_project_aggregation(
     project_id: str,
@@ -283,8 +259,6 @@ async def cancel_project_aggregation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to cancel aggregation"
         )
-
-
 @router.post("/run/{product_id}", response_model=ProductAggregationResponse)
 async def aggregate_single_product(
     product_id: str,
@@ -324,8 +298,6 @@ async def aggregate_single_product(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to start aggregation"
         )
-
-
 @router.get("/attributes/{product_id}", response_model=List[AggregatedAttribute])
 async def get_aggregated_attributes(
     product_id: str,
@@ -385,7 +357,6 @@ async def get_aggregated_attributes(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch attributes"
         )
-        
 def extract_ai_value_text(ai_val: Any) -> str:
     if isinstance(ai_val, dict):
         val = ai_val.get("web_value") or ai_val.get("standard_value") or ai_val.get("value")
@@ -469,8 +440,6 @@ async def run_project_aggregation_task(job_id: str) -> None:
                         if "back filling" in use_case or "validation" in use_case:
                             conflicts = {}
                             ai_data_for_merge = {}
-
-                            
                             existing_attrs={}
                             if product.dynamic_attributes:
                                 for attr in product.dynamic_attributes:
@@ -479,37 +448,25 @@ async def run_project_aggregation_task(job_id: str) -> None:
                 'value': attr.get('value'),
                 'uom': attr.get('uom') or attr.get('unit')
             }
-
-                            
                             for ai_key, ai_val in ai_attributes.items():
                                 ai_key_clean = str(ai_key).lower().replace(" ", "").replace("_", "").replace("-", "")
-                                
-                                
                                 target_pk = ai_key
                                 for pk in primary_attrs:
                                     if str(pk).lower().replace(" ", "").replace("_", "").replace("-", "") == ai_key_clean:
                                         target_pk = pk
                                         break
-
                                 ai_text_val = extract_ai_value_text(ai_val)
                                 user_val = existing_attrs.get(target_pk, "")
-
-                                
-                                
                                 is_mismatch = False
                                 if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
                                     is_mismatch = True
                                 elif user_val and ai_text_val:
-                                    
                                     if user_val.lower() != ai_text_val.lower() and user_val.lower() not in ['missing', 'none']:
                                         is_mismatch = True
-
                                 if is_mismatch:
                                     conflicts[target_pk] = ai_text_val
-                                    logger.info(f"🚩 Correction found for {target_pk}: '{user_val}' -> '{ai_text_val}'")
-                                
+                                    logger.info(f"Correction found for {target_pk}: '{user_val}' -> '{ai_text_val}'")
                                 ai_data_for_merge[target_pk] = ai_val
-
                             product.attributes = merge_attributes_preserving_order(
                                 primary_attributes=primary_attrs,
                                 existing_attrs=existing_attrs,
@@ -529,15 +486,9 @@ async def run_project_aggregation_task(job_id: str) -> None:
                                             else:
                                                 attr['validation_value'] = str(ai_val) if ai_val else ''
                                 flag_modified(product, "dynamic_attributes")
-                                
-                            
-                            
                             product.enrichment_status = 'completed'
-                            
-                            
                             await db_session.flush()
                             db_session.add(product)
-                            
                             found_image = aggregation_result.get('image_url')
                             if found_image:
                                 product.image_url_1 = found_image
@@ -647,8 +598,6 @@ async def run_project_aggregation_task(job_id: str) -> None:
                 except Exception as commit_error:
                     logger.error(
                         f"Failed to update job status: {commit_error}")
-
-
 async def run_single_product_aggregation(product_id: str) -> None:
     if not hasattr(run_single_product_aggregation,'_semaphore'):
         run_single_product_aggregation._semaphore=asyncio.Semaphore(1)
@@ -669,65 +618,47 @@ async def run_single_product_aggregation(product_id: str) -> None:
                             primary_attrs.append(str(attr_name).strip())
                 logger.info(f"   └─ Taxonomy: {product.taxonomy}")
                 logger.info(f"   └─ Primary attrs: {primary_attrs}")
-                
-                                # ✅ MULTI-PASS PROCESSING FOR LARGE ATTRIBUTE LISTS
                 if len(primary_attrs) > 10:
                     logger.info(f"🔄 Product has {len(primary_attrs)} attributes - using multi-pass processing")
-                    
-                    # Split into chunks of 10
                     attr_chunks = chunk_attributes(primary_attrs, chunk_size=10)
                     merged_ai_data = {}
                     all_sources = []
                     image_url = None
-                    
                     for idx, chunk in enumerate(attr_chunks, 1):
                         logger.info(f"   └─ Pass {idx}/{len(attr_chunks)}: Processing attributes {chunk}")
-                        
                         chunk_result = await aggregate_with_retry(
                             mpn=product.product_code,
                             title=product.product_name,
-                            max_retries=2,  # Reduced retries for chunks
+                            max_retries=2,  
                             brand=product.brand_name,
                             taxonomy=product.taxonomy,
-                            primary_attributes=primary_attrs,  # Full list for context
-                            attribute_chunk=chunk,  # ✅ Only process this chunk
+                            primary_attributes=primary_attrs,  
+                            attribute_chunk=chunk,  
                             db_session=db_session,
                             project_id=product.project_id
                         )
-                        
                         if chunk_result.get('status') == 'success':
                             golden = chunk_result.get('golden_record', {})
                             chunk_attrs = golden.get('attributes', {})
                             merged_ai_data.update(chunk_attrs)
-                            
-                            # Collect sources
                             sources = golden.get('sources_consulted', [])
                             all_sources.extend(sources)
-                            
-                            # Get image from first successful pass
                             if not image_url:
                                 image_url = chunk_result.get('image_url')
-                        
-                        # Small delay between chunks
                         await asyncio.sleep(1)
-                    
-                    # Reconstruct result as if it was single pass
                     result = {
                         'status': 'success' if merged_ai_data else 'failed',
                         'golden_record': {
                             'attributes': merged_ai_data,
-                            'sources_consulted': list(set(all_sources)),  # Deduplicate
+                            'sources_consulted': list(set(all_sources)),  
                             'short_description': product.short_description,
                             'long_description': product.long_description,
                             'features': product.features
                         },
                         'image_url': image_url
                     }
-                    
-                    logger.info(f"✅ Multi-pass complete: {len(merged_ai_data)} total attributes from {len(attr_chunks)} passes")
-
+                    logger.info(f" Multi-pass complete: {len(merged_ai_data)} total attributes from {len(attr_chunks)} passes")
                 else:
-                    # Single pass for products with ≤10 attributes
                     result = await aggregate_with_retry(
                         mpn=product.product_code,
                         title=product.product_name,
@@ -752,26 +683,21 @@ async def run_single_product_aggregation(product_id: str) -> None:
                         existing_attrs = {}
                         conflicts = {}
                         ai_data_for_merge = {}
-
                         if product.dynamic_attributes:
                             for attr in product.dynamic_attributes:
                                 if isinstance(attr, dict):
                                     name = attr.get('name')
                                     existing_attrs[name] = {'value': attr.get('value'), 'uom': attr.get('uom')}
-
-                        
                         for attr_name, ai_val in ai_data.items():
                             if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
                                 conflicts[attr_name] = extract_ai_value_text(ai_val)
                             ai_data_for_merge[attr_name] = ai_val
-
                         product.attributes = merge_attributes_preserving_order(
                             primary_attributes=primary_attrs,
                             existing_attrs=existing_attrs,
                             ai_data=ai_data_for_merge
                         )
                         product.validation_conflicts = conflicts 
-                                            
                         if "validation" in use_case and product.dynamic_attributes:
                             for attr in product.dynamic_attributes:
                                 if isinstance(attr, dict) and attr.get('name'):
@@ -784,7 +710,6 @@ async def run_single_product_aggregation(product_id: str) -> None:
                                         else:
                                             attr['validation_value'] = str(ai_val) if ai_val else ''
                             flag_modified(product, "dynamic_attributes")
-                        
                         product.enrichment_status = 'completed'
                         await db_session.flush() 
                         db_session.add(product)
@@ -804,7 +729,6 @@ async def run_single_product_aggregation(product_id: str) -> None:
                     else:
                         product.attributes = {**product.attributes, **ai_data}
                         found_image = result.get('image_url')
-                        
                         logger.info(
                             f" Single product - Image found: {found_image}")
                         product.attributes = {**product.attributes, **ai_data}
@@ -870,7 +794,6 @@ async def run_single_product_aggregation(product_id: str) -> None:
                 await asyncio.sleep(2) 
             except Exception as e:
                 await db_session.rollback()
-                
                 logger.error(
                     f"Single product aggregation failed: {e}", exc_info=True)
                 logger.error(f"Traceback: {traceback.format_exc()}")
@@ -882,8 +805,6 @@ async def run_single_product_aggregation(product_id: str) -> None:
                         await db_session.commit()
                 except Exception:
                     pass
-
-
 async def aggregate_with_retry(
     db_session,
     mpn: str,
@@ -928,8 +849,6 @@ async def aggregate_with_retry(
         'status': 'failed',
         'reason': str(last_error) if last_error else 'Unknown error'
     }
-
-
 async def check_data_quality(
     db_session: AsyncSession,
     product_code: str,
@@ -945,8 +864,6 @@ async def check_data_quality(
                 details=f"Placeholder or invalid value detected: '{val_str}'",
                 resolved=False
             ))
-
-
 @router.delete("/jobs/cleanup")
 async def cleanup_old_aggregation_jobs(
     days: int = 7,
@@ -965,8 +882,6 @@ async def cleanup_old_aggregation_jobs(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to cleanup old jobs"
         )
-
-
 async def export_project_data(project_id: str, db: AsyncSession = Depends(get_session)):
     try:
         stmt = select(Product).where(Product.project_id == project_id)
@@ -1006,4 +921,3 @@ async def export_project_data(project_id: str, db: AsyncSession = Depends(get_se
         logger.error(f"Export failed for project {project_id}: {e}")
         raise HTTPException(
             status_code=500, detail="Failed to generate export file")
-
