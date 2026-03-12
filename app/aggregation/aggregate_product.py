@@ -63,7 +63,7 @@ async def aggregate_product(
                         value=attr.get('value')
                         if name and value:
                             existing_data[name]=value
-        attrs_to_process=attribute_chunk if attribute_chunk else is not None else primary_attributes
+        attrs_to_process = attribute_chunk if attribute_chunk is not None else primary_attributes
         prompt_config = await build_aggregation_prompt(
             mpn=mpn or "",
             product_name=title or "",
