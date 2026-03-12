@@ -651,7 +651,7 @@ async def run_project_aggregation_task(job_id: str) -> None:
 
 async def run_single_product_aggregation(product_id: str) -> None:
     if not hasattr(run_single_product_aggregation,'_semaphore'):
-        run_single_product_aggregation._semaphore=asyncio.Semaphore(2)
+        run_single_product_aggregation._semaphore=asyncio.Semaphore(1)
     async with run_single_product_aggregation._semaphore:
         async with async_session_factory() as db_session:
             try:
