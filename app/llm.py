@@ -3,7 +3,7 @@ import google.generativeai as genai
 import json
 import time
 from app.core.config import settings
-client = OpenAI(api_key=settings.openai_api_key)
+client = OpenAI(api_key=settings.openai_api_key,timeout=60.0    )
 genai.configure(api_key=settings.gemini_api_key)
 
 def parse_response(content: str) -> dict:
@@ -33,12 +33,14 @@ def call_llm(prompt: str, schema: dict) -> dict:
             {"role": "user", "content": full_prompt}
         ],
         response_format={"type": "json_object"},
-        max_completion_tokens=8000
+        max_completion_tokens=8000,
+        timeout=60.0
     )
         content = response.choices[0].message.content.strip()
         return parse_response(content)
     except Exception as e:
-        print(f"Open AI failed:{str(e)}")
+        error_msg = str(e)
+        print(f"Open AI failed: {error_msg[:200]}") 
         print(f"---Switching  to Gemini backup ({settings.gemini_model})")
         try:
             model=genai.GenerativeModel(model_name=settings.gemini_model,generation_config={'response_mime_type':'application/json'})
