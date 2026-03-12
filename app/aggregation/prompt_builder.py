@@ -127,19 +127,24 @@ STRICT REJECTION RULES (CRITICAL):
                 existing_text = "\n".join(existing_list) if existing_list else "(None)"
                 missing_text = "\n".join([f"  • {m}" for m in missing_names_only]) if missing_names_only else "(None)"
                 prompt = f"""
-                You are performing a technical specification BACKFILL and VALIDATION task.
+                You are performing a technical specification BACKFILL task.
                 {context}
+
                 PROVIDED DATA (VERIFY AND CORRECT THESE):
                 {existing_text}
+
                 MISSING DATA (SEARCH AND FILL THESE):
                 {missing_text}
+
                 {strict_extraction_rules}
+
                 CRITICAL INSTRUCTIONS:
                 1. ANALYZE PROVIDED DATA: Look at the values in "PROVIDED DATA". If a value is obviously placeholder text (like "hello world", "test"), or is factually incorrect based on official manufacturer specs, you MUST provide the correct value in your response.
                 2. FILL MISSING DATA: Search for and provide accurate values for all items in the "MISSING DATA" list.
-                3. DISCOVER ADDITIONAL: Extract any other technical specifications you find that are not mentioned in either list.
+                3. DISCOVER ADDITIONAL: Extract up to 5 ADDITIONAL technical specifications you find that are not mentioned in either list. Focus on the most important specs.
                 4. OVERWRITE RULE: If your researched value for an attribute contradicts the "PROVIDED DATA", your researched value takes priority. 
                 5. NAMING: Use the EXACT attribute names provided in the lists above for the JSON keys.
+
                 OUTPUT FORMAT:
                 {{
                 "attributes": {{
@@ -149,7 +154,7 @@ STRICT REJECTION RULES (CRITICAL):
                 """
                 return {
                     'prompt': prompt,
-                    'expected_attributes': primary_attributes + ["*discover*"],
+                    'expected_attributes': primary_attributes + ["*discover_limited*"],
                     'mode': 'backfill',
                     'use_case': use_case
                 }
