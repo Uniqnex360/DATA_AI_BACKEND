@@ -76,7 +76,7 @@ async def aggregate_product(
         )
         logger.info(f"Aggregating {mpn} in '{prompt_config['mode']}' mode")
         attrs_to_process=attribute_chunk if attribute_chunk is not None else primary_attributes
-        logger.info(f"Expected attributes: {prompt_config['attrs_to_process'][:5]}")
+        logger.info(f"Expected attributes: {attrs_to_process[:5] if attrs_to_process else []}")
         pipeline = build_pipeline()
         result = await pipeline.run(
             mpn=mpn,
