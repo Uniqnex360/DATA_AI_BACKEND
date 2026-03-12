@@ -28,33 +28,20 @@ def merge_attributes_preserving_order(
     existing_attrs: Dict[str, Any],
     ai_data: Dict[str, Any]
 ) -> Dict[str, Any]:
-    """
-    Merge existing and AI-discovered attributes while preserving original attribute order.
-    Preserves complete attribute structure including UOM/unit information.
-    
-    Args:
-        primary_attributes: Original ordered list of attribute names
-        existing_attrs: Dict of existing attribute values (may include {value, uom} structure)
-        ai_data: Dict of newly discovered attributes from AI (may be plain or dict values)
-    
-    Returns:
-        Merged dict with attributes in their original order, followed by new discoveries.
-        Preserves value+uom structure where available.
-    """
     merged = {}
     
-    # First pass: add primary attributes in their original order
+    
     for attr_name in primary_attributes:
         if attr_name in existing_attrs:
-            # Keep existing value with full structure (value + uom)
+            
             existing_val = existing_attrs[attr_name]
-            # Preserve as-is if it's a dict, otherwise wrap as value
+            
             merged[attr_name] = existing_val if isinstance(existing_val, dict) else existing_val
         elif attr_name in ai_data:
-            # Use AI value for missing primary attribute
+            
             merged[attr_name] = ai_data[attr_name]
     
-    # Second pass: add any new AI-discovered attributes not in primary list
+    
     for attr_name, ai_val in ai_data.items():
         if attr_name not in merged:
             merged[attr_name] = ai_val
@@ -483,7 +470,7 @@ async def run_project_aggregation_task(job_id: str) -> None:
                             conflicts = {}
                             ai_data_for_merge = {}
 
-                            # 1. Map existing data for easy lookup
+                            
                             existing_attrs={}
                             if product.dynamic_attributes:
                                 for attr in product.dynamic_attributes:
@@ -493,11 +480,11 @@ async def run_project_aggregation_task(job_id: str) -> None:
                 'uom': attr.get('uom') or attr.get('unit')
             }
 
-                            # 2. Match and Compare AI results
+                            
                             for ai_key, ai_val in ai_attributes.items():
                                 ai_key_clean = str(ai_key).lower().replace(" ", "").replace("_", "").replace("-", "")
                                 
-                                # Find matching primary key (Excel column)
+                                
                                 target_pk = ai_key
                                 for pk in primary_attrs:
                                     if str(pk).lower().replace(" ", "").replace("_", "").replace("-", "") == ai_key_clean:
@@ -507,13 +494,13 @@ async def run_project_aggregation_task(job_id: str) -> None:
                                 ai_text_val = extract_ai_value_text(ai_val)
                                 user_val = existing_attrs.get(target_pk, "")
 
-                                # --- THE SMART CHECK ---
-                                # Check if AI explicitly said it's a mismatch OR if the values are just different
+                                
+                                
                                 is_mismatch = False
                                 if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
                                     is_mismatch = True
                                 elif user_val and ai_text_val:
-                                    # If user has a value, compare it to AI result (ignoring case)
+                                    
                                     if user_val.lower() != ai_text_val.lower() and user_val.lower() not in ['missing', 'none']:
                                         is_mismatch = True
 
@@ -544,10 +531,10 @@ async def run_project_aggregation_task(job_id: str) -> None:
                                 flag_modified(product, "dynamic_attributes")
                                 
                             
-                            # Standard fields update...
+                            
                             product.enrichment_status = 'completed'
                             
-                            # Use flush instead of commit so subsequent changes are also saved
+                            
                             await db_session.flush()
                             db_session.add(product)
                             
@@ -713,7 +700,7 @@ async def run_single_product_aggregation(product_id: str) -> None:
                                     name = attr.get('name')
                                     existing_attrs[name] = {'value': attr.get('value'), 'uom': attr.get('uom')}
 
-                        # Separate AI corrections from discovery
+                        
                         for attr_name, ai_val in ai_data.items():
                             if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
                                 conflicts[attr_name] = extract_ai_value_text(ai_val)
@@ -724,8 +711,8 @@ async def run_single_product_aggregation(product_id: str) -> None:
                             existing_attrs=existing_attrs,
                             ai_data=ai_data_for_merge
                         )
-                        product.validation_conflicts = conflicts # SAVE CORRECTIONS
-                                            # Update dynamic_attributes with AI validation values
+                        product.validation_conflicts = conflicts 
+                                            
                         if "validation" in use_case and product.dynamic_attributes:
                             for attr in product.dynamic_attributes:
                                 if isinstance(attr, dict) and attr.get('name'):
@@ -745,6 +732,10 @@ async def run_single_product_aggregation(product_id: str) -> None:
                         found_image = result.get('image_url')
                         if found_image and isinstance(found_image, str) and found_image.strip():
                             product.image_url_1 = found_image.strip()
+                            logger.info(f"Image URL saved: {product.image_url_1}")
+                            logger.info(f"Image URL length: {len(product.image_url_1)}")
+                        else:
+                            logger.warning(f"No valid image for {product.product_code}, found_image: {found_image}")
                         product.completeness_score = min(len(ai_data) * 5, 100)
                         product.sources_consulted = golden.get(
                             'sources_consulted', [])
@@ -754,6 +745,7 @@ async def run_single_product_aggregation(product_id: str) -> None:
                     else:
                         product.attributes = {**product.attributes, **ai_data}
                         found_image = result.get('image_url')
+                        
                         logger.info(
                             f" Single product - Image found: {found_image}")
                         product.attributes = {**product.attributes, **ai_data}

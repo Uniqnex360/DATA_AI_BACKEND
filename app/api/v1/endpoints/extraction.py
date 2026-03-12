@@ -40,33 +40,21 @@ def merge_attributes_preserving_order(
     existing_attrs: dict,
     ai_data: dict
 ) -> dict:
-    """
-    Merge existing and AI-discovered attributes while preserving original attribute order.
-    Preserves complete attribute structure including UOM/unit information.
     
-    Args:
-        primary_attributes: Original ordered list of attribute names
-        existing_attrs: Dict of existing attribute values (may include {value, uom} structure)
-        ai_data: Dict of newly discovered attributes from AI (may be plain or dict values)
-    
-    Returns:
-        Merged dict with attributes in their original order, followed by new discoveries.
-        Preserves value+uom structure where available.
-    """
     merged = {}
     
-    # First pass: add primary attributes in their original order
+    
     for attr_name in primary_attributes:
         if attr_name in existing_attrs:
-            # Keep existing value with full structure (value + uom)
+            
             existing_val = existing_attrs[attr_name]
-            # Preserve as-is if it's a dict, otherwise keep the value
+            
             merged[attr_name] = existing_val if isinstance(existing_val, dict) else existing_val
         elif attr_name in ai_data:
-            # Use AI value for missing primary attribute
+            
             merged[attr_name] = ai_data[attr_name]
     
-    # Second pass: add any new AI-discovered attributes not in primary list
+    
     for attr_name, ai_val in ai_data.items():
         if attr_name not in merged:
             merged[attr_name] = ai_val
@@ -202,28 +190,28 @@ def clean_for_excel(val, attr_name=None):
     return sanitize_for_excel(val_str)
 
 
-# def semantic_match_key(target_name: str, ai_keys: list) -> str:
-#     import re
-#     from difflib import SequenceMatcher
-#     def cl(s): return re.sub(r'[^a-z0-9]', '', str(s).lower())
-#     target_clean = cl(target_name)
-#     best_key, highest_score = None, 0
-#     for key in ai_keys:
-#         key_clean = cl(key)
-#         score = 0
-#         if target_clean == key_clean:
-#             score = 100
-#         elif target_clean in key_clean or key_clean in target_clean:
-#             overlap = min(len(target_clean), len(key_clean)) / \
-#                 max(len(target_clean), len(key_clean))
-#             score = 80 + (overlap * 19)
-#         else:
-#             ratio = SequenceMatcher(None, target_clean, key_clean).ratio()
-#             if ratio > 0.8:
-#                 score = 60 + (ratio * 20)
-#         if score > highest_score and score > 75:
-#             highest_score, best_key = score, key
-#     return best_key
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @router.get("/{source_id}/download")
@@ -370,7 +358,7 @@ async def download_file(
                 "main_image": "image_url_1",
                 "3d_model": "3D_Model_URL",
                 "model_3d": "3D_Model_URL",
-                # "images": "image_url_1"
+                
             }
             IGNORED_KEYS = {
             "share", "latest_news", "search_for", "error_ref", "important",
@@ -408,7 +396,7 @@ async def download_file(
                 if tax not in taxonomy_raw_data:
                     taxonomy_raw_data[tax] = {
                         'user_defined': [],
-                        'user_defined_map': {},  # normalized -> original name
+                        'user_defined_map': {},  
                         'ai_discovered': set(),
                     }
                 data = taxonomy_raw_data[tax]
@@ -418,7 +406,7 @@ async def download_file(
                             name = attr['name'].strip()
                             name_norm = normalize_attr_name(name)
                             if name and name_norm not in data['user_defined_map']:
-                                # Store both the original name and normalized version
+                                
                                 data['user_defined'].append(name)
                                 data['user_defined_map'][name_norm] = name
                 if p.attributes:
@@ -572,8 +560,8 @@ async def download_file(
                                 row[f"image_url_{i}"] = img.get("url", "")
                             else:
                                 row[f"image_url_{i}"] = str(img) if img else ""
-                # Build original attributes map - handle duplicates by using list instead of dict
-                original_attrs_by_norm = {}  # normalized_name -> [list of attrs]
+                
+                original_attrs_by_norm = {}  
                 if p.dynamic_attributes:
                     for attr in p.dynamic_attributes:
                         if isinstance(attr, dict) and attr.get('name'):
@@ -583,7 +571,7 @@ async def download_file(
                             original_attrs_by_norm[k_norm].append(attr)
 
                 used_ai_keys = set()
-                used_original_indexes = {}  # track which original attr was used {norm_key: index}
+                used_original_indexes = {}  
 
                 for i, template_attr_name in enumerate(attribute_template, 1):
                     if i > MAX_ATTRIBUTES:
@@ -613,7 +601,7 @@ async def download_file(
                             ai_uom_str = clean_for_excel(uom_obj)
                         used_ai_keys.add(ai_match_key)
 
-                    # Get next available original attribute (handle duplicates)
+                    
                     orig_val_str = ""
                     orig_uom_str = ""
                     if template_norm in original_attrs_by_norm:
@@ -638,9 +626,9 @@ async def download_file(
                             if val is None:
                                 return ""
                             val_str = str(val).lower().strip()
-                            # Remove common unit indicators for comparison only
+                            
                             val_str = re.sub(r'\s*(lbs?|kg|g|in|cm|mm|ft|°[fc]|degrees?)\s*\.?\s*$', '', val_str)
-                            val_str = re.sub(r'[^\d\.\-]', '', val_str)  # Keep only numbers, decimal, minus
+                            val_str = re.sub(r'[^\d\.\-]', '', val_str)  
                             return val_str
                         norm_original = normalize_for_display(original_val)
                         norm_validation = normalize_for_display(validation_val)
@@ -648,7 +636,7 @@ async def download_file(
                             row[f"validation_value{i}"] = validation_val
                             row[f"validation_uom{i}"] = clean_for_excel(orig_match.get('validation_uom'))
                     elif p.validation_conflicts:
-                        # Fallback to validation_conflicts if needed
+                        
                         if template_attr_name in p.validation_conflicts:
                             row[f"validation_value{i}"] = clean_for_excel(p.validation_conflicts[template_attr_name])
                         else:
@@ -1094,7 +1082,7 @@ def normalize_key(key: str) -> str:
     return str(key).lower().replace("_", "").replace(" ", "").strip()
 def fuzzy_match_key(key: str, key_list: List[str]) -> Optional[str]:
     def normalize(s):
-        # Remove units in parentheses, spaces, underscores, and lowercase everything
+        
         s = re.sub(r'\(.*?\)', '', s) 
         return s.lower().replace("_", "").replace(" ", "").strip()
     
@@ -1153,7 +1141,7 @@ async def run_aggregation_task(source_id: str):
                                     'value':attr.get('value'),
                                     'uom':attr.get('uom') or attr.get('unit')
                                 }
-                    logger.info(f"🔍 EXISTING DATA BUILT for {product.product_code}:")
+                    logger.info(f" EXISTING DATA BUILT for {product.product_code}:")
                     logger.info(f"   dynamic_attributes count: {len(product.dynamic_attributes) if product.dynamic_attributes else 0}")
                     logger.info(f"   existing_data keys: {list(existing_data.keys())}")
                     logger.info(f"   existing_data sample: {dict(list(existing_data.items())[:2])}")
@@ -1184,55 +1172,55 @@ async def run_aggregation_task(source_id: str):
                         product.features = sanitize_ai_data(
                             golden.get('features')) or product.features
                         
-                        # Apply merge logic with order preservation for backfilling/validation
+                        
                         use_case = project.use_case.lower() if project and project.use_case else ""
                         if "back filling" in use_case or "validation" in use_case:
                             conflicts = {}
                             ai_data_for_merge = {}
 
-                            # for ai_key, ai_val in ai_attributes.items():
-                            #     # FIND THE MATCHING EXCEL COLUMN NAME
-                            #     matched_primary_key = fuzzy_match_key(ai_key, primary_attr_names)
+                            
+                            
+                            
                                 
-                            #     if matched_primary_key:
-                            #         if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
-                            #             # Use our helper to get the clean string fix
-                            #             correction_text = extract_ai_value_text(ai_val)
-                            #             conflicts[matched_primary_key] = correction_text
-                            #             logger.info(f"🚩 Correction found for {matched_primary_key}: {correction_text}")
+                            
+                            
+                            
+                            
+                            
+                            
                                     
-                            #         # Map the clean web value for the attributes merge
-                            #         ai_data_for_merge[matched_primary_key] = ai_val.get("web_value") if isinstance(ai_val, dict) else ai_val
-                            #     else:
-                            #         # It's a completely new discovery
-                            #         ai_data_for_merge[ai_key] = ai_val
+                            
+                            
+                            
+                            
+                            
 
-                            # # SAVE TO PRODUCT
-                            # product.attributes = merge_attributes_preserving_order(
-                            #     primary_attributes=primary_attr_names,
-                            #     existing_attrs=existing_data,
-                            #     ai_data=ai_data_for_merge
-                            # )
+                            
+                            
+                            
+                            
+                            
+                            
                             for ai_key, ai_val in ai_attributes.items():
-                                # FIND THE MATCHING EXCEL COLUMN NAME
+                                
                                 matched_primary_key = fuzzy_match_key(ai_key, primary_attr_names)
                                 
                                 if matched_primary_key:
                                     if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
-                                        # Use our helper to get the clean string fix
+                                        
                                         correction_text = extract_ai_value_text(ai_val)
                                         conflicts[matched_primary_key] = correction_text
                                         logger.info(f"🚩 Correction found for {matched_primary_key}: {correction_text}")
                                         
-                                        # 🚨 CRITICAL FIX: Remove the garbage from existing data 
-                                        # so the merge function is forced to use the AI value.
+                                        
+                                        
                                         if matched_primary_key in existing_data:
                                             del existing_data[matched_primary_key]
                                     
-                                    # Map the clean web value for the attributes merge
+                                    
                                     ai_data_for_merge[matched_primary_key] = ai_val.get("web_value") if isinstance(ai_val, dict) else ai_val
                                 else:
-                                    # It's a completely new discovery
+                                    
                                     ai_data_for_merge[ai_key] = ai_val
 
                             if product.dynamic_attributes and "validation" in use_case:
@@ -1253,7 +1241,7 @@ async def run_aggregation_task(source_id: str):
                                 ai_data=ai_data_for_merge
                             )
                             product.validation_conflicts = conflicts
-                            flag_modified(product, "validation_conflicts") # MANDATORY
+                            flag_modified(product, "validation_conflicts") 
                             logger.info(f"BACKFILL: Saved {len(conflicts)} corrections for {product.product_code}")
                         else:
                             product.attributes = {

@@ -12,32 +12,31 @@ router = APIRouter()
 
 @router.get("/debug/{project_id}", response_model=Dict[str, Any])
 async def debug_project_products(project_id: str, db: AsyncSession = Depends(get_session)):
-    """DEBUG ENDPOINT: Shows detailed info about products for a project"""
     try:
         logger.info(f"[DEBUG] Checking products for project_id: '{project_id}'")
         
-        # Check if project exists
+        
         project = await db.get(Project, project_id)
         logger.info(f"[DEBUG] Project found: {project is not None}")
         
-        # Count all products in database
+        
         total_products = await db.execute(select(func.count(Product.id)))
         total_count = total_products.scalar() or 0
         logger.info(f"[DEBUG] Total products in database: {total_count}")
         
-        # Count products for this project
+        
         project_products = await db.execute(
             select(func.count(Product.id)).where(Product.project_id == project_id)
         )
         project_count = project_products.scalar() or 0
         logger.info(f"[DEBUG] Products with project_id == '{project_id}': {project_count}")
         
-        # Get all unique project_ids in database
+        
         unique_pids = await db.execute(select(Product.project_id).distinct())
         pids = unique_pids.scalars().all()
         logger.info(f"[DEBUG] Unique project_ids in Product table: {pids}")
         
-        # Get actual products for this project
+        
         products_stmt = select(Product.product_code, Product.project_id).where(
             Product.project_id == project_id
         ).limit(10)

@@ -102,7 +102,7 @@ STRICT REJECTION RULES (CRITICAL):
                     'mode': 'validate',
                     'use_case': use_case
                 }
-            logger.info(f"🔍 PROMPT BUILDER DEBUG:")
+            logger.info(f" PROMPT BUILDER DEBUG:")
             logger.info(f"   use_case_lower: '{use_case_lower}'")
             logger.info(f"   has_primary_attrs: {has_primary_attrs}")
             logger.info(f"   existing_data keys: {list(existing_data.keys()) if existing_data else 'None'}")
