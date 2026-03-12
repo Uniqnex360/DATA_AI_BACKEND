@@ -28,7 +28,8 @@ def build_pipeline() -> AggregationPipeline:
         ]),
         image_service=ImageService(),
     )
-
+def chunk_attributes(attributes: List[str], chunk_size: int = 10) -> List[List[str]]:
+    return [attributes[i:i + chunk_size] for i in range(0, len(attributes), chunk_size)]
 
 async def aggregate_product(
     mpn: str = None,
@@ -38,7 +39,8 @@ async def aggregate_product(
     taxonomy: Optional[str] = None,
     primary_attributes: Optional[List[str]] = None,
     db: Optional[AsyncSession] = None,
-    project_id:str=None
+    project_id:str=None,
+    attribute_chunk:Optional[List[str]]=None
 ) -> Dict:
     try:
         if not project_id:
@@ -61,20 +63,20 @@ async def aggregate_product(
                         value=attr.get('value')
                         if name and value:
                             existing_data[name]=value
-            
+        attrs_to_process=attribute_chunk if attribute_chunk else is not None else primary_attributes
         prompt_config = await build_aggregation_prompt(
             mpn=mpn or "",
             product_name=title or "",
             brand=brand,
             taxonomy=taxonomy,
-            primary_attributes=primary_attributes,
+            primary_attributes=attrs_to_process,
             existing_data=existing_data,
             db=db,
             use_case=use_case  
         )
         logger.info(f"Aggregating {mpn} in '{prompt_config['mode']}' mode")
-        logger.info(
-            f"Expected attributes: {prompt_config['expected_attributes'][:5]}")
+        attrs_to_process=attribute_chunk if attribute_chunk is not None else primary_attributes
+        logger.info(f"Expected attributes: {prompt_config['attrs_to_process'][:5]}")
         pipeline = build_pipeline()
         result = await pipeline.run(
             mpn=mpn,

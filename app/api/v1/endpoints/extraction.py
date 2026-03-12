@@ -13,6 +13,7 @@ from app.utils.usecase_validator import validate_file_against_use_case
 import json
 import io
 import hashlib
+import asyncio
 import re
 from datetime import datetime, timedelta
 from app.aggregation.aggregate_product import aggregate_product
@@ -1091,6 +1092,7 @@ def fuzzy_match_key(key: str, key_list: List[str]) -> Optional[str]:
         if normalize(k) == target:
             return k
     return None
+
 async def run_aggregation_task(source_id: str):
     async with async_session_factory() as db_session:
         try:
@@ -1151,16 +1153,70 @@ async def run_aggregation_task(source_id: str):
                         logger.info(f" Excel attributes: {list(existing_data.keys())[:5]}")
                         
                     logger.info(f"Primary attributes found in DB: {primary_attr_names}")
-                    aggregation_result = await aggregate_product(
-                        mpn=product.product_code,
-                        title=product.product_name,
-                        brand=product.brand_name,
-                        taxonomy=product.taxonomy,
-                        primary_attributes=primary_attr_names,
-                        existing_data=existing_data, 
-                        db=db_session,
-                        project_id=source.project_id
-                    )
+                    # ✅ MULTI-PASS PROCESSING FOR LARGE ATTRIBUTE LISTS
+                    if len(primary_attr_names) > 10:
+                        logger.info(f"🔄 Product has {len(primary_attr_names)} attributes - using multi-pass processing")
+                        
+                        from app.aggregation.aggregate_product import chunk_attributes
+                        attr_chunks = chunk_attributes(primary_attr_names, chunk_size=10)
+                        merged_ai_data = {}
+                        all_sources = []
+                        
+                        for idx, chunk in enumerate(attr_chunks, 1):
+                            logger.info(f"   └─ Pass {idx}/{len(attr_chunks)}: Processing attributes {chunk}")
+                            
+                            chunk_result = await aggregate_product(
+                                mpn=product.product_code,
+                                title=product.product_name,
+                                brand=product.brand_name,
+                                taxonomy=product.taxonomy,
+                                primary_attributes=primary_attr_names,
+                                attribute_chunk=chunk,  # ✅ Only process this chunk
+                                db=db_session,
+                                project_id=source.project_id
+                            )
+                            
+                            if chunk_result.get('status') == 'success':
+                                golden = chunk_result.get('golden_record', {})
+                                chunk_attrs = golden.get('attributes', {})
+                                merged_ai_data.update(chunk_attrs)
+                                sources = golden.get('sources_consulted', [])
+                                all_sources.extend(sources)
+                            
+                            await asyncio.sleep(1)
+                        
+                        aggregation_result = {
+                            'status': 'success' if merged_ai_data else 'failed',
+                            'golden_record': {
+                                'attributes': merged_ai_data,
+                                'sources_consulted': list(set(all_sources)),
+                                'short_description': '',
+                                'long_description': '',
+                                'features': []
+                            }
+                        }
+                        logger.info(f"✅ Multi-pass complete: {len(merged_ai_data)} total attributes")
+                    else:
+                        # Single pass for ≤10 attributes
+                        aggregation_result = await aggregate_product(
+                            mpn=product.product_code,
+                            title=product.product_name,
+                            brand=product.brand_name,
+                            taxonomy=product.taxonomy,
+                            primary_attributes=primary_attr_names,
+                            db=db_session,
+                            project_id=source.project_id
+                        )
+                    # aggregation_result = await aggregate_product(
+                    #     mpn=product.product_code,
+                    #     title=product.product_name,
+                    #     brand=product.brand_name,
+                    #     taxonomy=product.taxonomy,
+                    #     primary_attributes=primary_attr_names,
+                    #     existing_data=existing_data, 
+                    #     db=db_session,
+                    #     project_id=source.project_id
+                    # )
                     if aggregation_result.get('status') == 'success':
                         golden = aggregation_result.get('golden_record', {})
                         ai_attributes = golden.get('attributes', {})

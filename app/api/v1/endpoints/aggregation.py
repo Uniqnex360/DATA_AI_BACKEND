@@ -15,7 +15,7 @@ from app.core.database import get_session, async_session_factory
 from app.models.pipeline import AggregationJob, AuditTrail, CleansingIssue, RawExtraction, Source
 from app.models.product import Product
 from app.models.project import Project
-from app.aggregation.aggregate_product import aggregate_product
+from app.aggregation.aggregate_product import aggregate_product, chunk_attributes
 from app.schemas.aggregation import AggregatedAttribute, AggregatedAttributeValue, AggregationJobResponse, AggregationTriggerResponse, ProductAggregationResponse, ProjectStats
 from app.utils.validators import is_invalid
 from app.utils.sanitize import sanitize_ai_data
@@ -669,16 +669,75 @@ async def run_single_product_aggregation(product_id: str) -> None:
                             primary_attrs.append(str(attr_name).strip())
                 logger.info(f"   └─ Taxonomy: {product.taxonomy}")
                 logger.info(f"   └─ Primary attrs: {primary_attrs}")
-                result = await aggregate_with_retry(
-                    mpn=product.product_code,
-                    title=product.product_name,
-                    max_retries=3,
-                    brand=product.brand_name,
-                    taxonomy=product.taxonomy,
-                    primary_attributes=primary_attrs,
-                    db_session=db_session,
-                    project_id=product.project_id
-                )
+                
+                                # ✅ MULTI-PASS PROCESSING FOR LARGE ATTRIBUTE LISTS
+                if len(primary_attrs) > 10:
+                    logger.info(f"🔄 Product has {len(primary_attrs)} attributes - using multi-pass processing")
+                    
+                    # Split into chunks of 10
+                    attr_chunks = chunk_attributes(primary_attrs, chunk_size=10)
+                    merged_ai_data = {}
+                    all_sources = []
+                    image_url = None
+                    
+                    for idx, chunk in enumerate(attr_chunks, 1):
+                        logger.info(f"   └─ Pass {idx}/{len(attr_chunks)}: Processing attributes {chunk}")
+                        
+                        chunk_result = await aggregate_with_retry(
+                            mpn=product.product_code,
+                            title=product.product_name,
+                            max_retries=2,  # Reduced retries for chunks
+                            brand=product.brand_name,
+                            taxonomy=product.taxonomy,
+                            primary_attributes=primary_attrs,  # Full list for context
+                            attribute_chunk=chunk,  # ✅ Only process this chunk
+                            db_session=db_session,
+                            project_id=product.project_id
+                        )
+                        
+                        if chunk_result.get('status') == 'success':
+                            golden = chunk_result.get('golden_record', {})
+                            chunk_attrs = golden.get('attributes', {})
+                            merged_ai_data.update(chunk_attrs)
+                            
+                            # Collect sources
+                            sources = golden.get('sources_consulted', [])
+                            all_sources.extend(sources)
+                            
+                            # Get image from first successful pass
+                            if not image_url:
+                                image_url = chunk_result.get('image_url')
+                        
+                        # Small delay between chunks
+                        await asyncio.sleep(1)
+                    
+                    # Reconstruct result as if it was single pass
+                    result = {
+                        'status': 'success' if merged_ai_data else 'failed',
+                        'golden_record': {
+                            'attributes': merged_ai_data,
+                            'sources_consulted': list(set(all_sources)),  # Deduplicate
+                            'short_description': product.short_description,
+                            'long_description': product.long_description,
+                            'features': product.features
+                        },
+                        'image_url': image_url
+                    }
+                    
+                    logger.info(f"✅ Multi-pass complete: {len(merged_ai_data)} total attributes from {len(attr_chunks)} passes")
+
+                else:
+                    # Single pass for products with ≤10 attributes
+                    result = await aggregate_with_retry(
+                        mpn=product.product_code,
+                        title=product.product_name,
+                        max_retries=3,
+                        brand=product.brand_name,
+                        taxonomy=product.taxonomy,
+                        primary_attributes=primary_attrs,
+                        db_session=db_session,
+                        project_id=product.project_id
+                    )
                 if result.get('status') == 'success':
                     golden = sanitize_ai_data(result.get('golden_record', {}))
                     ai_data = golden.get('attributes', {})
@@ -832,6 +891,7 @@ async def aggregate_with_retry(
     brand: Optional[str] = None,
     taxonomy: Optional[str] = None,
     primary_attributes: Optional[List[str]] = None,
+    attribute_chunk:Optional[List[str]]=None,
     db: Optional[AsyncSession] = None,
     project_id: str = None,
     max_retries: int = 2,
@@ -847,6 +907,7 @@ async def aggregate_with_retry(
                 brand=brand,
                 taxonomy=taxonomy,
                 primary_attributes=primary_attributes,
+                attribute_chunk=attribute_chunk,
                 project_id=project_id
             )
             logger.info(f"Aggregation result for {mpn}: {result}")
