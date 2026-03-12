@@ -772,6 +772,7 @@ async def batch_aggregate(
             project_id=projectId,
             status="completed",
             uploaded_at=datetime.utcnow(),
+            content_data=content,  
             source_metadata={
                 "file_hash": file_hash,
                 "total": total_rows,
