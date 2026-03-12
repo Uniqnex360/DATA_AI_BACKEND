@@ -39,7 +39,7 @@ def generate_search_queries(mpn: str = None, brand: str = None, title: str = Non
         core = mpn
     else:
         core = f"{brand or ''} {short_title}".strip()
-    logger.info(f"🔎 Generating queries for core term: {core}")
+    logger.info(f" Generating queries for core term: {core}")
     queries = [
         f"{core} technical specifications",
         f"{core} datasheet pdf",
@@ -458,7 +458,7 @@ Example output:
 def build_golden_record(
     standardized_data: Dict,
     identifiers: Dict,
-    scraped_urls:List[str],
+    scraped_urls: List[str],
     taxonomy: Optional[str] = None,
     primary_attributes: Optional[List[str]] = None
 ) -> Dict:

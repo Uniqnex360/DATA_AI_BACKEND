@@ -60,7 +60,7 @@ class SerpApiSearchService(ISearchService):
                     if r.get("link")
                 ]
 
-                logger.info(f"🔎 SERP returned {len(raw_urls)} raw URLs")
+                logger.info(f" SERP returned {len(raw_urls)} raw URLs")
 
                 
                 filtered = [

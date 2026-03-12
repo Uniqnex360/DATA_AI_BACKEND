@@ -713,13 +713,24 @@ async def run_single_product_aggregation(product_id: str) -> None:
                         product.enrichment_status = 'completed'
                         await db_session.flush() 
                         db_session.add(product)
+                        existing_image=product.image_url_1
                         found_image = result.get('image_url')
                         if found_image and isinstance(found_image, str) and found_image.strip():
-                            product.image_url_1 = found_image.strip()
-                            logger.info(f"Image URL saved: {product.image_url_1}")
-                            logger.info(f"Image URL length: {len(product.image_url_1)}")
+                            if await validate_image_url(found_image):
+                                product.image_url_1=found_image.strip()
+                                logger.info(f"New image saved :{product.image_url_1}")
+                            elif existing_image:
+                                product.image_url_1=existing_image
+                                logger.info(f"📸 Kept existing image (new image invalid)")
+                            else:
+                                logger.warning(f"No valid image found for {product.product_code}")
                         else:
-                            logger.warning(f"No valid image for {product.product_code}, found_image: {found_image}")
+                            if existing_image:
+                                product.image_url_1 = found_image.strip()
+                                logger.info(f"Image URL saved: {product.image_url_1}")
+                                logger.info(f"Image URL length: {len(product.image_url_1)}")
+                            else:
+                                logger.warning(f"No valid image for {product.product_code}, found_image: {found_image}")
                         product.completeness_score = min(len(ai_data) * 5, 100)
                         product.sources_consulted = golden.get(
                             'sources_consulted', [])

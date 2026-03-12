@@ -6,6 +6,12 @@ from typing import List, Dict, Optional, Any
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 logger = logging.getLogger("prompt_builder")
+SYSTEM_PROMPT = """You are a Product Data Aggregation Engine. Rules (STRICT): 
+1. Never invent product information 
+2. Never overwrite raw values 
+3. Always preserve source and confidence
+"""
+
 async def build_aggregation_prompt(
     mpn: str,
     product_name: str,
@@ -27,26 +33,26 @@ async def build_aggregation_prompt(
         context_parts.append(f"Category: {taxonomy}")
     context = "\n".join(context_parts)
     naming_rules = """
-ATTRIBUTE NAMING RULES:
-- Use SINGULAR forms: "Material" not "Materials", "Certification" not "Certifications"
-- Use Title Case: "Color Temperature" not "color temperature"
-- Be consistent: Always use the same name for the same concept
-- Common attributes: Material, Dimension, Weight, Color, Certification, Feature, Standard
-"""
+    ATTRIBUTE NAMING RULES:
+    - Use SINGULAR forms: "Material" not "Materials", "Certification" not "Certifications"
+    - Use Title Case: "Color Temperature" not "color temperature"
+    - Be consistent: Always use the same name for the same concept
+    - Common attributes: Material, Dimension, Weight, Color, Certification, Feature, Standard
+    """
     strict_extraction_rules = """
-STRICT REJECTION RULES (CRITICAL):
-1. Do NOT extract website metadata, HTML attributes, file access dates, or server timestamps.
-2. Do NOT extract user comments, forum posts, or email headers (e.g., 'subject', 'received').
-3. If a requested attribute (like 'Internal Bin Code' or 'Custom ID') is clearly a proprietary internal tracking number and NOT a public specification, you MUST ignore it. Do not invent or guess a value.
-4. If the page content is clearly NOT a product page (e.g., it is a forum, a blog about a different topic, or an error page), return an empty attributes object {}.
-"""
-    has_existing_values=False
-    existing_list=[]
-    use_case_lower = (use_case or "").lower() if use_case else ""    
+    STRICT REJECTION RULES (CRITICAL):
+    1. Do NOT extract website metadata, HTML attributes, file access dates, or server timestamps.
+    2. Do NOT extract user comments, forum posts, or email headers (e.g., 'subject', 'received').
+    3. If a requested attribute (like 'Internal Bin Code' or 'Custom ID') is clearly a proprietary internal tracking number and NOT a public specification, you MUST ignore it. Do not invent or guess a value.
+    4. If the page content is clearly NOT a product page (e.g., it is a forum, a blog about a different topic, or an error page), return an empty attributes object {}.
+    """
+    has_existing_values = False
+    existing_list = []
+    use_case_lower = (use_case or "").lower() if use_case else ""
     if existing_data and has_primary_attrs:
         for attr in primary_attributes:
             if existing_data.get(attr):
-                has_existing_values=True
+                has_existing_values = True
                 break
         if "validation" in use_case_lower and has_primary_attrs and existing_data:
             existing_list = []
@@ -54,9 +60,10 @@ STRICT REJECTION RULES (CRITICAL):
                 val = existing_data.get(attr, 'MISSING')
                 if val != 'MISSING':
                     existing_list.append(f"  • {attr}: {val}")
-            if existing_list:  
+            if existing_list:
                 existing_text = "\n".join(existing_list)
                 prompt = f"""
+        {SYSTEM_PROMPT}
         You are extracting and VALIDATING product specifications from web searches.
         {context}
         EXCEL-PROVIDED DATA (VERIFY AGAINST WEB):
@@ -104,10 +111,14 @@ STRICT REJECTION RULES (CRITICAL):
             logger.info(f" PROMPT BUILDER DEBUG:")
             logger.info(f"   use_case_lower: '{use_case_lower}'")
             logger.info(f"   has_primary_attrs: {has_primary_attrs}")
-            logger.info(f"   existing_data keys: {list(existing_data.keys()) if existing_data else 'None'}")
-            logger.info(f"   existing_data sample: {dict(list(existing_data.items())[:2]) if existing_data else 'None'}")
-            logger.info(f"   'back filling' in use_case_lower: {'back filling' in use_case_lower}")
-            logger.info(f"   'validation' in use_case_lower: {'validation' in use_case_lower}")
+            logger.info(
+                f"   existing_data keys: {list(existing_data.keys()) if existing_data else 'None'}")
+            logger.info(
+                f"   existing_data sample: {dict(list(existing_data.items())[:2]) if existing_data else 'None'}")
+            logger.info(
+                f"   'back filling' in use_case_lower: {'back filling' in use_case_lower}")
+            logger.info(
+                f"   'validation' in use_case_lower: {'validation' in use_case_lower}")
         elif "back filling" in use_case_lower and "validation" not in use_case_lower:
             if has_primary_attrs and existing_data:
                 existing_list = []
@@ -116,20 +127,24 @@ STRICT REJECTION RULES (CRITICAL):
                     attr_data = existing_data.get(attr)
                     if isinstance(attr_data, dict):
                         val_str = str(attr_data.get('value', '') or '')
-                        uom_str = str(attr_data.get('uom', '') or attr_data.get('unit', '') or '')
+                        uom_str = str(attr_data.get('uom', '')
+                                      or attr_data.get('unit', '') or '')
                     else:
                         val_str = str(attr_data) if attr_data else ''
                         uom_str = ''
                     if val_str and val_str.strip() and val_str.lower() != 'missing':
-                        existing_list.append(f"  • {attr}: {val_str} {uom_str}".strip())
+                        existing_list.append(
+                            f"  • {attr}: {val_str} {uom_str}".strip())
                     else:
                         missing_names_only.append(attr)
-                existing_text = "\n".join(existing_list) if existing_list else "(None)"
-                missing_text = "\n".join([f"  • {m}" for m in missing_names_only]) if missing_names_only else "(None)"
+                existing_text = "\n".join(
+                    existing_list) if existing_list else "(None)"
+                missing_text = "\n".join(
+                    [f"  • {m}" for m in missing_names_only]) if missing_names_only else "(None)"
                 prompt = f"""
                 You are performing a technical specification BACKFILL task.
                 {context}
-
+                {SYSTEM_PROMPT}
                 PROVIDED DATA (VERIFY AND CORRECT THESE):
                 {existing_text}
 
@@ -159,13 +174,14 @@ STRICT REJECTION RULES (CRITICAL):
                     'use_case': use_case
                 }
         elif "with categories" in use_case_lower and has_primary_attrs:
-            existing_list=[]    
+            existing_list = []
             for attr in primary_attributes:
-                val=existing_data.get(attr,'MISSING')
+                val = existing_data.get(attr, 'MISSING')
                 existing_list.append(f"  • {attr}: {val}")
             existing_text = "\n".join(existing_list)
-            prompt=f"""
-            You are extracting product specifications from web searches and data sources.
+            prompt = f"""
+            
+            {SYSTEM_PROMPT}
             {context}
             CURRENT DATA (Verify & Enrich):
             {existing_text}
@@ -194,15 +210,17 @@ STRICT REJECTION RULES (CRITICAL):
             }}
             Search the web, validate existing data, and discover new specifications."""
             return {
-                'prompt':prompt,
+                'prompt': prompt,
                 "expected_attributes": primary_attributes + ["*discover*"],
-                'mode':'enrichment_validation',
-                'primary_count':len(primary_attributes)
+                'mode': 'enrichment_validation',
+                'primary_count': len(primary_attributes)
             }
     elif has_primary_attrs:
         primary_list = "\n".join(
             [f"  {i+1}. {attr}" for i, attr in enumerate(primary_attributes)])
         prompt = f"""You are extracting product specifications from web searches and data sources.
+        
+        {SYSTEM_PROMPT}
         {context}
         EXTRACTION PRIORITY:
         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -249,7 +267,8 @@ STRICT REJECTION RULES (CRITICAL):
         if db:
             taxonomy_hints = await get_taxonomy_attribute_hints(taxonomy, db)
         else:
-            logger.warning("No DB session provided, using empty taxonomy hints")
+            logger.warning(
+                "No DB session provided, using empty taxonomy hints")
         hints_text = ""
         if taxonomy_hints:
             hints_text = f"""
@@ -296,7 +315,8 @@ STRICT REJECTION RULES (CRITICAL):
             "use_case": use_case
         }
     elif "without categories" in use_case_lower or not use_case_lower:
-            prompt = f"""You are extracting product specifications from web searches and data sources.
+        prompt = f"""You are extracting product specifications from web searches and data sources.
+            {SYSTEM_PROMPT}
             {context}
             TASK: Perform FULL product discovery and extraction.
             PHASE 1 - CLASSIFY:
@@ -334,11 +354,13 @@ STRICT REJECTION RULES (CRITICAL):
             }}
     Search the web and perform comprehensive product discovery."""
     return {
-            "prompt": prompt,
-            "expected_attributes": ["*discover*"],
-            "mode": "full_discovery",
-            "use_case":use_case
-        }
+        "prompt": prompt,
+        "expected_attributes": ["*discover*"],
+        "mode": "full_discovery",
+        "use_case": use_case
+    }
+
+
 async def get_taxonomy_attribute_hints(
     taxonomy: Optional[str],
     db: AsyncSession
@@ -392,6 +414,8 @@ async def get_taxonomy_attribute_hints(
     except Exception as e:
         logger.error(f"Error in get_taxonomy_attribute_hints: {str(e)}")
     return []
+
+
 async def get_taxonomy_attribute_hints_simple(
     taxonomy: str,
     db: AsyncSession
