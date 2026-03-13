@@ -18,6 +18,7 @@ from app.models.project import Project
 from app.aggregation.aggregate_product import aggregate_product, chunk_attributes
 from app.schemas.aggregation import AggregatedAttribute, AggregatedAttributeValue, AggregationJobResponse, AggregationTriggerResponse, ProductAggregationResponse, ProjectStats
 from app.utils.validators import is_invalid
+from app.utils.image_validator import validate_image_url
 from app.utils.sanitize import sanitize_ai_data
 logger = logging.getLogger("aggregation_router")
 router = APIRouter()
@@ -490,8 +491,19 @@ async def run_project_aggregation_task(job_id: str) -> None:
                             await db_session.flush()
                             db_session.add(product)
                             found_image = aggregation_result.get('image_url')
-                            if found_image:
-                                product.image_url_1 = found_image
+                            if found_image and isinstance(found_image, str):
+                                found_image_str = found_image.strip()
+                                if found_image_str:
+                                    # Validate before saving
+                                    if await validate_image_url(found_image_str):
+                                        product.image_url_1 = found_image_str
+                                        logger.info(f"✓ Valid image found and saved for {product.product_code}: {found_image_str}")
+                                    else:
+                                        logger.warning(f"⚠ Image URL invalid for {product.product_code}, not saving")
+                                else:
+                                    logger.debug(f"Empty image URL for {product.product_code}")
+                            else:
+                                logger.warning(f"⚠ No image found during aggregation of {product.product_code}")
                             product.completeness_score = min(
                                 len(ai_attributes) * 5, 100)
                             product.sources_consulted = golden.get(
@@ -513,8 +525,19 @@ async def run_project_aggregation_task(job_id: str) -> None:
                                 }
                             product.attributes = {
                                 **product.attributes, **ai_attributes}
-                            if found_image:
-                                product.image_url_1 = found_image
+                            if found_image and isinstance(found_image, str):
+                                found_image_str = found_image.strip()
+                                if found_image_str:
+                                    # Validate before saving
+                                    if await validate_image_url(found_image_str):
+                                        product.image_url_1 = found_image_str
+                                        logger.info(f"✓ Valid image found and saved for {product.product_code}")
+                                    else:
+                                        logger.warning(f"⚠ Image URL invalid for {product.product_code}, not saving")
+                                else:
+                                    logger.debug(f"Empty image URL for {product.product_code}")
+                            else:
+                                logger.warning(f"⚠ No image found during aggregation of {product.product_code}")
                             product.enrichment_status = 'completed'
                             product.completeness_score = min(
                                 len(ai_attributes) * 5, 100)
@@ -713,24 +736,28 @@ async def run_single_product_aggregation(product_id: str) -> None:
                         product.enrichment_status = 'completed'
                         await db_session.flush() 
                         db_session.add(product)
-                        existing_image=product.image_url_1
+                        existing_image = product.image_url_1
                         found_image = result.get('image_url')
-                        if found_image and isinstance(found_image, str) and found_image.strip():
-                            if await validate_image_url(found_image):
-                                product.image_url_1=found_image.strip()
-                                logger.info(f"New image saved :{product.image_url_1}")
-                            elif existing_image:
-                                product.image_url_1=existing_image
-                                logger.info(f"📸 Kept existing image (new image invalid)")
+                        
+                        # Image validation and handling
+                        if found_image and isinstance(found_image, str):
+                            found_image_str = found_image.strip()
+                            if found_image_str:
+                                # Validate the image URL
+                                if await validate_image_url(found_image_str):
+                                    product.image_url_1 = found_image_str
+                                    logger.info(f"✓ Valid image saved for {product.product_code}")
+                                else:
+                                    # Image validation failed, keep existing if available
+                                    if existing_image:
+                                        product.image_url_1 = existing_image
+                                        logger.warning(f"⚠ New image invalid, keeping existing for {product.product_code}")
+                                    else:
+                                        logger.warning(f"⚠ Image validation failed and no existing image for {product.product_code}")
                             else:
-                                logger.warning(f"No valid image found for {product.product_code}")
+                                logger.debug(f"Empty image URL for {product.product_code}")
                         else:
-                            if existing_image:
-                                product.image_url_1 = found_image.strip()
-                                logger.info(f"Image URL saved: {product.image_url_1}")
-                                logger.info(f"Image URL length: {len(product.image_url_1)}")
-                            else:
-                                logger.warning(f"No valid image for {product.product_code}, found_image: {found_image}")
+                            logger.warning(f"⚠ No image found during single product aggregation of {product.product_code}")
                         product.completeness_score = min(len(ai_data) * 5, 100)
                         product.sources_consulted = golden.get(
                             'sources_consulted', [])
@@ -740,15 +767,24 @@ async def run_single_product_aggregation(product_id: str) -> None:
                     else:
                         product.attributes = {**product.attributes, **ai_data}
                         found_image = result.get('image_url')
-                        logger.info(
-                            f" Single product - Image found: {found_image}")
+                        logger.info(f"Single product aggregation - Image found: {found_image}")
                         product.attributes = {**product.attributes, **ai_data}
-                        if found_image and isinstance(found_image, str) and found_image.strip():
-                            product.image_url_1 = found_image.strip()
-                            logger.info(f" Image URL saved: {product.image_url_1}")
+                        
+                        # Validate and save image
+                        if found_image and isinstance(found_image, str):
+                            found_image_str = found_image.strip()
+                            if found_image_str:
+                                # Validate the image URL
+                                if await validate_image_url(found_image_str):
+                                    product.image_url_1 = found_image_str
+                                    logger.info(f"✓ Valid image saved for {product.product_code}")
+                                else:
+                                    logger.warning(f"⚠ Image validation failed for {product.product_code}")
+                            else:
+                                logger.debug(f"Empty image URL for {product.product_code}")
                         else:
-                            logger.warning(
-                                f" No valid image for {product.product_code}")
+                            logger.warning(f"⚠ No image found for {product.product_code}")
+                        
                         product.enrichment_status = 'completed'
                         await db_session.flush() 
                         product.completeness_score = min(len(ai_data) * 5, 100)

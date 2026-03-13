@@ -84,6 +84,58 @@ class AggregationPipeline:
         final_image_url = await self.image_service.extract_best_image(
             sources, request_id
         )
+        
+        # RETRY LOGIC: If no image found, try image-specific searches
+        if not final_image_url and (mpn or title):
+            logger.info(f"[{request_id}] No image found in initial sources, attempting image-specific searches...")
+            image_queries = []
+            if mpn:
+                image_queries.extend([
+                    f"{mpn} product image",
+                    f"{mpn} photo",
+                    f"{mpn} official image"
+                ])
+            if title:
+                image_queries.extend([
+                    f"{title} product image",
+                    f"{title} photo official"
+                ])
+            
+            # Try to get more URLs from image-specific queries
+            image_urls = []
+            for q in image_queries[:3]:  # Limit to 3 additional queries
+                try:
+                    found = await self.search.get_urls(q)
+                    image_urls.extend(found)
+                    if len(image_urls) >= 3:
+                        break
+                    await asyncio.sleep(0.1)
+                except Exception as e:
+                    logger.debug(f"[{request_id}] Image search query failed: {e}")
+            
+            # Download and extract images from new URLs
+            if image_urls:
+                logger.info(f"[{request_id}] Downloading {len(image_urls)} additional URLs for image extraction")
+                image_download_tasks = [self.downloader.download(url) for url in image_urls]
+                image_results = await asyncio.gather(*image_download_tasks, return_exceptions=True)
+                
+                image_sources = []
+                for result in image_results:
+                    if isinstance(result, Exception) or not result:
+                        continue
+                    image_sources.append(result)
+                
+                if image_sources:
+                    final_image_url = await self.image_service.extract_best_image(
+                        image_sources, request_id
+                    )
+                    if final_image_url:
+                        logger.info(f"[{request_id}] ✓ SUCCESS: Found image through retry mechanism")
+                    else:
+                        logger.warning(f"[{request_id}] Could not extract image from retry sources")
+        
+        if not final_image_url:
+            logger.warning(f"[{request_id}] WARNING: No valid image found after exhausting all strategies")
 
         extract_tasks = [
             self.extractor.extract(
