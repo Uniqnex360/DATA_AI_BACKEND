@@ -624,6 +624,9 @@ async def run_single_product_aggregation(product_id: str) -> None:
                     merged_ai_data = {}
                     all_sources = []
                     image_url = None
+                    short_desc=None
+                    long_desc=None
+                    features=None
                     for idx, chunk in enumerate(attr_chunks, 1):
                         logger.info(f"   └─ Pass {idx}/{len(attr_chunks)}: Processing attributes {chunk}")
                         chunk_result = await aggregate_with_retry(
@@ -643,16 +646,23 @@ async def run_single_product_aggregation(product_id: str) -> None:
                             merged_ai_data.update(chunk_attrs)
                             sources = golden.get('sources_consulted', [])
                             all_sources.extend(sources)
-                            if not image_url:
+                            if not image_url and chunk_result.get('image_url'):
                                 image_url = chunk_result.get('image_url')
+                                logger.info(f"Image captured from pass {idx} {image_url}")
+                            if not short_desc and golden.get('short_description'):
+                                short_desc=golden.get('short_description')
+                            if not long_desc and golden.get('long_description'):
+                                long_desc=golden.get('long_description')
+                            if not features and golden.get('features'):
+                                features=golden.get('features')
                         await asyncio.sleep(1)
                     result = {
                         'status': 'success' if merged_ai_data else 'failed',
                         'golden_record': {
                             'attributes': merged_ai_data,
                             'sources_consulted': list(set(all_sources)),  
-                            'short_description': product.short_description,
-                            'long_description': product.long_description,
+                            'short_description': short_desc or product.short_description,
+                            'long_description':long_desc or product.long_description,
                             'features': product.features
                         },
                         'image_url': image_url

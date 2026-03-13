@@ -6,6 +6,7 @@ from .llm import call_llm
 import httpx
 from typing import Optional
 import re
+from html import unescape
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("aggregation_engine")
 
@@ -116,22 +117,112 @@ def fallback_extraction(html: str) -> Dict:
         return {}
 
 
-async def extract_image_from_source(source_html: str, source_url: str) -> Optional[str]:
+async def extract_image_from_source(source_html: str, source_url: str, mpn: str = "") -> Optional[str]:
+    logger.info(f"🖼️ Extracting image from {source_url[:80]}... (HTML size: {len(source_html)})") 
+
+    if not source_html or len(source_html) < 100:
+        logger.warning(f"Image extraction: Source HTML too short ({len(source_html)}) for {source_url}")
+        return None
+    if any(keyword in source_html.lower() for keyword in ['just a moment', 'captcha', 'cloudflare', 'verify']):
+        logger.warning(f"Image extraction: Site blocked/bot challenge detected for {source_url}") 
+        return None
+    image_url=None
+   
+    
     match = re.search(
-        r'<meta[^>]*property=["\']og:image["\'][^>]*content=["\']([^"\']+)["\']', source_html)
+        r'<meta[^>]*property=["\']og:image["\'][^>]*content=["\']([^"\']+)["\']',
+        source_html, re.IGNORECASE
+    )
     if not match:
         match = re.search(
-            r'<meta[^>]*name=["\']twitter:image["\'][^>]*content=["\']([^"\']+)["\']', source_html)
+            r'<meta[^>]*content=["\']([^"\']+)["\'][^>]*property=["\']og:image["\']',
+            source_html, re.IGNORECASE
+        )
     if not match:
+        match = re.search(
+            r'<meta[^>]*name=["\']twitter:image["\'][^>]*content=["\']([^"\']+)["\']',
+            source_html, re.IGNORECASE
+        )
+    if match:
+        image_url = match.group(1)
+    if not image_url:
+        img_patterns = [
+            r'<img[^>]+class=["\'][^"\']*product[^"\']*image[^"\']*["\'][^>]+src=["\']([^"\']+)["\']',
+            r'<img[^>]+class=["\'][^"\']*main[^"\']*image[^"\']*["\'][^>]+src=["\']([^"\']+)["\']',
+            r'<img[^>]+class=["\'][^"\']*hero[^"\']*["\'][^>]+src=["\']([^"\']+)["\']',
+            r'<img[^>]+class=["\'][^"\']*primary[^"\']*["\'][^>]+src=["\']([^"\']+)["\']',
+            r'<img[^>]+class=["\'][^"\']*gallery[^"\']*["\'][^>]+src=["\']([^"\']+)["\']',
+            r'<img[^>]+src=["\']([^"\']+)["\'][^>]+class=["\'][^"\']*product[^"\']*image',
+            r'<img[^>]+src=["\']([^"\']+)["\'][^>]+class=["\'][^"\']*main[^"\']*image',
+            r'<img[^>]+id=["\'][^"\']*product[^"\']*image[^"\']*["\'][^>]+src=["\']([^"\']+)["\']',
+            r'<img[^>]+id=["\'][^"\']*main[^"\']*image[^"\']*["\'][^>]+src=["\']([^"\']+)["\']',
+            r'<img[^>]+data-zoom-image=["\']([^"\']+)["\']',
+            r'<img[^>]+data-large=["\']([^"\']+)["\']',
+            r'<img[^>]+data-full=["\']([^"\']+)["\']',
+            r'<img[^>]+data-src=["\']([^"\']+\.(?:jpg|jpeg|png|webp))["\']',
+            r'<img[^>]+src=["\']([^"\']+(?:large|zoom|full|orig|medium)[^"\']*\.(?:jpg|jpeg|png|webp))["\']',
+        ]
+        if mpn:
+            mpn_escaped = re.escape(mpn)
+            mpn_patterns = [
+                rf'<img[^>]+src=["\']([^"\']*{mpn_escaped}[^"\']*\.(?:jpg|jpeg|png|webp))["\']',
+                rf'<img[^>]+alt=["\'][^"\']*{mpn_escaped}[^"\']*["\'][^>]+src=["\']([^"\']+)["\']',
+            ]
+            img_patterns = mpn_patterns + img_patterns
+        for pattern in img_patterns:
+            match = re.search(pattern, source_html, re.IGNORECASE)
+            if match:
+                candidate = match.group(1)
+                junk_keywords = [
+                    'logo', 'icon', 'pixel', 'banner', 'avatar',
+                    'button', 'spacer', 'loading', 'placeholder',
+                    'no-image', 'noimage', 'default', 'generic',
+                    'social', 'favicon', 'sprite', '1x1', 'tracking'
+                ]
+                if not any(junk in candidate.lower() for junk in junk_keywords):
+                    image_url = candidate
+                    break
+    if not image_url:
+        ld_matches = re.findall(
+            r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+            source_html, re.DOTALL | re.IGNORECASE
+        )
+        for ld_text in ld_matches:
+            try:
+                import json
+                ld_data = json.loads(ld_text)
+                if isinstance(ld_data, dict):
+                    if 'Product' in ld_data.get('@type', ''):
+                        img = ld_data.get('image')
+                        if isinstance(img, str):
+                            image_url = img
+                        elif isinstance(img, list) and img:
+                            image_url = img[0] if isinstance(
+                                img[0], str) else img[0].get('url', '')
+                        elif isinstance(img, dict):
+                            image_url = img.get('url', '')
+                        if image_url:
+                            break
+            except Exception:
+                continue
+    if not image_url:
+        match = re.search(
+            r'<img[^>]+src=["\']([^"\']+(?:ImgMedium|ImgLarge|ImgFull)[^"\']*)["\']',
+            source_html, re.IGNORECASE
+        )
+        if match:
+            image_url = match.group(1)
+    if not image_url:
         return None
-    image_url = match.group(1)
     if image_url.startswith('//'):
         image_url = 'https:' + image_url
     if image_url.startswith('/'):
         from urllib.parse import urljoin
         image_url = urljoin(source_url, image_url)
-    junk_keywords = ['logo', 'icon', 'pixel', 'banner',
-                     'avatar', 'button', 'spacer', 'loading']
+    junk_keywords = [
+        'logo', 'icon', 'pixel', 'banner', 'avatar',
+        'button', 'spacer', 'loading', 'placeholder'
+    ]
     if any(junk in image_url.lower() for junk in junk_keywords):
         return None
     try:
@@ -141,14 +232,11 @@ async def extract_image_from_source(source_html: str, source_url: str) -> Option
                 content_type = response.headers.get("content-type", "").lower()
                 if "image" in content_type:
                     return image_url
-            else:
-                response = await client.get(image_url, headers={"Range": "bytes=0-100"})
-                if response.status_code in [200, 206] and "image" in response.headers.get("content-type", ""):
-                    return image_url
+            response = await client.get(image_url, headers={"Range": "bytes=0-100"})
+            if response.status_code in [200, 206] and "image" in response.headers.get("content-type", ""):
+                return image_url
     except Exception as e:
-        import logging
-        logging.getLogger("truth_engine").warning(
-            f"Image validation failed for {image_url}: {e}")
+        logger.warning(f"Image validation failed for {image_url}: {e}")
         return None
     return None
 
@@ -458,7 +546,7 @@ Example output:
 def build_golden_record(
     standardized_data: Dict,
     identifiers: Dict,
-    scraped_urls:List[str],
+    scraped_urls: List[str],
     taxonomy: Optional[str] = None,
     primary_attributes: Optional[List[str]] = None
 ) -> Dict:
