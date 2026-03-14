@@ -249,7 +249,7 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
             return url
 
     logger.warning("⚠️ No suitable product image found")
-    return None
+    return None 
 
 async def aggregate_product(
     mpn: str,
