@@ -647,6 +647,9 @@ async def run_single_product_aggregation(product_id: str) -> None:
                     merged_ai_data = {}
                     all_sources = []
                     image_url = None
+                    short_desc=None
+                    long_desc=None
+                    features=None
                     for idx, chunk in enumerate(attr_chunks, 1):
                         logger.info(f"   └─ Pass {idx}/{len(attr_chunks)}: Processing attributes {chunk}")
                         chunk_result = await aggregate_with_retry(
@@ -666,17 +669,24 @@ async def run_single_product_aggregation(product_id: str) -> None:
                             merged_ai_data.update(chunk_attrs)
                             sources = golden.get('sources_consulted', [])
                             all_sources.extend(sources)
-                            if not image_url:
+                            if not image_url and chunk_result.get('image_url'):
                                 image_url = chunk_result.get('image_url')
+                                logger.info(f"Image captured from pass {idx} {image_url}")
+                            if not short_desc and golden.get('short_description'):
+                                short_desc=golden.get('short_description')
+                            if not long_desc and golden.get('long_description'):
+                                long_desc=golden.get('long_description')
+                            if not features and golden.get('features'):
+                                features=golden.get('features')
                         await asyncio.sleep(1)
                     result = {
                         'status': 'success' if merged_ai_data else 'failed',
                         'golden_record': {
                             'attributes': merged_ai_data,
                             'sources_consulted': list(set(all_sources)),  
-                            'short_description': product.short_description,
-                            'long_description': product.long_description,
-                            'features': product.features
+                            'short_description': short_desc or product.short_description,
+                            'long_description':long_desc or product.long_description,
+                            'features': features or product.features
                         },
                         'image_url': image_url
                     }
@@ -767,21 +777,11 @@ async def run_single_product_aggregation(product_id: str) -> None:
                     else:
                         product.attributes = {**product.attributes, **ai_data}
                         found_image = result.get('image_url')
-                        logger.info(f"Single product aggregation - Image found: {found_image}")
-                        product.attributes = {**product.attributes, **ai_data}
-                        
-                        # Validate and save image
-                        if found_image and isinstance(found_image, str):
-                            found_image_str = found_image.strip()
-                            if found_image_str:
-                                # Validate the image URL
-                                if await validate_image_url(found_image_str):
-                                    product.image_url_1 = found_image_str
-                                    logger.info(f"✓ Valid image saved for {product.product_code}")
-                                else:
-                                    logger.warning(f"⚠ Image validation failed for {product.product_code}")
-                            else:
-                                logger.debug(f"Empty image URL for {product.product_code}")
+                        logger.info(
+                            f" Single product - Image found: {found_image}")
+                        if found_image and isinstance(found_image, str) and found_image.strip():
+                            product.image_url_1 = found_image.strip()
+                            logger.info(f" Image URL saved: {product.image_url_1}")
                         else:
                             logger.warning(f"⚠ No image found for {product.product_code}")
                         

@@ -32,7 +32,7 @@ class IExtractor(ABC):
 class IImageService(ABC):
     
     @abstractmethod
-    async def extract_best_image(self, sources: list, request_id: str) -> Optional[str]:
+    async def extract_best_image(self,sources: list,request_id: str,mpn: str = "",brand: str = "",source_urls: list = None,) -> Optional[str]:
         pass
 
 

@@ -82,7 +82,7 @@ class AggregationPipeline:
             sources.append(result)
         logger.info(f"[{request_id}] Downloaded {len(sources)} sources")
         final_image_url = await self.image_service.extract_best_image(
-            sources, request_id
+            sources=sources, request_id=request_id,mpn=mpn or "",brand=brand or "",source_urls=urls
         )
         
         # RETRY LOGIC: If no image found, try image-specific searches
