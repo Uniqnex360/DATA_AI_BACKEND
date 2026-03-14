@@ -4,7 +4,6 @@ import logging
 from typing import Dict, List, Any, Optional
 from .llm import call_llm
 import httpx
-from typing import Optional
 import re
 from html import unescape
 logging.basicConfig(level=logging.INFO)

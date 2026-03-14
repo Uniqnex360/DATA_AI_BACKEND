@@ -2,10 +2,16 @@ from openai import OpenAI
 import google.generativeai as genai
 import json
 import time
+from typing import Any,Optional
+from openai import AsyncOpenAI
 from app.core.config import settings
+from app.aggregation.response_schemas import AggregationResponse, CleaningResponse, EnrichmentResponse, ExtractionResponse, UnificationResponse, ValidationResponse
 client = OpenAI(api_key=settings.openai_api_key,timeout=60.0    )
 genai.configure(api_key=settings.gemini_api_key)
-
+from app.core.rate_limiter import openai_limiter
+import asyncio
+import logging
+logger=logging.getLogger('llm')
 def parse_response(content: str) -> dict:
     content = content.strip()
     
@@ -50,3 +56,60 @@ def call_llm(prompt: str, schema: dict) -> dict:
         except Exception as e:
             print(f"Gemini Backup also failed: {str(e)}")
             return {"error": str(e)} 
+SCHEMA_MAP = {
+    "ExtractionResponse": ExtractionResponse,
+    "CleaningResponse": CleaningResponse,
+    "UnificationResponse": UnificationResponse,
+    "ValidationResponse": ValidationResponse,
+    "AggregationResponse": AggregationResponse,
+    "EnrichmentResponse": EnrichmentResponse
+}
+async def call_llm_with_schema(
+    prompt: str,
+    response_model: str,
+    model: str = "gpt-4o-2024-08-06",
+    estimated_tokens: int = 2000,
+    max_tokens: Optional[int] = None
+) -> Any:
+    """
+    Call LLM with structured output schema
+    
+    Uses OpenAI's Structured Outputs feature for reliability
+    """
+    await openai_limiter.wait_if_needed(estimated_tokens=estimated_tokens)
+    client = AsyncOpenAI()
+    
+    schema_class = SCHEMA_MAP.get(response_model)
+    if not schema_class:
+        raise ValueError(f"Unknown response model: {response_model}")
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = await client.beta.chat.completions.parse(
+                model=model,
+                messages=[
+                    {"role": "system", "content": "You are a precise data extraction engine. Follow instructions exactly.Never invent product information"},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format=schema_class,
+                max_tokens=max_tokens
+            )
+            
+            return response.choices[0].message.parsed
+            
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str or "rate_limit" in error_str.lower():
+                if attempt < max_retries - 1:
+                    # Extract wait time if provided
+                    wait_time = 2 ** attempt  # Exponential backoff
+                    logger.warning(f"Rate limit hit, retrying in {wait_time}s (attempt {attempt + 1}/{max_retries})")
+                    await asyncio.sleep(wait_time)
+                    continue
+                else:
+                    logger.error(f"Rate limit persisted after {max_retries} retries")
+                    raise
+            else:
+                # Not a rate limit error, re-raise
+                logger.error(f"LLM call failed: {e}")
+                raise

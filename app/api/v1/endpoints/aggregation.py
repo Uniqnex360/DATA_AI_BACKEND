@@ -663,7 +663,7 @@ async def run_single_product_aggregation(product_id: str) -> None:
                             'sources_consulted': list(set(all_sources)),  
                             'short_description': short_desc or product.short_description,
                             'long_description':long_desc or product.long_description,
-                            'features': product.features
+                            'features': features or product.features
                         },
                         'image_url': image_url
                     }
@@ -741,7 +741,6 @@ async def run_single_product_aggregation(product_id: str) -> None:
                         found_image = result.get('image_url')
                         logger.info(
                             f" Single product - Image found: {found_image}")
-                        product.attributes = {**product.attributes, **ai_data}
                         if found_image and isinstance(found_image, str) and found_image.strip():
                             product.image_url_1 = found_image.strip()
                             logger.info(f" Image URL saved: {product.image_url_1}")
