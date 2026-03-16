@@ -20,6 +20,7 @@ from app.schemas.aggregation import AggregatedAttribute, AggregatedAttributeValu
 from app.utils.validators import is_invalid
 from app.utils.image_validator import validate_image_url
 from app.utils.sanitize import sanitize_ai_data
+
 logger = logging.getLogger("aggregation_router")
 _product_semaphore = asyncio.Semaphore(1)
 router = APIRouter()
@@ -366,6 +367,7 @@ def extract_ai_value_text(ai_val: Any) -> str:
         if val is not None:
             return f"{val} {unit}".strip()
     return str(ai_val)
+
 async def run_project_aggregation_task(job_id: str) -> None:
     async with async_session_factory() as db_session:
         job: Optional[AggregationJob] = None
