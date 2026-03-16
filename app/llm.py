@@ -17,7 +17,7 @@ _openai_client = AsyncOpenAI(
     api_key=settings.openai_api_key,
     timeout=60.0
 )
-_llm_semaphore = asyncio.Semaphore(3)
+_llm_semaphore = asyncio.Semaphore(1)
 def parse_response(content: str) -> dict:
     content = content.strip()
 
@@ -76,11 +76,10 @@ SCHEMA_MAP = {
 }
 
 
-# ✅ Fix — cleaner retry pattern
 async def call_llm_with_schema(
     prompt: str,
     response_model: str,
-    model: str = "gpt-4o-2024-08-06",
+    model: str = "gpt-4o-mini",
     estimated_tokens: int = 2000,
     max_tokens: Optional[int] = None
 ) -> Any:

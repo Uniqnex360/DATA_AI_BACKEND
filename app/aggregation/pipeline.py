@@ -64,7 +64,7 @@ class AggregationPipeline:
         logger.info(f"[{request_id}] Search queries: {queries}")
         urls: List[str] = []
         for q in queries:
-            found = await self.search.get_urls(q)
+            found = await self.search.get_urls(q,mpn,brand)
             urls.extend(found)
             if len(urls)>MAX_SOURCES:
                 break

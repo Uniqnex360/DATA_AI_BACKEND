@@ -28,21 +28,21 @@ def build_extraction_prompt(product_name:str,mpn:str,brand:str,taxonomy:str,prim
         
         CONTENT TO ANALYZE:
         {html_content[:8000]}
-IMAGE EXTRACTION (CRITICAL):
-- Locate the main product image URL in the HTML. Look for:
-  * `<meta property="og:image" content="...">` (Open Graph)
-  * `<meta name="twitter:image" content="...">` (Twitter Card)
-  * `<img>` tags with `src` containing keywords like "product", "main", "hero", "full", or the MPN `{mpn}`
-  * `<link rel="image_src" href="...">`
-- Ignore small icons, logos, or thumbnails.
-- Return the absolute URL (if relative, assume it's relative to the page domain).
-- If no product image found, set `image_url` to `null`.
-            
-Return JSON following the ExtractionResponse schema with:
-- attributes: list of extracted specifications
-- product_detected: true/false
-- product_type: category if detected
-- image_url: product image URL or null
+    IMAGE EXTRACTION (CRITICAL):
+    - Locate the main product image URL in the HTML. Look for:
+    * `<meta property="og:image" content="...">` (Open Graph)
+    * `<meta name="twitter:image" content="...">` (Twitter Card)
+    * `<img>` tags with `src` containing keywords like "product", "main", "hero", "full", or the MPN `{mpn}`
+    * `<link rel="image_src" href="...">`
+    - Ignore small icons, logos, or thumbnails.
+    - Return the absolute URL (if relative, assume it's relative to the page domain).
+    - If no product image found, set `image_url` to `null`.
+                
+    Return JSON following the ExtractionResponse schema with:
+    - attributes: list of extracted specifications
+    - product_detected: true/false
+    - product_type: category if detected
+    - image_url: product image URL or null
 
         """
         return {

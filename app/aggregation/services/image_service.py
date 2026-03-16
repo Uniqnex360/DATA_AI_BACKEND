@@ -160,7 +160,7 @@ class ImageService(IImageService):
                                 logger.debug(f"[{request_id}] Skipped (junk): {img_url[:60]}")
                                 continue
                             img_url = self.clean_image_url(img_url)
-                            logger.info(f"[{request_id}] ✅ Google image found: {img_url[:100]}")
+                            logger.info(f"[{request_id}]  Google image found: {img_url[:100]}")
                             return img_url
                             
                         except Exception as img_err:

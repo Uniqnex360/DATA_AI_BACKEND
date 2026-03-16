@@ -20,9 +20,10 @@ from app.schemas.aggregation import AggregatedAttribute, AggregatedAttributeValu
 from app.utils.validators import is_invalid
 from app.utils.image_validator import validate_image_url
 from app.utils.sanitize import sanitize_ai_data
+from app.aggregation.worker_pool import get_worker_pool
 
 logger = logging.getLogger("aggregation_router")
-_product_semaphore = asyncio.Semaphore(1)
+
 router = APIRouter()
 def merge_attributes_preserving_order(
     primary_attributes: List[str],
@@ -283,8 +284,10 @@ async def aggregate_single_product(
         product.enrichment_status = 'processing'
         db.add(product)
         await db.commit()
-        background_tasks.add_task(
-            run_single_product_aggregation, str(product.id))
+        queue_position = await worker_pool.submit(str(product.id))
+        logger.info(f"📥 Queued {product.product_code} at position {queue_position}")
+        # background_tasks.add_task(
+        #     run_single_product_aggregation, str(product.id))
         return ProductAggregationResponse(
             status='accepted',
             product_id=str(product.id),
@@ -301,6 +304,7 @@ async def aggregate_single_product(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to start aggregation"
         )
+
 @router.get("/attributes/{product_id}", response_model=List[AggregatedAttribute])
 async def get_aggregated_attributes(
     product_id: str,
@@ -397,7 +401,6 @@ async def run_project_aggregation_task(job_id: str) -> None:
             logger.info(
                 f"Starting aggregation job {job_id} for {total} products")
             for idx, product in enumerate(products):
-                async with _product_semaphore:
                     await db_session.refresh(job)
                     if job.status == 'cancelled':
                         logger.info(f"Job {job_id} cancelled during processing")
@@ -626,7 +629,6 @@ async def run_project_aggregation_task(job_id: str) -> None:
                     logger.error(
                         f"Failed to update job status: {commit_error}")
 async def run_single_product_aggregation(product_id: str) -> None:
-    async with _product_semaphore:
         async with async_session_factory() as db_session:
             try:
                 product = await db_session.get(Product, product_id)
@@ -856,6 +858,8 @@ async def run_single_product_aggregation(product_id: str) -> None:
                         await db_session.commit()
                 except Exception:
                     pass
+worker_pool = get_worker_pool(process_function=run_single_product_aggregation)
+
 async def aggregate_with_retry(
     db_session,
     mpn: str,

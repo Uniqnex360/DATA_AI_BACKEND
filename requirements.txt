@@ -26,3 +26,7 @@ psycopg2-binary
 gunicorn
 alembic-autogenerate-enums
 pypdf2==3.0.1
+lxml
+PyMuPDF
+scikit-learn
+sentence-transformers

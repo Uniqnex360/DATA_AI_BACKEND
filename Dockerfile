@@ -29,9 +29,19 @@ RUN apt-get update && apt-get install -y \
     libu2f-udev \
     libvulkan1 \
     && rm -rf /var/lib/apt/lists/*
+ENV PIP_DEFAULT_TIMEOUT=200
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY constraints.txt .
+
+# RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir --retries 10 --timeout 200 \
+      --index-url https://download.pytorch.org/whl/cpu \
+      torch==2.10.0+cpu && \
+    pip install --no-cache-dir --retries 10 --timeout 200 \
+      --extra-index-url https://download.pytorch.org/whl/cpu \
+      -r requirements.txt -c constraints.txt
 COPY alembic.ini .
 COPY alembic ./alembic
 
@@ -41,4 +51,4 @@ COPY app ./app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

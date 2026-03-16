@@ -30,13 +30,13 @@ class PDFExtractionService:
             # Strategy 1: Try PyPDF2 first (fast)
             text = self._extract_with_pypdf2(pdf_bytes)
             if text and len(text.strip()) > 100:
-                logger.info(f"✅ PyPDF2 extracted {len(text)} characters")
+                logger.info(f"PyPDF2 extracted {len(text)} characters")
                 return text
             
             # Strategy 2: Try pdfplumber (better for tables/complex layouts)
             text = await self._extract_with_pdfplumber(pdf_bytes)
             if text and len(text.strip()) > 100:
-                logger.info(f"✅ pdfplumber extracted {len(text)} characters")
+                logger.info(f" pdfplumber extracted {len(text)} characters")
                 return text
             
             logger.warning("All PDF extraction methods failed")
