@@ -21,6 +21,7 @@ from app.utils.validators import is_invalid
 from app.utils.image_validator import validate_image_url
 from app.utils.sanitize import sanitize_ai_data
 logger = logging.getLogger("aggregation_router")
+_product_semaphore = asyncio.Semaphore(1)
 router = APIRouter()
 def merge_attributes_preserving_order(
     primary_attributes: List[str],
@@ -394,183 +395,184 @@ async def run_project_aggregation_task(job_id: str) -> None:
             logger.info(
                 f"Starting aggregation job {job_id} for {total} products")
             for idx, product in enumerate(products):
-                await db_session.refresh(job)
-                if job.status == 'cancelled':
-                    logger.info(f"Job {job_id} cancelled during processing")
-                    break
-                try:
-                    logger.info(
-                        f"[Job {job_id}] Aggregating {idx+1}/{total}: {product.product_code}")
-                    import gc
-                    gc.collect()
-                    primary_attrs = []
-                    if product.dynamic_attributes:
-                        for attr in product.dynamic_attributes:
-                            attr_name = attr.get('name')
-                            if attr_name and str(attr_name).strip():
-                                primary_attrs.append(str(attr_name).strip())
-                    logger.info(f"   └─ Taxonomy: {product.taxonomy}")
-                    logger.info(f"   └─ Primary attrs: {primary_attrs}")
-                    job.current_product = product.product_code
-                    job.successful = successful
-                    job.failed = failed
-                    db_session.add(job)
-                    await db_session.commit()
-                    aggregation_result = await aggregate_with_retry(
-                        db_session=db_session,
-                        mpn=product.product_code,
-                        title=product.product_name,
-                        brand=product.brand_name,
-                        taxonomy=product.taxonomy,
-                        primary_attributes=primary_attrs,
-                        db=db_session,
-                        project_id=job.project_id,
-                        max_retries=2
-                    )
-                    if aggregation_result.get('status') == 'success':
-                        golden = aggregation_result.get('golden_record', {})
-                        ai_attributes = golden.get('attributes', {})
-                        product.short_description = golden.get(
-                            'short_description') or product.short_description
-                        product.long_description = golden.get(
-                            'long_description') or product.long_description
-                        product.features = golden.get(
-                            'features') or product.features
-                        project = await db_session.get(Project, job.project_id)
-                        use_case = project.use_case.lower() if project and project.use_case else ""
-                        if "back filling" in use_case or "validation" in use_case:
-                            conflicts = {}
-                            ai_data_for_merge = {}
-                            existing_attrs={}
-                            if product.dynamic_attributes:
-                                for attr in product.dynamic_attributes:
-                                    if isinstance(attr, dict) and attr.get('name'):
-                                        existing_attrs[attr['name']] = {
-                'value': attr.get('value'),
-                'uom': attr.get('uom') or attr.get('unit')
-            }
-                            for ai_key, ai_val in ai_attributes.items():
-                                ai_key_clean = str(ai_key).lower().replace(" ", "").replace("_", "").replace("-", "")
-                                target_pk = ai_key
-                                for pk in primary_attrs:
-                                    if str(pk).lower().replace(" ", "").replace("_", "").replace("-", "") == ai_key_clean:
-                                        target_pk = pk
-                                        break
-                                ai_text_val = extract_ai_value_text(ai_val)
-                                user_val = existing_attrs.get(target_pk, "")
-                                is_mismatch = False
-                                if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
-                                    is_mismatch = True
-                                elif user_val and ai_text_val:
-                                    if user_val.lower() != ai_text_val.lower() and user_val.lower() not in ['missing', 'none']:
+                async with _product_semaphore:
+                    await db_session.refresh(job)
+                    if job.status == 'cancelled':
+                        logger.info(f"Job {job_id} cancelled during processing")
+                        break
+                    try:
+                        logger.info(
+                            f"[Job {job_id}] Aggregating {idx+1}/{total}: {product.product_code}")
+                        import gc
+                        gc.collect()
+                        primary_attrs = []
+                        if product.dynamic_attributes:
+                            for attr in product.dynamic_attributes:
+                                attr_name = attr.get('name')
+                                if attr_name and str(attr_name).strip():
+                                    primary_attrs.append(str(attr_name).strip())
+                        logger.info(f"   └─ Taxonomy: {product.taxonomy}")
+                        logger.info(f"   └─ Primary attrs: {primary_attrs}")
+                        job.current_product = product.product_code
+                        job.successful = successful
+                        job.failed = failed
+                        db_session.add(job)
+                        await db_session.commit()
+                        aggregation_result = await aggregate_with_retry(
+                            db_session=db_session,
+                            mpn=product.product_code,
+                            title=product.product_name,
+                            brand=product.brand_name,
+                            taxonomy=product.taxonomy,
+                            primary_attributes=primary_attrs,
+                            db=db_session,
+                            project_id=job.project_id,
+                            max_retries=2
+                        )
+                        if aggregation_result.get('status') == 'success':
+                            golden = aggregation_result.get('golden_record', {})
+                            ai_attributes = golden.get('attributes', {})
+                            product.short_description = golden.get(
+                                'short_description') or product.short_description
+                            product.long_description = golden.get(
+                                'long_description') or product.long_description
+                            product.features = golden.get(
+                                'features') or product.features
+                            project = await db_session.get(Project, job.project_id)
+                            use_case = project.use_case.lower() if project and project.use_case else ""
+                            if "back filling" in use_case or "validation" in use_case:
+                                conflicts = {}
+                                ai_data_for_merge = {}
+                                existing_attrs={}
+                                if product.dynamic_attributes:
+                                    for attr in product.dynamic_attributes:
+                                        if isinstance(attr, dict) and attr.get('name'):
+                                            existing_attrs[attr['name']] = {
+                    'value': attr.get('value'),
+                    'uom': attr.get('uom') or attr.get('unit')
+                }
+                                for ai_key, ai_val in ai_attributes.items():
+                                    ai_key_clean = str(ai_key).lower().replace(" ", "").replace("_", "").replace("-", "")
+                                    target_pk = ai_key
+                                    for pk in primary_attrs:
+                                        if str(pk).lower().replace(" ", "").replace("_", "").replace("-", "") == ai_key_clean:
+                                            target_pk = pk
+                                            break
+                                    ai_text_val = extract_ai_value_text(ai_val)
+                                    user_val = existing_attrs.get(target_pk, "")
+                                    is_mismatch = False
+                                    if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
                                         is_mismatch = True
-                                if is_mismatch:
-                                    conflicts[target_pk] = ai_text_val
-                                    logger.info(f"Correction found for {target_pk}: '{user_val}' -> '{ai_text_val}'")
-                                ai_data_for_merge[target_pk] = ai_val
-                            product.attributes = merge_attributes_preserving_order(
-                                primary_attributes=primary_attrs,
-                                existing_attrs=existing_attrs,
-                                ai_data=ai_data_for_merge
-                            )
-                            product.validation_conflicts = conflicts
-                            flag_modified(product, "validation_conflicts")
-                            if "validation" in use_case and product.dynamic_attributes:
-                                for attr in product.dynamic_attributes:
-                                    if isinstance(attr, dict) and attr.get('name'):
-                                        attr_name = attr['name']
-                                        if attr_name in ai_data_for_merge:
-                                            ai_val = ai_data_for_merge[attr_name]
-                                            if isinstance(ai_val, dict):
-                                                attr['validation_value'] = ai_val.get('value', '')
-                                                attr['validation_uom'] = ai_val.get('unit', '') or ai_val.get('uom', '')
-                                            else:
-                                                attr['validation_value'] = str(ai_val) if ai_val else ''
-                                flag_modified(product, "dynamic_attributes")
-                            product.enrichment_status = 'completed'
-                            await db_session.flush()
-                            db_session.add(product)
-                            found_image = aggregation_result.get('image_url')
-                            if found_image and isinstance(found_image, str):
-                                found_image_str = found_image.strip()
-                                if found_image_str:
-                                    # Validate before saving
-                                    if await validate_image_url(found_image_str):
-                                        product.image_url_1 = found_image_str
-                                        logger.info(f"✓ Valid image found and saved for {product.product_code}: {found_image_str}")
+                                    elif user_val and ai_text_val:
+                                        if user_val.lower() != ai_text_val.lower() and user_val.lower() not in ['missing', 'none']:
+                                            is_mismatch = True
+                                    if is_mismatch:
+                                        conflicts[target_pk] = ai_text_val
+                                        logger.info(f"Correction found for {target_pk}: '{user_val}' -> '{ai_text_val}'")
+                                    ai_data_for_merge[target_pk] = ai_val
+                                product.attributes = merge_attributes_preserving_order(
+                                    primary_attributes=primary_attrs,
+                                    existing_attrs=existing_attrs,
+                                    ai_data=ai_data_for_merge
+                                )
+                                product.validation_conflicts = conflicts
+                                flag_modified(product, "validation_conflicts")
+                                if "validation" in use_case and product.dynamic_attributes:
+                                    for attr in product.dynamic_attributes:
+                                        if isinstance(attr, dict) and attr.get('name'):
+                                            attr_name = attr['name']
+                                            if attr_name in ai_data_for_merge:
+                                                ai_val = ai_data_for_merge[attr_name]
+                                                if isinstance(ai_val, dict):
+                                                    attr['validation_value'] = ai_val.get('value', '')
+                                                    attr['validation_uom'] = ai_val.get('unit', '') or ai_val.get('uom', '')
+                                                else:
+                                                    attr['validation_value'] = str(ai_val) if ai_val else ''
+                                    flag_modified(product, "dynamic_attributes")
+                                product.enrichment_status = 'completed'
+                                await db_session.flush()
+                                db_session.add(product)
+                                found_image = aggregation_result.get('image_url')
+                                if found_image and isinstance(found_image, str):
+                                    found_image_str = found_image.strip()
+                                    if found_image_str:
+                                        # Validate before saving
+                                        if await validate_image_url(found_image_str):
+                                            product.image_url_1 = found_image_str
+                                            logger.info(f"✓ Valid image found and saved for {product.product_code}: {found_image_str}")
+                                        else:
+                                            logger.warning(f"⚠ Image URL invalid for {product.product_code}, not saving")
                                     else:
-                                        logger.warning(f"⚠ Image URL invalid for {product.product_code}, not saving")
+                                        logger.debug(f"Empty image URL for {product.product_code}")
                                 else:
-                                    logger.debug(f"Empty image URL for {product.product_code}")
+                                    logger.warning(f"⚠ No image found during aggregation of {product.product_code}")
+                                product.completeness_score = min(
+                                    len(ai_attributes) * 5, 100)
+                                product.sources_consulted = golden.get(
+                                    'sources_consulted', [])
+                                await check_data_quality(db_session, product.product_code, ai_attributes)
+                                successful += 1
+                                logger.info(
+                                    f"Aggregated {product.product_code}: {len(ai_attributes)} attributes")
                             else:
-                                logger.warning(f"⚠ No image found during aggregation of {product.product_code}")
-                            product.completeness_score = min(
-                                len(ai_attributes) * 5, 100)
-                            product.sources_consulted = golden.get(
-                                'sources_consulted', [])
-                            await check_data_quality(db_session, product.product_code, ai_attributes)
-                            successful += 1
-                            logger.info(
-                                f"Aggregated {product.product_code}: {len(ai_attributes)} attributes")
+                                found_image = aggregation_result.get('image_url')
+                                confidence = aggregation_result.get(
+                                    'golden_record', {}).get('confidence', 0.5)
+                                enriched_attributes = {}
+                                for key, val in ai_attributes.items():
+                                    enriched_attributes[key] = {
+                                        "standard_value": val,
+                                        "source": "AI_Aggregation_Engine",
+                                        "timestamp": datetime.utcnow().isoformat()
+                                    }
+                                product.attributes = {
+                                    **product.attributes, **ai_attributes}
+                                if found_image and isinstance(found_image, str):
+                                    found_image_str = found_image.strip()
+                                    if found_image_str:
+                                        # Validate before saving
+                                        if await validate_image_url(found_image_str):
+                                            product.image_url_1 = found_image_str
+                                            logger.info(f"✓ Valid image found and saved for {product.product_code}")
+                                        else:
+                                            logger.warning(f"⚠ Image URL invalid for {product.product_code}, not saving")
+                                    else:
+                                        logger.debug(f"Empty image URL for {product.product_code}")
+                                else:
+                                    logger.warning(f"⚠ No image found during aggregation of {product.product_code}")
+                                product.enrichment_status = 'completed'
+                                product.completeness_score = min(
+                                    len(ai_attributes) * 5, 100)
+                                product.sources_consulted = golden.get(
+                                    'sources_consulted', [])
+                                logger.info(
+                                    f"Saving product {product.product_code} with sources: {product.sources_consulted}")
+                                db_session.add(product)
+                                await check_data_quality(db_session, product.product_code, ai_attributes)
+                                successful += 1
+                                logger.info(
+                                    f" Aggregated {product.product_code}: {len(ai_attributes)} attributes")
                         else:
-                            found_image = aggregation_result.get('image_url')
-                            confidence = aggregation_result.get(
-                                'golden_record', {}).get('confidence', 0.5)
-                            enriched_attributes = {}
-                            for key, val in ai_attributes.items():
-                                enriched_attributes[key] = {
-                                    "standard_value": val,
-                                    "source": "AI_Aggregation_Engine",
-                                    "timestamp": datetime.utcnow().isoformat()
-                                }
-                            product.attributes = {
-                                **product.attributes, **ai_attributes}
-                            if found_image and isinstance(found_image, str):
-                                found_image_str = found_image.strip()
-                                if found_image_str:
-                                    # Validate before saving
-                                    if await validate_image_url(found_image_str):
-                                        product.image_url_1 = found_image_str
-                                        logger.info(f"✓ Valid image found and saved for {product.product_code}")
-                                    else:
-                                        logger.warning(f"⚠ Image URL invalid for {product.product_code}, not saving")
-                                else:
-                                    logger.debug(f"Empty image URL for {product.product_code}")
-                            else:
-                                logger.warning(f"⚠ No image found during aggregation of {product.product_code}")
-                            product.enrichment_status = 'completed'
-                            product.completeness_score = min(
-                                len(ai_attributes) * 5, 100)
-                            product.sources_consulted = golden.get(
-                                'sources_consulted', [])
-                            logger.info(
-                                f"Saving product {product.product_code} with sources: {product.sources_consulted}")
+                            product.enrichment_status = 'failed'
                             db_session.add(product)
-                            await check_data_quality(db_session, product.product_code, ai_attributes)
-                            successful += 1
-                            logger.info(
-                                f" Aggregated {product.product_code}: {len(ai_attributes)} attributes")
-                    else:
+                            failed += 1
+                            failed_products.append({
+                                'sku': product.product_code,
+                                'error': aggregation_result.get('reason', 'Unknown error')
+                            })
+                            logger.warning(f" Aggregation failed for {product.product_code}")
+                        await asyncio.sleep(5)
+                    except Exception as e:
+                        logger.error(
+                            f"Error aggregating {product.product_code}: {e}")
                         product.enrichment_status = 'failed'
                         db_session.add(product)
                         failed += 1
                         failed_products.append({
                             'sku': product.product_code,
-                            'error': aggregation_result.get('reason', 'Unknown error')
+                            'error': str(e)
                         })
-                        logger.warning(f" Aggregation failed for {product.product_code}")
-                    await asyncio.sleep(5)
-                except Exception as e:
-                    logger.error(
-                        f"Error aggregating {product.product_code}: {e}")
-                    product.enrichment_status = 'failed'
-                    db_session.add(product)
-                    failed += 1
-                    failed_products.append({
-                        'sku': product.product_code,
-                        'error': str(e)
-                    })
-                    continue
+                        continue
             job.status = 'completed' if job.status != 'cancelled' else 'cancelled'
             job.successful = successful
             job.failed = failed
@@ -622,9 +624,7 @@ async def run_project_aggregation_task(job_id: str) -> None:
                     logger.error(
                         f"Failed to update job status: {commit_error}")
 async def run_single_product_aggregation(product_id: str) -> None:
-    if not hasattr(run_single_product_aggregation,'_semaphore'):
-        run_single_product_aggregation._semaphore=asyncio.Semaphore(1)
-    async with run_single_product_aggregation._semaphore:
+    async with _product_semaphore:
         async with async_session_factory() as db_session:
             try:
                 product = await db_session.get(Product, product_id)
@@ -663,6 +663,8 @@ async def run_single_product_aggregation(product_id: str) -> None:
                             db_session=db_session,
                             project_id=product.project_id
                         )
+                        if idx < len(attr_chunks):
+                            await asyncio.sleep(5)
                         if chunk_result.get('status') == 'success':
                             golden = chunk_result.get('golden_record', {})
                             chunk_attrs = golden.get('attributes', {})

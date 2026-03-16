@@ -29,6 +29,7 @@ class CleanedAttribute(BaseModel):
     unit: Optional[str] = None
     confidence: float
     cleaning_applied: List[str] = Field(default_factory=list, description="What cleaning was done")
+    _source_idx:Optional[int]=None
 
 
 class CleaningResponse(BaseModel):

@@ -17,7 +17,7 @@ class OpenAIRateLimiter:
     - 500 requests per minute (RPM)
     """
     
-    def __init__(self, tpm_limit: int = 30000, rpm_limit: int = 500):
+    def __init__(self, tpm_limit: int = 24000, rpm_limit: int = 400):
         self.tpm_limit = tpm_limit
         self.rpm_limit = rpm_limit
         
@@ -52,13 +52,14 @@ class OpenAIRateLimiter:
             # Check if we'll exceed token limit
             if self.tokens_used_this_minute + estimated_tokens > self.tpm_limit:
                 wait_time = self.token_reset_time - now
-                logger.warning(f"Token limit approaching: {self.tokens_used_this_minute}/{self.tpm_limit}")
-                logger.warning(f"Waiting {wait_time:.2f}s for token reset")
                 await asyncio.sleep(wait_time)
+                now=time.time()
+                # logger.warning(f"Token limit approaching: {self.tokens_used_this_minute}/{self.tpm_limit}")
+                # logger.warning(f"Waiting {wait_time:.2f}s for token reset")
                 
                 # Reset after waiting
                 self.tokens_used_this_minute = 0
-                self.token_reset_time = now + wait_time + 60
+                self.token_reset_time = now + 60
             
             # ========================================
             # 2. Request-based rate limiting
@@ -74,9 +75,10 @@ class OpenAIRateLimiter:
                 logger.warning(f"Request limit reached: {len(self.request_timestamps)}/{self.rpm_limit}")
                 logger.warning(f"Waiting {wait_time:.2f}s for request slot")
                 await asyncio.sleep(wait_time)
+                now=time.time()
                 
                 # Remove expired requests after waiting
-                while self.request_timestamps and self.request_timestamps[0] < time.time() - 60:
+                while self.request_timestamps and self.request_timestamps[0] < now - 60:
                     self.request_timestamps.popleft()
             
             # Add current request timestamp
