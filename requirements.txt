@@ -20,6 +20,7 @@ sqlmodel
 asyncpg
 psycopg2-binary
 alembic
+duckduckgo_search>=6.0.0
 python-jose[cryptography]   
 passlib[bcrypt]
 psycopg2-binary
@@ -30,3 +31,5 @@ lxml
 PyMuPDF
 scikit-learn
 sentence-transformers
+googlesearch-python
+aiohttp

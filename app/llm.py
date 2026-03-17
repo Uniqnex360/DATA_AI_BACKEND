@@ -10,6 +10,7 @@ from openai import AsyncOpenAI
 import random
 from app.core.config import settings
 from app.aggregation.response_schemas import AggregationResponse, CleaningResponse, EnrichmentResponse, ExtractionResponse, UnificationResponse, ValidationResponse
+from app.aggregation.services.smart_search import SmartSearchResponse, UrlFilterResponse
 client = OpenAI(api_key=settings.openai_api_key, timeout=60.0)
 genai.configure(api_key=settings.gemini_api_key)
 logger = logging.getLogger('llm')
@@ -72,7 +73,10 @@ SCHEMA_MAP = {
     "UnificationResponse": UnificationResponse,
     "ValidationResponse": ValidationResponse,
     "AggregationResponse": AggregationResponse,
-    "EnrichmentResponse": EnrichmentResponse
+    "EnrichmentResponse": EnrichmentResponse,
+    "UrlFilterResponse":UrlFilterResponse,
+    "SmartSearchResponse":SmartSearchResponse
+    
 }
 
 

@@ -12,7 +12,7 @@ async def main():
     )
 
     print("\n" + "=" * 60)
-    print("🏆 GOLDEN RECORD")
+    print(" GOLDEN RECORD")
     print("=" * 60)
     print(f"Brand: {result.brand}")
     print(f"MPN: {result.mpn}")
@@ -24,7 +24,7 @@ async def main():
         print(f"  {name}: {value}")
 
     if result.conflicts:
-        print(f"\n⚠️ Conflicts ({len(result.conflicts)}):")
+        print(f"\n Conflicts ({len(result.conflicts)}):")
         for name, values in result.conflicts.items():
             print(f"  {name}:")
             for v in values:

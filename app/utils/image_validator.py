@@ -4,7 +4,15 @@ from typing import Optional
 
 logger = logging.getLogger("image_validator")
 
-BLOCKED_KEYWORDS = ['logo', 'icon', 'pixel', 'banner', 'avatar', 'button', 'spacer', 'loading', 'spinner', 'placeholder']
+BLOCKED_KEYWORDS = [
+        'logo', 'icon', 'carton', 'banner', 'default',
+        'no-image', 'noimage', 'placeholder', 'missing',
+        'blank', 'spacer', 'pixel', 'tracking',
+        'social-share', 'social_share',       # ← catches pension-evaluators
+        'facebook', 'twitter', 'og-image',    # ← catches yumpu facebook image
+        'share.jpg', 'share.png',
+        'camozzi', '3d-carton',               # ← catches kyklo logo
+    ]
 
 
 async def validate_image_url(url: str, timeout: int = 10) -> bool:
@@ -13,7 +21,6 @@ async def validate_image_url(url: str, timeout: int = 10) -> bool:
         return False
     
     url = url.strip()
-    
     if any(keyword.lower() in url.lower() for keyword in BLOCKED_KEYWORDS):
         logger.debug(f"Image URL contains blocked keyword: {url}")
         return False

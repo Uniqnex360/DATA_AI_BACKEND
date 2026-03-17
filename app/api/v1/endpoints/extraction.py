@@ -332,7 +332,7 @@ async def download_file(
             "baton_led_road_flares", "baton_road_flares_features", 
             "battery_operated_led_road_flares_features", "flex_fit_tripods",
             "led_flares_vs_incendiary_flares", "led_road_flares", "patterns_and_run_times",
-            "price_range", "usage", "voc_level"
+            "price_range", "usage", "voc_level",'category'
 }
             def normalize_attr_name(s):
                 return s.strip().lower().replace('_', '').replace(' ', '').replace('-', '')

@@ -14,7 +14,7 @@ class ProductWorkerPool:
         self.workers = []
     
     async def _worker(self, worker_id: int):
-        logger.info(f"🚀 Worker {worker_id} started")
+        logger.info(f" Worker {worker_id} started")
         
         while True:
             try:
@@ -24,17 +24,17 @@ class ProductWorkerPool:
                     break
                 
                 product_id = task_data['product_id']
-                logger.info(f"👷 Worker {worker_id} processing {product_id}")
+                logger.info(f" Worker {worker_id} processing {product_id}")
                 
                 await self.process_function(product_id)
                 
-                logger.info(f"✅ Worker {worker_id} completed {product_id}")
+                logger.info(f" Worker {worker_id} completed {product_id}")
                 
             except Exception as e:
                 logger.error(f"Worker {worker_id} error: {e}", exc_info=True)
             finally:
                 self.queue.task_done()
-                await asyncio.sleep(10)  # 10s delay between products
+                await asyncio.sleep(10)  
     
     async def start(self):
         if self.workers_started:
@@ -45,7 +45,7 @@ class ProductWorkerPool:
             self.workers.append(worker)
         
         self.workers_started = True
-        logger.info(f"✅ Started {self.worker_count} workers")
+        logger.info(f" Started {self.worker_count} workers")
     
     async def submit(self, product_id: str) -> int:
         await self.start()

@@ -64,7 +64,7 @@ class AggregationPipeline:
         logger.info(f"[{request_id}] Search queries: {queries}")
         urls: List[str] = []
         for q in queries:
-            found = await self.search.get_urls(q,mpn,brand)
+            found = await self.search.get_urls(q,mpn,brand,title)
             urls.extend(found)
             if len(urls)>MAX_SOURCES:
                 break
@@ -105,7 +105,7 @@ class AggregationPipeline:
             image_urls = []
             for q in image_queries[:3]:  # Limit to 3 additional queries
                 try:
-                    found = await self.search.get_urls(q)
+                    found = await self.search.get_urls(q,mpn=mpn or "",brand=brand or identifiers["brand"] or "",title=title or "")
                     image_urls.extend(found)
                     if len(image_urls) >= 3:
                         break
@@ -127,8 +127,12 @@ class AggregationPipeline:
                 
                 if image_sources:
                     final_image_url = await self.image_service.extract_best_image(
-                        image_sources, request_id
-                    )
+    sources=image_sources,
+    request_id=request_id,
+    mpn=mpn or "",
+    brand=brand or "",
+    source_urls=image_urls   
+)
                     if final_image_url:
                         logger.info(f"[{request_id}] ✓ SUCCESS: Found image through retry mechanism")
                     else:

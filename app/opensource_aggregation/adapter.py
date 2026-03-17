@@ -19,27 +19,24 @@ async def opensource_aggregate_product(
     project_id: str = None,
     attribute_chunk: Optional[List[str]] = None
 ) -> Dict:
-    """
-    Open-Source Only Aggregation Adapter
-    No LLM fallback - Pure open-source pipeline
-    """
+    
     try:
         logger.info(f"🆓 Starting open-source aggregation for {mpn} | Brand: {brand}")
-        # Prepare product identifier
+        
         product = ProductIdentifier(
             mpn=mpn,
             brand=brand or "",
             title=title or ""
         )
 
-        # Run the open-source pipeline
+        
         pipeline = OpenSourceAggregationPipeline(serp_api_key=settings.serpapi_key)
         golden = await pipeline.aggregate(product)
         logger.info(f"Golden record attributes count: {len(golden.attributes)}")
         logger.info(f"Golden record attributes keys: {list(golden.attributes.keys())}")
 
         
-        # After obtaining golden from pipeline
+        
         if attribute_chunk or primary_attributes:
             requested = attribute_chunk or primary_attributes
             final_attributes = {}
@@ -55,16 +52,16 @@ async def opensource_aggregate_product(
                         logger.info(f"Matched {req} to {value} (from attribute '{name}')")
                         break
 
-            # If no matches at all, fall back to all extracted attributes
+            
             if not final_attributes:
                 logger.warning("No primary attributes matched – returning all extracted attributes")
                 final_attributes = golden.attributes
         else:
-            # No primary list provided – use all extracted attributes
+            
             final_attributes = golden.attributes
             logger.info(f"Using all {len(final_attributes)} attributes")
             logger.info(f"FINAL: golden.attributes = {golden.attributes}")
-        # Build final response in the same format your system expects
+        
         return {
             'status': 'success' if final_attributes else 'partial',
             'golden_record': {

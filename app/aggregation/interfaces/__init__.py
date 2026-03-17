@@ -7,7 +7,7 @@ import httpx
 class ISearchService(ABC):
     
     @abstractmethod
-    async def get_urls(self, query: str,mpn:str,brand:str) -> List[str]:
+    async def get_urls(self, query: str,mpn:str,brand:str,title:str) -> List[str]:
         pass
 
 
