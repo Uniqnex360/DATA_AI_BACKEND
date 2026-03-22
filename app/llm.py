@@ -1,5 +1,6 @@
 import logging
 import asyncio
+from app.aggregation.services.smart_search import SmartSearchResponse, TargetedQueryResponse, UrlFilterResponse
 from app.core.rate_limiter import openai_limiter
 from openai import OpenAI
 import google.generativeai as genai
@@ -9,8 +10,9 @@ from typing import Any, Optional
 from openai import AsyncOpenAI
 import random
 from app.core.config import settings
-from app.aggregation.response_schemas import AggregationResponse, CleaningResponse, EnrichmentResponse, ExtractionResponse, UnificationResponse, ValidationResponse
-from app.aggregation.services.smart_search import SmartSearchResponse, UrlFilterResponse
+from app.aggregation.response_schemas import AggregationResponse, CleaningResponse, EnrichmentResponse, ExtractionResponse, StandardizationResponse, UnificationResponse, ValidationResponse
+from app.aggregation.services.cleaning_service import LLMCleaningResponse
+from app.schemas.aggregation import UnifiedStandardizedResponse
 client = OpenAI(api_key=settings.openai_api_key, timeout=60.0)
 genai.configure(api_key=settings.gemini_api_key)
 logger = logging.getLogger('llm')
@@ -18,7 +20,7 @@ _openai_client = AsyncOpenAI(
     api_key=settings.openai_api_key,
     timeout=60.0
 )
-_llm_semaphore = asyncio.Semaphore(1)
+_llm_semaphore = asyncio.Semaphore(5)
 def parse_response(content: str) -> dict:
     content = content.strip()
 
@@ -75,7 +77,11 @@ SCHEMA_MAP = {
     "AggregationResponse": AggregationResponse,
     "EnrichmentResponse": EnrichmentResponse,
     "UrlFilterResponse":UrlFilterResponse,
-    "SmartSearchResponse":SmartSearchResponse
+    "SmartSearchResponse":SmartSearchResponse,
+    "LLMCleaningResponse":LLMCleaningResponse,
+    "StandardizationResponse":StandardizationResponse,
+    "UnifiedStandardizedResponse":UnifiedStandardizedResponse,
+    "TargetedQueryResponse":TargetedQueryResponse
     
 }
 

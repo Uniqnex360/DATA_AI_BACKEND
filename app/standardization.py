@@ -3,6 +3,7 @@ import logging
 from typing import List, Optional, Dict, Any, Union
 from difflib import SequenceMatcher
 from app.schemas.enrichment import RawValue, StandardizedAttribute
+from app.llm import _llm_semaphore
 
 logger = logging.getLogger("standardization_engine")
 

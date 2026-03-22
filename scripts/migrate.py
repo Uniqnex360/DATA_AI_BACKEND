@@ -8,7 +8,7 @@ from app.core.auto_migrate import auto_migration
 
 async def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "safe"
-    print(f"🔄 Running migration in '{mode}' mode...")
+    print(f" Running migration in '{mode}' mode...")
     
     if mode == "reset":
         confirm = input("  This will DELETE ALL DATA! Type 'YES' to confirm: ")

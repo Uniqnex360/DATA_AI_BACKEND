@@ -62,3 +62,16 @@ class ProductAggregationResponse(BaseModel):
     attributes_count: int
     confidence: float
     message: str
+
+class FinalAttribute(BaseModel):
+    name: str
+    value: str
+    unit: Optional[str] = None
+    confidence: float = 0.9
+    sources: List[str] = []     
+    source_ids: List[str] = []         
+    original_values: List[str] = []    
+
+class UnifiedStandardizedResponse(BaseModel):
+    attributes: List[FinalAttribute]
+    summary: str = ""                    

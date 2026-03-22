@@ -1,3 +1,4 @@
+# settings.yml - Complete fixed configuration
 
 use_default_settings: true
 
@@ -7,6 +8,76 @@ server:
   image_proxy: false
 
 search:
+  safe_search: 0
+  default_lang: "en"              # ← Forces English results
   formats:
     - html
     - json
+
+outgoing:
+  request_timeout: 10.0
+  useragent_suffix: ""
+  pool_connections: 100
+  pool_maxsize: 20
+  enable_http2: true
+
+engines:
+  # ── GOOGLE ──────────────────────────────────────────
+  - name: google
+    engine: google
+    shortcut: g
+    language: "en"
+    region: "en-US"
+    safesearch: 0
+    timeout: 10
+    weight: 2                     # ← Higher weight = more trusted
+    disabled: false
+
+  # ── BING ────────────────────────────────────────────
+  - name: bing
+    engine: bing
+    shortcut: b
+    language: "en"
+    region: "en-US"
+    safesearch: 0
+    timeout: 10
+    weight: 2
+    disabled: false
+
+  # ── DUCKDUCKGO ──────────────────────────────────────
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+    language: "en"
+    safesearch: 0
+    timeout: 10
+    weight: 1
+    disabled: false
+
+  # ── BRAVE ───────────────────────────────────────────
+  - name: brave
+    engine: brave
+    shortcut: brave
+    region: "en-US"
+    safesearch: 0
+    timeout: 10
+    weight: 1
+    disabled: false
+
+  # ── GOOGLE IMAGES (for product images) ──────────────
+  - name: google images
+    engine: google_images
+    shortcut: gimg
+    language: "en"
+    region: "en-US"
+    timeout: 10
+    disabled: false
+
+  # ── BING IMAGES ─────────────────────────────────────
+  - name: bing images
+    engine: bing_images
+    shortcut: bimg
+    language: "en"
+    region: "en-US"
+    timeout: 10
+    disabled: false

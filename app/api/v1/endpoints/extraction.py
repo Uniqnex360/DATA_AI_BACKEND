@@ -163,6 +163,7 @@ def clean_for_excel(val, attr_name=None):
     if val_str.lower() in ["n/a", "none", "null", "nan", "not available", "increase", "*"]:
         return ""
     return sanitize_for_excel(val_str)
+    
 @router.get("/{source_id}/download")
 async def download_file(
     source_id: str,
@@ -196,9 +197,9 @@ async def download_file(
             project = await db.get(Project, products[0].project_id) if products else None
             use_case_lower = (project.use_case or "").lower() if project else ""
             if 'back filling' in use_case_lower or 'validation' in use_case_lower:
-                MAX_ATTRIBUTES=25
+                MAX_ATTRIBUTES=30
             else:
-                MAX_ATTRIBUTES=20
+                MAX_ATTRIBUTES=30
             logger.info(f"Using {MAX_ATTRIBUTES} attribute columns for use case: {project.use_case if project else 'Unknown'}")
             core_headers = ["Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name", "Brand", "GTIN",
                             "ean", "upc", "unspc", "MPN", "Status", "Lifecycle_Stage", "Launch_Date", "Discontinue_Status"]
@@ -616,6 +617,7 @@ async def download_file(
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Error generating download")
+        
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
     request: Request,
@@ -660,9 +662,22 @@ async def batch_aggregate(
                                 "File already uploaded recently.")
         rows = parse_import_file(content, file.filename)
         valid_rows = []
+        rejected_count=0
         for r in rows:
-            if str(r.get('sku', '')).strip() or str(r.get('mpn', '')).strip() or str(r.get('product_name', '')).strip():
+            
+            mpn = str(r.get('mpn', '')).strip()
+            brand = str(r.get('brand', '')).strip()
+            if  brand and mpn:
                 valid_rows.append(r)
+            else:
+                rejected_count+=1
+                logger.warning(f"Rejected row: missing  MPN='{mpn}', Brand='{brand}'")
+            # if str(r.get('sku', '')).strip() or str(r.get('mpn', '')).strip() or str(r.get('product_name', '')).strip() or str(r.get('brand')).strip():
+            #     valid_rows.append(r)
+        if rejected_count>0:
+            logger.info(f"Rejected {rejected_count} rows due to missing SKU, MPN, or Brand")
+        if not valid_rows:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="No valid rows with SKU, MPN, and Brand found in file")
         rows = valid_rows
         total_rows = len(rows)
         if total_rows == 0:
@@ -1074,13 +1089,15 @@ async def run_aggregation_task(source_id: str):
                             logger.info(f"   └─ Pass {idx}/{len(attr_chunks)}: Processing attributes {chunk}")
                             chunk_result = await aggregate_product(
                                 mpn=product.product_code,
+                                sku=product.sku,
+                                upc=product.upc,
                                 title=product.product_name,
                                 brand=product.brand_name,
                                 taxonomy=product.taxonomy,
                                 primary_attributes=primary_attr_names,
                                 attribute_chunk=chunk, 
                                 db=db_session,
-                                project_id=source.project_id
+                                project_id=source.project_id,
                             )
                             if chunk_result.get('status') == 'success':
                                 golden = chunk_result.get('golden_record', {})
@@ -1104,12 +1121,14 @@ async def run_aggregation_task(source_id: str):
                         
                         aggregation_result = await aggregate_product(
                             mpn=product.product_code,
+                            sku=product.sku,
+                            upc=product.upc,
                             title=product.product_name,
                             brand=product.brand_name,
                             taxonomy=product.taxonomy,
                             primary_attributes=primary_attr_names,
                             db=db_session,
-                            project_id=source.project_id
+                            project_id=source.project_id,
                         )
                     
                     

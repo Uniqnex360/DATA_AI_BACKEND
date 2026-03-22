@@ -85,3 +85,38 @@ class EnrichmentResponse(BaseModel):
     long_description: str = Field(max_length=1000)
     features: List[str] = Field(max_items=10)
     confidence: float
+    
+class StandardizedAttribute(BaseModel):
+    name: str
+    value: str
+    unit: Optional[str] = None
+    conversion_applied: Optional[str] = Field(
+        default=None,
+        description="What was changed, e.g., 'Converted 24 inches to 24 in' or 'Averaged range 10-20 to 15'"
+    )
+class StandardizationResponse(BaseModel):
+    standardized_attributes: List[StandardizedAttribute] = Field(
+        description="Standardized attributes in the SAME ORDER as input"
+    )
+    market: str = Field(description="Target market (US/EU)")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "standardized_attributes": [
+                    {
+                        "name": "Length",
+                        "value": "24",
+                        "unit": "in",
+                        "conversion_applied": "Removed unit text from value"
+                    },
+                    {
+                        "name": "Weight",
+                        "value": "23.15",
+                        "unit": "lb",
+                        "conversion_applied": "Converted 10.5 kg to 23.15 lb"
+                    }
+                ],
+                "market": "US"
+            }
+        }

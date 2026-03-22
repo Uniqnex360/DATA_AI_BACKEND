@@ -23,7 +23,6 @@ alembic
 duckduckgo_search>=6.0.0
 python-jose[cryptography]   
 passlib[bcrypt]
-psycopg2-binary
 gunicorn
 alembic-autogenerate-enums
 pypdf2==3.0.1
@@ -33,3 +32,5 @@ scikit-learn
 sentence-transformers
 googlesearch-python
 aiohttp
+tenacity
+curl_cffi

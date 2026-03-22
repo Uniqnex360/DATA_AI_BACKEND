@@ -18,7 +18,6 @@ class ProductIdentifier:
     brand: str = ""
     title: str = ""
     upc: str = ""
-    model_number: str = ""
 
 
 @dataclass

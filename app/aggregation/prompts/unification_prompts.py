@@ -26,7 +26,7 @@ def build_unification_prompt(
         elif "safety" in taxonomy.lower() or "fall protection" in taxonomy.lower():
             synonym_hints = """
         SPECIAL RULES FOR SAFETY HARNESSES:
-        - "Buckle Type - Chest", "Chest Buckle Type", and "Buckle Type" (when value is "Chest") are the same attribute. Use "Buckle Type - Chest" as the canonical name.
+        - Any attribute that describes the chest buckle type (e.g., "Buckle Type", "Chest Buckle Type", "Buckle Type - Chest") should be unified into a single attribute with the canonical name **"Buckle Type - Chest"**.
         - "Number of D-Rings" is the canonical name (do not merge with other counts).
         """
         prompt = f"""You are a semantic attribute unification engine.
