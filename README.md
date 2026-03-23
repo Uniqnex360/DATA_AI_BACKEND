@@ -223,4 +223,3 @@ services:
 
 ---
 
-*For detailed code, see the repository. For interactive API exploration, visit `/docs` after deployment.*
