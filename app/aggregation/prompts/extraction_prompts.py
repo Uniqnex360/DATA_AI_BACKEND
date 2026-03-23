@@ -125,8 +125,8 @@ For each specification you find in the HTML:
    - Type→Material: "Adhesive Type" vs "Adhesive Material" ✓
 
 3️⃣ DECIDE:
-   ✅ MATCH FOUND → Use the PRIMARY ATTRIBUTE name
-   ❌ NO MATCH → Use the name from HTML (still extract it!)
+    MATCH FOUND → Use the PRIMARY ATTRIBUTE name
+   NO MATCH → Use the name from HTML (still extract it!)
 
 LINGUISTIC PATTERNS TO RECOGNIZE:
 
@@ -250,10 +250,10 @@ Find the main product image URL. Follow these rules STRICTLY:
    e) <img> tags with src containing the MPN: "{mpn}"
 
 2. URL VALIDATION:
-   ✅ MUST be absolute URL starting with http:// or https://
-   ✅ MUST end with image extension: .jpg, .jpeg, .png, .webp, .gif
-   ❌ IGNORE: icons, logos, thumbnails, badges, social-media images
-   ❌ IGNORE: SVG files, data URIs, placeholder images
+    MUST be absolute URL starting with http:// or https://
+    MUST end with image extension: .jpg, .jpeg, .png, .webp, .gif
+    IGNORE: icons, logos, thumbnails, badges, social-media images
+    IGNORE: SVG files, data URIs, placeholder images
    
 3. URL COMPLETION:
    - If you find a URL WITHOUT extension, look for the same base URL 
@@ -272,16 +272,16 @@ Find the main product image URL. Follow these rules STRICTLY:
 
 EXAMPLES:
 
-❌ BAD OUTPUT:
+ BAD OUTPUT:
 "https://assets.dewalt.com/.../product_image"  (missing extension)
 
-✅ GOOD OUTPUT:
+ GOOD OUTPUT:
 "https://assets.dewalt.com/.../product_image.jpg"
 
-❌ BAD OUTPUT:
+ BAD OUTPUT:
 "https://example.com/logo.svg"  (logo, not product)
 
-✅ GOOD OUTPUT:
+ GOOD OUTPUT:
 "https://example.com/products/dcf414b-main-1200x1200.jpg"
 ═══════════════════════════════════════════════════════════════════
 
