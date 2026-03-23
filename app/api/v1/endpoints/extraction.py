@@ -163,7 +163,6 @@ def clean_for_excel(val, attr_name=None):
     if val_str.lower() in ["n/a", "none", "null", "nan", "not available", "increase", "*"]:
         return ""
     return sanitize_for_excel(val_str)
-    
 @router.get("/{source_id}/download")
 async def download_file(
     source_id: str,
@@ -617,7 +616,6 @@ async def download_file(
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Error generating download")
-        
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
     request: Request,
@@ -664,7 +662,6 @@ async def batch_aggregate(
         valid_rows = []
         rejected_count=0
         for r in rows:
-            
             mpn = str(r.get('mpn', '')).strip()
             brand = str(r.get('brand', '')).strip()
             if  brand and mpn:
@@ -1080,7 +1077,7 @@ async def run_aggregation_task(source_id: str):
                         logger.info(f" Excel attributes: {list(existing_data.keys())[:5]}")
                     logger.info(f"Primary attributes found in DB: {primary_attr_names}")
                     if len(primary_attr_names) > 10:
-                        logger.info(f"🔄 Product has {len(primary_attr_names)} attributes - using multi-pass processing")
+                        logger.info(f" Product has {len(primary_attr_names)} attributes - using multi-pass processing")
                         from app.aggregation.aggregate_product import chunk_attributes
                         attr_chunks = chunk_attributes(primary_attr_names, chunk_size=10)
                         merged_ai_data = {}
@@ -1118,7 +1115,6 @@ async def run_aggregation_task(source_id: str):
                         }
                         logger.info(f" Multi-pass complete: {len(merged_ai_data)} total attributes")
                     else:
-                        
                         aggregation_result = await aggregate_product(
                             mpn=product.product_code,
                             sku=product.sku,
@@ -1130,16 +1126,6 @@ async def run_aggregation_task(source_id: str):
                             db=db_session,
                             project_id=source.project_id,
                         )
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                     if aggregation_result.get('status') == 'success':
                         golden = aggregation_result.get('golden_record', {})
                         ai_attributes = golden.get('attributes', {})

@@ -733,7 +733,7 @@ async def aggregate_product(
         for src_idx, source in enumerate(all_extractions):
             for attr in source['attributes']:
                 raw_attrs_for_combine.append({
-                    'temp_id': f"{src_idx}_{len(raw_attrs_for_combine)}",  # unique ID
+                    'temp_id': f"{src_idx}_{len(raw_attrs_for_combine)}",  
                     'name': attr['name'],
                     'value': attr['value'],
                     'unit': attr.get('unit'),
@@ -904,6 +904,7 @@ async def aggregate_product(
             'reason': str(e),
             'golden_record': {'attributes': {}}
         }
+        
 def _build_combined_prompt(
     raw_attrs: List[Dict],
     brand: str,
