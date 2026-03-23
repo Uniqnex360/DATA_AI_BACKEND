@@ -1014,10 +1014,18 @@ RULE 5 — STATUS / BOOLEAN
   For boolean fields: 1/Y/TRUE → "Yes";  0/N/FALSE → "No".
   Examples:
     "TEMPORARY / PERMANENT"  → "Temporary"
+     "TEMPORARY / PERMANENT"  → "PERMANENT"
+     "TEMPORARY / PERMANENT"  → "TEMPORARY"
     "PERMANENT"              → "Permanent"
     "Y"                      → "Yes"
     "1"                      → "Yes"
 
+  ★ IMPORTANT ★ For the attribute named "Temporary / Permanent" (or any variant like "Permanent/Temporary"):
+    - Output the value as exactly "Temporary" or "Permanent" (Title Case).
+    - Map any input variation: "TEMP", "TEMPORARY", "Temporary", "Temporary / Permanent" → "Temporary".
+    - Map "PERM", "PERMANENT", "Permanent" → "Permanent".
+    - Always include this attribute in the final output if it appears in the input.
+    
 RULE 6 — HYPHENS IN DESCRIPTIVE TEXT
   Replace hyphens with spaces in descriptive words (not in technical standards).
   Examples:
@@ -1044,6 +1052,9 @@ RULE 7 — MATERIAL MAPPING  (context-aware — ONLY apply if value is a recogni
     Name="Backing Material", Value="pvc"    → "Polyvinyl Chloride"
     Name="Backing Material", Value="PVC"    → "Polyvinyl Chloride"
     Name="Backing Material", Value="Polyvinyl Chloride" → "Polyvinyl Chloride"  (unchanged)
+    Name="Adhesive Material", Value="rubber" → "Rubber"
+    Name="Adhesive Material", Value="Acrylic" → "Acrylic"
+     ★ IMPORTANT ★ For "Adhesive Material", always use the adhesive type (e.g., "Rubber", "Acrylic") – never use the backing material value.
 RULE 8 — PLACEHOLDERS → EMPTY
   Convert N/A, None, -, TBD, "null", blank → empty string "".
   Set issue_detected = true for these.
@@ -1079,12 +1090,18 @@ RULE 12 — UNIT SYMBOL EXPANSION
 
 RULE 13 — ROUNDING
   Round decimals to 2 places.  1.998 → 2.00
-
+  
 RULE 14 — UNIFICATION
   After cleaning, group attributes that represent the same concept
   (e.g., "CCT" and "Color Temperature", "Colour" and "Color").
   Produce ONE output attribute per concept using the most canonical name.
   Pick the value with the highest confidence; list all source URLs and original values.
+
+  ★ IMPORTANT ★ Specific synonym groups:
+    - Temperature attributes: treat "Maximum Operating Temperature" and "Operating Temperature - Maximum" as the same.
+      If both appear, keep the one that matches the primary attributes list; otherwise keep the one with higher confidence.
+    - Material attributes: if both "Material" and "Backing Material" refer to the same material, keep only the one that matches the primary list.
+      If neither is in the primary list, keep "Backing Material" (more specific).
 
 ═══════════════════════════════════════════════════════
 CONCRETE FEW-SHOT EXAMPLES  (exact JSON output required for these inputs)
@@ -1195,6 +1212,9 @@ CRITICAL FINAL CHECKS before returning:
   ✓ Is "Temporary / Permanent" outputting two words?  If yes → pick one.
   ✓ Are hyphens still in descriptive words like "Double-Sided"?  If yes → replace with space.
   ✓ Does any Material/Backing Material/Adhesive Material have a non-material value (product name, tape type, etc.)?  If yes → set value="" and issue_detected=true.
+    ✓ Is "Temporary / Permanent" correctly title-cased and present? If missing, ensure it's included (set value="" if not found).
+  ✓ Does "Adhesive Material" say "PVC"? If yes → it is wrong; set to empty or correct value if possible (look for a source that says "Rubber").
+  ✓ Have all primary attributes been considered? If a primary attribute is missing because no matching specification was found, still include it with an empty value and note in original_values that it was not found.
 {excel_section}
 {validation_section }
 ═══════════════════════════════════════════════════════

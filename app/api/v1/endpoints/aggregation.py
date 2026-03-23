@@ -285,7 +285,7 @@ async def aggregate_single_product(
         db.add(product)
         await db.commit()
         queue_position = await worker_pool.submit(str(product.id))
-        logger.info(f"📥 Queued {product.product_code} at position {queue_position}")
+        logger.info(f"Queued {product.product_code} at position {queue_position}")
         # background_tasks.add_task(
         #     run_single_product_aggregation, str(product.id))
         return ProductAggregationResponse(

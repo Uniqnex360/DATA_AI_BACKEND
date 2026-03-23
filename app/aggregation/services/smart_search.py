@@ -52,6 +52,8 @@ class SmartSearchService(ISearchService):
     - Car part → "Bosch 0986479D27 site:bosch-automotive.com OR site:rockauto.com"
     - Food product → "Heinz Tomato Ketchup 57 site:heinz.com product details"
     - Electronics → "Sony WH-1000XM5 site:sony.com specifications"
+    - If possible, include `inurl:product` or `inurl:p/` to target product pages directly.
+
 
     Return JSON: {{"search_query": "your query here"}}
     """

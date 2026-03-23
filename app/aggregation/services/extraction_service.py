@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Any
 from app.aggregation.interfaces import IExtractor
 from app.extractors import extract_pdf_pdfplumber, extract_web_playwright
 from app.sacred import extract_from_web, extract_from_pdf
-
+#Not used
 logger = logging.getLogger("extraction_service")
 
 class StructuredDataExtractor(IExtractor):

@@ -163,6 +163,7 @@ def clean_for_excel(val, attr_name=None):
     if val_str.lower() in ["n/a", "none", "null", "nan", "not available", "increase", "*"]:
         return ""
     return sanitize_for_excel(val_str)
+    
 @router.get("/{source_id}/download")
 async def download_file(
     source_id: str,
@@ -596,7 +597,11 @@ async def download_file(
                                 uom)
                     current_slot += 1
                 if p.sources_consulted and isinstance(p.sources_consulted, list):
-                    for i, url in enumerate(p.sources_consulted[:5], 1):
+                    brand=row.get('Brand') or p.brand_name or ""
+                    urls=list(p.sources_consulted)
+                    from urllib.parse  import urlparse
+                    urls.sort(key=lambda u: 0 if (brand and brand.lower() in urlparse(u).netloc.lower()) else 1)
+                    for i, url in enumerate(urls[:5], 1):
                         row[f"source_url_{i}"] = url
                 sanitized_row = {str(k): sanitize_for_excel(v)
                                  for k, v in row.items()}
@@ -616,6 +621,7 @@ async def download_file(
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Error generating download")
+        
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
     request: Request,

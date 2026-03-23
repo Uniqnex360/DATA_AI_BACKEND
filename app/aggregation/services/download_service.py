@@ -119,3 +119,110 @@ class HttpDownloadService(IDownloadService):
         except Exception as e:
             logger.error(f"Download crashed for {url}: {type(e).__name__} - {e}")
             return None
+from playwright.async_api import async_playwright
+
+async def download_with_playwright(self, url: str):
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        await page.goto(url, timeout=self.timeout * 1000)
+        content = await page.content()
+        await browser.close()
+        return content
+
+# import logging
+# import asyncio
+# import random
+# from typing import Dict, Optional
+# from urllib.parse import urlparse
+# from curl_cffi import requests
+# from playwright.async_api import async_playwright
+
+# logger = logging.getLogger("download_service")
+
+# # List of browser fingerprints to rotate
+# BROWSERS = [
+#     "chrome110", "chrome116", "chrome123",
+#     "firefox102", "firefox115",
+#     "safari15_3", "edge101"
+# ]
+
+# # Domains that are known to block curl_cffi and may need Playwright
+# STUBBORN_DOMAINS = [
+#     "www.anixter.com", "www.hisco.com", "www.mouser.com",
+#     "www.homedepot.com", "www.lowes.com"
+# ]
+
+# class HttpDownloadService:
+#     def __init__(self, timeout: int = 30):
+#         self.timeout = timeout
+#         self._sessions = {}  # optional: reuse sessions per domain (not implemented here for simplicity)
+
+#     async def download(self, url: str) -> Optional[Dict]:
+#         # Determine if this domain is known to be stubborn
+#         domain = urlparse(url).netloc
+#         use_playwright = domain in STUBBORN_DOMAINS
+
+#         # Try curl_cffi first (unless it's a known stubborn domain, then go straight to Playwright)
+#         if not use_playwright:
+#             for attempt in range(3):
+#                 try:
+#                     # Add random delay before request to mimic human behavior
+#                     await asyncio.sleep(random.uniform(1.0, 3.0))
+#                     impersonate = random.choice(BROWSERS)
+#                     async with requests.AsyncSession(
+#                         impersonate=impersonate,
+#                         timeout=self.timeout,
+#                         verify=False
+#                     ) as session:
+#                         response = await session.get(url, allow_redirects=True)
+
+#                         if response.status_code == 200:
+#                             # Success with curl_cffi
+#                             is_pdf = "pdf" in response.headers.get("Content-Type", "").lower()
+#                             return {
+#                                 "source_url": url,
+#                                 "raw_bytes": response.content,
+#                                 "type": "pdf" if is_pdf else "html",
+#                             }
+#                         elif response.status_code in [403, 429]:
+#                             logger.warning(f"Blocked ({response.status_code}) attempt {attempt+1} for {url}")
+#                             await asyncio.sleep(2 ** attempt)  # exponential backoff
+#                             continue
+#                         else:
+#                             # Other status code -> give up
+#                             logger.warning(f"HTTP {response.status_code} for {url}")
+#                             break
+#                 except Exception as e:
+#                     logger.error(f"curl_cffi attempt {attempt+1} failed for {url}: {e}")
+#                     await asyncio.sleep(2 ** attempt)
+
+#         # If we reach here, curl_cffi failed or domain is stubborn → use Playwright
+#         logger.info(f"Falling back to Playwright for {url}")
+#         try:
+#             content = await self._download_with_playwright(url)
+#             if content:
+#                 # Playwright returns HTML content as string; we treat it as HTML
+#                 return {
+#                     "source_url": url,
+#                     "raw_bytes": content.encode('utf-8'),
+#                     "type": "html",
+#                 }
+#         except Exception as e:
+#             logger.error(f"Playwright download failed for {url}: {e}")
+
+#         return None
+
+#     async def _download_with_playwright(self, url: str) -> Optional[str]:
+#         """Fetch page content using Playwright (headless browser)."""
+#         try:
+#             async with async_playwright() as p:
+#                 browser = await p.chromium.launch(headless=True)
+#                 page = await browser.new_page()
+#                 await page.goto(url, timeout=self.timeout * 1000)
+#                 content = await page.content()
+#                 await browser.close()
+#                 return content
+#         except Exception as e:
+#             logger.error(f"Playwright error for {url}: {e}")
+#             return None
