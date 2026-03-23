@@ -197,9 +197,9 @@ async def download_file(
             project = await db.get(Project, products[0].project_id) if products else None
             use_case_lower = (project.use_case or "").lower() if project else ""
             if 'back filling' in use_case_lower or 'validation' in use_case_lower:
-                MAX_ATTRIBUTES=30
+                MAX_ATTRIBUTES=40
             else:
-                MAX_ATTRIBUTES=30
+                MAX_ATTRIBUTES=40
             logger.info(f"Using {MAX_ATTRIBUTES} attribute columns for use case: {project.use_case if project else 'Unknown'}")
             core_headers = ["Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name", "Brand", "GTIN",
                             "ean", "upc", "unspc", "MPN", "Status", "Lifecycle_Stage", "Launch_Date", "Discontinue_Status"]
