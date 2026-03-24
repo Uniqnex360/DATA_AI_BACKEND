@@ -538,6 +538,7 @@ async def download_file(
                         used_ai_keys.add(ai_match_key)
                     orig_val_str = ""
                     orig_uom_str = ""
+                    orig_match=None
                     if template_norm in original_attrs_by_norm:
                         attrs_list = original_attrs_by_norm[template_norm]
                         next_idx = used_original_indexes.get(template_norm, 0)
@@ -598,7 +599,7 @@ async def download_file(
                     current_slot += 1
                 if p.sources_consulted and isinstance(p.sources_consulted, list):
                     brand=row.get('Brand') or p.brand_name or ""
-                    urls=list(p.sources_consulted)
+                    urls=list(p.sources_consulted)      
                     from urllib.parse  import urlparse
                     urls.sort(key=lambda u: 0 if (brand and brand.lower() in urlparse(u).netloc.lower()) else 1)
                     for i, url in enumerate(urls[:5], 1):

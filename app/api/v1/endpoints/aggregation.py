@@ -8,7 +8,6 @@ from sqlalchemy.orm.attributes import flag_modified
 from fastapi.responses import StreamingResponse
 import asyncio
 import traceback
-import sys
 import io
 import pandas as pd
 from app.core.database import get_session, async_session_factory
@@ -125,6 +124,7 @@ async def get_projects_with_aggregation_stats(
     except Exception as e:
         logger.error(f"Stats Error: {e}", exc_info=True)
         return []
+    
 @router.post("/project/{project_id}", response_model=AggregationTriggerResponse, status_code=status.HTTP_202_ACCEPTED)
 async def trigger_project_aggregation(
     project_id: str,
@@ -147,7 +147,7 @@ async def trigger_project_aggregation(
         pending_stmt = select(func.count(Product.id)).where(
             and_(
                 Product.project_id == project_id,
-                Product.enrichment_status == 'pending'
+                Product.enrichment_status.in_(['pending','failed'])
             )
         )
         pending_result = await db.execute(pending_stmt)
@@ -389,7 +389,7 @@ async def run_project_aggregation_task(job_id: str) -> None:
             stmt = select(Product).where(
                 and_(
                     Product.project_id == job.project_id,
-                    Product.enrichment_status == 'pending'
+                    Product.enrichment_status.in_ (['pending','failed'])
                 )
             )
             result = await db_session.execute(stmt)
@@ -427,10 +427,10 @@ async def run_project_aggregation_task(job_id: str) -> None:
                             db_session=db_session,
                             mpn=product.product_code,
                             title=product.product_name,
+                            sku=product.sku,
                             brand=product.brand_name,
                             taxonomy=product.taxonomy,
                             primary_attributes=primary_attrs,
-                            db=db_session,
                             project_id=job.project_id,
                             max_retries=2
                         )
