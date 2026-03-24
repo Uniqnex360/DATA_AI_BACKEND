@@ -11,6 +11,7 @@ from app.aggregation.prompt_builder import get_taxonomy_attribute_hints
 from app.models.product import Product
 from app.models.project import Project
 import json
+
 async def generate_products_excel(
     products: List[Product],
     db: AsyncSession,
@@ -410,8 +411,10 @@ async def generate_products_excel(
         if p.sources_consulted and isinstance(p.sources_consulted, list):
             brand = row.get('Brand') or p.brand_name or ""
             urls = list(p.sources_consulted)
-            from urllib.parse import urlparse
-            urls.sort(key=lambda u: 0 if (brand and brand.lower() in urlparse(u).netloc.lower()) else 1)
+            def normalize_for_brand(s:str)->str:
+                return s.lower().replace('-', '').replace('_', '')
+            norm_brand=normalize_for_brand(brand)
+            urls.sort(key=lambda u: 0 if (norm_brand and norm_brand in normalize_for_brand(u)) else 1)
             for i, url in enumerate(urls[:5], 1):
                 row[f"source_url_{i}"] = url
         export_rows.append({str(k): sanitize_for_excel(v) for k, v in row.items()})

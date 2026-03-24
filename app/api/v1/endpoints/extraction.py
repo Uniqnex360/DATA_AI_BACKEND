@@ -203,198 +203,198 @@ async def download_file(
             else:
                 MAX_ATTRIBUTES=40
             logger.info(f"Using {MAX_ATTRIBUTES} attribute columns for use case: {project.use_case if project else 'Unknown'}")
-            core_headers = ["Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name", "Brand", "GTIN",
-                            "ean", "upc", "unspc", "MPN", "Status", "Lifecycle_Stage", "Launch_Date", "Discontinue_Status"]
-            cat_headers = ["industry_name", "category 1", "category 2", "category 3",
-                           "category 4", "category 5", "category 6", "category 7", "category 8", "Taxonomy"]
-            phys_headers = ["Country_of_Origin", "Warranty", "Weight", "Weight_Unit",
-                            "Length", "Width", "Height", "Dimension_Unit", "Variant_Status"]
-            price_headers = ["Currency", "Base Price", "Sale Price", "Selling_Price",
-                             "Special_Price", "Stock_Qty", "Stock_Status", "Vendor_Name", "Vendor_SKU"]
-            media_headers = []
-            for i in range(1, 9):
-                media_headers.extend([f"image_name_{i}", f"image_url_{i}"])
-            for i in range(1, 4):
-                media_headers.extend([f"video_name_{i}", f"video_url_{i}"])
-            for i in range(1, 6):
-                media_headers.extend(
-                    [f"document_name_{i}", f"document_url_{i}"])
-            content_headers = ["3D_Model_URL", "Short_Description", "Long_Description",
-                               "features_1", "features_2", "features_3", "features_4", "features_5",
-                               "features_6", "features_7", "features_8", "features_9", "features_10",
-                               "Meta_Title", "Meta_Description", "Search_Keywords",
-                               "Certification", "Safety_Standard", "Hazardous_Material", "Prop65_Warning"]
-            attr_headers = []
-            for i in range(1, MAX_ATTRIBUTES + 1):
-                attr_headers.extend([
-                    f"attribute_name{i}", 
-                    f"attribute_value{i}",
-                    f"attribute_uom{i}", 
-                    f"validation_value{i}", 
-                    f"validation_uom{i}"
-                ])
-            source_url_headers = [f"source_url_{i}" for i in range(1, 6)]
-            all_headers = core_headers + cat_headers + phys_headers + price_headers + \
-                media_headers + content_headers + attr_headers+source_url_headers
-            DEDICATED_COLUMN_MAPPING = {
-                "name": "Product_Name",
-                "product_name": "Product_Name",
-                "title": "Product_Name",
-                "brand": "Brand",
-                "manufacturer": "Brand",
-                "sku": "SKU",
-                "mpn": "MPN",
-                "model": "MPN",
-                "product_type": "Product_Type",
-                "type": "Product_Type",
-                "parent_sku": "Parent_SKU",
-                "gtin": "GTIN",
-                "gtin13": "ean",
-                "gtin12": "upc",
-                "ean": "ean",
-                "upc": "upc",
-                "unspc": "unspc",
-                "status": "Status",
-                "lifecycle_stage": "Lifecycle_Stage",
-                "launch_date": "Launch_Date",
-                "discontinue_status": "Discontinue_Status",
-                "weight": "Weight",
-                "weight_unit": "Weight_Unit",
-                "length": "Length",
-                "width": "Width",
-                "height": "Height",
-                "dimension_unit": "Dimension_Unit",
-                "dimensions": "Length",
-                "country_of_origin": "Country_of_Origin",
-                "made_in": "Country_of_Origin",
-                "warranty": "Warranty",
-                "warranty_period": "Warranty",
-                "price": "Base Price",
-                "base_price": "Base Price",
-                "list_price": "Base Price",
-                "sale_price": "Sale Price",
-                "selling_price": "Selling_Price",
-                "special_price": "Special_Price",
-                "currency": "Currency",
-                "stock": "Stock_Qty",
-                "stock_qty": "Stock_Qty",
-                "quantity": "Stock_Qty",
-                "stock_status": "Stock_Status",
-                "availability": "Stock_Status",
-                "vendor": "Vendor_Name",
-                "vendor_name": "Vendor_Name",
-                "supplier": "Vendor_Name",
-                "vendor_sku": "Vendor_SKU",
-                "description": "Short_Description",
-                "short_description": "Short_Description",
-                "product_description": "Short_Description",
-                "long_description": "Long_Description",
-                "detailed_description": "Long_Description",
-                "product_summary": "Short_Description",
-                "meta_title": "Meta_Title",
-                "meta_description": "Meta_Description",
-                "keywords": "Search_Keywords",
-                "search_keywords": "Search_Keywords",
-                "seo_keywords": "Search_Keywords",
-                "certification": "Certification",
-                "certifications": "Certification",
-                "safety_standard": "Safety_Standard",
-                "safety_standards": "Safety_Standard",
-                "hazardous": "Hazardous_Material",
-                "hazardous_material": "Hazardous_Material",
-                "prop65": "Prop65_Warning",
-                "prop65_warning": "Prop65_Warning",
-                "image": "image_url_1",
-                "image_url": "image_url_1",
-                "main_image": "image_url_1",
-                "3d_model": "3D_Model_URL",
-                "model_3d": "3D_Model_URL",
-            }
-            IGNORED_KEYS = {
-            "share", "latest_news", "search_for", "error_ref", "important",
-            "frequently_bought_together", "select_all", "contact_info",
-            "customer_service", "phone", "email", "hours", "best_sellers_rank",
-            "asin", "date_first_available", "customer_reviews", "return_policy",
-            "availability", "sold_by", "ships_from", "seller", "rating",
-            "review_count", "reviews", "item_type", "catalog_number",
-            "authentication_state", "location", "item_package_quantity",
-            "color_options", "color_variants", "gtin14", "min_qty", "shipping_times", 
-            "freight_extra", "contact_email", "contact_phone", "depth", "toll_free", 
-            "case_pack", "original_price", "barcode", "pattern_run_time", 
-            "shell_material", "lens_material", "flashes_per_minute", "wattage", 
-            "power_source", "operating_life", "operating_temp", "number_of_leds", 
-            "diameter", "additional_certifications", "alloy_range", "applications", 
-            "blog", "certification_options", "chemical_physical_certifications",
-            "compliance_specifications", "custom_products", "distribution",
-            "established", "establishment", "finish", "hardness", "inspection_standards",
-            "item_name", "item_number", "main_products", "manufactured_products",
-            "chemical_and_physical_certifications", "compliance", "compliance_certification",
-            "contact_information", "fax", "follow_us", "inspection_testing",
-            "manufacturing_location", "material_traceability", "quality_management_certification",
-            "quality_management_system", "url", "warning", "packaging_information",
-            "baton_led_road_flares", "baton_road_flares_features", 
-            "battery_operated_led_road_flares_features", "flex_fit_tripods",
-            "led_flares_vs_incendiary_flares", "led_road_flares", "patterns_and_run_times",
-            "price_range", "usage", "voc_level",'category'
-}
-            def normalize_attr_name(s):
-                return s.strip().lower().replace('_', '').replace(' ', '').replace('-', '')
-            taxonomy_raw_data = {}
-            for p in products:
-                tax = p.taxonomy or "Unknown"
-                if tax not in taxonomy_raw_data:
-                    taxonomy_raw_data[tax] = {
-                        'user_defined': [],
-                        'user_defined_map': {},  
-                        'ai_discovered': set(),
-                    }
-                data = taxonomy_raw_data[tax]
-                if p.dynamic_attributes:
-                    for attr in p.dynamic_attributes:
-                        if isinstance(attr, dict) and attr.get('name'):
-                            name = attr['name'].strip()
-                            name_norm = normalize_attr_name(name)
-                            if name and name_norm not in data['user_defined_map']:
-                                data['user_defined'].append(name)
-                                data['user_defined_map'][name_norm] = name
-                if p.attributes:
-                    for key in p.attributes.keys():
-                        key_lower = key.lower().strip()
-                        if key_lower in IGNORED_KEYS:
-                            continue
-                        key_norm = key_lower.replace(
-                            '_', '').replace(' ', '').replace('-', '')
-                        is_dedicated = False
-                        for map_key in DEDICATED_COLUMN_MAPPING.keys():
-                            map_norm = map_key.lower().replace('_', '').replace(' ', '').replace('-', '')
-                            if key_norm == map_norm:
-                                is_dedicated = True
-                                break
-                        if not is_dedicated:
-                            data['ai_discovered'].add(key)
-            taxonomy_templates = {}
-            for tax, data in taxonomy_raw_data.items():
-                final_template = []
-                added_normalized = set()
-                def add_if_unique(name):
-                    norm = normalize_attr_name(name)
-                    if norm not in added_normalized:
-                        added_normalized.add(norm)
-                        final_template.append(name)
-                        return True
-                    return False
-                for attr in data['user_defined']:
-                    add_if_unique(attr)
-                logger.info(f"{tax}: Added {len(data['user_defined'])} Excel attributes in order")
-                if tax != "Unknown":
-                    category_attrs = await get_taxonomy_attribute_hints(tax, db)
-                    for cat_attr in category_attrs:
-                        add_if_unique(cat_attr)
-                for ai_attr in sorted(data['ai_discovered']):
-                    add_if_unique(ai_attr)
-                taxonomy_templates[tax] = final_template[:MAX_ATTRIBUTES]
-                logger.info(f" Unified template for '{tax}': {len(taxonomy_templates[tax])} attributes")
-                logger.info(f"   User-defined: {len(data['user_defined'])}, AI-discovered: {len(data['ai_discovered'])}")
+#             core_headers = ["Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name", "Brand", "GTIN",
+#                             "ean", "upc", "unspc", "MPN", "Status", "Lifecycle_Stage", "Launch_Date", "Discontinue_Status"]
+#             cat_headers = ["industry_name", "category 1", "category 2", "category 3",
+#                            "category 4", "category 5", "category 6", "category 7", "category 8", "Taxonomy"]
+#             phys_headers = ["Country_of_Origin", "Warranty", "Weight", "Weight_Unit",
+#                             "Length", "Width", "Height", "Dimension_Unit", "Variant_Status"]
+#             price_headers = ["Currency", "Base Price", "Sale Price", "Selling_Price",
+#                              "Special_Price", "Stock_Qty", "Stock_Status", "Vendor_Name", "Vendor_SKU"]
+#             media_headers = []
+#             for i in range(1, 9):
+#                 media_headers.extend([f"image_name_{i}", f"image_url_{i}"])
+#             for i in range(1, 4):
+#                 media_headers.extend([f"video_name_{i}", f"video_url_{i}"])
+#             for i in range(1, 6):
+#                 media_headers.extend(
+#                     [f"document_name_{i}", f"document_url_{i}"])
+#             content_headers = ["3D_Model_URL", "Short_Description", "Long_Description",
+#                                "features_1", "features_2", "features_3", "features_4", "features_5",
+#                                "features_6", "features_7", "features_8", "features_9", "features_10",
+#                                "Meta_Title", "Meta_Description", "Search_Keywords",
+#                                "Certification", "Safety_Standard", "Hazardous_Material", "Prop65_Warning"]
+#             attr_headers = []
+#             for i in range(1, MAX_ATTRIBUTES + 1):
+#                 attr_headers.extend([
+#                     f"attribute_name{i}", 
+#                     f"attribute_value{i}",
+#                     f"attribute_uom{i}", 
+#                     f"validation_value{i}", 
+#                     f"validation_uom{i}"
+#                 ])
+#             source_url_headers = [f"source_url_{i}" for i in range(1, 6)]
+#             all_headers = core_headers + cat_headers + phys_headers + price_headers + \
+#                 media_headers + content_headers + attr_headers+source_url_headers
+#             DEDICATED_COLUMN_MAPPING = {
+#                 "name": "Product_Name",
+#                 "product_name": "Product_Name",
+#                 "title": "Product_Name",
+#                 "brand": "Brand",
+#                 "manufacturer": "Brand",
+#                 "sku": "SKU",
+#                 "mpn": "MPN",
+#                 "model": "MPN",
+#                 "product_type": "Product_Type",
+#                 "type": "Product_Type",
+#                 "parent_sku": "Parent_SKU",
+#                 "gtin": "GTIN",
+#                 "gtin13": "ean",
+#                 "gtin12": "upc",
+#                 "ean": "ean",
+#                 "upc": "upc",
+#                 "unspc": "unspc",
+#                 "status": "Status",
+#                 "lifecycle_stage": "Lifecycle_Stage",
+#                 "launch_date": "Launch_Date",
+#                 "discontinue_status": "Discontinue_Status",
+#                 "weight": "Weight",
+#                 "weight_unit": "Weight_Unit",
+#                 "length": "Length",
+#                 "width": "Width",
+#                 "height": "Height",
+#                 "dimension_unit": "Dimension_Unit",
+#                 "dimensions": "Length",
+#                 "country_of_origin": "Country_of_Origin",
+#                 "made_in": "Country_of_Origin",
+#                 "warranty": "Warranty",
+#                 "warranty_period": "Warranty",
+#                 "price": "Base Price",
+#                 "base_price": "Base Price",
+#                 "list_price": "Base Price",
+#                 "sale_price": "Sale Price",
+#                 "selling_price": "Selling_Price",
+#                 "special_price": "Special_Price",
+#                 "currency": "Currency",
+#                 "stock": "Stock_Qty",
+#                 "stock_qty": "Stock_Qty",
+#                 "quantity": "Stock_Qty",
+#                 "stock_status": "Stock_Status",
+#                 "availability": "Stock_Status",
+#                 "vendor": "Vendor_Name",
+#                 "vendor_name": "Vendor_Name",
+#                 "supplier": "Vendor_Name",
+#                 "vendor_sku": "Vendor_SKU",
+#                 "description": "Short_Description",
+#                 "short_description": "Short_Description",
+#                 "product_description": "Short_Description",
+#                 "long_description": "Long_Description",
+#                 "detailed_description": "Long_Description",
+#                 "product_summary": "Short_Description",
+#                 "meta_title": "Meta_Title",
+#                 "meta_description": "Meta_Description",
+#                 "keywords": "Search_Keywords",
+#                 "search_keywords": "Search_Keywords",
+#                 "seo_keywords": "Search_Keywords",
+#                 "certification": "Certification",
+#                 "certifications": "Certification",
+#                 "safety_standard": "Safety_Standard",
+#                 "safety_standards": "Safety_Standard",
+#                 "hazardous": "Hazardous_Material",
+#                 "hazardous_material": "Hazardous_Material",
+#                 "prop65": "Prop65_Warning",
+#                 "prop65_warning": "Prop65_Warning",
+#                 "image": "image_url_1",
+#                 "image_url": "image_url_1",
+#                 "main_image": "image_url_1",
+#                 "3d_model": "3D_Model_URL",
+#                 "model_3d": "3D_Model_URL",
+#             }
+#             IGNORED_KEYS = {
+#             "share", "latest_news", "search_for", "error_ref", "important",
+#             "frequently_bought_together", "select_all", "contact_info",
+#             "customer_service", "phone", "email", "hours", "best_sellers_rank",
+#             "asin", "date_first_available", "customer_reviews", "return_policy",
+#             "availability", "sold_by", "ships_from", "seller", "rating",
+#             "review_count", "reviews", "item_type", "catalog_number",
+#             "authentication_state", "location", "item_package_quantity",
+#             "color_options", "color_variants", "gtin14", "min_qty", "shipping_times", 
+#             "freight_extra", "contact_email", "contact_phone", "depth", "toll_free", 
+#             "case_pack", "original_price", "barcode", "pattern_run_time", 
+#             "shell_material", "lens_material", "flashes_per_minute", "wattage", 
+#             "power_source", "operating_life", "operating_temp", "number_of_leds", 
+#             "diameter", "additional_certifications", "alloy_range", "applications", 
+#             "blog", "certification_options", "chemical_physical_certifications",
+#             "compliance_specifications", "custom_products", "distribution",
+#             "established", "establishment", "finish", "hardness", "inspection_standards",
+#             "item_name", "item_number", "main_products", "manufactured_products",
+#             "chemical_and_physical_certifications", "compliance", "compliance_certification",
+#             "contact_information", "fax", "follow_us", "inspection_testing",
+#             "manufacturing_location", "material_traceability", "quality_management_certification",
+#             "quality_management_system", "url", "warning", "packaging_information",
+#             "baton_led_road_flares", "baton_road_flares_features", 
+#             "battery_operated_led_road_flares_features", "flex_fit_tripods",
+#             "led_flares_vs_incendiary_flares", "led_road_flares", "patterns_and_run_times",
+#             "price_range", "usage", "voc_level",'category'
+# }
+#             def normalize_attr_name(s):
+#                 return s.strip().lower().replace('_', '').replace(' ', '').replace('-', '')
+#             taxonomy_raw_data = {}
+#             for p in products:
+#                 tax = p.taxonomy or "Unknown"
+#                 if tax not in taxonomy_raw_data:
+#                     taxonomy_raw_data[tax] = {
+#                         'user_defined': [],
+#                         'user_defined_map': {},  
+#                         'ai_discovered': set(),
+#                     }
+#                 data = taxonomy_raw_data[tax]
+#                 if p.dynamic_attributes:
+#                     for attr in p.dynamic_attributes:
+#                         if isinstance(attr, dict) and attr.get('name'):
+#                             name = attr['name'].strip()
+#                             name_norm = normalize_attr_name(name)
+#                             if name and name_norm not in data['user_defined_map']:
+#                                 data['user_defined'].append(name)
+#                                 data['user_defined_map'][name_norm] = name
+#                 if p.attributes:
+#                     for key in p.attributes.keys():
+#                         key_lower = key.lower().strip()
+#                         if key_lower in IGNORED_KEYS:
+#                             continue
+#                         key_norm = key_lower.replace(
+#                             '_', '').replace(' ', '').replace('-', '')
+#                         is_dedicated = False
+#                         for map_key in DEDICATED_COLUMN_MAPPING.keys():
+#                             map_norm = map_key.lower().replace('_', '').replace(' ', '').replace('-', '')
+#                             if key_norm == map_norm:
+#                                 is_dedicated = True
+#                                 break
+#                         if not is_dedicated:
+#                             data['ai_discovered'].add(key)
+#             taxonomy_templates = {}
+#             for tax, data in taxonomy_raw_data.items():
+#                 final_template = []
+#                 added_normalized = set()
+#                 def add_if_unique(name):
+#                     norm = normalize_attr_name(name)
+#                     if norm not in added_normalized:
+#                         added_normalized.add(norm)
+#                         final_template.append(name)
+#                         return True
+#                     return False
+#                 for attr in data['user_defined']:
+#                     add_if_unique(attr)
+#                 logger.info(f"{tax}: Added {len(data['user_defined'])} Excel attributes in order")
+#                 if tax != "Unknown":
+#                     category_attrs = await get_taxonomy_attribute_hints(tax, db)
+#                     for cat_attr in category_attrs:
+#                         add_if_unique(cat_attr)
+#                 for ai_attr in sorted(data['ai_discovered']):
+#                     add_if_unique(ai_attr)
+#                 taxonomy_templates[tax] = final_template[:MAX_ATTRIBUTES]
+#                 logger.info(f" Unified template for '{tax}': {len(taxonomy_templates[tax])} attributes")
+#                 logger.info(f"   User-defined: {len(data['user_defined'])}, AI-discovered: {len(data['ai_discovered'])}")
             # export_rows = []
             # project = await db.get(Project, products[0].project_id) if products else None
             # is_validation_mode = False
@@ -620,7 +620,6 @@ async def download_file(
             #     media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             #     headers={"Content-Disposition": f"attachment; filename={filename}"}
             # )
-            project = await db.get(Project, products[0].project_id) if products else None
             project_name = project.name if project else None
             return await generate_products_excel(products, db, global_project_name=project_name)
 
