@@ -24,6 +24,7 @@ class ProjectResponse(BaseModel):
     use_case: Optional[str] = None
     status: Optional[str] = None
     created_at: Optional[datetime] = None
-
+    product_count:int=0
+    aggregation_status:str='pending'
     class Config:
         from_attributes = True

@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings 
-from typing import Optional,List
+from typing import List
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME:str='Data AI Backend'

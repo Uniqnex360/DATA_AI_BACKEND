@@ -8,6 +8,7 @@ from sqlalchemy.orm.attributes import flag_modified
 from fastapi.responses import StreamingResponse
 import asyncio
 import traceback
+from sqlmodel import update
 import io
 import pandas as pd
 from app.core.database import get_session, async_session_factory
@@ -15,7 +16,8 @@ from app.models.pipeline import AggregationJob, AuditTrail, CleansingIssue, RawE
 from app.models.product import Product
 from app.models.project import Project
 from app.aggregation.aggregate_product import aggregate_product, chunk_attributes
-from app.schemas.aggregation import AggregatedAttribute, AggregatedAttributeValue, AggregationJobResponse, AggregationTriggerResponse, ProductAggregationResponse, ProjectStats
+from app.schemas.aggregation import AggregatedAttribute, AggregatedAttributeValue, AggregationJobResponse, AggregationTriggerResponse, BatchExportRequest, ProductAggregationResponse, ProjectStats
+from app.utils.aggregate_download import generate_products_excel
 from app.utils.validators import is_invalid
 from app.utils.image_validator import validate_image_url
 from app.utils.sanitize import sanitize_ai_data
@@ -157,6 +159,17 @@ async def trigger_project_aggregation(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No pending products to aggregate"
             )
+        update_stmt = (
+            update(Product)
+            .where(
+                and_(
+                    Product.project_id == project_id,
+                    Product.enrichment_status.in_(['pending', 'failed'])
+                )
+            )
+            .values(enrichment_status='processing')
+        )
+        await db.execute(update_stmt)
         job = AggregationJob(
             project_id=project_id,
             status='pending',
@@ -371,7 +384,62 @@ def extract_ai_value_text(ai_val: Any) -> str:
         if val is not None:
             return f"{val} {unit}".strip()
     return str(ai_val)
-
+def merge_dynamic_attributes(
+    product: Product,
+    ai_data: Dict[str, Any],
+    is_validation_mode: bool = False
+) -> None:
+    """Merge AI‑extracted attributes into product.dynamic_attributes.
+    - Updates existing attributes with non‑empty values.
+    - Appends new attributes not already present.
+    - If is_validation_mode, also sets validation_value/_uom.
+    """
+    existing_names = {attr.get('name') for attr in product.dynamic_attributes if isinstance(attr, dict)}
+    
+    # Update existing attributes
+    for attr in product.dynamic_attributes:
+        if not isinstance(attr, dict) or not attr.get('name'):
+            continue
+        attr_name = attr['name']
+        if attr_name not in ai_data:
+            continue
+        ai_val = ai_data[attr_name]
+        if isinstance(ai_val, dict):
+            new_val = ai_val.get('value', '')
+            new_uom = ai_val.get('unit', '') or ai_val.get('uom', '')
+        else:
+            new_val = str(ai_val) if ai_val else ''
+            new_uom = ''
+        # Only update if new value is non‑empty (to avoid losing existing data)
+        if new_val:
+            attr['value'] = new_val
+            if new_uom:
+                attr['uom'] = new_uom
+            if is_validation_mode:
+                attr['validation_value'] = new_val
+                attr['validation_uom'] = new_uom
+    
+    # Add new attributes
+    for attr_name, ai_val in ai_data.items():
+        if attr_name in existing_names:
+            continue
+        if isinstance(ai_val, dict):
+            value = ai_val.get('value', '')
+            uom = ai_val.get('unit', '') or ai_val.get('uom', '')
+        else:
+            value = str(ai_val) if ai_val else ''
+            uom = ''
+        if value:   # only add if there is a value
+            product.dynamic_attributes.append({
+                'name': attr_name,
+                'value': value,
+                'uom': uom,
+                'validation_value': value if is_validation_mode else '',
+                'validation_uom': uom if is_validation_mode else ''
+            })
+    
+    flag_modified(product, "dynamic_attributes")
+    
 async def run_project_aggregation_task(job_id: str) -> None:
     async with async_session_factory() as db_session:
         job: Optional[AggregationJob] = None
@@ -386,12 +454,23 @@ async def run_project_aggregation_task(job_id: str) -> None:
             job.status = 'processing'
             db_session.add(job)
             await db_session.commit()
-            stmt = select(Product).where(
-                and_(
-                    Product.project_id == job.project_id,
-                    Product.enrichment_status.in_ (['pending','failed'])
+            product_ids = job.details.get('product_ids', [])
+            if not product_ids:
+                logger.warning(f"No product_ids in job {job_id}, falling back to status query")
+                stmt = select(Product).where(
+                    and_(
+                        Product.project_id == job.project_id,
+                        Product.enrichment_status.in_(['processing', 'pending', 'failed'])
+                    )
                 )
-            )
+            else:
+                stmt=select(Product.where(Product.id.in_(product_ids)))
+            # stmt = select(Product).where(
+            #     and_(
+            #         Product.project_id == job.project_id,
+            #         Product.enrichment_status.in_ (['pending','failed'])
+            #     )
+            # )
             result = await db_session.execute(stmt)
             products = result.scalars().all()
             successful = 0
@@ -464,7 +543,12 @@ async def run_project_aggregation_task(job_id: str) -> None:
                                             target_pk = pk
                                             break
                                     ai_text_val = extract_ai_value_text(ai_val)
-                                    user_val = existing_attrs.get(target_pk, "")
+                                    # user_val = existing_attrs.get(target_pk, "")
+                                    user_val=existing_attrs.get(target_pk,{})
+                                    if isinstance(user_val,dict):
+                                        user_val=user_val.get('value','')
+                                    else:
+                                        user_val=user_val if isinstance(user_val, str) else ''
                                     is_mismatch = False
                                     if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
                                         is_mismatch = True
@@ -482,18 +566,18 @@ async def run_project_aggregation_task(job_id: str) -> None:
                                 )
                                 product.validation_conflicts = conflicts
                                 flag_modified(product, "validation_conflicts")
-                                if "validation" in use_case and product.dynamic_attributes:
-                                    for attr in product.dynamic_attributes:
-                                        if isinstance(attr, dict) and attr.get('name'):
-                                            attr_name = attr['name']
-                                            if attr_name in ai_data_for_merge:
-                                                ai_val = ai_data_for_merge[attr_name]
-                                                if isinstance(ai_val, dict):
-                                                    attr['validation_value'] = ai_val.get('value', '')
-                                                    attr['validation_uom'] = ai_val.get('unit', '') or ai_val.get('uom', '')
-                                                else:
-                                                    attr['validation_value'] = str(ai_val) if ai_val else ''
-                                    flag_modified(product, "dynamic_attributes")
+                                # if "validation" in use_case and product.dynamic_attributes:
+                                #     for attr in product.dynamic_attributes:
+                                #         if isinstance(attr, dict) and attr.get('name'):
+                                #             attr_name = attr['name']
+                                #             if attr_name in ai_data_for_merge:
+                                #                 ai_val = ai_data_for_merge[attr_name]
+                                #                 if isinstance(ai_val, dict):
+                                #                     attr['validation_value'] = ai_val.get('value', '')
+                                #                     attr['validation_uom'] = ai_val.get('unit', '') or ai_val.get('uom', '')
+                                #                 else:
+                                #                     attr['validation_value'] = str(ai_val) if ai_val else ''
+                                #     flag_modified(product, "dynamic_attributes")
                                 product.enrichment_status = 'completed'
                                 await db_session.flush()
                                 db_session.add(product)
@@ -519,56 +603,88 @@ async def run_project_aggregation_task(job_id: str) -> None:
                                 successful += 1
                                 logger.info(
                                     f"Aggregated {product.product_code}: {len(ai_attributes)} attributes")
+                            # else:
+                            #     found_image = aggregation_result.get('image_url')
+                            #     confidence = aggregation_result.get(
+                            #         'golden_record', {}).get('confidence', 0.5)
+                            #     enriched_attributes = {}
+                            #     for key, val in ai_attributes.items():
+                            #         enriched_attributes[key] = {
+                            #             "standard_value": val,
+                            #             "source": "AI_Aggregation_Engine",
+                            #             "timestamp": datetime.utcnow().isoformat()
+                            #         }
+                            #     # product.attributes = {**product.attributes, **ai_attributes}
+                            #     if product.dynamic_attributes:
+                            #         for attr in product.dynamic_attributes:
+                            #             if isinstance(attr, dict) and attr.get('name'):
+                            #                 attr_name = attr['name']
+                            #                 if attr_name in ai_attributes:
+                            #                     ai_val = ai_attributes[attr_name]
+                            #                     if isinstance(ai_val, dict):
+                            #                         attr['value'] = ai_val.get('value', '') or attr.get('value', '')
+                            #                         attr['uom'] = ai_val.get('unit', '') or ai_val.get('uom', '') or attr.get('uom', '')
+                            #                     else:
+                            #                         attr['value'] = str(ai_val) if ai_val else attr.get('value', '')
+                            #         flag_modified(product, "dynamic_attributes")
+                            #     product.attributes = {**product.attributes, **ai_attributes}
+                            #     if found_image and isinstance(found_image, str):
+                            #         found_image_str = found_image.strip()
+                            #         if found_image_str:
+                            #             # Validate before saving
+                            #             if await validate_image_url(found_image_str):
+                            #                 product.image_url_1 = found_image_str
+                            #                 logger.info(f"✓ Valid image found and saved for {product.product_code}")
+                            #             else:
+                            #                 logger.warning(f"⚠ Image URL invalid for {product.product_code}, not saving")
+                            #         else:
+                            #             logger.debug(f"Empty image URL for {product.product_code}")
+                            #     else:
+                            #         logger.warning(f"⚠ No image found during aggregation of {product.product_code}")
+                            #     product.enrichment_status = 'completed'
+                            #     product.completeness_score = min(
+                            #         len(ai_attributes) * 5, 100)
+                            #     product.sources_consulted = golden.get(
+                            #         'sources_consulted', [])
+                            #     logger.info(
+                            #         f"Saving product {product.product_code} with sources: {product.sources_consulted}")
+                            #     db_session.add(product)
+                            #     await check_data_quality(db_session, product.product_code, ai_attributes)
+                            #     successful += 1
+                            #     logger.info(
+                            #         f" Aggregated {product.product_code}: {len(ai_attributes)} attributes")
                             else:
-                                found_image = aggregation_result.get('image_url')
-                                confidence = aggregation_result.get(
-                                    'golden_record', {}).get('confidence', 0.5)
-                                enriched_attributes = {}
+                                # Standard case (no backfilling)
+                                # Update product.attributes (preserve existing if new is empty)
                                 for key, val in ai_attributes.items():
-                                    enriched_attributes[key] = {
-                                        "standard_value": val,
-                                        "source": "AI_Aggregation_Engine",
-                                        "timestamp": datetime.utcnow().isoformat()
-                                    }
-                                # product.attributes = {**product.attributes, **ai_attributes}
-                                if product.dynamic_attributes:
-                                    for attr in product.dynamic_attributes:
-                                        if isinstance(attr, dict) and attr.get('name'):
-                                            attr_name = attr['name']
-                                            if attr_name in ai_attributes:
-                                                ai_val = ai_attributes[attr_name]
-                                                if isinstance(ai_val, dict):
-                                                    attr['value'] = ai_val.get('value', '') or attr.get('value', '')
-                                                    attr['uom'] = ai_val.get('unit', '') or ai_val.get('uom', '') or attr.get('uom', '')
-                                                else:
-                                                    attr['value'] = str(ai_val) if ai_val else attr.get('value', '')
-                                    flag_modified(product, "dynamic_attributes")
-                                product.attributes = {**product.attributes, **ai_attributes}
+                                    if key not in product.attributes or (val and (not isinstance(val, dict) or val.get('value'))):
+                                        product.attributes[key] = val
+                                flag_modified(product, "attributes") 
+
+                                # Merge dynamic_attributes (update existing, add new)
+                                merge_dynamic_attributes(product, ai_attributes, is_validation_mode=False)
+
+                                # Image handling
+                                found_image = aggregation_result.get('image_url')
                                 if found_image and isinstance(found_image, str):
                                     found_image_str = found_image.strip()
                                     if found_image_str:
-                                        # Validate before saving
                                         if await validate_image_url(found_image_str):
                                             product.image_url_1 = found_image_str
-                                            logger.info(f"✓ Valid image found and saved for {product.product_code}")
+                                            logger.info(f"✓ Valid image saved for {product.product_code}")
                                         else:
-                                            logger.warning(f"⚠ Image URL invalid for {product.product_code}, not saving")
+                                            logger.warning(f"⚠ Image invalid for {product.product_code}")
                                     else:
                                         logger.debug(f"Empty image URL for {product.product_code}")
                                 else:
-                                    logger.warning(f"⚠ No image found during aggregation of {product.product_code}")
+                                    logger.warning(f"⚠ No image found for {product.product_code}")
+
                                 product.enrichment_status = 'completed'
-                                product.completeness_score = min(
-                                    len(ai_attributes) * 5, 100)
-                                product.sources_consulted = golden.get(
-                                    'sources_consulted', [])
-                                logger.info(
-                                    f"Saving product {product.product_code} with sources: {product.sources_consulted}")
-                                db_session.add(product)
+                                product.completeness_score = min(len(ai_attributes) * 5, 100)
+                                product.sources_consulted = golden.get('sources_consulted', [])
                                 await check_data_quality(db_session, product.product_code, ai_attributes)
                                 successful += 1
-                                logger.info(
-                                    f" Aggregated {product.product_code}: {len(ai_attributes)} attributes")
+                                logger.info(f" Aggregated {product.product_code}: {len(ai_attributes)} attributes")
                         else:
                             product.enrichment_status = 'failed'
                             db_session.add(product)
@@ -640,6 +756,7 @@ async def run_project_aggregation_task(job_id: str) -> None:
                 except Exception as commit_error:
                     logger.error(
                         f"Failed to update job status: {commit_error}")
+                    
 async def run_single_product_aggregation(product_id: str) -> None:
         async with async_session_factory() as db_session:
             try:
@@ -747,24 +864,36 @@ async def run_single_product_aggregation(product_id: str) -> None:
                             if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
                                 conflicts[attr_name] = extract_ai_value_text(ai_val)
                             ai_data_for_merge[attr_name] = ai_val
+                        # product.attributes = merge_attributes_preserving_order(
+                        #     primary_attributes=primary_attrs,
+                        #     existing_attrs=existing_attrs,
+                        #     ai_data=ai_data_for_merge
+                        # )
+                        # product.validation_conflicts = conflicts 
+                        # if "validation" in use_case and product.dynamic_attributes:
+                        #     for attr in product.dynamic_attributes:
+                        #         if isinstance(attr, dict) and attr.get('name'):
+                        #             attr_name = attr['name']
+                        #             if attr_name in ai_data_for_merge:
+                        #                 ai_val = ai_data_for_merge[attr_name]
+                        #                 if isinstance(ai_val, dict):
+                        #                     attr['validation_value'] = ai_val.get('value', '')
+                        #                     attr['validation_uom'] = ai_val.get('unit', '') or ai_val.get('uom', '')
+                        #                 else:
+                        #                     attr['validation_value'] = str(ai_val) if ai_val else ''
+                        #     flag_modified(product, "dynamic_attributes")
                         product.attributes = merge_attributes_preserving_order(
                             primary_attributes=primary_attrs,
                             existing_attrs=existing_attrs,
                             ai_data=ai_data_for_merge
                         )
-                        product.validation_conflicts = conflicts 
-                        if "validation" in use_case and product.dynamic_attributes:
-                            for attr in product.dynamic_attributes:
-                                if isinstance(attr, dict) and attr.get('name'):
-                                    attr_name = attr['name']
-                                    if attr_name in ai_data_for_merge:
-                                        ai_val = ai_data_for_merge[attr_name]
-                                        if isinstance(ai_val, dict):
-                                            attr['validation_value'] = ai_val.get('value', '')
-                                            attr['validation_uom'] = ai_val.get('unit', '') or ai_val.get('uom', '')
-                                        else:
-                                            attr['validation_value'] = str(ai_val) if ai_val else ''
-                            flag_modified(product, "dynamic_attributes")
+                        product.validation_conflicts = conflicts
+                        flag_modified(product, "validation_conflicts")
+
+                        # Merge dynamic_attributes (update existing, add new, set validation fields)
+                        merge_dynamic_attributes(product, ai_data_for_merge, is_validation_mode=('validation' in use_case))
+
+                        # Image handling (keep the existing image handling code that follows)
                         product.enrichment_status = 'completed'
                         await db_session.flush() 
                         db_session.add(product)
@@ -813,20 +942,42 @@ async def run_single_product_aggregation(product_id: str) -> None:
                     #     product.sources_consulted = golden.get(
                     #         'sources_consulted', [])
                     #     await check_data_quality(db_session, product.product_code, ai_data)
+                    # else:
+                    #     if product.dynamic_attributes:
+                    #         for attr in product.dynamic_attributes:
+                    #             if isinstance(attr,dict) and attr.get('name'):
+                    #                 attr_name=attr['name']
+                    #                 if attr_name in ai_data:
+                    #                     ai_val=ai_data[attr_name]
+                    #                     if isinstance(ai_val, dict):
+                    #                         attr['value'] = ai_val.get('value', '') or attr.get('value', '')
+                    #                         attr['uom'] = ai_val.get('unit', '') or ai_val.get('uom', '') or attr.get('uom', '')
+                    #                     else:
+                    #                         attr['value'] = str(ai_val) if ai_val else attr.get('value', '')
+                    #         flag_modified(product, "dynamic_attributes")
+                    #     product.attributes = {**product.attributes, **ai_data}
+                    #     found_image = result.get('image_url')
+                    #     if found_image and isinstance(found_image, str) and found_image.strip():
+                    #         if await validate_image_url(found_image.strip()):
+                    #             product.image_url_1 = found_image.strip()
+                    #             logger.info(f"✓ Valid image saved for {product.product_code}")
+                    #         else:
+                    #             logger.warning(f"⚠ Image invalid for {product.product_code}")
+                    #     else:
+                    #         logger.warning(f"⚠ No image found for {product.product_code}")
+                        
+                    #     product.enrichment_status = 'completed'
+                    #     await db_session.flush()
+                    #     product.completeness_score = min(len(ai_data) * 5, 100)
+                    #     product.sources_consulted = golden.get('sources_consulted', [])
+                    #     await check_data_quality(db_session, product.product_code, ai_data)
                     else:
-                        if product.dynamic_attributes:
-                            for attr in product.dynamic_attributes:
-                                if isinstance(attr,dict) and attr.get('name'):
-                                    attr_name=attr['name']
-                                    if attr_name in ai_data:
-                                        ai_val=ai_data[attr_name]
-                                        if isinstance(ai_val, dict):
-                                            attr['value'] = ai_val.get('value', '') or attr.get('value', '')
-                                            attr['uom'] = ai_val.get('unit', '') or ai_val.get('uom', '') or attr.get('uom', '')
-                                        else:
-                                            attr['value'] = str(ai_val) if ai_val else attr.get('value', '')
-                            flag_modified(product, "dynamic_attributes")
-                        product.attributes = {**product.attributes, **ai_data}
+                        for key, val in ai_data.items():
+                            if key not in product.attributes or (val and (not isinstance(val, dict) or val.get('value'))):
+                                product.attributes[key] = val
+                        flag_modified(product, "attributes") 
+                        merge_dynamic_attributes(product, ai_data, is_validation_mode=False)
+
                         found_image = result.get('image_url')
                         if found_image and isinstance(found_image, str) and found_image.strip():
                             if await validate_image_url(found_image.strip()):
@@ -836,9 +987,8 @@ async def run_single_product_aggregation(product_id: str) -> None:
                                 logger.warning(f"⚠ Image invalid for {product.product_code}")
                         else:
                             logger.warning(f"⚠ No image found for {product.product_code}")
-                        
+
                         product.enrichment_status = 'completed'
-                        await db_session.flush()
                         product.completeness_score = min(len(ai_data) * 5, 100)
                         product.sources_consulted = golden.get('sources_consulted', [])
                         await check_data_quality(db_session, product.product_code, ai_data)
@@ -856,7 +1006,6 @@ async def run_single_product_aggregation(product_id: str) -> None:
                             logger.info(f" Project {product.project_id} completed with {failed_count} failed products")
                         else:
                             logger.info(f" Project {product.project_id} is FULLY COMPLETED!")
-                        from sqlmodel import update
                         await db_session.execute(update(Project).where(Project.id == product.project_id).values(status='completed'))
                         source_stmt = select(Source).where(
                             Source.project_id == product.project_id)
@@ -1028,3 +1177,27 @@ async def export_project_data(project_id: str, db: AsyncSession = Depends(get_se
         logger.error(f"Export failed for project {project_id}: {e}")
         raise HTTPException(
             status_code=500, detail="Failed to generate export file")
+
+@router.post('/export/batch',status_code=200)
+async def batch_export_products(request:BatchExportRequest,db:AsyncSession=Depends(get_session)):
+    try:
+        
+        product_id_set=set(request.product_ids)
+        if request.project_ids:
+            stmt=select(Product.id).where(Product.project_id.in_(request.project_ids))
+            result=await db.execute(stmt)
+            product_ids_from_projects=result.scalars().all()
+            product_id_set.update(product_ids_from_projects)
+        if not product_id_set:
+            raise HTTPException(status_code=400,detail='No products selected')
+        stmt=select(Product).where(Product.id.in_(list(product_id_set)))
+        result=await db.execute(stmt)
+        products=result.scalars().all()
+        if not products:
+            raise HTTPException(status_code=404,detail='No products found')
+        return await generate_products_excel(products,db)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f'Batch export failed {e}')
+        raise HTTPException(status_code=500,detail='Failed to download results!')

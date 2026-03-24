@@ -371,7 +371,7 @@ async def get_taxonomy_attribute_hints(
         clean_path = " > ".join([part.strip()
                                 for part in taxonomy.split(">") if part.strip()])
         stmt = (
-            select(Attribute.display_name)
+            select(Attribute.attribute_name)
             .join(CategoryAttribute, Attribute.id == CategoryAttribute.attribute_id)
             .join(Category, CategoryAttribute.category_id == Category.id)
             .where(
@@ -391,7 +391,7 @@ async def get_taxonomy_attribute_hints(
             path_parts.pop()
             parent_path = " > ".join(path_parts)
             parent_stmt = (
-                select(Attribute.display_name)
+                select(Attribute.attribute_name)
                 .join(CategoryAttribute, Attribute.id == CategoryAttribute.attribute_id)
                 .join(Category, CategoryAttribute.category_id == Category.id)
                 .where(and_(Category.full_path == parent_path, CategoryAttribute.is_primary == True))

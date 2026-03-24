@@ -9,6 +9,8 @@ from app.models.product import Product
 from typing import List,Optional
 import logging
 from sqlalchemy.orm.attributes import flag_modified
+
+from app.utils.aggregate_download import generate_products_excel
 from app.utils.usecase_validator import validate_file_against_use_case
 import json
 import io
@@ -393,231 +395,235 @@ async def download_file(
                 taxonomy_templates[tax] = final_template[:MAX_ATTRIBUTES]
                 logger.info(f" Unified template for '{tax}': {len(taxonomy_templates[tax])} attributes")
                 logger.info(f"   User-defined: {len(data['user_defined'])}, AI-discovered: {len(data['ai_discovered'])}")
-            export_rows = []
+            # export_rows = []
+            # project = await db.get(Project, products[0].project_id) if products else None
+            # is_validation_mode = False
+            # if project and project.use_case:
+            #     is_validation_mode = 'validation' in project.use_case.lower()
+            #     logger.info(f"Download mode: {'validation' if is_validation_mode else 'standard'}")
+            # for p in products:
+            #     row = {h: "" for h in all_headers}
+            #     ai_data = dict(p.attributes or {})
+            #     taxonomy = p.taxonomy or "Unknown"
+            #     attribute_template = taxonomy_templates.get(taxonomy, [])
+            #     if 'images' in ai_data and isinstance(ai_data['images'], list):
+            #         images_list = ai_data.pop('images')
+            #         for i, img_url in enumerate(images_list[:8], 1):
+            #             row[f'image_url_{i}'] = clean_for_excel(img_url)
+            #         logger.info(
+            #             f"Mapped {len(images_list)} URLs from 'images' key.")
+            #     elif 'image_url' in ai_data:
+            #         row['image_url_1'] = clean_for_excel(
+            #             ai_data.pop('image_url'))
+            #     elif 'main_image' in ai_data:
+            #         row['image_url_1'] = clean_for_excel(
+            #             ai_data.pop('main_image'))
+            #     elif 'image' in ai_data:
+            #         row['image_url_1'] = clean_for_excel(ai_data.pop('image'))
+            #     if not row.get("image_url_1") and p.image_url_1:
+            #         row["image_url_1"] = p.image_url_1
+            #     for ai_key in list(ai_data.keys()):
+            #         ai_key_norm = ai_key.lower().replace('_', '').replace(' ', '').replace('-', '')
+            #         for map_key, target_col in DEDICATED_COLUMN_MAPPING.items():
+            #             map_key_norm = map_key.lower().replace(
+            #                 '_', '').replace(' ', '').replace('-', '')
+            #             if ai_key_norm == map_key_norm:
+            #                 value = ai_data.pop(ai_key)
+            #                 row[target_col] = clean_for_excel(value)
+            #                 logger.info(
+            #                     f"Mapped AI '{ai_key}' → Column '{target_col}'")
+            #                 if isinstance(value, dict):
+            #                     uom = value.get('uom') or value.get('unit')
+            #                     if uom:
+            #                         uom_clean = clean_for_excel(uom)
+            #                         if target_col == 'Weight':
+            #                             row['Weight_Unit'] = uom_clean
+            #                         elif target_col in ['Length', 'Width', 'Height']:
+            #                             if not row['Dimension_Unit']:
+            #                                 row['Dimension_Unit'] = uom_clean
+            #                 break
+            #     row.update({
+            #         "Prod ID": str(p.id) if p.id else "",
+            #         "SKU": row.get("SKU") or p.sku or "",
+            #         "Product_Type": row.get("Product_Type") or getattr(p, 'product_type', '') or "",
+            #         "Parent_SKU": row.get("Parent_SKU") or getattr(p, 'parent_sku', '') or "",
+            #         "Product_Name": row.get("Product_Name") or p.product_name or "",
+            #         "Brand": row.get("Brand") or p.brand_name or "",
+            #         "GTIN": row.get("GTIN") or getattr(p, 'gtin', '') or "",
+            #         "ean": row.get("ean") or getattr(p, 'ean', '') or "",
+            #         "upc": row.get("upc") or getattr(p, 'upc', '') or "",
+            #         "unspc": row.get("unspc") or getattr(p, 'unspc', '') or "",
+            #         "MPN": row.get("MPN") or p.product_code or "",
+            #         "Status": row.get("Status") or getattr(p, 'status', '') or "",
+            #         "Lifecycle_Stage": row.get("Lifecycle_Stage") or getattr(p, 'lifecycle_stage', '') or "",
+            #         "Launch_Date": row.get("Launch_Date") or getattr(p, 'launch_date', '') or "",
+            #         "Discontinue_Status": row.get("Discontinue_Status") or getattr(p, 'discontinue_status', '') or "",
+            #         "industry_name": p.industry_name or "",
+            #         "category 1": p.category_1 or "",
+            #         "category 2": p.category_2 or "",
+            #         "category 3": p.category_3 or "",
+            #         "category 4": p.category_4 or "",
+            #         "category 5": p.category_5 or "",
+            #         "category 6": p.category_6 or "",
+            #         "category 7": p.category_7 or "",
+            #         "category 8": p.category_8 or "",
+            #         "Taxonomy": taxonomy,
+            #         "Country_of_Origin": row.get("Country_of_Origin") or getattr(p, 'country_of_origin', '') or "",
+            #         "Warranty": row.get("Warranty") or p.warranty or "",
+            #         "Weight": row.get("Weight") or (str(p.weight) if p.weight else ""),
+            #         "Weight_Unit": row.get("Weight_Unit") or p.weight_unit or "",
+            #         "Length": row.get("Length") or (str(getattr(p, 'length', '')) if getattr(p, 'length', None) else ""),
+            #         "Width": row.get("Width") or (str(getattr(p, 'width', '')) if getattr(p, 'width', None) else ""),
+            #         "Height": row.get("Height") or (str(getattr(p, 'height', '')) if getattr(p, 'height', None) else ""),
+            #         "Currency": row.get("Currency") or p.currency or "",
+            #         "Base Price": row.get("Base Price") or (str(p.base_price) if p.base_price else ""),
+            #         "Vendor_Name": row.get("Vendor_Name") or p.vendor_name or "",
+            #         "Short_Description": row.get("Short_Description") or p.short_description or "",
+            #         "Long_Description": row.get("Long_Description") or p.long_description or "",
+            #         "Meta_Title": row.get("Meta_Title") or p.meta_title or "",
+            #         "Meta_Description": row.get("Meta_Description") or getattr(p, 'meta_description', '') or "",
+            #         "Search_Keywords": row.get("Search_Keywords") or getattr(p, 'search_keywords', '') or "",
+            #     })
+            #     features_data = ai_data.pop(
+            #         "features", None) or p.features or []
+            #     if isinstance(features_data, str):
+            #         try:
+            #             import json
+            #             features_data = json.loads(features_data)
+            #         except:
+            #             features_data = [features_data]
+            #     if isinstance(features_data, list):
+            #         for i, feat in enumerate(features_data[:10], 1):
+            #             row[f"features_{i}"] = clean_for_excel(feat)
+            #     if not row.get("image_url_1"):
+            #         if hasattr(p, 'images') and p.images:
+            #             images_list = list(p.images.values()) if isinstance(
+            #                 p.images, dict) else (p.images if isinstance(p.images, list) else [])
+            #             for i, img in enumerate(images_list[:8], 1):
+            #                 if isinstance(img, dict):
+            #                     row[f"image_name_{i}"] = img.get("name", "")
+            #                     row[f"image_url_{i}"] = img.get("url", "")
+            #                 else:
+            #                     row[f"image_url_{i}"] = str(img) if img else ""
+            #     original_attrs_by_norm = {}  
+            #     if p.dynamic_attributes:
+            #         for attr in p.dynamic_attributes:
+            #             if isinstance(attr, dict) and attr.get('name'):
+            #                 k_norm = normalize_attr_name(attr['name'])
+            #                 if k_norm not in original_attrs_by_norm:
+            #                     original_attrs_by_norm[k_norm] = []
+            #                 original_attrs_by_norm[k_norm].append(attr)
+            #     used_ai_keys = set()
+            #     used_original_indexes = {}  
+            #     for i, template_attr_name in enumerate(attribute_template, 1):
+            #         if i > MAX_ATTRIBUTES:
+            #             break
+            #         row[f"attribute_name{i}"] = template_attr_name
+            #         template_norm = normalize_attr_name(template_attr_name)
+            #         ai_match_key = None
+            #         for ai_key in ai_data.keys():
+            #             if ai_key in used_ai_keys or ai_key.lower() in IGNORED_KEYS:
+            #                 continue
+            #             ai_norm = normalize_attr_name(ai_key)
+            #             if template_norm == ai_norm or (template_norm in ai_norm and len(template_norm) > 3):
+            #                 ai_match_key = ai_key
+            #                 break
+            #         ai_val_str = ""
+            #         ai_uom_str = ""
+            #         if ai_match_key:
+            #             raw_val = ai_data[ai_match_key]
+            #             ai_val_str = clean_for_excel(
+            #                 raw_val, template_attr_name)
+            #             if isinstance(raw_val, dict):
+            #                 uom_obj = raw_val.get("uom") or raw_val.get("unit")
+            #                 ai_uom_str = clean_for_excel(uom_obj)
+            #             used_ai_keys.add(ai_match_key)
+            #         orig_val_str = ""
+            #         orig_uom_str = ""
+            #         orig_match=None
+            #         if template_norm in original_attrs_by_norm:
+            #             attrs_list = original_attrs_by_norm[template_norm]
+            #             next_idx = used_original_indexes.get(template_norm, 0)
+            #             if next_idx < len(attrs_list):
+            #                 orig_match = attrs_list[next_idx]
+            #                 orig_val_str = clean_for_excel(orig_match.get('value'))
+            #                 orig_uom_str = clean_for_excel(
+            #                     orig_match.get('uom') or orig_match.get('unit'))
+            #                 used_original_indexes[template_norm] = next_idx + 1
+            #         final_val = ai_val_str if ai_val_str else orig_val_str
+            #         final_uom = ai_uom_str if ai_val_str else orig_uom_str
+            #         row[f"attribute_value{i}"] = final_val
+            #         row[f"attribute_uom{i}"] = final_uom
+            #         if orig_match and orig_match.get('validation_value'):
+            #             validation_val = clean_for_excel(orig_match.get('validation_value'))
+            #             original_val = clean_for_excel(orig_match.get('value'))
+            #             def normalize_for_display(val):
+            #                 if val is None:
+            #                     return ""
+            #                 val_str = str(val).lower().strip()
+            #                 val_str = re.sub(r'\s*(lbs?|kg|g|in|cm|mm|ft|°[fc]|degrees?)\s*\.?\s*$', '', val_str)
+            #                 val_str = re.sub(r'[^\d\.\-]', '', val_str)  
+            #                 return val_str
+            #             norm_original = normalize_for_display(original_val)
+            #             norm_validation = normalize_for_display(validation_val)
+            #             if validation_val and norm_validation != norm_original:
+            #                 row[f"validation_value{i}"] = validation_val
+            #                 row[f"validation_uom{i}"] = clean_for_excel(orig_match.get('validation_uom'))
+            #         elif p.validation_conflicts:
+            #             if template_attr_name in p.validation_conflicts:
+            #                 row[f"validation_value{i}"] = clean_for_excel(p.validation_conflicts[template_attr_name])
+            #             else:
+            #                 temp_norm = normalize_attr_name(template_attr_name)
+            #                 for conflict_key, conflict_val in p.validation_conflicts.items():
+            #                     if normalize_attr_name(conflict_key) == temp_norm:
+            #                         row[f"validation_value{i}"] = clean_for_excel(conflict_val)
+            #                         break
+            #         if not row.get(f"validation_value{i}") and is_validation_mode:
+            #             if ai_val_str and orig_val_str:
+            #                 if ai_val_str.lower().strip() != orig_val_str.lower().strip():
+            #                     row[f"validation_value{i}"] = orig_val_str
+            #                     row[f"validation_uom{i}"] = orig_uom_str
+            #     remaining_attrs = [k for k in ai_data.keys(
+            #     ) if k not in used_ai_keys and k.lower() not in IGNORED_KEYS]
+            #     current_slot = len(attribute_template) + 1
+            #     for ai_key in remaining_attrs:
+            #         if current_slot > MAX_ATTRIBUTES:
+            #             break
+            #         row[f"attribute_name{current_slot}"] = ai_key.replace(
+            #             '_', ' ').title()
+            #         row[f"attribute_value{current_slot}"] = clean_for_excel(
+            #             ai_data[ai_key], ai_key)
+            #         if isinstance(ai_data[ai_key], dict):
+            #             uom = ai_data[ai_key].get("uom", "")
+            #             if uom and uom.lower() not in ["n/a", "na", "none", "null"]:
+            #                 row[f"attribute_uom{current_slot}"] = clean_for_excel(
+            #                     uom)
+            #         current_slot += 1
+            #     if p.sources_consulted and isinstance(p.sources_consulted, list):
+            #         brand=row.get('Brand') or p.brand_name or ""
+            #         urls=list(p.sources_consulted)      
+            #         from urllib.parse  import urlparse
+            #         urls.sort(key=lambda u: 0 if (brand and brand.lower() in urlparse(u).netloc.lower()) else 1)
+            #         for i, url in enumerate(urls[:5], 1):
+            #             row[f"source_url_{i}"] = url
+            #     sanitized_row = {str(k): sanitize_for_excel(v)
+            #                      for k, v in row.items()}
+            #     export_rows.append(sanitized_row)
+            # df = pd.DataFrame(export_rows, columns=all_headers)
+            # excel_buffer = io.BytesIO()
+            # with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+            #     df.to_excel(writer, index=False, sheet_name='Enriched Data')
+            # excel_buffer.seek(0)
+            # filename = f"Enriched_Export_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+            # return StreamingResponse(
+            #     excel_buffer,
+            #     media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            #     headers={"Content-Disposition": f"attachment; filename={filename}"}
+            # )
             project = await db.get(Project, products[0].project_id) if products else None
-            is_validation_mode = False
-            if project and project.use_case:
-                is_validation_mode = 'validation' in project.use_case.lower()
-                logger.info(f"Download mode: {'validation' if is_validation_mode else 'standard'}")
-            for p in products:
-                row = {h: "" for h in all_headers}
-                ai_data = dict(p.attributes or {})
-                taxonomy = p.taxonomy or "Unknown"
-                attribute_template = taxonomy_templates.get(taxonomy, [])
-                if 'images' in ai_data and isinstance(ai_data['images'], list):
-                    images_list = ai_data.pop('images')
-                    for i, img_url in enumerate(images_list[:8], 1):
-                        row[f'image_url_{i}'] = clean_for_excel(img_url)
-                    logger.info(
-                        f"Mapped {len(images_list)} URLs from 'images' key.")
-                elif 'image_url' in ai_data:
-                    row['image_url_1'] = clean_for_excel(
-                        ai_data.pop('image_url'))
-                elif 'main_image' in ai_data:
-                    row['image_url_1'] = clean_for_excel(
-                        ai_data.pop('main_image'))
-                elif 'image' in ai_data:
-                    row['image_url_1'] = clean_for_excel(ai_data.pop('image'))
-                if not row.get("image_url_1") and p.image_url_1:
-                    row["image_url_1"] = p.image_url_1
-                for ai_key in list(ai_data.keys()):
-                    ai_key_norm = ai_key.lower().replace('_', '').replace(' ', '').replace('-', '')
-                    for map_key, target_col in DEDICATED_COLUMN_MAPPING.items():
-                        map_key_norm = map_key.lower().replace(
-                            '_', '').replace(' ', '').replace('-', '')
-                        if ai_key_norm == map_key_norm:
-                            value = ai_data.pop(ai_key)
-                            row[target_col] = clean_for_excel(value)
-                            logger.info(
-                                f"Mapped AI '{ai_key}' → Column '{target_col}'")
-                            if isinstance(value, dict):
-                                uom = value.get('uom') or value.get('unit')
-                                if uom:
-                                    uom_clean = clean_for_excel(uom)
-                                    if target_col == 'Weight':
-                                        row['Weight_Unit'] = uom_clean
-                                    elif target_col in ['Length', 'Width', 'Height']:
-                                        if not row['Dimension_Unit']:
-                                            row['Dimension_Unit'] = uom_clean
-                            break
-                row.update({
-                    "Prod ID": str(p.id) if p.id else "",
-                    "SKU": row.get("SKU") or p.sku or "",
-                    "Product_Type": row.get("Product_Type") or getattr(p, 'product_type', '') or "",
-                    "Parent_SKU": row.get("Parent_SKU") or getattr(p, 'parent_sku', '') or "",
-                    "Product_Name": row.get("Product_Name") or p.product_name or "",
-                    "Brand": row.get("Brand") or p.brand_name or "",
-                    "GTIN": row.get("GTIN") or getattr(p, 'gtin', '') or "",
-                    "ean": row.get("ean") or getattr(p, 'ean', '') or "",
-                    "upc": row.get("upc") or getattr(p, 'upc', '') or "",
-                    "unspc": row.get("unspc") or getattr(p, 'unspc', '') or "",
-                    "MPN": row.get("MPN") or p.product_code or "",
-                    "Status": row.get("Status") or getattr(p, 'status', '') or "",
-                    "Lifecycle_Stage": row.get("Lifecycle_Stage") or getattr(p, 'lifecycle_stage', '') or "",
-                    "Launch_Date": row.get("Launch_Date") or getattr(p, 'launch_date', '') or "",
-                    "Discontinue_Status": row.get("Discontinue_Status") or getattr(p, 'discontinue_status', '') or "",
-                    "industry_name": p.industry_name or "",
-                    "category 1": p.category_1 or "",
-                    "category 2": p.category_2 or "",
-                    "category 3": p.category_3 or "",
-                    "category 4": p.category_4 or "",
-                    "category 5": p.category_5 or "",
-                    "category 6": p.category_6 or "",
-                    "category 7": p.category_7 or "",
-                    "category 8": p.category_8 or "",
-                    "Taxonomy": taxonomy,
-                    "Country_of_Origin": row.get("Country_of_Origin") or getattr(p, 'country_of_origin', '') or "",
-                    "Warranty": row.get("Warranty") or p.warranty or "",
-                    "Weight": row.get("Weight") or (str(p.weight) if p.weight else ""),
-                    "Weight_Unit": row.get("Weight_Unit") or p.weight_unit or "",
-                    "Length": row.get("Length") or (str(getattr(p, 'length', '')) if getattr(p, 'length', None) else ""),
-                    "Width": row.get("Width") or (str(getattr(p, 'width', '')) if getattr(p, 'width', None) else ""),
-                    "Height": row.get("Height") or (str(getattr(p, 'height', '')) if getattr(p, 'height', None) else ""),
-                    "Currency": row.get("Currency") or p.currency or "",
-                    "Base Price": row.get("Base Price") or (str(p.base_price) if p.base_price else ""),
-                    "Vendor_Name": row.get("Vendor_Name") or p.vendor_name or "",
-                    "Short_Description": row.get("Short_Description") or p.short_description or "",
-                    "Long_Description": row.get("Long_Description") or p.long_description or "",
-                    "Meta_Title": row.get("Meta_Title") or p.meta_title or "",
-                    "Meta_Description": row.get("Meta_Description") or getattr(p, 'meta_description', '') or "",
-                    "Search_Keywords": row.get("Search_Keywords") or getattr(p, 'search_keywords', '') or "",
-                })
-                features_data = ai_data.pop(
-                    "features", None) or p.features or []
-                if isinstance(features_data, str):
-                    try:
-                        import json
-                        features_data = json.loads(features_data)
-                    except:
-                        features_data = [features_data]
-                if isinstance(features_data, list):
-                    for i, feat in enumerate(features_data[:10], 1):
-                        row[f"features_{i}"] = clean_for_excel(feat)
-                if not row.get("image_url_1"):
-                    if hasattr(p, 'images') and p.images:
-                        images_list = list(p.images.values()) if isinstance(
-                            p.images, dict) else (p.images if isinstance(p.images, list) else [])
-                        for i, img in enumerate(images_list[:8], 1):
-                            if isinstance(img, dict):
-                                row[f"image_name_{i}"] = img.get("name", "")
-                                row[f"image_url_{i}"] = img.get("url", "")
-                            else:
-                                row[f"image_url_{i}"] = str(img) if img else ""
-                original_attrs_by_norm = {}  
-                if p.dynamic_attributes:
-                    for attr in p.dynamic_attributes:
-                        if isinstance(attr, dict) and attr.get('name'):
-                            k_norm = normalize_attr_name(attr['name'])
-                            if k_norm not in original_attrs_by_norm:
-                                original_attrs_by_norm[k_norm] = []
-                            original_attrs_by_norm[k_norm].append(attr)
-                used_ai_keys = set()
-                used_original_indexes = {}  
-                for i, template_attr_name in enumerate(attribute_template, 1):
-                    if i > MAX_ATTRIBUTES:
-                        break
-                    row[f"attribute_name{i}"] = template_attr_name
-                    template_norm = normalize_attr_name(template_attr_name)
-                    ai_match_key = None
-                    for ai_key in ai_data.keys():
-                        if ai_key in used_ai_keys or ai_key.lower() in IGNORED_KEYS:
-                            continue
-                        ai_norm = normalize_attr_name(ai_key)
-                        if template_norm == ai_norm or (template_norm in ai_norm and len(template_norm) > 3):
-                            ai_match_key = ai_key
-                            break
-                    ai_val_str = ""
-                    ai_uom_str = ""
-                    if ai_match_key:
-                        raw_val = ai_data[ai_match_key]
-                        ai_val_str = clean_for_excel(
-                            raw_val, template_attr_name)
-                        if isinstance(raw_val, dict):
-                            uom_obj = raw_val.get("uom") or raw_val.get("unit")
-                            ai_uom_str = clean_for_excel(uom_obj)
-                        used_ai_keys.add(ai_match_key)
-                    orig_val_str = ""
-                    orig_uom_str = ""
-                    orig_match=None
-                    if template_norm in original_attrs_by_norm:
-                        attrs_list = original_attrs_by_norm[template_norm]
-                        next_idx = used_original_indexes.get(template_norm, 0)
-                        if next_idx < len(attrs_list):
-                            orig_match = attrs_list[next_idx]
-                            orig_val_str = clean_for_excel(orig_match.get('value'))
-                            orig_uom_str = clean_for_excel(
-                                orig_match.get('uom') or orig_match.get('unit'))
-                            used_original_indexes[template_norm] = next_idx + 1
-                    final_val = ai_val_str if ai_val_str else orig_val_str
-                    final_uom = ai_uom_str if ai_val_str else orig_uom_str
-                    row[f"attribute_value{i}"] = final_val
-                    row[f"attribute_uom{i}"] = final_uom
-                    if orig_match and orig_match.get('validation_value'):
-                        validation_val = clean_for_excel(orig_match.get('validation_value'))
-                        original_val = clean_for_excel(orig_match.get('value'))
-                        def normalize_for_display(val):
-                            if val is None:
-                                return ""
-                            val_str = str(val).lower().strip()
-                            val_str = re.sub(r'\s*(lbs?|kg|g|in|cm|mm|ft|°[fc]|degrees?)\s*\.?\s*$', '', val_str)
-                            val_str = re.sub(r'[^\d\.\-]', '', val_str)  
-                            return val_str
-                        norm_original = normalize_for_display(original_val)
-                        norm_validation = normalize_for_display(validation_val)
-                        if validation_val and norm_validation != norm_original:
-                            row[f"validation_value{i}"] = validation_val
-                            row[f"validation_uom{i}"] = clean_for_excel(orig_match.get('validation_uom'))
-                    elif p.validation_conflicts:
-                        if template_attr_name in p.validation_conflicts:
-                            row[f"validation_value{i}"] = clean_for_excel(p.validation_conflicts[template_attr_name])
-                        else:
-                            temp_norm = normalize_attr_name(template_attr_name)
-                            for conflict_key, conflict_val in p.validation_conflicts.items():
-                                if normalize_attr_name(conflict_key) == temp_norm:
-                                    row[f"validation_value{i}"] = clean_for_excel(conflict_val)
-                                    break
-                    if not row.get(f"validation_value{i}") and is_validation_mode:
-                        if ai_val_str and orig_val_str:
-                            if ai_val_str.lower().strip() != orig_val_str.lower().strip():
-                                row[f"validation_value{i}"] = orig_val_str
-                                row[f"validation_uom{i}"] = orig_uom_str
-                remaining_attrs = [k for k in ai_data.keys(
-                ) if k not in used_ai_keys and k.lower() not in IGNORED_KEYS]
-                current_slot = len(attribute_template) + 1
-                for ai_key in remaining_attrs:
-                    if current_slot > MAX_ATTRIBUTES:
-                        break
-                    row[f"attribute_name{current_slot}"] = ai_key.replace(
-                        '_', ' ').title()
-                    row[f"attribute_value{current_slot}"] = clean_for_excel(
-                        ai_data[ai_key], ai_key)
-                    if isinstance(ai_data[ai_key], dict):
-                        uom = ai_data[ai_key].get("uom", "")
-                        if uom and uom.lower() not in ["n/a", "na", "none", "null"]:
-                            row[f"attribute_uom{current_slot}"] = clean_for_excel(
-                                uom)
-                    current_slot += 1
-                if p.sources_consulted and isinstance(p.sources_consulted, list):
-                    brand=row.get('Brand') or p.brand_name or ""
-                    urls=list(p.sources_consulted)      
-                    from urllib.parse  import urlparse
-                    urls.sort(key=lambda u: 0 if (brand and brand.lower() in urlparse(u).netloc.lower()) else 1)
-                    for i, url in enumerate(urls[:5], 1):
-                        row[f"source_url_{i}"] = url
-                sanitized_row = {str(k): sanitize_for_excel(v)
-                                 for k, v in row.items()}
-                export_rows.append(sanitized_row)
-            df = pd.DataFrame(export_rows, columns=all_headers)
-            excel_buffer = io.BytesIO()
-            with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False, sheet_name='Enriched Data')
-            excel_buffer.seek(0)
-            filename = f"Enriched_Export_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
-            return StreamingResponse(
-                excel_buffer,
-                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                headers={"Content-Disposition": f"attachment; filename={filename}"}
-            )
+            project_name = project.name if project else None
+            return await generate_products_excel(products, db, global_project_name=project_name)
+
     except Exception as e:
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(

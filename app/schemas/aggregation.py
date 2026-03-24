@@ -15,7 +15,9 @@ class ProjectStats(BaseModel):
 
     class Config:
         from_attributes = True
-
+class BatchExportRequest(BaseModel):
+    project_ids:List[str]=[]
+    product_ids:List[str]=[]
 
 class AggregationJobResponse(BaseModel):
     id: str
