@@ -11,12 +11,13 @@ import traceback
 from sqlmodel import update
 import io
 import pandas as pd
+from app import llm
 from app.core.database import get_session, async_session_factory
 from app.models.pipeline import AggregationJob, AuditTrail, CleansingIssue, RawExtraction, Source
 from app.models.product import Product
 from app.models.project import Project
 from app.aggregation.aggregate_product import aggregate_product, chunk_attributes
-from app.schemas.aggregation import AggregatedAttribute, AggregatedAttributeValue, AggregationJobResponse, AggregationTriggerResponse, BatchExportRequest, ProductAggregationResponse, ProjectStats
+from app.schemas.aggregation import AggregateLLMRequest, AggregatedAttribute, AggregatedAttributeValue, AggregationJobResponse, AggregationTriggerResponse, BatchExportRequest, ProductAggregationResponse, ProjectStats
 from app.utils.aggregate_download import generate_products_excel
 from app.utils.validators import is_invalid
 from app.utils.image_validator import validate_image_url
@@ -130,6 +131,7 @@ async def get_projects_with_aggregation_stats(
 @router.post("/project/{project_id}", response_model=AggregationTriggerResponse, status_code=status.HTTP_202_ACCEPTED)
 async def trigger_project_aggregation(
     project_id: str,
+    request: AggregateLLMRequest, 
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_session)
 ) -> AggregationTriggerResponse:
@@ -179,13 +181,14 @@ async def trigger_project_aggregation(
             started_at=datetime.utcnow(),
             details={
                 'project_name': project.name,
-                'triggered_at': datetime.utcnow().isoformat()
+                'triggered_at': datetime.utcnow().isoformat(),
+                'llm_provider': request.llm_provider
             }
         )
         db.add(job)
         await db.commit()
         await db.refresh(job)
-        background_tasks.add_task(run_project_aggregation_task, str(job.id))
+        background_tasks.add_task(run_project_aggregation_task, str(job.id),request.llm_provider )
         logger.info(
             f"Aggregation job {job.id} created for project {project_id} with {pending_count} products")
         return AggregationTriggerResponse(
@@ -279,6 +282,7 @@ async def cancel_project_aggregation(
 @router.post("/run/{product_id}", response_model=ProductAggregationResponse)
 async def aggregate_single_product(
     product_id: str,
+    request:AggregateLLMRequest,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_session)
 ) -> ProductAggregationResponse:
@@ -297,7 +301,7 @@ async def aggregate_single_product(
         product.enrichment_status = 'processing'
         db.add(product)
         await db.commit()
-        queue_position = await worker_pool.submit(str(product.id))
+        queue_position = await worker_pool.submit(str(product.id),request.llm_provider)
         logger.info(f"Queued {product.product_code} at position {queue_position}")
         # background_tasks.add_task(
         #     run_single_product_aggregation, str(product.id))
@@ -440,7 +444,7 @@ def merge_dynamic_attributes(
     
     flag_modified(product, "dynamic_attributes")
     
-async def run_project_aggregation_task(job_id: str) -> None:
+async def run_project_aggregation_task(job_id: str,llm_provider:str='openai') -> None:
     async with async_session_factory() as db_session:
         job: Optional[AggregationJob] = None
         try:
@@ -511,6 +515,7 @@ async def run_project_aggregation_task(job_id: str) -> None:
                             taxonomy=product.taxonomy,
                             primary_attributes=primary_attrs,
                             project_id=job.project_id,
+                            llm_provider=llm_provider,
                             max_retries=2
                         )
                         if aggregation_result.get('status') == 'success':
@@ -757,7 +762,7 @@ async def run_project_aggregation_task(job_id: str) -> None:
                     logger.error(
                         f"Failed to update job status: {commit_error}")
                     
-async def run_single_product_aggregation(product_id: str) -> None:
+async def run_single_product_aggregation(product_id: str,llm_provider:str='openai') -> None:
         async with async_session_factory() as db_session:
             try:
                 product = await db_session.get(Product, product_id)
@@ -796,7 +801,8 @@ async def run_single_product_aggregation(product_id: str) -> None:
                             taxonomy=product.taxonomy,
                             primary_attributes=primary_attrs,  
                             attribute_chunk=chunk,  
-                            project_id=product.project_id
+                            project_id=product.project_id,
+                            llm_provider=llm_provider
                         )
                         if idx < len(attr_chunks):
                             await asyncio.sleep(5)
@@ -839,7 +845,8 @@ async def run_single_product_aggregation(product_id: str) -> None:
                         brand=product.brand_name,
                         taxonomy=product.taxonomy,
                         primary_attributes=primary_attrs,
-                        project_id=product.project_id
+                        project_id=product.project_id,
+                        llm_provider=llm_provider
                     )
                 if result.get('status') == 'success':
                     golden = sanitize_ai_data(result.get('golden_record', {}))
@@ -1069,8 +1076,9 @@ async def aggregate_with_retry(
     primary_attributes: Optional[List[str]] = None,
     attribute_chunk:Optional[List[str]]=None,
     project_id: str = None,
+    llm_provider: str = "openai",
     max_retries: int = 2,
-    retry_delay: float = 2.0
+    retry_delay: float = 2.0,
 ) -> Dict[str, Any]:
     last_error: Optional[Exception] = None
     for attempt in range(max_retries + 1):
@@ -1085,7 +1093,8 @@ async def aggregate_with_retry(
                 taxonomy=taxonomy,
                 primary_attributes=primary_attributes,
                 attribute_chunk=attribute_chunk,
-                project_id=project_id
+                project_id=project_id,
+                llm_provider=llm_provider
             )
             logger.info(f"Aggregation result for {mpn}: {result}")
             image_url = result.get('golden_record', {}).get('image_url')

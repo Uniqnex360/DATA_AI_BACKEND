@@ -45,18 +45,21 @@ async def list_projects(db: AsyncSession = Depends(get_session)):
             project = row[0]
             product_count = row[1]
             aggregation_status=row[2]
-            project_dict = {
-                "id": str(project.id),
-                "name": project.name,
-                "client": project.client,
-                "use_case": project.use_case,
-                "status": project.status,
-                "created_at": project.created_at,
-                "updated_at": project.updated_at,
-                "product_count": product_count or 0,
-                "aggregation_status": aggregation_status or "idle" 
-            }
-            projects.append(project_dict)
+            # project_dict = {
+            #     "id": str(project.id),
+            #     "name": project.name,
+            #     "client": project.client,
+            #     "use_case": project.use_case,
+            #     "status": project.status,
+            #     "created_at": project.created_at,
+            #     "updated_at": project.updated_at,
+            #     "product_count": product_count or 0,
+            #     "aggregation_status": aggregation_status or "idle" 
+            # }
+            project_response=ProjectResponse.model_validate(project)
+            project_response.product_count = product_count or 0
+            project_response.aggregation_status = aggregation_status or "idle"
+            projects.append(project_response)
         return projects
     except Exception as e:
         logger.error(f"Failed to fetch projects: {e}")
@@ -68,6 +71,7 @@ async def list_projects(db: AsyncSession = Depends(get_session)):
 
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_session)):
+    print(f"Received payload: {payload}") 
     try:
         existing = await db.execute(
             select(Project).where(Project.name == payload.name)

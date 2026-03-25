@@ -1,6 +1,6 @@
 
 from pydantic import BaseModel
-from typing import Optional,List
+from typing import Optional,List,Dict
 from datetime import datetime
 class ProjectStats(BaseModel):
     id: str
@@ -77,3 +77,11 @@ class FinalAttribute(BaseModel):
 class UnifiedStandardizedResponse(BaseModel):
     attributes: List[FinalAttribute]
     summary: str = ""                    
+
+
+
+class AggregateLLMRequest(BaseModel):
+    llm_provider: Optional[str] = "openai"
+    
+class UpdateAttributesRequest(BaseModel):
+    attributes: Dict[str, str]

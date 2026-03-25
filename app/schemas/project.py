@@ -7,6 +7,7 @@ class ProjectCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     client: Optional[str] = None
     use_case: Optional[str] = None
+    operation_mode:Optional[str]='aggregation'
     status: Optional[str] = "draft"
 
 
@@ -14,6 +15,7 @@ class ProjectUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     client: Optional[str] = None
     use_case: Optional[str] = None
+    operation_mode:Optional[str]='aggregation   '
     status: Optional[str] = None
 
 
@@ -22,6 +24,7 @@ class ProjectResponse(BaseModel):
     name: str
     client: Optional[str] = None
     use_case: Optional[str] = None
+    operation_mode:Optional[str]=None
     status: Optional[str] = None
     created_at: Optional[datetime] = None
     product_count:int=0

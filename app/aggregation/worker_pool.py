@@ -24,9 +24,10 @@ class ProductWorkerPool:
                     break
                 
                 product_id = task_data['product_id']
-                logger.info(f" Worker {worker_id} processing {product_id}")
+                llm_provider=task_data['llm_provider']
+                logger.info(f" Worker {worker_id} processing {product_id} with LLM: {llm_provider}")
                 
-                await self.process_function(product_id)
+                await self.process_function(product_id,llm_provider)
                 
                 logger.info(f" Worker {worker_id} completed {product_id}")
                 
@@ -47,9 +48,9 @@ class ProductWorkerPool:
         self.workers_started = True
         logger.info(f" Started {self.worker_count} workers")
     
-    async def submit(self, product_id: str) -> int:
+    async def submit(self, product_id: str,llm_provider:str='openai') -> int:
         await self.start()
-        await self.queue.put({'product_id': product_id})
+        await self.queue.put({'product_id': product_id,'llm_provider':llm_provider})
         return self.queue.qsize()
     
     def get_status(self) -> Dict[str, Any]:

@@ -30,7 +30,6 @@ from app.aggregation.stages import (
 _llm_semaphore = asyncio.Semaphore(5)
 from app.aggregation.services.search_service import SerpApiSearchService
 from app.aggregation.services.download_service import HttpDownloadService
-from app.llm import call_llm_with_schema
 def build_pipeline() -> AggregationPipeline:
     return AggregationPipeline(
         search_service=SerpApiSearchService(max_results=5),
@@ -578,6 +577,7 @@ async def aggregate_product(
     primary_attributes: Optional[List[str]] = None,
     db: Optional[AsyncSession] = None,
     project_id: str = None,
+    llm_provider:str='openai',
     attribute_chunk: Optional[List[str]] = None,
     existing_excel_attrs:Optional[Dict[str,str]]=None
 ) -> Dict:
@@ -585,7 +585,7 @@ async def aggregate_product(
     try:
         logger.info(f"Starting aggregation for {mpn}")
         logger.info("Stage 1: URL Discovery")
-        search_service = SmartSearchService(max_results=5)
+        search_service = SmartSearchService(llm_provider,max_results=5)
 
         # Prepare query (same as before)
         query = title if (mpn in title and brand in title) else f"{brand} {mpn} {title}"
@@ -634,6 +634,7 @@ async def aggregate_product(
                         extraction_result = await call_llm_with_schema(
                             prompt=prompt_config['prompt'],
                             response_model="ExtractionResponse",
+                            llm_provider=llm_provider,
                             estimated_tokens=3000
                         )
                         attr_dicts = []
@@ -683,6 +684,7 @@ async def aggregate_product(
                             extraction_result = await call_llm_with_schema(
                                 prompt=prompt_config['prompt'],
                                 response_model="ExtractionResponse",
+                                llm_provider=llm_provider,                                
                                 estimated_tokens=4000
                             )
                             if extraction_result and extraction_result.product_detected:
@@ -749,6 +751,7 @@ async def aggregate_product(
                 combined_result = await call_llm_with_schema(
                     prompt=combine_prompt,
                     response_model="UnifiedStandardizedResponse",  
+                    llm_provider=llm_provider,                    
                     estimated_tokens=3000 + len(raw_attrs_for_combine) * 200,
                     max_tokens=4000
                 )
@@ -802,6 +805,7 @@ async def aggregate_product(
             validation_result = await call_llm_with_schema(
                 prompt=validation_config['prompt'],
                 response_model="ValidationResponse",
+                llm_provider=llm_provider,
                 estimated_tokens=1500
             )
 
@@ -868,6 +872,7 @@ async def aggregate_product(
         enrichment_result = await call_llm_with_schema(
             prompt=enrichment_config['prompt'],
             response_model="EnrichmentResponse",
+            llm_provider=llm_provider,
             estimated_tokens=2000,
             max_tokens=4000
         )

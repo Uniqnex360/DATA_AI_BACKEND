@@ -3,35 +3,6 @@ import logging
 logger = logging.getLogger('validate_against_usecase')
 
 
-def validate_file_against_use_case(
-    rows: List[Dict[str, Any]],
-    use_case: str
-) -> Dict[str, Any]:
-
-    if not rows:
-        return {
-            "valid": False,
-            "error": "File is empty or could not be parsed",
-            "requirements": []
-        }
-    use_case_lower = use_case.lower() if use_case else ""
-    if "with categories" in use_case_lower and "back filling" not in use_case_lower:
-        return validate_with_categories_flexible(rows, use_case)
-    elif "without categories" in use_case_lower:
-        return validate_without_categories(rows, use_case)
-    elif "back filling" in use_case_lower and "validation" not in use_case_lower:
-        return validate_backfill_requirements(rows, use_case)
-    elif "validation" in use_case_lower:
-        return validate_validation_requirements(rows, use_case)
-    else:
-        logger.warning(f"Unknown use case: {use_case}. Accepting file.")
-        return {
-            "valid": True,
-            "message": "No specific validation applied",
-            "requirements": []
-        }
-
-
 def get_row_identifier(row: Dict, idx: int) -> str:
     return (
         row.get('SKU') or row.get('sku') or
@@ -123,7 +94,9 @@ def validate_file_against_use_case(rows: List[Dict[str, Any]], use_case: str) ->
             'requirements': []
         }
     use_case_lower = use_case.lower() if use_case else ""
-    if 'with categories' in use_case_lower and 'back filling' not in use_case_lower:
+    if 'data cleaning and standardization' in use_case_lower:
+        return validate_cleaning_requirements(rows, use_case)
+    elif 'with categories' in use_case_lower and 'back filling' not in use_case_lower:
         return validate_with_categories_flexible(rows, use_case)
     elif 'without categories' in use_case_lower:
         return validate_without_categories(rows, use_case)
@@ -213,7 +186,92 @@ def validate_backfill_requirements(rows: List[Dict], use_case: str) -> Dict[str,
         "message": "File ready for backfilling. Excel values will be kept, missing attributes will be added.",
         "requirements": ["Categories and attributes present"]
     }
-
+    
+def validate_cleaning_requirements(rows: List[Dict], use_case: str) -> Dict[str, Any]:
+    
+    missing_identifiers = []
+    missing_attributes = []
+    products_with_attrs = []
+    
+    for idx, row in enumerate(rows, start=2):
+        sku = get_row_identifier(row, idx)
+        
+        has_identifier = bool(
+            row.get('SKU') or row.get('sku') or
+            row.get('MPN') or row.get('mpn') or
+            row.get('product_code') or row.get('Product Code')
+        )
+        
+        if not has_identifier:
+            missing_identifiers.append(f"Row {idx} ({sku or 'unknown'})")
+            continue
+        
+        attr_count = count_attributes(row)
+        if attr_count == 0:
+            missing_attributes.append(f"Row {idx} ({sku}): 0 attributes")
+        else:
+            products_with_attrs.append(f"Row {idx} ({sku}): {attr_count} attribute(s)")
+    
+    errors = []
+    
+    if missing_identifiers:
+        errors.append(
+            f"Missing product identifiers (MPN/SKU) in {len(missing_identifiers)} product(s):\n"
+            f"{format_error_list(missing_identifiers)}\n\n"
+            "Each product MUST have either MPN or SKU to identify it for cleaning."
+        )
+    
+    if missing_attributes:
+        errors.append(
+            f"Missing attributes in {len(missing_attributes)} product(s):\n"
+            f"{format_error_list(missing_attributes)}\n\n"
+            "Data cleaning requires at least ONE attribute per product to clean.\n"
+            "Please provide attribute_name and attribute_value columns."
+        )
+    
+    if errors:
+        return {
+            'valid': False,
+            'error': "\n\n".join(errors),
+            'requirements': [
+                "✓ MPN or SKU required for each product",
+                "✓ At least 1 attribute per product required",
+                "✓ Attribute format: attribute_name1, attribute_value1, attribute_uom1",
+                "✓ System will clean and standardize the provided attributes"
+            ]
+        }
+    
+    total_products = len(rows)
+    total_attrs = sum(count_attributes(row) for row in rows)
+    avg_attrs = total_attrs / total_products if total_products > 0 else 0
+    
+    logger.info(
+        f"Cleaning validation passed: {total_products} products, "
+        f"{total_attrs} total attributes, avg {avg_attrs:.1f} per product"
+    )
+    
+    return {
+        'valid': True,
+        'message': (
+            f"File validated for cleaning.\n\n"
+            f"Statistics:\n"
+            f"  • {total_products} products ready for cleaning\n"
+            f"  • {total_attrs} total attributes to clean\n"
+            f"  • Average {avg_attrs:.1f} attributes per product\n\n"
+            f"System will clean and standardize all provided attributes."
+        ),
+        'requirements': [
+            f"✓ {total_products} products with identifiers",
+            f"✓ {total_attrs} attributes to clean",
+            f"✓ At least 1 attribute per product present"
+        ],
+        'statistics': {
+            'total_products': total_products,
+            'total_attributes': total_attrs,
+            'avg_attributes_per_product': round(avg_attrs, 1),
+            'products_with_attributes': len(products_with_attrs)
+        }
+    }
 
 def validate_validation_requirements(rows: List[Dict], use_case: str) -> Dict[str, Any]:
     missing_categories = find_missing_categories(rows)

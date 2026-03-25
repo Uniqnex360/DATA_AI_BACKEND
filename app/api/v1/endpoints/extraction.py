@@ -670,6 +670,7 @@ async def batch_aggregate(
         if await db.scalar(duplicate_check):
             raise HTTPException(status.HTTP_409_CONFLICT,
                                 "File already uploaded recently.")
+            
         rows = parse_import_file(content, file.filename)
         valid_rows = []
         rejected_count=0
@@ -826,6 +827,7 @@ async def batch_aggregate(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Batch processing failed: {str(e)}"
         )
+        
 @router.get("/batch-status/{batch_id}")
 async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_session)):
     try:

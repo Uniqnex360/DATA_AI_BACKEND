@@ -22,12 +22,12 @@ def build_enrichment_prompt(golden_attributes: dict,product_name: str,brand: str
     TASK: Generate marketing content based ONLY on verified specs above.
 
     GENERATE:
-    1. Short Description (150-200 chars):
+    1.Short Description (max 500 chars):
     - Professional tone
     - Highlight key benefits
     - No superlatives without data
 
-    2. Long Description (500-800 words):
+    2. Long Description (max 1000 chars):
     - Technical yet accessible
     - Explain how specs translate to benefits
     - Use specific numbers from specs

@@ -81,7 +81,7 @@ class AggregationResponse(BaseModel):
 
 
 class EnrichmentResponse(BaseModel):
-    short_description: str = Field(max_length=200)
+    short_description: str = Field(max_length=500)
     long_description: str = Field(max_length=1000)
     features: List[str] = Field(max_items=10)
     confidence: float

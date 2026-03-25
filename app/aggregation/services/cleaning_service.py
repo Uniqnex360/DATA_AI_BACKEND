@@ -1,7 +1,9 @@
 import asyncio
 import logging
+from re import S
 from typing import List, Optional
 from pydantic import BaseModel, Field
+from app import llm
 from app.core.rate_limiter import openai_limiter
 logger = logging.getLogger('cleaning_service')
 class AttributeInput(BaseModel):
@@ -27,7 +29,8 @@ class LLMCleaningResponse(BaseModel):
     cleaned_attributes: List[CleanedAttribute]
     summary: str = Field(description="Brief summary of cleaning actions taken")
 class LLMCleaningService:
-    def __init__(self, model: str = "gpt-4o-mini", max_retries: int = 3, concurrency_limit: int = 10):
+    def __init__(self,llm_provider:str, model: str = "gpt-4o-mini", max_retries: int = 3, concurrency_limit: int = 10):
+        self.llm_provider=llm_provider
         self.model = model
         self.max_retries = max_retries
         self._semaphore = asyncio.Semaphore(concurrency_limit)  
@@ -48,6 +51,7 @@ class LLMCleaningService:
                     response = await call_llm_with_schema(
                         prompt=prompt,
                         response_model="LLMCleaningResponse",
+                        llm_provider=self.llm_provider,
                         model=self.model,
                         estimated_tokens=estimated_tokens,
                         max_tokens=2000

@@ -85,42 +85,56 @@ SCHEMA_MAP = {
 async def call_llm_with_schema(
     prompt: str,
     response_model: str,
+    llm_provider:str,
     model: str = "gpt-4o-mini",
     estimated_tokens: int = 2000,
     max_tokens: Optional[int] = None
 ) -> Any:
+    logger.info(f"CALL_LLM_WITH_SCHEMA - Using LLM provider: {llm_provider}")  
     schema_class = SCHEMA_MAP.get(response_model)
     if not schema_class:
         raise ValueError(f"Unknown response model: {response_model}")
     try:
-        last_error = None
-        for attempt in range(5):
-            if attempt > 0 and last_error:
-                wait_time = (2 ** (attempt - 1)) + random.uniform(0, 1)
-                logger.warning(
-                    f"Rate limit hit, waiting {wait_time:.1f}s (attempt {attempt + 1}/5)")
-                await asyncio.sleep(wait_time)
-            async with _llm_semaphore:
-                try:
-                    await openai_limiter.wait_if_needed(estimated_tokens=estimated_tokens)
-                    response = await _openai_client.beta.chat.completions.parse(
-                        model=model,
-                        messages=[
-                            {"role": "system", "content": "You are a precise data extraction engine. Follow instructions exactly. Never invent product information"},
-                            {"role": "user", "content": prompt}
-                        ],
-                        response_format=schema_class,
-                        max_tokens=max_tokens
-                    )
-                    return response.choices[0].message.parsed
-                except Exception as e:
-                    error_str = str(e)
-                    if "429" in error_str or "rate_limit" in error_str.lower():
-                        last_error = e
-                        continue
-                    else:
-                        raise
-        raise last_error
+        if llm_provider=='openai':
+            last_error = None
+            for attempt in range(5):
+                if attempt > 0 and last_error:
+                    wait_time = (2 ** (attempt - 1)) + random.uniform(0, 1)
+                    logger.warning(
+                        f"Rate limit hit, waiting {wait_time:.1f}s (attempt {attempt + 1}/5)")
+                    await asyncio.sleep(wait_time)
+                async with _llm_semaphore:
+                    try:
+                        await openai_limiter.wait_if_needed(estimated_tokens=estimated_tokens)
+                        response = await _openai_client.beta.chat.completions.parse(
+                            model=model,
+                            messages=[
+                                {"role": "system", "content": "You are a precise data extraction engine. Follow instructions exactly. Never invent product information"},
+                                {"role": "user", "content": prompt}
+                            ],
+                            response_format=schema_class,
+                            max_tokens=max_tokens
+                        )
+                        return response.choices[0].message.parsed
+                    except Exception as e:
+                        error_str = str(e)
+                        if "429" in error_str or "rate_limit" in error_str.lower():
+                            last_error = e
+                            continue
+                        else:
+                            raise
+            raise last_error
+        elif llm_provider=='gemini':
+            schema_dict=schema_class.model_json_schema()
+            gemini_prompt=f"""{prompt}
+            Return JSON response matching this schema:{json.dumps(schema_dict,indent=2)}
+            """
+            gemini_model=genai.GenerativeModel(model_name=settings.gemini_model,generation_config={'response_mime_type':'application/json'})
+            def sync_call():
+                return gemini_model.generate_content(gemini_prompt).text
+            response_text=await asyncio.to_thread(sync_call)
+            parsed=parse_response(response_text)
+            return schema_class.model_validate(parsed)
     except Exception as e:
         logger.warning(f"OpenAI failed: {str(e)[:200]}")
         logger.info(f"Switching to Gemini backup ({settings.gemini_model})")      

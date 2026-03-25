@@ -16,16 +16,17 @@ class TargetedQueryResponse(BaseModel):
 class SmartSearchService(ISearchService):
     def __init__(
         self,
+        llm_provider:str,
         searxng_url: str = "http://searxng:8080",
         max_results: int = 5,
     ):
+        self.llm_provider=llm_provider
         self.searxng = SearXNGSearchService(
             base_url=searxng_url,
             max_results=15,  
         )
         self.max_results = max_results
     async def _build_targeted_query(self, mpn: str, brand: str, title: str, sku: str = None) -> str:
-        """Use LLM to figure out where this product is typically sold/documented."""
         from app.aggregation.aggregate_product import call_llm_with_schema
         from pydantic import BaseModel
 
@@ -61,6 +62,7 @@ class SmartSearchService(ISearchService):
             result = await call_llm_with_schema(
                 prompt=prompt,
                 response_model="TargetedQueryResponse",
+                llm_provider=self.llm_provider,
                 estimated_tokens=300
             )
             if result and result.search_query:
@@ -210,11 +212,11 @@ class SmartSearchService(ISearchService):
     - "candidate_image_urls": list of image URLs matching this product (max 3)
     """
 
-        # Step 9 — LLM filter
         try:
             result = await call_llm_with_schema(
                 prompt=prompt,
                 response_model="SmartSearchResponse",
+                llm_provider=self.llm_provider,
                 estimated_tokens=500,
             )
             if result and result.selected_urls:

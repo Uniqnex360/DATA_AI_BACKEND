@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     llm_model:str='gpt-4o-mini'
     MIGRATION_MODE: str = "safe" 
     gemini_api_key:str
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-2.5-flash"
     enrichment_confidence_threashold:float=0.8
     HITL_CONFIDENCE_THRESHOLD:float=0.85
     cloudinary_cloud_name:str 
