@@ -83,5 +83,10 @@ class UnifiedStandardizedResponse(BaseModel):
 class AggregateLLMRequest(BaseModel):
     llm_provider: Optional[str] = "openai"
     
+
+class AttributeUpdatePayload(BaseModel):
+    value: str
+    uom: Optional[str] = ""
+
 class UpdateAttributesRequest(BaseModel):
-    attributes: Dict[str, str]
+    attributes: Dict[str, AttributeUpdatePayload]
