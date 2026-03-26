@@ -729,7 +729,7 @@ async def run_project_aggregation_task(job_id: str,llm_provider:str='openai') ->
             for source in sources:
                 new_metadata = dict(
                     source.source_metadata) if source.source_metadata else {}
-                new_metadata['aggregation_status'] = 'completed'
+                new_metadata['processing_status'] = 'completed'
                 new_metadata['successful'] = successful
                 new_metadata['failed'] = failed
                 new_metadata['last_run'] = datetime.utcnow().isoformat()
@@ -1021,7 +1021,7 @@ async def run_single_product_aggregation(product_id: str,llm_provider:str='opena
                         for source in sources:
                             new_metadata = dict(
                                 source.source_metadata) if source.source_metadata else {}
-                            new_metadata['aggregation_status'] = 'completed'
+                            new_metadata['processing_status'] = 'completed'
                             new_metadata['completed_at'] = datetime.utcnow(
                             ).isoformat()
                             source.source_metadata = new_metadata

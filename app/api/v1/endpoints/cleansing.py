@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select,func,and_
 from app.core.database import get_session
-from app.models.pipeline import CleansingIssue
+from app.models.pipeline import CleansingIssue, Source
 import logging
 from app.core.database import async_session_factory
 from sqlalchemy.orm.attributes import flag_modified
@@ -19,8 +19,8 @@ import io
 
 from app.schemas.aggregation import AggregateLLMRequest, UpdateAttributesRequest
 from app.schemas.enrichment import AggregatedAttribute
-from app.schemas.cleaning import RunCleaningRequest
-from app.utils.cleaning_helper import append_cleaning_task_log, get_cleaning_task_or_404, update_cleaning_task_status
+from app.schemas.cleaning import BulkUpdateAttributesRequest, RunCleaningRequest
+from app.utils.cleaning_helper import append_cleaning_task_log, create_cleaning_task, get_cleaning_task_or_404, update_cleaning_task_status
 logger = logging.getLogger("cleansing_router")
 router = APIRouter()
 
@@ -204,6 +204,29 @@ async def run_cleaning_task(
                 task_id,
                 f"Cleaning completed. Updated {updated_count}/{total}, failed {failed_count}",
             )
+            try:
+                stmt = select(Source).where(Source.project_id == project_id)
+                result = await db.execute(stmt)
+                sources = result.scalars().all()
+                for source in sources:
+                    metadata = dict(source.source_metadata or {})
+                    metadata["processing_status"] = "completed"
+                    source.source_metadata = metadata
+                    db.add(source)
+                project = await db.get(Project, project_id)
+                if project:
+                    project.status='failed'
+                    db.add(project)
+                await db.commit()
+            except Exception as status_error:
+                await db.rollback()
+                logger.error(
+                    f"Failed to update source/project failure status for project {project_id}: {status_error}",
+                    exc_info=True,
+                )
+                
+            except Exception as e:
+                raise e
             await update_cleaning_task_status(db, task_id, "completed")
 
         except Exception as e:
@@ -696,3 +719,59 @@ async def update_product_attributes(
 #                 await db.commit()
 #         except:
 #             pass
+@router.put("/products/bulk-attributes")
+async def bulk_update_product_attributes(
+    request: BulkUpdateAttributesRequest,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        if not request.product_ids:
+            raise HTTPException(status_code=400, detail="No product IDs provided")
+
+        stmt = select(Product).where(Product.id.in_(request.product_ids))
+        result = await db.execute(stmt)
+        products = result.scalars().all()
+
+        if not products:
+            raise HTTPException(status_code=404, detail="No products found")
+
+        updated_count = 0
+
+        for product in products:
+            if not product.dynamic_attributes:
+                continue
+
+            updated = False
+            new_attrs = [dict(attr) for attr in product.dynamic_attributes]
+
+            for attr in new_attrs:
+                if attr.get("name") == request.attribute_name:
+                    attr["value"] = request.attribute_value
+                    updated = True
+
+            if updated:
+                product.dynamic_attributes = new_attrs
+                flag_modified(product, "dynamic_attributes")
+
+                if product.validation_conflicts and request.attribute_name in product.validation_conflicts:
+                    del product.validation_conflicts[request.attribute_name]
+                    flag_modified(product, "validation_conflicts")
+
+                product.updated_at = datetime.utcnow()
+                db.add(product)
+                updated_count += 1
+
+        await db.commit()
+
+        return {
+            "status": "success",
+            "message": f"Updated {updated_count} product(s)",
+            "updated_count": updated_count
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Bulk update attributes failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to bulk update attributes")

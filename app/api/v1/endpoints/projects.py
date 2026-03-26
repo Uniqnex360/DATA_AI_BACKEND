@@ -25,7 +25,7 @@ async def list_projects(db: AsyncSession = Depends(get_session)):
             select(
                 Project,
                 func.count(Product.id).label("product_count"),
-                func.max(active_job.status).label("aggregation_status")
+                func.max(active_job.status).label("processing_status")
             )
             .outerjoin(Product, Product.project_id == Project.id)
             .outerjoin(
@@ -58,7 +58,7 @@ async def list_projects(db: AsyncSession = Depends(get_session)):
             # }
             project_response=ProjectResponse.model_validate(project)
             project_response.product_count = product_count or 0
-            project_response.aggregation_status = aggregation_status or "idle"
+            project_response.processing_status = aggregation_status or "idle"
             projects.append(project_response)
         return projects
     except Exception as e:

@@ -28,6 +28,6 @@ class ProjectResponse(BaseModel):
     status: Optional[str] = None
     created_at: Optional[datetime] = None
     product_count:int=0
-    aggregation_status:str='pending'
+    processing_status:str='pending'
     class Config:
         from_attributes = True
