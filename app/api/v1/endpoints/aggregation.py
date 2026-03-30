@@ -222,7 +222,7 @@ async def get_project_aggregation_status(
             return AggregationJobResponse(
                 id='',
                 project_id=project_id,
-                status='idle',
+                status='pending',
                 total_products=0,
                 successful=0,
                 failed=0,

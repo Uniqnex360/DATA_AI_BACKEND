@@ -10,7 +10,7 @@ from app.models.product_attribute_link import ProductAttributeLinkModel, Product
 class Product(UUIDModel,table=True):
     __tablename__='product_master'
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    product_code:str=Field(index=True,unique=True)
+    product_code:str=Field(index=True)
     product_name:str
     sku: Optional[str] = Field(index=True)
     brand_id: Optional[UUID] = Field(foreign_key="brands.id", index=True)

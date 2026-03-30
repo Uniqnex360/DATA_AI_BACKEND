@@ -757,7 +757,7 @@ async def batch_aggregate(
         updated_count = 0
         for idx, row in enumerate(rows):
             code = row.get("mpn") or row.get("sku") or f"UNK-{uuid4()}"
-            stmt = select(Product).where(Product.product_code == str(code))
+            stmt = select(Product).where(Product.product_code == str(code),Product.project_id==projectId)
             result = await db.execute(stmt)
             product = result.scalars().first()
             if not product:

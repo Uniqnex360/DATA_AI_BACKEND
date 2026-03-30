@@ -1,7 +1,8 @@
 from typing import Any, List,Optional,Dict
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query,status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
+from app.models.brand import Brand
 from app.services.product_service import product_service
 from sqlmodel import select,func
 from app.schemas.product import ProductCreate, ProductResponse
@@ -74,4 +75,52 @@ async def trigger_enrichment(product_code:str,background_tasks:BackgroundTasks,d
         raise HTTPException(status_code=404,detail='Product not found')
     background_tasks.add_task(run_enrichment_task,product_code)
     return {"status": "Enrichment started", "product": product.product_name}
-    
+@router.get("/filters")
+async def get_project_filters(
+    project_id: str | None = None,
+    db: AsyncSession = Depends(get_session),
+):
+    try:
+        category_stmt = select(Product.category_1)
+        brand_stmt = select(Brand.name).join(Product, Product.brand_id == Brand.id)
+
+        if project_id:
+            category_stmt = category_stmt.where(Product.project_id == project_id)
+            brand_stmt = brand_stmt.where(Product.project_id == project_id)
+
+        category_result = await db.execute(category_stmt)
+        category_rows = category_result.all()
+
+        categories = sorted(
+            {
+                row[0].strip()
+                for row in category_rows
+                if row[0] and isinstance(row[0], str) and row[0].strip()
+            }
+        )
+
+        brand_result = await db.execute(brand_stmt)
+        brand_rows = brand_result.all()
+
+        brands = sorted(
+            {
+                row[0].strip()
+                for row in brand_rows
+                if row[0] and isinstance(row[0], str) and row[0].strip()
+            }
+        )
+
+        return {
+            "categories": categories,
+            "brands": brands,
+        }
+
+    except Exception as e:
+        logger.error(
+            f"Failed to fetch filters for project {project_id}: {e}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch project filters",
+        )

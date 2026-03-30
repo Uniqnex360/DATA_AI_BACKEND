@@ -25,7 +25,7 @@ class ProjectResponse(BaseModel):
     client: Optional[str] = None
     use_case: Optional[str] = None
     operation_mode:Optional[str]=None
-    status: Optional[str] = None
+    source_status: str | None = None
     created_at: Optional[datetime] = None
     product_count:int=0
     processing_status:str='pending'

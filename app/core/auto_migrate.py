@@ -165,7 +165,7 @@ class AutoMigration:
             ("aggregation_jobs", "project_id", False),
             ("aggregation_jobs", "status", False),
             ("product_master", "project_id", False),
-            ("product_master", "product_code", True),
+            ("product_master", "product_code", False),
             ("sources", "project_id", False),
             ("raw_extractions", "source_id", False),
         ]

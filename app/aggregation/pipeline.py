@@ -85,7 +85,7 @@ class AggregationPipeline:
             sources=sources, request_id=request_id,mpn=mpn or "",brand=brand or "",source_urls=urls
         )
         
-        # RETRY LOGIC: If no image found, try image-specific searches
+        
         if not final_image_url and (mpn or title):
             logger.info(f"[{request_id}] No image found in initial sources, attempting image-specific searches...")
             image_queries = []
@@ -101,9 +101,9 @@ class AggregationPipeline:
                     f"{title} photo official"
                 ])
             
-            # Try to get more URLs from image-specific queries
+            
             image_urls = []
-            for q in image_queries[:3]:  # Limit to 3 additional queries
+            for q in image_queries[:3]:  
                 try:
                     found = await self.search.get_urls(q,mpn=mpn or "",brand=brand or identifiers["brand"] or "",title=title or "")
                     image_urls.extend(found)
@@ -113,7 +113,7 @@ class AggregationPipeline:
                 except Exception as e:
                     logger.debug(f"[{request_id}] Image search query failed: {e}")
             
-            # Download and extract images from new URLs
+            
             if image_urls:
                 logger.info(f"[{request_id}] Downloading {len(image_urls)} additional URLs for image extraction")
                 image_download_tasks = [self.downloader.download(url) for url in image_urls]

@@ -893,7 +893,7 @@ async def aggregate_product(
                 'short_description': enrichment_result.short_description or "",
                 'long_description': enrichment_result.long_description,
                 'features': enrichment_result.features,
-                'sources_consulted': list({s['url'] for s in all_extractions}),  # unique URLs
+                'sources_consulted': list({s['url'] for s in all_extractions}), 
                 'confidence': avg_conf
             },
             'validation_conflicts': validation_conflicts,
