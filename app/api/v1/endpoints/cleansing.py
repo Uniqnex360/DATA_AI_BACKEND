@@ -1,5 +1,7 @@
 from typing import Dict, List
 from datetime import datetime
+from sqlalchemy import or_
+
 from app.models.cleaning import CleaningTask
 from app.models.product import Product
 from app.models.project import Project
@@ -18,7 +20,8 @@ import pandas as pd
 import io
 from app.schemas.aggregation import AggregateLLMRequest, UpdateAttributesRequest
 from app.schemas.enrichment import AggregatedAttribute
-from app.schemas.cleaning import BulkUpdateAttributesRequest, RunCleaningRequest
+from app.schemas.cleaning import BulkUpdateAttributesRequest, ExportSelectedCleaningRequest, RunCleaningRequest
+from app.utils.aggregate_download import generate_products_excel
 from app.utils.cleaning_helper import append_cleaning_task_log, create_cleaning_task, get_cleaning_task_or_404, update_cleaning_task_status
 logger = logging.getLogger("cleansing_router")
 router = APIRouter()
@@ -690,8 +693,6 @@ async def update_product_attributes(
 #                 await db.commit()
 #         except:
 #             pass
-
-
 @router.put("/products/bulk-attributes")
 async def bulk_update_product_attributes(
     request: BulkUpdateAttributesRequest,
@@ -699,70 +700,140 @@ async def bulk_update_product_attributes(
 ):
     try:
         if not request.product_ids:
-            raise HTTPException(
-                status_code=400, detail="No product IDs provided")
+            raise HTTPException(status_code=400, detail="No product IDs provided")
+
+        if not request.attributes:
+            raise HTTPException(status_code=400, detail="No attributes provided")
+
         stmt = select(Product).where(Product.id.in_(request.product_ids))
         result = await db.execute(stmt)
         products = result.scalars().all()
+
         if not products:
             raise HTTPException(status_code=404, detail="No products found")
-        cleaning_service = LLMCleaningService(llm_provider="openai") 
+
+        cleaning_service = LLMCleaningService(llm_provider="openai")
         updated_count = 0
+
         for product in products:
             if not product.dynamic_attributes:
                 continue
+
             updated = False
             new_attrs = [dict(attr) for attr in product.dynamic_attributes]
+
+            context = ProductContext(
+                mpn=product.product_code,
+                brand=product.brand_name,
+                product_name=product.product_name,
+                taxonomy=product.taxonomy
+            )
+
             for idx, attr in enumerate(new_attrs):
-                if attr.get("name") == request.attribute_name:
-                    attribute_input = AttributeInput(
-                        id=str(idx),
-                        name=request.attribute_name,
-                        value=request.attribute_value,
-                        unit=attr.get("unit") or attr.get("uom"),
-                        source="bulk_update"
+                attr_name = attr.get("name")
+                if attr_name not in request.attributes:
+                    continue
+
+                raw_value = request.attributes[attr_name]
+
+                attribute_input = AttributeInput(
+                    id=str(idx),
+                    name=attr_name,
+                    value=raw_value,
+                    unit=attr.get("unit") or attr.get("uom"),
+                    source="bulk_update"
+                )
+
+                try:
+                    cleaning_result = await cleaning_service.clean_attributes(
+                        [attribute_input],
+                        context
                     )
-                    context = ProductContext(
-                        mpn=product.product_code,
-                        brand=product.brand_name,
-                        product_name=product.product_name,
-                        taxonomy=product.taxonomy
+
+                    if cleaning_result.cleaned_attributes:
+                        cleaned = cleaning_result.cleaned_attributes[0]
+                        attr["value"] = cleaned.cleaned_value
+                        attr["unit"] = cleaned.unit or ""
+                        attr["uom"] = cleaned.unit or ""
+                    else:
+                        attr["value"] = raw_value
+
+                except Exception as e:
+                    logger.error(
+                        f"Bulk cleaning failed for product {product.id}, attribute {attr_name}: {e}",
+                        exc_info=True,
                     )
-                    try:
-                        cleaning_result = await cleaning_service.clean_attributes(
-                            [attribute_input], 
-                            context
-                        )
-                        if cleaning_result.cleaned_attributes:
-                            cleaned = cleaning_result.cleaned_attributes[0]
-                            attr["value"] = cleaned.cleaned_value
-                            attr["unit"] = cleaned.unit or ""
-                            attr["uom"] = cleaned.unit or ""
-                        else:
-                            attr["value"] = request.attribute_value
-                    except Exception as e:
-                        logger.error(f"Bulk cleaning failed for product {product.id}: {e}")
-                        attr["value"] = request.attribute_value
-                    updated = True
+                    attr["value"] = raw_value
+
+                updated = True
+
             if updated:
                 product.dynamic_attributes = new_attrs
                 flag_modified(product, "dynamic_attributes")
-                if product.validation_conflicts and request.attribute_name in product.validation_conflicts:
-                    del product.validation_conflicts[request.attribute_name]
+
+                if product.validation_conflicts:
+                    for attr_name in request.attributes.keys():
+                        if attr_name in product.validation_conflicts:
+                            del product.validation_conflicts[attr_name]
                     flag_modified(product, "validation_conflicts")
+
                 product.updated_at = datetime.utcnow()
                 db.add(product)
                 updated_count += 1
+
         await db.commit()
+
         return {
             "status": "success",
             "message": f"Updated {updated_count} product(s)",
             "updated_count": updated_count
         }
+
     except HTTPException:
         raise
     except Exception as e:
         await db.rollback()
         logger.error(f"Bulk update attributes failed: {e}", exc_info=True)
         raise HTTPException(
-            status_code=500, detail="Failed to bulk update attributes")
+            status_code=500,
+            detail="Failed to bulk update attributes"
+        )
+
+@router.post("/download-selected")
+async def download_selected_cleaned_products(
+    request: ExportSelectedCleaningRequest,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        if not request.product_ids and not request.project_ids:
+            raise HTTPException(status_code=400, detail="No products or projects selected")
+
+        stmt = select(Product)
+
+        filters = []
+        if request.product_ids:
+            filters.append(Product.id.in_(request.product_ids))
+        if request.project_ids:
+            filters.append(Product.project_id.in_(request.project_ids))
+
+        stmt = stmt.where(or_(*filters)).order_by(Product.created_at.asc())
+
+        result = await db.execute(stmt)
+        products = result.scalars().all()
+
+        if not products:
+            raise HTTPException(status_code=404, detail="No products found")
+
+        return await generate_products_excel(products, db)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Failed to download selected cleaned products: {e}",
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to download cleaned products"
+        )

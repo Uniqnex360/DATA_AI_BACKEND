@@ -124,3 +124,33 @@ async def get_project_filters(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch project filters",
         )
+@router.get("/attributes")
+async def get_project_attributes(
+    project_id: str = Query(..., description="Project ID"),
+    category: str | None = Query(default=None, description="Optional category filter"),
+db: AsyncSession = Depends(get_session),):
+    try:
+        stmt=select(Product.dynamic_attributes).where(Product.project_id==project_id)
+        if category:
+            stmt=stmt.where(Product.category_1==category)
+        result=await db.execute(stmt)
+        rows=result.scalars().all()
+        attribute_names=set()
+        for dynamic_attributes in rows:
+            if not dynamic_attributes or not isinstance(dynamic_attributes,list):
+                continue
+            for attr in dynamic_attributes:
+                if isinstance(attr,dict):
+                    name=attr.get('name')
+                    if isinstance(name,str) and name.strip():
+                        attribute_names.add(name.strip())
+        return {
+            "attributes":sorted(attribute_names)
+        }   
+    except Exception as e:
+        logger.error(f"Failed to fetch attributes for project {project_id} and category {category}: {e}",exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch project attributes",
+        )
+        

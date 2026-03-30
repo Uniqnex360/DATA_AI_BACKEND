@@ -17,6 +17,18 @@ from app.schemas.project import ProjectCreate, ProjectResponse
 logger = logging.getLogger("projects_router")
 router = APIRouter()
 
+def normalize_source_status(status: str | None) -> str:
+    if not status:
+        return "Yet to Start"
+    
+    status = status.lower().strip()
+    
+    if status == "completed":
+        return "Completed"
+    if status in ("processing", "failed"):
+        return "In Progress"
+    
+    return "Yet to Start"
 @router.get("/", response_model=List[ProjectResponse])
 async def list_projects(
     operation_mode: str | None = None,
@@ -70,7 +82,8 @@ async def list_projects(
             project_response = ProjectResponse.model_validate(project)
             project_response.product_count = product_count or 0
             project_response.processing_status = processing_status or "pending"
-            project_response.source_status = clean_source_status
+            project_response.source_status = normalize_source_status(clean_source_status)
+
 
             projects.append(project_response)
 

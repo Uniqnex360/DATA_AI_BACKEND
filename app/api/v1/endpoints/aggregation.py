@@ -393,14 +393,9 @@ def merge_dynamic_attributes(
     ai_data: Dict[str, Any],
     is_validation_mode: bool = False
 ) -> None:
-    """Merge AI‑extracted attributes into product.dynamic_attributes.
-    - Updates existing attributes with non‑empty values.
-    - Appends new attributes not already present.
-    - If is_validation_mode, also sets validation_value/_uom.
-    """
+    
     existing_names = {attr.get('name') for attr in product.dynamic_attributes if isinstance(attr, dict)}
     
-    # Update existing attributes
     for attr in product.dynamic_attributes:
         if not isinstance(attr, dict) or not attr.get('name'):
             continue
@@ -414,7 +409,6 @@ def merge_dynamic_attributes(
         else:
             new_val = str(ai_val) if ai_val else ''
             new_uom = ''
-        # Only update if new value is non‑empty (to avoid losing existing data)
         if new_val:
             attr['value'] = new_val
             if new_uom:
@@ -423,7 +417,6 @@ def merge_dynamic_attributes(
                 attr['validation_value'] = new_val
                 attr['validation_uom'] = new_uom
     
-    # Add new attributes
     for attr_name, ai_val in ai_data.items():
         if attr_name in existing_names:
             continue
@@ -433,7 +426,7 @@ def merge_dynamic_attributes(
         else:
             value = str(ai_val) if ai_val else ''
             uom = ''
-        if value:   # only add if there is a value
+        if value:   
             product.dynamic_attributes.append({
                 'name': attr_name,
                 'value': value,

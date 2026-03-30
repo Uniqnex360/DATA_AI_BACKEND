@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional,Dict
 
 class RunCleaningRequest(BaseModel):
     project_id: str
@@ -8,5 +8,8 @@ class RunCleaningRequest(BaseModel):
 
 class BulkUpdateAttributesRequest(BaseModel):
     product_ids: List[str]
-    attribute_name: str
-    attribute_value: str
+    attributes:Dict[str,str]
+    
+class ExportSelectedCleaningRequest(BaseModel):
+    product_ids: List[str] = []
+    project_ids: List[str] = []
