@@ -1,5 +1,6 @@
 import logging
 import asyncio
+from anthropic import AsyncAnthropic
 from app.aggregation.services.smart_search import SmartSearchResponse, TargetedQueryResponse, UrlFilterResponse
 from app.core.rate_limiter import openai_limiter
 from openai import OpenAI
@@ -19,6 +20,7 @@ _openai_client = AsyncOpenAI(
     api_key=settings.openai_api_key,
     timeout=60.0
 )
+_anthropic_client = AsyncAnthropic(api_key=settings.anthropic_api_key) if settings.anthropic_api_key else None
 _llm_semaphore = asyncio.Semaphore(5)
 
 
@@ -135,8 +137,35 @@ async def call_llm_with_schema(
             response_text=await asyncio.to_thread(sync_call)
             parsed=parse_response(response_text)
             return schema_class.model_validate(parsed)
+        elif llm_provider == 'claude':
+            if not _anthropic_client:
+                raise ValueError("Anthropic API key not configured")
+
+            schema_dict = schema_class.model_json_schema()
+            claude_prompt = f"""{prompt}
+            Return JSON response matching this schema:{json.dumps(schema_dict, indent=2)}
+            Do not include markdown fences or explanation text.
+            """
+
+            async with _llm_semaphore:
+                response = await _anthropic_client.messages.create(
+                    model=settings.claude_model,
+                    max_tokens=max_tokens or 4000,
+                    system="You are a precise data extraction engine. Follow instructions exactly. Never invent product information. Return only valid JSON.",
+                    messages=[
+                        {"role": "user", "content": claude_prompt}
+                    ]
+                )
+
+            response_text = "".join(
+                block.text for block in response.content
+                if getattr(block, "type", None) == "text"
+            )
+            parsed = parse_response(response_text)
+            return schema_class.model_validate(parsed)
     except Exception as e:
-        logger.warning(f"OpenAI failed: {str(e)[:200]}")
+        logger.warning(f"{llm_provider} failed: {str(e)[:200]}")
+
         logger.info(f"Switching to Gemini backup ({settings.gemini_model})")      
         try:
             schema_dict=schema_class.model_json_schema()

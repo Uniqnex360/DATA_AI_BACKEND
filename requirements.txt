@@ -32,5 +32,6 @@ scikit-learn
 sentence-transformers
 googlesearch-python
 aiohttp
+anthropic
 tenacity
 curl_cffi

@@ -276,23 +276,30 @@ async def batch_aggregate(
         rows = parse_import_file(content, file.filename)
         valid_rows = []
         rejected_count = 0
+        with_mpn_count=0
+        without_mpn_count=0
         for r in rows:
             mpn = str(r.get('mpn', '')).strip()
             brand = str(r.get('brand', '')).strip()
-            if brand and mpn:
+            sku=str(r.get('sku','')).strip()
+            product_name=str(r.get('product_name',"")).strip()
+            has_identifier=bool(mpn or sku or product_name)
+            if brand and has_identifier:
                 valid_rows.append(r)
+                if mpn:
+                    with_mpn_count+=1
+                else:
+                    without_mpn_count+=1
             else:
                 rejected_count += 1
-                logger.warning(
-                    f"Rejected row: missing  MPN='{mpn}', Brand='{brand}'")
+                logger.warning(f"Rejected row: missing required fields Brand='{brand}', MPN='{mpn}', SKU='{sku}', Product_Name='{product_name}'")
             # if str(r.get('sku', '')).strip() or str(r.get('mpn', '')).strip() or str(r.get('product_name', '')).strip() or str(r.get('brand')).strip():
             #     valid_rows.append(r)
         if rejected_count > 0:
             logger.info(
                 f"Rejected {rejected_count} rows due to missing SKU, MPN, or Brand")
         if not valid_rows:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST,
-                                detail="No valid rows with SKU, MPN, and Brand found in file")
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,detail="No valid rows found. Each row must contain Brand and at least one of MPN, SKU, or Product Name.")
         rows = valid_rows
         total_rows = len(rows)
         if total_rows == 0:
@@ -331,7 +338,10 @@ async def batch_aggregate(
                 "file_hash": file_hash,
                 "total": total_rows,
                 "inferred_taxonomies": inferred_count,
-                "processing_status": "pending"
+                "processing_status": "pending",
+                'with_mpn_count':with_mpn_count,
+                'without_mpn_count':without_mpn_count,
+                'rejected_count':rejected_count
             }
         )
         db.add(new_source)
@@ -421,7 +431,15 @@ async def batch_aggregate(
         return {
             "status": "accepted",
             "batch_id": str(new_source.id),
-            "message": f"Imported {total_rows} products. Ready for aggregation."
+            "message": f"Imported {len(valid_rows)} products. Ready for aggregation.",
+             "summary": {
+            "total_rows": total_rows,
+            "valid_rows": len(valid_rows),
+            "rejected_rows": rejected_count,
+            "with_mpn_count": with_mpn_count,
+            "without_mpn_count": without_mpn_count,
+    }
+            
         }
     except HTTPException:
         raise

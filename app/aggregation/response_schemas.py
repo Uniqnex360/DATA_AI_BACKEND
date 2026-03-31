@@ -85,7 +85,6 @@ class EnrichmentResponse(BaseModel):
     long_description: str = Field(max_length=1000)
     features: List[str] = Field(max_items=10)
     confidence: float
-    
 class StandardizedAttribute(BaseModel):
     name: str
     value: str

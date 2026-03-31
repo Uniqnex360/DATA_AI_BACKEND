@@ -16,7 +16,6 @@ from sqlalchemy.orm import aliased
 from app.schemas.project import ProjectCreate, ProjectResponse
 logger = logging.getLogger("projects_router")
 router = APIRouter()
-
 def normalize_source_status(status: str | None) -> str:
     if not status:
         return "Yet to Start"
@@ -78,7 +77,8 @@ async def list_projects(
             product_count = row[1]
             processing_status = row[2]
             source_status = row[3]
-            clean_source_status = source_status.replace('"', "") if source_status else "pending"
+            clean_source_status = source_status.replace('"', "") if source_status else None
+
             project_response = ProjectResponse.model_validate(project)
             project_response.product_count = product_count or 0
             project_response.processing_status = processing_status or "pending"
