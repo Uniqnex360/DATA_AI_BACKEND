@@ -1,6 +1,5 @@
 from typing import Dict, List, Optional, Literal
 from pydantic import BaseModel, Field
-from app.cleaning import clean_attribute
 """
 Structured output schemas for reliable LLM responses
 """
