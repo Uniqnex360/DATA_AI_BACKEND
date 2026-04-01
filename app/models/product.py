@@ -20,8 +20,6 @@ class Product(UUIDModel,table=True):
     industry_name: Optional[str] = Field(default=None) 
     industry_code: Optional[str] = Field(default=None)
     taxonomy: Optional[str] = Field(default=None, index=True) 
-    brand_name:Optional[str]=None
-    brand_code:Optional[str]=None
     category_1:Optional[str]=None
     category_2: Optional[str] = Field(default=None)
     category_3: Optional[str] = Field(default=None)
@@ -64,8 +62,6 @@ class Product(UUIDModel,table=True):
     )
     sources_consulted: Optional[List[str]] = Field(default=None, sa_column=Column(JSON))
     published_at: Optional[datetime] = Field(default=None, nullable=True)
-    gtin:Optional[str]=None
-    upc:Optional[str]=None
     source_url: Optional[str] = Field(default=None) 
     project_id: Optional[UUID] = Field(default=None, index=True, foreign_key="catalog_projects.id")
     project: Optional["Project"] = Relationship(back_populates="products")
@@ -96,3 +92,7 @@ class Product(UUIDModel,table=True):
     safety_standard: Optional[str] = None
     hazardous_material: Optional[str] = None
     prop65_warning: Optional[str] = None
+    workflow_stage: str = Field(default="aggregation", index=True)
+    needs_enrichment: bool = Field(default=False, index=True)
+    ready_for_export: bool = Field(default=False, index=True)
+    routed_to_enrichment_at: Optional[datetime] = Field(default=None, nullable=True)

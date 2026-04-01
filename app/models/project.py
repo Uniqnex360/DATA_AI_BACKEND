@@ -12,4 +12,5 @@ class Project(UUIDModel, table=True):
     status: str = Field(default="draft") 
     use_case: Optional[str] = Field(default=None)
     operation_mode: Optional[str] = Field(default="aggregation") 
+    
     products: List["Product"] = Relationship(back_populates="project")

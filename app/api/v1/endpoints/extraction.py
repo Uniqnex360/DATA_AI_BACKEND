@@ -689,6 +689,8 @@ async def run_aggregation_task(source_id: str):
             successful = 0
             failed = 0
             total = len(products)
+            products_routed_to_enrichment = 0
+            products_ready_for_export=0
             logger.info(
                 f"Starting aggregation task for source {source_id}, found {total} pending products.")
             for product in products:

@@ -13,6 +13,7 @@ from app.models.project import Project
 from app.models.product import Product
 logger=logging.getLogger('products')
 router=APIRouter()
+
 @router.get("/", response_model=Dict[str, Any]) 
 
 async def read_products(
@@ -20,7 +21,8 @@ async def read_products(
     project_id: Optional[UUID]=None,   
     enrichment_status: Optional[str] = None, 
     skip: int = 0, 
-    limit: int = 100
+    limit: int = 100,
+    workflow_stage:Optional[str]=None,
 ):
     try:
         
@@ -28,11 +30,9 @@ async def read_products(
 
         
         if project_id:
-            try:
                 statement = statement.where(Product.project_id == project_id)
-            except ValueError:
-                statement = statement.where(Product.project_id == project_id)
-        
+        if workflow_stage and hasattr(Product,'workflow_stage'):
+            statement = statement.where(Product.workflow_stage == workflow_stage)
         if enrichment_status and enrichment_status != 'all':
             statement = statement.where(product_service.model.enrichment_status == enrichment_status)
 
