@@ -67,7 +67,6 @@ async def calculate_metrics(db: AsyncSession, project_id: str | None) -> dict:
 
         aggregated_products = 0
         cleaned_products = 0
-        standardized_products = 0
         enriched_products = 0
         published_products = 0
 
@@ -83,13 +82,13 @@ async def calculate_metrics(db: AsyncSession, project_id: str | None) -> dict:
                 cleaned_products = completed_count
 
                 if "standardization" in use_case:
-                    standardized_products = completed_count
+                    cleaned_products = completed_count
 
             elif operation_mode == "enrichment":
                 enriched_products = completed_count
 
                 if "validation" in use_case:
-                    standardized_products = completed_count
+                    cleaned_products = completed_count
 
         else:
             global_stmt = select(
@@ -109,24 +108,16 @@ async def calculate_metrics(db: AsyncSession, project_id: str | None) -> dict:
 
             for operation_mode, use_case, count in global_result.all():
                 operation_mode = (operation_mode or "").lower()
-                use_case = (use_case or "").lower()
                 count = count or 0
 
                 if operation_mode == "aggregation":
                     aggregated_products += count
-                    
 
                 elif operation_mode == "cleaning":
                     cleaned_products += count
 
-                    if "standardization" in use_case:
-                        standardized_products += count
-
                 elif operation_mode == "enrichment":
                     enriched_products += count
-
-                    if "validation" in use_case:
-                        standardized_products += count
 
         return {
             "name": project_name,
@@ -135,7 +126,6 @@ async def calculate_metrics(db: AsyncSession, project_id: str | None) -> dict:
             "totalProducts": total_products,
             "aggregatedProducts": aggregated_products,
             "cleanedProducts": cleaned_products,
-            "standardizedProducts": standardized_products,
             "enrichedProducts": enriched_products,
             "publishedProducts": published_products,
             "failedProducts": failed_count,
