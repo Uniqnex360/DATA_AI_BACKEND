@@ -3,7 +3,6 @@ from sqlalchemy import cast, String
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, outerjoin, and_
-from pydantic import BaseModel, Field
 from typing import Optional, List
 from app.core.database import get_session
 from app.models.brand import Brand
@@ -28,6 +27,7 @@ def normalize_source_status(status: str | None) -> str:
         return "In Progress"
     
     return "Yet to Start"
+
 @router.get("/", response_model=List[ProjectResponse])
 async def list_projects(
     operation_mode: str | None = None,
