@@ -96,3 +96,4 @@ class Product(UUIDModel,table=True):
     needs_enrichment: bool = Field(default=False, index=True)
     ready_for_export: bool = Field(default=False, index=True)
     routed_to_enrichment_at: Optional[datetime] = Field(default=None, nullable=True)
+    used_llms:List[str]=Field(default=[],sa_column=Column(JSON))

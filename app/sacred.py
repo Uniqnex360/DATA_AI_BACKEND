@@ -117,7 +117,7 @@ def fallback_extraction(html: str) -> Dict:
 
 
 async def extract_image_from_source(source_html: str, source_url: str, mpn: str = "") -> Optional[str]:
-    logger.info(f"🖼️ Extracting image from {source_url[:80]}... (HTML size: {len(source_html)})") 
+    logger.info(f" Extracting image from {source_url[:80]}... (HTML size: {len(source_html)})") 
 
     if not source_html or len(source_html) < 100:
         logger.warning(f"Image extraction: Source HTML too short ({len(source_html)}) for {source_url}")

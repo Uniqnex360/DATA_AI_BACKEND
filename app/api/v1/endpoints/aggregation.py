@@ -11,14 +11,15 @@ import traceback
 from sqlmodel import update
 import io
 import pandas as pd
-from app import llm
 from app.core.database import get_session, async_session_factory
 from app.models.pipeline import AggregationJob, AuditTrail, CleansingIssue, RawExtraction, Source
 from app.models.product import Product
 from app.models.project import Project
 from app.aggregation.aggregate_product import aggregate_product, chunk_attributes
 from app.schemas.aggregation import AggregateLLMRequest, AggregatedAttribute, AggregatedAttributeValue, AggregationJobResponse, AggregationTriggerResponse, BatchExportRequest, ProductAggregationResponse, ProjectStats
+from app.utils import llm_usage
 from app.utils.aggregate_download import generate_products_excel
+from app.utils.llm_usage import track_llm_usage
 from app.utils.validators import is_invalid
 from app.utils.image_validator import validate_image_url
 from app.utils.sanitize import sanitize_ai_data
@@ -367,6 +368,10 @@ async def aggregate_single_product(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Product not found"
             )
+        used_llms=product.used_llms or []
+        if request.llm_provider in used_llms:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail=f'Product has been already enriched with LLM,Please try another one!')
+        logger.info(f"Starting single product aggregation:{product.product_code}")
         if product.enrichment_status == 'processing':
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -690,6 +695,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                 logger.warning(
                                     f"⚠ No image found during aggregation of {product.product_code}")
                             product.completeness_score = min(len(ai_attributes) * 5, 100)
+                            is_enrichment_attempt=product.workflow_stage=='enrichment'
                             product.sources_consulted = golden.get('sources_consulted', [])
                             if product.completeness_score<enrichment_threshold:
                                 product.workflow_stage='enrichment'
@@ -706,6 +712,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                 product.enrichment_status='completed'  
                                 product.routed_to_enrichment_at = None
                                 ready_for_export+=1
+                            track_llm_usage(product,llm_provider,is_enrichment_attempt,logger)
                             await db_session.flush()
                             await check_data_quality(db_session, product.product_code, ai_attributes)
                             successful += 1
@@ -812,6 +819,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                 product.enrichment_status = 'completed'
                                 product.routed_to_enrichment_at = None 
                                 ready_for_export+=1
+                            track_llm_usage(product,llm_provider,is_enrichment_attempt,logger)
                             db_session.add(product)
                             await db_session.flush()
                             await check_data_quality(db_session, product.product_code, ai_attributes)
@@ -920,6 +928,8 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                 return
             logger.info(
                 f"Starting single product aggregation: {product.product_code}")
+            is_enrichment_attempt=product.workflow_stage=='enrichment'
+            logger.info(f"Product {product.product_code} - workflow_stage: {product.workflow_stage}, is_enrichment_attempt: {is_enrichment_attempt}")
             primary_attrs = []
             if product.dynamic_attributes:
                 for attr in product.dynamic_attributes:
@@ -1101,6 +1111,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                         product.ready_for_export = True
                         product.enrichment_status = 'completed'
                         product.routed_to_enrichment_at = None
+                    track_llm_usage(product,llm_provider,is_enrichment_attempt,logger)
                     await check_data_quality(db_session, product.product_code, ai_data)
                     logger.info(
                         f"Single product aggregation complete: {product.product_code}")
@@ -1174,7 +1185,6 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     product.enrichment_status = 'completed'
                     product.completeness_score = min(len(ai_data) * 5, 100)
                     product.sources_consulted = golden.get('sources_consulted', [])
-
                     if product.completeness_score < enrichment_threshold:
                         product.workflow_stage = 'enrichment'
                         product.needs_enrichment = True
@@ -1182,19 +1192,13 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                         product.routed_to_enrichment_at = datetime.utcnow()
                         product.enrichment_status = 'pending'  
                     else:
-                        product.workflow_stage = 'aggregation'   
+                        product.workflow_stage = 'aggregation'
                         product.needs_enrichment = False
                         product.ready_for_export = True
                         product.enrichment_status = 'completed'
                         product.routed_to_enrichment_at = None
-                    await check_data_quality(db_session, product.product_code, ai_data)
-                # # remaining_stmt = select(func.count(Product.id)).where(
-                # #     and_(
-                # #         Product.project_id == product.project_id,
-                # #         Product.enrichment_status.in_(
-                # #             ['pending', 'processing'])
-                # #     )
-                # # )
+                    track_llm_usage(product,llm_provider,is_enrichment_attempt,logger)
+          
                 # # remaining_count = await db_session.scalar(remaining_stmt)
                 # # failed_stmt = select(func.count(Product.id)).where(and_(
                 # #     Product.project_id == product.project_id, Product.enrichment_status == 'failed'))

@@ -1,4 +1,4 @@
-from sqlalchemy import cast, String
+from sqlalchemy import cast, String,case
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -38,16 +38,60 @@ def normalize_source_status(status: str | None, project_status: str | None = Non
 @router.get("/", response_model=List[ProjectResponse])
 async def list_projects(
     operation_mode: str | None = None,
+    tab: str | None = None,  # <--- NEW PARAMETER
     db: AsyncSession = Depends(get_session),
 ):
     try:
         active_job = aliased(AggregationJob)
         active_source = aliased(Source)
 
+        score = func.coalesce(Product.completeness_score, 0)
+
+        # ---------------------------------------------------------
+        # COUNT LOGIC (Now controlled by the 'tab' parameter)
+        # ---------------------------------------------------------
+        if tab == "aggregation":
+            # Aggregation Tab: Show products >= 90
+            product_count_expr = func.sum(
+                case(
+                    (
+                        and_(
+                            Product.workflow_stage == "aggregation",
+                            Product.enrichment_status.in_(["pending", "failed"])
+                        ),
+                        1
+                    ),
+                    else_=0
+                )
+            ).label("product_count")
+            
+        elif tab == "enrichment":
+            # Enrichment Tab: Show products < 90
+            product_count_expr = func.sum(
+                case(
+                    (
+                        and_(
+                            Product.workflow_stage == "enrichment",
+                            Product.enrichment_status.in_(["pending", "failed"])
+                        ),
+                        1
+                    ),
+                    else_=0
+                )
+            ).label("product_count")
+            
+        else:
+            # Fallback: Total products
+            product_count_expr = func.count(Product.id).label("product_count")
+
+
+        # ---------------------------------------------------------
+        # QUERY BUILDER
+        # ---------------------------------------------------------
         statement = (
             select(
                 Project,
-                func.count(Product.id).label("product_count"),
+                product_count_expr,
                 func.max(active_job.status).label("processing_status"),
                 func.max(
                     cast(active_source.source_metadata["processing_status"], String)
@@ -67,6 +111,7 @@ async def list_projects(
             )
         )
 
+        # FILTER LOGIC (Controlled by operation_mode)
         if operation_mode:
             statement = statement.where(Project.operation_mode == operation_mode)
 
@@ -81,16 +126,15 @@ async def list_projects(
         projects = []
         for row in rows:
             project = row[0]
-            product_count = row[1]
+            product_count = row[1] or 0 
             processing_status = row[2]
             source_status = row[3]
             clean_source_status = source_status.replace('"', "") if source_status else None
 
             project_response = ProjectResponse.model_validate(project)
-            project_response.product_count = product_count or 0
+            project_response.product_count = product_count
             project_response.processing_status = processing_status or "pending"
-            project_response.source_status = normalize_source_status(clean_source_status,project_status=project.status)
-
+            project_response.source_status = normalize_source_status(clean_source_status, project_status=project.status)
 
             projects.append(project_response)
 
@@ -101,7 +145,6 @@ async def list_projects(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch projects",
         )
-
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_session)):
     print(f"Received payload: {payload}")
