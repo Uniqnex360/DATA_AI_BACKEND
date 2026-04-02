@@ -27,8 +27,57 @@ from app.aggregation.worker_pool import get_worker_pool
 logger = logging.getLogger("aggregation_router")
 
 router = APIRouter()
+async def update_project_status(db_session: AsyncSession, project_id: str) -> None:
+    stmt = select(
+        func.count(Product.id).label("total"),
+        func.sum(case((Product.enrichment_status == 'completed', 1), else_=0)).label("completed"),
+        func.sum(case((Product.enrichment_status == 'failed', 1), else_=0)).label("failed"),
+        func.sum(case((Product.enrichment_status == 'pending', 1), else_=0)).label("pending"),
+        func.sum(case((Product.enrichment_status == 'processing', 1), else_=0)).label("processing"),
+    ).where(Product.project_id == project_id)
 
+    result = await db_session.execute(stmt)
+    stats = result.first()
 
+    total = stats.total or 0
+    completed = stats.completed or 0
+    failed = stats.failed or 0
+    pending = stats.pending or 0
+    processing = stats.processing or 0
+
+    if processing > 0:
+        status_value = "in_progress"
+    elif pending > 0 and completed > 0:
+        status_value = "partially_completed"
+    elif pending == 0 and completed == total and total > 0:
+        status_value = "completed"
+    elif failed == total and total > 0:
+        status_value = "failed"
+    elif total > 0 and completed > 0:
+        status_value = "partially_completed"
+    else:
+        status_value = "yet_to_start"
+
+    logger.info(
+        f"update_project_status({project_id}) => "
+        f"total={total}, completed={completed}, failed={failed}, "
+        f"pending={pending}, processing={processing}, status={status_value}"
+    )
+
+    await db_session.execute(
+        update(Project).where(Project.id == project_id).values(status=status_value)
+    )
+async def refresh_project_status(project_id: str) -> None:
+    async with async_session_factory() as session:
+        await update_project_status(session, project_id)
+        await session.commit()
+
+        project = await session.get(Project, project_id)
+        if project:
+            logger.info(
+                f"Refreshed project {project_id} final status: {project.status}"
+            )
+            
 def merge_attributes_preserving_order(
     primary_attributes: List[str],
     existing_attrs: Dict[str, Any],
@@ -117,10 +166,16 @@ async def get_projects_with_aggregation_stats(
                 agg_status = 'in_progress'
             elif total == 0:
                 agg_status = 'yet_to_start'
-            elif pending == 0 and completed > 0:
+            elif pending > 0 and completed > 0:
+                agg_status = 'partially_completed'
+            elif pending == 0 and completed > 0 and failed == 0:
                 agg_status = 'completed'
-            elif completed > 0:
+            elif pending == 0 and completed > 0 and failed > 0:
+                agg_status = 'partially_completed'
+            elif completed == 0 and pending > 0:
                 agg_status = 'in_progress'
+            elif failed == total:
+                agg_status = 'failed'
             else:
                 agg_status = 'yet_to_start'
             result.append(ProjectStats(
@@ -805,11 +860,16 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
             source_stmt = select(Source).where(
                 Source.project_id == job.project_id)
             source_result = await db_session.execute(source_stmt)
+            await update_project_status(db_session, job.project_id)
+            project = await db_session.get(Project, job.project_id)
+            processing_status = project.status if project else 'completed'
             sources = source_result.scalars().all()
             for source in sources:
                 new_metadata = dict(
                     source.source_metadata) if source.source_metadata else {}
-                new_metadata['processing_status'] = 'completed'
+                
+                new_metadata['processing_status'] = processing_status
+
                 new_metadata['successful'] = successful
                 new_metadata['failed'] = failed
                 new_metadata['routed_to_enrichment'] = routed_to_enrichment
@@ -823,13 +883,16 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                 product_id=f"PROJECT_{job.project_id}",
                 stage="aggregation",
                 attribute_name="project_aggregation",
-                selected_value="Completed" if job.status == 'completed' else "Cancelled",
+                selected_value=processing_status.replace('_', ' ').title(),
                 sources_used=f"{total} products",
                 reason=f"Aggregated {successful}/{total} products successfully, {failed} failed"
             ))
+            await update_project_status(db_session, job.project_id)
             await db_session.commit()
             logger.info(
                 f"Job {job_id} complete: {successful}/{total} successful, {failed} failed")
+            await refresh_project_status(job.project_id)
+
         except Exception as e:
             await db_session.rollback()
             logger.error(
@@ -841,6 +904,8 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                     job.completed_at = datetime.utcnow()
                     db_session.add(job)
                     await db_session.commit()
+                    await refresh_project_status(job.project_id)
+
                 except Exception as commit_error:
                     logger.error(
                         f"Failed to update job status: {commit_error}")
@@ -1123,48 +1188,98 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                         product.enrichment_status = 'completed'
                         product.routed_to_enrichment_at = None
                     await check_data_quality(db_session, product.product_code, ai_data)
-                remaining_stmt = select(func.count(Product.id)).where(
-                    and_(
-                        Product.project_id == product.project_id,
-                        Product.enrichment_status.in_(
-                            ['pending', 'processing'])
+                # # remaining_stmt = select(func.count(Product.id)).where(
+                # #     and_(
+                # #         Product.project_id == product.project_id,
+                # #         Product.enrichment_status.in_(
+                # #             ['pending', 'processing'])
+                # #     )
+                # # )
+                # # remaining_count = await db_session.scalar(remaining_stmt)
+                # # failed_stmt = select(func.count(Product.id)).where(and_(
+                # #     Product.project_id == product.project_id, Product.enrichment_status == 'failed'))
+                # # failed_count = await db_session.scalar(failed_stmt)
+                # # if remaining_count == 0:
+                # #     if failed_count > 0:
+                # #         logger.info(
+                # #             f" Project {product.project_id} completed with {failed_count} failed products")
+                # #     else:
+                # #         logger.info(
+                # #             f" Project {product.project_id} is FULLY COMPLETED!")
+                # #     await db_session.execute(update(Project).where(Project.id == product.project_id).values(status='completed'))
+                #     await update_project_status(db_session, product.project_id)
+                #     project = await db_session.get(Project, product.project_id)
+                #     logger.info(f"Project {product.project_id} status updated to {project.status}")
+                #     source_stmt = select(Source).where(
+                #         Source.project_id == product.project_id)
+                #     source_result = await db_session.execute(source_stmt)
+                #     sources = source_result.scalars().all()
+                #     for source in sources:
+                #         new_metadata = dict(
+                #             source.source_metadata) if source.source_metadata else {}
+                #         new_metadata['processing_status'] = 'completed'
+                #         new_metadata['completed_at'] = datetime.utcnow(
+                #         ).isoformat()
+                #         source.source_metadata = new_metadata
+                #         flag_modified(source, "source_metadata")
+                #         db_session.add(source)
+                #         logger.info(
+                #             f" Updated source {source.id} metadata: {new_metadata}")
+                #     db_session.add(AuditTrail(
+                #         product_id=f"PROJECT_{product.project_id}",
+                #         stage="aggregation",
+                #         attribute_name="project_completion",
+                #         selected_value="Completed",
+                #         sources_used="All products",
+                #         reason="All products aggregated successfully"
+                #     ))
+                await update_project_status(db_session, product.project_id)
+                project = await db_session.get(Project, product.project_id)
+
+                if project:
+                    logger.info(
+                        f"Project {product.project_id} status updated to {project.status}"
                     )
-                )
-                remaining_count = await db_session.scalar(remaining_stmt)
-                failed_stmt = select(func.count(Product.id)).where(and_(
-                    Product.project_id == product.project_id, Product.enrichment_status == 'failed'))
-                failed_count = await db_session.scalar(failed_stmt)
-                if remaining_count == 0:
-                    if failed_count > 0:
-                        logger.info(
-                            f" Project {product.project_id} completed with {failed_count} failed products")
-                    else:
-                        logger.info(
-                            f" Project {product.project_id} is FULLY COMPLETED!")
-                    await db_session.execute(update(Project).where(Project.id == product.project_id).values(status='completed'))
-                    source_stmt = select(Source).where(
-                        Source.project_id == product.project_id)
-                    source_result = await db_session.execute(source_stmt)
-                    sources = source_result.scalars().all()
-                    for source in sources:
-                        new_metadata = dict(
-                            source.source_metadata) if source.source_metadata else {}
-                        new_metadata['processing_status'] = 'completed'
-                        new_metadata['completed_at'] = datetime.utcnow(
-                        ).isoformat()
-                        source.source_metadata = new_metadata
-                        flag_modified(source, "source_metadata")
-                        db_session.add(source)
-                        logger.info(
-                            f" Updated source {source.id} metadata: {new_metadata}")
-                    db_session.add(AuditTrail(
-                        product_id=f"PROJECT_{product.project_id}",
-                        stage="aggregation",
-                        attribute_name="project_completion",
-                        selected_value="Completed",
-                        sources_used="All products",
-                        reason="All products aggregated successfully"
-                    ))
+
+                    if project.status == 'completed':
+                        source_stmt = select(Source).where(
+                            Source.project_id == product.project_id
+                        )
+                        source_result = await db_session.execute(source_stmt)
+                        sources = source_result.scalars().all()
+
+                        for source in sources:
+                            new_metadata = dict(source.source_metadata) if source.source_metadata else {}
+                            processing_status = project.status if project else 'completed'
+
+                            new_metadata['processing_status'] = processing_status
+
+                            new_metadata['completed_at'] = datetime.utcnow().isoformat()
+                            source.source_metadata = new_metadata
+                            flag_modified(source, "source_metadata")
+                            db_session.add(source)
+                            logger.info(
+                                f"Updated source {source.id} metadata: {new_metadata}"
+                            )
+
+                        db_session.add(AuditTrail(
+                            product_id=f"PROJECT_{product.project_id}",
+                            stage="aggregation",
+                            attribute_name="project_completion",
+                            selected_value="Completed",
+                            sources_used="All products",
+                            reason="All products aggregated successfully"
+                        ))
+
+                    elif project.status == 'partially_completed':
+                        db_session.add(AuditTrail(
+                            product_id=f"PROJECT_{product.project_id}",
+                            stage="aggregation",
+                            attribute_name="project_completion",
+                            selected_value="Partially Completed",
+                            sources_used="Mixed product states",
+                            reason="Some products completed while others are pending for enrichment"
+                        ))
                 logger.info(
                     f"Single product aggregation complete: {product.product_code}")
             else:
@@ -1177,6 +1292,8 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
             await db_session.refresh(product)
             logger.info(
                 f" Single product saved with image: {product.image_url_1}")
+            await refresh_project_status(product.project_id)
+
             await asyncio.sleep(2)
         except Exception as e:
             await db_session.rollback()
@@ -1189,6 +1306,8 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     product.enrichment_status = 'failed'
                     db_session.add(product)
                     await db_session.commit()
+                    await refresh_project_status(product.project_id)
+
             except Exception:
                 pass
 worker_pool = get_worker_pool(process_function=run_single_product_aggregation)

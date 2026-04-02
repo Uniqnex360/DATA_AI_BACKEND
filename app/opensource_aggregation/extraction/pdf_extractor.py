@@ -1,5 +1,5 @@
 import httpx
-import fitz  # PyMuPDF
+import fitz 
 import re
 import logging
 from typing import List, Optional
@@ -14,7 +14,6 @@ logger = logging.getLogger("os_pdf_extractor")
 
 
 class PdfExtractor:
-    """Extract product attributes from PDF documents"""
 
     def __init__(self):
         self.client = httpx.AsyncClient(
@@ -23,7 +22,6 @@ class PdfExtractor:
         )
 
     async def extract(self, url: str) -> SourceResult:
-        """Download and extract attributes from a PDF"""
         try:
             response = await self.client.get(url)
 
@@ -69,7 +67,6 @@ class PdfExtractor:
     def _extract_from_pdf(
         self, pdf_bytes: bytes, url: str
     ) -> List[ExtractedAttribute]:
-        """Extract attributes from PDF content"""
         attributes = []
         confidence = config.source_confidence.get("pdf_manual", 0.95)
 
@@ -84,12 +81,10 @@ class PdfExtractor:
 
             doc.close()
 
-            # Method 1: Key-Value patterns
             attributes.extend(
                 self._extract_key_value_pairs(full_text, url, confidence)
             )
 
-            # Method 2: Table-like patterns
             attributes.extend(
                 self._extract_table_patterns(full_text, url, confidence)
             )
@@ -102,15 +97,11 @@ class PdfExtractor:
     def _extract_key_value_pairs(
         self, text: str, url: str, confidence: float
     ) -> List[ExtractedAttribute]:
-        """Extract 'Key: Value' patterns from text"""
         attributes = []
 
         patterns = [
-            # "Key: Value" or "Key - Value"
             r'^([A-Z][A-Za-z\s\.\-\/]+?)[\s]*[:–—-]\s*(.+?)$',
-            # "Key .... Value" (tabular dots)
             r'^([A-Z][A-Za-z\s]+?)\s*\.{2,}\s*(.+?)$',
-            # "Key    Value" (multiple spaces)
             r'^([A-Z][A-Za-z\s\.\-]+?)\s{3,}(.+?)$',
         ]
 

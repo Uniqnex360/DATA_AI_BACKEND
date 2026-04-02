@@ -1,14 +1,29 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, case
 from app.core.database import get_session
 from app.models.product import Product
 from app.models.project import Project
-from app.schemas.dashboard import DashboardMetricsResponse
-from typing import Dict, Any
+from app.schemas.dashboard import BrandAttributeStat, BrandFlowStat, CategoryAttributeStat, CategoryDistributionStat, CategoryFlowStat, DashboardMetricsResponse, TimelineStat
+from typing import Optional, List
+from datetime import datetime
 logger = logging.getLogger("dashboard_metrics")
 router = APIRouter()
+
+def build_product_filters(
+    project_id: Optional[str] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+):
+    filters = []
+    if project_id:
+        filters.append(Product.project_id == project_id)
+    if start_date:
+        filters.append(Product.created_at >= start_date)
+    if end_date:
+        filters.append(Product.created_at <= end_date)
+    return filters
 
 
 async def calculate_metrics(db: AsyncSession, project_id: str | None) -> dict:
@@ -76,19 +91,31 @@ async def calculate_metrics(db: AsyncSession, project_id: str | None) -> dict:
 
             if operation_mode == "aggregation":
                 aggregated_products = completed_count
-                
 
             elif operation_mode == "cleaning":
                 cleaned_products = completed_count
-
-                if "standardization" in use_case:
+                if "standardization" in use_case or "validation" in use_case:
                     cleaned_products = completed_count
 
             elif operation_mode == "enrichment":
+                # completed products in enrichment projects
                 enriched_products = completed_count
 
-                if "validation" in use_case:
-                    cleaned_products = completed_count
+            enrichment_stmt = select(func.count(Product.id)).where(
+                Product.project_id == project_id,
+                (
+                    (Product.workflow_stage == 'enrichment') |
+                    (Product.needs_enrichment == True)
+                )
+            )
+            enrichment_result = await db.execute(enrichment_stmt)
+            enrichment_workflow_count = enrichment_result.scalar() or 0
+
+            # include products routed to enrichment even for aggregation projects
+            if operation_mode == "aggregation":
+                enriched_products = enrichment_workflow_count
+            elif operation_mode == "enrichment":
+                enriched_products = max(enriched_products, enrichment_workflow_count)
 
         else:
             global_stmt = select(
@@ -112,12 +139,19 @@ async def calculate_metrics(db: AsyncSession, project_id: str | None) -> dict:
 
                 if operation_mode == "aggregation":
                     aggregated_products += count
-
                 elif operation_mode == "cleaning":
                     cleaned_products += count
-
                 elif operation_mode == "enrichment":
                     enriched_products += count
+
+            enrichment_workflow_stmt = select(func.count(Product.id)).where(
+                (Product.workflow_stage == 'enrichment') |
+                (Product.needs_enrichment == True)
+            )
+            enrichment_workflow_result = await db.execute(enrichment_workflow_stmt)
+            enrichment_workflow_count = enrichment_workflow_result.scalar() or 0
+
+            enriched_products = max(enriched_products, enrichment_workflow_count)
 
         return {
             "name": project_name,
@@ -169,3 +203,300 @@ async def get_project_metrics(project_id: str, db: AsyncSession = Depends(get_se
             "totalProjects": 0, "activeProjects": 0, "totalProducts": 0,
             "publishedProducts": 0, "catalogHealth": 0, "categoryDistribution": []
         }
+        
+def parse_date(date_str: Optional[str]) -> Optional[datetime]:
+    if not date_str:
+        return None
+    return datetime.fromisoformat(date_str)
+@router.get("/timeline", response_model=List[TimelineStat])
+async def get_dashboard_timeline(
+    project_id: Optional[str] = Query(None),
+    period: str = Query("month"),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        start_dt = parse_date(start_date)
+        end_dt = parse_date(end_date)
+        filters = build_product_filters(project_id, start_dt, end_dt)
+
+        period = period.lower()
+        if period not in {"day", "week", "month"}:
+            period = "month"
+
+        period_expr = func.date_trunc(period, Product.created_at)
+
+        stmt = select(
+            period_expr.label("period"),
+            func.count(Product.id).label("total_products"),
+            func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label("aggregated_products"),
+            func.sum(case((
+                (Product.workflow_stage == "enrichment") | (Product.needs_enrichment == True), 1
+            ), else_=0)).label("moved_to_enrichment")
+        ).where(
+            *filters
+        ).group_by(
+            period_expr
+        ).order_by(
+            period_expr
+        )
+
+        result = await db.execute(stmt)
+
+        return [
+            TimelineStat(
+                period=row.period.isoformat() if row.period else "",
+                totalProducts=row.total_products or 0,
+                aggregatedProducts=row.aggregated_products or 0,
+                movedToEnrichment=row.moved_to_enrichment or 0,
+            )
+            for row in result.all()
+        ]
+    except Exception as e:
+        logger.error(f"Failed to load dashboard timeline: {e}", exc_info=True)
+        return []
+
+@router.get("/brand-flow", response_model=List[BrandFlowStat])
+async def get_brand_flow(
+    project_id: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        start_dt = parse_date(start_date)
+        end_dt = parse_date(end_date)
+        filters = build_product_filters(project_id, start_dt, end_dt)
+
+        stmt = select(
+            Product.brand_name.label("brand"),
+            func.count(Product.id).label("total_products"),
+            func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label("aggregated_products"),
+            func.sum(case((
+                (Product.workflow_stage == "enrichment") | (Product.needs_enrichment == True), 1
+            ), else_=0)).label("enrichment_products")
+        ).where(
+            *filters
+        ).group_by(
+            Product.brand_name
+        ).order_by(
+            func.count(Product.id).desc()
+        )
+
+        result = await db.execute(stmt)
+
+        return [
+            BrandFlowStat(
+                brand=row.brand or "Unknown",
+                totalProducts=row.total_products or 0,
+                aggregatedProducts=row.aggregated_products or 0,
+                enrichmentProducts=row.enrichment_products or 0,
+            )
+            for row in result.all()
+        ]
+    except Exception as e:
+        logger.error(f"Failed to load brand flow metrics: {e}", exc_info=True)
+        return []
+
+@router.get("/brand-attributes", response_model=List[BrandAttributeStat])
+async def get_brand_attributes(
+    project_id: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        start_dt = parse_date(start_date)
+        end_dt = parse_date(end_date)
+        filters = build_product_filters(project_id, start_dt, end_dt)
+
+        stmt = select(
+            Product.brand_name,
+            Product.workflow_stage,
+            Product.enrichment_status,
+            Product.attributes,
+            Product.dynamic_attributes
+        ).where(*filters)
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        brand_map = {}
+
+        for brand, workflow_stage, enrichment_status, attributes, dynamic_attributes in rows:
+            brand_key = brand or "Unknown"
+
+            if brand_key not in brand_map:
+                brand_map[brand_key] = {
+                    "brand": brand_key,
+                    "aggregationAttributes": 0,
+                    "enrichmentAttributes": 0,
+                    "completedAttributes": 0,
+                    "totalAttributes": 0
+                }
+
+            attr_count = 0
+            if isinstance(attributes, dict):
+                attr_count += len(attributes)
+            if isinstance(dynamic_attributes, list):
+                attr_count += len(dynamic_attributes)
+
+            brand_map[brand_key]["totalAttributes"] += attr_count
+
+            if workflow_stage == "aggregation":
+                brand_map[brand_key]["aggregationAttributes"] += attr_count
+
+            if workflow_stage == "enrichment":
+                brand_map[brand_key]["enrichmentAttributes"] += attr_count
+
+            if enrichment_status == "completed":
+                brand_map[brand_key]["completedAttributes"] += attr_count
+
+        return [BrandAttributeStat(**value) for value in brand_map.values()]
+
+    except Exception as e:
+        logger.error(f"Failed to load brand attribute metrics: {e}", exc_info=True)
+        return []
+
+@router.get("/category-attributes", response_model=List[CategoryAttributeStat])
+async def get_category_attributes(
+    project_id: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        start_dt = parse_date(start_date)
+        end_dt = parse_date(end_date)
+        filters = build_product_filters(project_id, start_dt, end_dt)
+
+        stmt = select(
+            Product.taxonomy,
+            Product.workflow_stage,
+            Product.enrichment_status,
+            Product.attributes,
+            Product.dynamic_attributes
+        ).where(*filters)
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        category_map = {}
+
+        for taxonomy, workflow_stage, enrichment_status, attributes, dynamic_attributes in rows:
+            cat_key = taxonomy or "Uncategorized"
+
+            if cat_key not in category_map:
+                category_map[cat_key] = {
+                    "category": cat_key,
+                    "aggregationAttributes": 0,
+                    "enrichmentAttributes": 0,
+                    "completedAttributes": 0,
+                    "totalAttributes": 0
+                }
+
+            attr_count = 0
+            if isinstance(attributes, dict):
+                attr_count += len(attributes)
+            if isinstance(dynamic_attributes, list):
+                attr_count += len(dynamic_attributes)
+
+            category_map[cat_key]["totalAttributes"] += attr_count
+
+            if workflow_stage == "aggregation":
+                category_map[cat_key]["aggregationAttributes"] += attr_count
+
+            if workflow_stage == "enrichment":
+                category_map[cat_key]["enrichmentAttributes"] += attr_count
+
+            if enrichment_status == "completed":
+                category_map[cat_key]["completedAttributes"] += attr_count
+
+        return [CategoryAttributeStat(**value) for value in category_map.values()]
+
+    except Exception as e:
+        logger.error(f"Failed to load category attribute metrics: {e}", exc_info=True)
+        return []
+
+@router.get("/category-flow", response_model=List[CategoryFlowStat])
+async def get_category_flow(
+    project_id: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        start_dt = parse_date(start_date)
+        end_dt = parse_date(end_date)
+        filters = build_product_filters(project_id, start_dt, end_dt)
+
+        stmt = select(
+            Product.taxonomy.label("category"),
+            func.count(Product.id).label("total_products"),
+            func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label("aggregated_products"),
+            func.sum(case((
+                (Product.workflow_stage == "enrichment") | (Product.needs_enrichment == True), 1
+            ), else_=0)).label("enrichment_products")
+        ).where(
+            *filters
+        ).group_by(
+            Product.taxonomy
+        ).order_by(
+            func.count(Product.id).desc()
+        )
+
+        result = await db.execute(stmt)
+
+        return [
+            CategoryFlowStat(
+                category=row.category or "Uncategorized",
+                totalProducts=row.total_products or 0,
+                aggregatedProducts=row.aggregated_products or 0,
+                enrichmentProducts=row.enrichment_products or 0,
+            )
+            for row in result.all()
+        ]
+    except Exception as e:
+        logger.error(f"Failed to load category flow metrics: {e}", exc_info=True)
+        return []
+
+@router.get("/category-distribution", response_model=List[CategoryDistributionStat])
+async def get_category_distribution(
+    project_id: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        start_dt = parse_date(start_date)
+        end_dt = parse_date(end_date)
+        filters = build_product_filters(project_id, start_dt, end_dt)
+
+        stmt = select(
+            Product.taxonomy.label("category"),
+            func.count(Product.id).label("product_count")
+        ).where(
+            *filters
+        ).group_by(
+            Product.taxonomy
+        ).order_by(
+            func.count(Product.id).desc()
+        )
+
+        result = await db.execute(stmt)
+        rows = result.all()
+        
+        total_products = sum(row.product_count for row in rows)
+
+        return [
+            CategoryDistributionStat(
+                category=row.category or "Uncategorized",
+                productCount=row.product_count,
+                percentage=round((row.product_count / total_products) * 100, 2) if total_products > 0 else 0.0
+            )
+            for row in rows
+        ]
+    except Exception as e:
+        logger.error(f"Failed to load category distribution metrics: {e}", exc_info=True)
+        return []

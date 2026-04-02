@@ -15,7 +15,14 @@ from sqlalchemy.orm import aliased
 from app.schemas.project import ProjectCreate, ProjectResponse
 logger = logging.getLogger("projects_router")
 router = APIRouter()
-def normalize_source_status(status: str | None) -> str:
+def normalize_source_status(status: str | None, project_status: str | None = None) -> str:
+    if project_status == "partially_completed":
+        return "Partially Completed"
+    if project_status == "failed":
+        return "In Progress"
+    if project_status == "completed":
+        return "Completed"
+    
     if not status:
         return "Yet to Start"
     
@@ -82,7 +89,7 @@ async def list_projects(
             project_response = ProjectResponse.model_validate(project)
             project_response.product_count = product_count or 0
             project_response.processing_status = processing_status or "pending"
-            project_response.source_status = normalize_source_status(clean_source_status)
+            project_response.source_status = normalize_source_status(clean_source_status,project_status=project.status)
 
 
             projects.append(project_response)

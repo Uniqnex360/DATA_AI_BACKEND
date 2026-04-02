@@ -15,7 +15,7 @@ class ProjectUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=255)
     client: Optional[str] = None
     use_case: Optional[str] = None
-    operation_mode:Optional[str]='aggregation   '
+    operation_mode:Optional[str]='aggregation'
     status: Optional[str] = None
 
 

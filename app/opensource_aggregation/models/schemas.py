@@ -13,7 +13,6 @@ class SourceType(Enum):
 
 @dataclass
 class ProductIdentifier:
-    """Input product identifiers"""
     mpn: str
     brand: str = ""
     title: str = ""
@@ -22,7 +21,6 @@ class ProductIdentifier:
 
 @dataclass
 class ExtractedAttribute:
-    """Single attribute extracted from a source"""
     name: str
     value: str
     unit: Optional[str] = None
@@ -33,7 +31,6 @@ class ExtractedAttribute:
 
 @dataclass
 class SourceResult:
-    """Result from extracting one source"""
     url: str
     source_type: SourceType
     attributes: List[ExtractedAttribute] = field(default_factory=list)
@@ -45,20 +42,17 @@ class SourceResult:
 
 @dataclass
 class UnifiedAttribute:
-    """Attribute after name unification"""
     canonical_name: str
     values: List[ExtractedAttribute] = field(default_factory=list)
 
     @property
     def best_value(self) -> Optional[str]:
-        """Get highest confidence value"""
         if not self.values:
             return None
         return max(self.values, key=lambda x: x.confidence).value
 
     @property
     def consensus_value(self) -> Optional[str]:
-        """Get most common value"""
         if not self.values:
             return None
         from collections import Counter
@@ -68,7 +62,6 @@ class UnifiedAttribute:
 
 @dataclass
 class GoldenRecord:
-    """Final canonical product record"""
     brand: str
     mpn: str
     title: str

@@ -62,9 +62,7 @@ BLOCKED_KEYWORDS = [
 #         logger.warning(f"Error validating image URL {url}: {e}")
 #         return False
 async def validate_image_url(url: str, max_retries: int = 2) -> bool:
-    """
-    Validate image URL with retry and extension guessing.
-    """
+    
     if not url:
         return False
     
@@ -72,7 +70,6 @@ async def validate_image_url(url: str, max_retries: int = 2) -> bool:
     if await _test_image_url(url):
         return True
     
-    # If failed and missing extension, try common extensions
     if not any(url.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.webp']):
         for ext in ['.jpg', '.jpeg', '.png', '.webp']:
             test_url = url + ext
@@ -84,17 +81,14 @@ async def validate_image_url(url: str, max_retries: int = 2) -> bool:
 
 
 async def _test_image_url(url: str) -> bool:
-    """
-    Test if URL returns a valid image.
-    """
+    
     try:
         async with httpx.AsyncClient(timeout=5.0, follow_redirects=True) as client:
             response = await client.head(url, headers={
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Referer': url  # Add referer to bypass some anti-hotlinking
+                'Referer': url  
             })
             
-            # Check status and content type
             if response.status_code == 200:
                 content_type = response.headers.get('content-type', '')
                 if 'image' in content_type.lower():

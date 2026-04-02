@@ -13,7 +13,6 @@ class SemanticMatcher:
         self._manual_mappings = self._build_manual_mappings()
     @property
     def model(self):
-        """Lazy load the embedding model"""
         if self._model is None:
             logger.info(f"Loading embedding model: {config.embedding_model}")
             from sentence_transformers import SentenceTransformer
