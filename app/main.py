@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 from pathlib import Path
 from app.core.database import init_db
-from app.api.v1.endpoints import auth,audit,users,golden_records,dashboard,products,rules,projects,extraction,cleansing,aggregation,standardization,enrichment,hitl,publishing,business_rules
+from app.api.v1.endpoints import auth,audit, pdf_extraction,users,golden_records,dashboard,products,rules,projects,extraction,cleansing,aggregation,standardization,enrichment,hitl,publishing,business_rules
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api_main")
 app = FastAPI(title="Product Data Aggregation Engine - Production Backend")
@@ -32,6 +32,7 @@ app.include_router(enrichment.router, prefix=f"{settings.API_V1_STR}/enrichment"
 app.include_router(hitl.router, prefix=f"{settings.API_V1_STR}/hitl", tags=["hitl"])
 app.include_router(publishing.router, prefix=f"{settings.API_V1_STR}/publishing", tags=["publishing"])
 app.include_router(business_rules.router, prefix=f"{settings.API_V1_STR}/business-rules", tags=["business_rules"])
+app.include_router(pdf_extraction.router, prefix=f"{settings.API_V1_STR}/extraction/pdf", tags=["pdf_extraction"])
 
 @app.on_event("startup")
 async def on_startup():
