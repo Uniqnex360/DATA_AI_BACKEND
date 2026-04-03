@@ -804,7 +804,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                 len(ai_attributes) * 5, 100)
                             product.sources_consulted = golden.get(
                                 'sources_consulted', [])
-
+                            is_enrichment_attempt = product.workflow_stage == 'enrichment'
                             if product.completeness_score < enrichment_threshold:
                                 product.workflow_stage = 'enrichment'
                                 product.needs_enrichment = True
@@ -1471,3 +1471,52 @@ async def batch_export_products(request: BatchExportRequest, db: AsyncSession = 
         logger.error(f'Batch export failed {e}')
         raise HTTPException(
             status_code=500, detail='Failed to download results!')
+@router.get("/project/{project_id}/products-with-movement")
+async def get_products_with_movement(
+    project_id: str,
+    db: AsyncSession = Depends(get_session)
+) -> Dict[str, Any]:
+    try:
+        aggregation_stmt = select(Product).where(
+            and_(
+                Product.project_id == project_id,
+                Product.workflow_stage == 'aggregation',
+                Product.enrichment_status.in_(['pending', 'processing', 'failed'])
+            )
+        )
+        enrichment_stmt = select(Product).where(
+            and_(
+                Product.project_id == project_id,
+                Product.workflow_stage == 'enrichment',
+                Product.enrichment_status.in_(['pending', 'processing', 'failed'])
+            )
+        )
+        
+        aggregation_result = await db.execute(aggregation_stmt)
+        enrichment_result = await db.execute(enrichment_stmt)
+        
+        aggregation_products = aggregation_result.scalars().all()
+        enrichment_products = enrichment_result.scalars().all()
+        
+        # Track which products have been recently completed
+        completed_products = []
+        for product in aggregation_products + enrichment_products:
+            if product.enrichment_status == 'completed':
+                completed_products.append({
+                    "id": str(product.id),
+                    "product_code": product.product_code,
+                    "product_name": product.product_name,
+                    "completeness_score": product.completeness_score,
+                    "workflow_stage": product.workflow_stage,
+                    "moved_to": 'aggregation' if product.completeness_score >= 90 else 'enrichment'
+                })
+        
+        return {
+            "aggregation_products": [p.dict() for p in aggregation_products],
+            "enrichment_products": [p.dict() for p in enrichment_products],
+            "completed_products": completed_products,
+            "last_updated": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get products with movement: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
