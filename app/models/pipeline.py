@@ -40,13 +40,13 @@ class Source(UUIDModel,table=True):
     source_type:str
     source_url:str
     project_id: Optional[UUID] = Field(default=None, foreign_key="catalog_projects.id")
+    content_data: Optional[bytes] = Field(default=None, sa_column=Column(LargeBinary))
     source_metadata: Dict = Field(
         default={}, 
         sa_column=Column("metadata", JSON),
         validation_alias="metadata",
         serialization_alias="metadata"
     )
-    content_data: Optional[bytes] = Field(default=None, sa_column=Column(LargeBinary))
     status:str=Field(default='pending')
     uploaded_at:datetime=Field(default_factory=datetime.utcnow)
     

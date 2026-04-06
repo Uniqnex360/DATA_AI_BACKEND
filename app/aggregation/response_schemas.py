@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field
 Structured output schemas for reliable LLM responses
 """
 from typing import Dict, List, Optional, Literal
-from pydantic import BaseModel, Field
 
 
 class ExtractedAttribute(BaseModel):

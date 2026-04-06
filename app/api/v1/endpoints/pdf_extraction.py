@@ -1,18 +1,23 @@
+from io import BytesIO
+
+import pdfplumber
+import json
 from  app.core.config import settings
 from email.policy import HTTP
-import trace
-
+from sqlmodel import select
+from sqlalchemy import cast, String
+from sqlalchemy import func  
 from curl_cffi import AsyncSession
-from fastapi import APIRouter, BackgroundTasks,Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks,Depends, File, Form, HTTPException, UploadFile
 from datetime import datetime
 import aiohttp
-from openai import BaseModel, timeout
+from openai import BaseModel, project, timeout
 from app.aggregation.services.pdf_service import PDFExtractionService
 from app.core.database import get_session
 from app.llm import call_llm_with_schema
 from app.models.pipeline import Source
 from app.models.product import Product
-from app.schemas.pdf_extraction import FreshAggregationRequest
+from app.schemas.pdf_extraction import FreshAggregationRequest, PDFExtractionResponse
 import uuid
 import logging
 from typing import List,Optional,Dict   
@@ -272,3 +277,432 @@ async def get_batch_status(batch_id:str,db:AsyncSession=Depends(get_session)):
         }
     except Exception as e:
         raise e
+
+
+@router.post('/structured-extraction')
+async def structured_pdf_extraction(
+    background_tasks: BackgroundTasks,
+    
+    file: UploadFile = File(...),
+    mpn: str = Form(...),
+    project_id: str = Form(...),
+    use_case: str = Form(...),
+    db: AsyncSession = Depends(get_session),
+):
+    try:
+        batch_id=str(uuid.uuid4())
+        pdf_bytes=await file.read()
+        source=Source(
+            id=batch_id,
+            source_type='pdf_structured_extraction',
+            source_url=file.filename,
+            project_id=project_id,
+            status='processing',
+            source_metadata={
+                'mpn':mpn,
+                'use_case':use_case,
+                'started_at':datetime.utcnow().isoformat(),
+                'successful':0,
+                'failed':0
+            }
+            
+        )
+        db.add(source)
+        await db.commit()
+        background_tasks.add_task(process_structured_pdf_extraction,batch_id,pdf_bytes,mpn,project_id,file.filename)
+        return {
+            'status':'processing',
+            'batch_id':batch_id,
+            'message':f'Processing MPN {mpn} from PDF'
+        }
+    except Exception as e:
+         logger.error(f"Failed to start structured extraction: {e}")
+         raise HTTPException(500,str(e))
+
+async def process_structured_pdf_extraction(
+    batch_id: str,
+    pdf_bytes: bytes,
+    mpn: str,
+    project_id: str,
+    filename: str
+) -> None:
+    """
+    Background task: extract product data for a single MPN from an uploaded PDF.
+    No external web search – only the PDF content is used.
+    """
+    async with async_session_factory() as db:
+        try:
+            # ----- 1. Extract text and tables from PDF -----
+            full_text = ""
+            tables = []
+
+            with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
+                for page in pdf.pages:
+                    # Extract plain text
+                    page_text = page.extract_text()
+                    if page_text:
+                        full_text += page_text + "\n"
+
+                    # Extract tables as list of dictionaries
+                    page_tables = page.extract_tables()
+                    for tbl in page_tables:
+                        if tbl and len(tbl) > 1:          # at least header + one data row
+                            headers = [str(h).strip() if h else "" for h in tbl[0]]
+                            for row in tbl[1:]:
+                                # Skip completely empty rows
+                                if not any(cell for cell in row):
+                                    continue
+                                row_dict = {}
+                                for idx, cell in enumerate(row):
+                                    if idx < len(headers):
+                                        key = headers[idx]
+                                        val = str(cell).strip() if cell else ""
+                                        if key and val:
+                                            row_dict[key] = val
+                                if row_dict:
+                                    tables.append(row_dict)
+
+            # Limit text length to avoid token overflow
+            truncated_text = full_text[:15000]
+            truncated_tables = json.dumps(tables, indent=2)[:5000]
+
+            # ----- 2. Build prompt for Claude -----
+            prompt = f"""
+You are a product data extraction expert. Extract product information for MPN "{mpn}" from the document below.
+Use only the content provided; do not search externally.
+
+Document content (text):
+{truncated_text}
+
+Table data (extracted from the document):
+{truncated_tables}
+
+Extract the following fields if present. If a field is missing, leave it empty:
+- product_name
+- brand_name
+- sku
+- taxonomy
+- description
+- image_url
+- specifications
+
+Return ONLY a single valid JSON object in this format:
+{{
+  "product_name": "",
+  "brand_name": "",
+  "sku": "",
+  "taxonomy": "",
+  "description": "",
+  "image_url": "",
+  "specifications": {{}}
+}}
+"""
+
+            # ----- 3. Call Claude with a response model that accepts a dynamic key -----
+            # We use a dict wrapper because the key is the MPN (variable).
+            from pydantic import BaseModel, Field
+            from typing import Dict
+
+            
+            logger.info(f"Extracted text length for {mpn}: {len(full_text)}")
+            logger.info(f"Extracted text preview for {mpn}: {full_text[:1000]}")
+            logger.info(f"Extracted tables count for {mpn}: {len(tables)}")
+            response = await call_llm_with_schema(
+                prompt=prompt,
+                response_model="PDFExtractionResponse",
+                llm_provider='claude',
+                estimated_tokens=4000
+            )
+
+            # Extract the product data for the given MPN
+            product_info = None
+            resp_dict = None
+
+            if response:
+                if hasattr(response, "model_dump"):
+                    resp_dict = response.model_dump()
+                elif hasattr(response, "dict"):
+                    resp_dict = response.dict()
+                elif isinstance(response, dict):
+                    resp_dict = response
+
+            logger.info(f"LLM parsed response for {mpn}: {resp_dict}")
+
+            if resp_dict:
+                if isinstance(resp_dict.get("data"), dict):
+                    product_info = resp_dict["data"].get(mpn)
+                elif mpn in resp_dict:
+                    product_info = resp_dict[mpn]
+                elif "product_name" in resp_dict or "specifications" in resp_dict:
+                    product_info = resp_dict
+
+            if not product_info:
+                logger.warning(f"MPN {mpn} not found or could not be extracted from PDF")
+                # Update source as failed for this MPN
+                source = await db.get(Source, batch_id)
+                if source:
+                    source.status = 'failed'
+                    source.source_metadata['error'] = f"MPN {mpn} not found in PDF"
+                    source.source_metadata['failed'] = 1
+                    source.source_metadata['completed_at'] = datetime.utcnow().isoformat()
+                    db.add(source)
+                    await db.commit()
+                return
+
+            # Convert Pydantic model to dict
+            if hasattr(product_info, 'model_dump'):
+                prod_dict = product_info.model_dump()
+            elif hasattr(product_info, 'dict'):
+                prod_dict = product_info.dict()
+            elif isinstance(product_info, dict):
+                prod_dict = product_info
+            else:
+                raise ValueError(f"Unexpected product_info type: {type(product_info)}")
+
+            # ----- 4. Calculate completeness score -----
+            spec_count = len(prod_dict.get('specifications', {}))
+            completeness_score = min(spec_count * 5, 100)
+
+            # ----- 5. Determine workflow stage -----
+            enrichment_threshold = getattr(settings, 'enrichment_threshold', 90)
+            if completeness_score < enrichment_threshold:
+                workflow_stage = 'enrichment'
+                needs_enrichment = True
+                ready_for_export = False
+                routed_to_enrichment_at = datetime.utcnow()
+                enrichment_status = 'pending'
+            else:
+                workflow_stage = 'aggregation'
+                needs_enrichment = False
+                ready_for_export = True
+                routed_to_enrichment_at = None
+                enrichment_status = 'completed'
+            existing_product = await db.execute(
+            select(Product).where(
+                Product.project_id == project_id,
+                Product.product_code == mpn
+            )
+        )
+            existing_product = existing_product.scalar_one_or_none()
+
+            if existing_product:
+                # Update the existing product
+                existing_product.product_name = prod_dict.get('product_name', f"Product {mpn}")
+                existing_product.brand_name = prod_dict.get('brand_name', "")
+                existing_product.sku = prod_dict.get('sku', "")
+                existing_product.taxonomy = prod_dict.get('taxonomy', '')
+                existing_product.description = prod_dict.get('description', '')
+                existing_product.image_url_1 = prod_dict.get('image_url', '')
+                existing_product.workflow_stage = workflow_stage
+                existing_product.needs_enrichment = needs_enrichment
+                existing_product.ready_for_export = ready_for_export
+                existing_product.routed_to_enrichment_at = routed_to_enrichment_at
+                existing_product.enrichment_status = enrichment_status
+                existing_product.attributes = prod_dict.get('specifications', {})
+                existing_product.source_url = filename
+                existing_product.completeness_score = completeness_score
+                db.add(existing_product)
+            else:
+                # ----- 6. Create product -----
+                product = Product(
+                    product_code=mpn,
+                    product_name=prod_dict.get('product_name', f"Product {mpn}"),
+                    brand_name=prod_dict.get('brand_name', ""),
+                    mpn=mpn,
+                    sku=prod_dict.get('sku', ""),
+                    taxonomy=prod_dict.get('taxonomy', ''),
+                    description=prod_dict.get('description', ''),
+                    image_url_1=prod_dict.get('image_url', ''),
+                    project_id=project_id,
+                    workflow_stage=workflow_stage,
+                    needs_enrichment=needs_enrichment,
+                    ready_for_export=ready_for_export,
+                    routed_to_enrichment_at=routed_to_enrichment_at,
+                    enrichment_status=enrichment_status,
+                    attributes=prod_dict.get('specifications', {}),
+                    source_url=filename,
+                    completeness_score=completeness_score
+                )
+                db.add(product)
+            await db.flush()
+
+            # ----- 7. Update source metadata -----
+            source = await db.get(Source, batch_id)
+            if source:
+                source.status = 'completed'
+                source.source_metadata.update({
+                    'successful': 1,
+                    'failed': 0,
+                    'product': prod_dict,
+                    'mpn': mpn,
+                    'completeness_score': completeness_score,
+                    'workflow_stage': workflow_stage,
+                    'completed_at': datetime.utcnow().isoformat()
+                })
+                db.add(source)
+
+            await db.commit()
+            logger.info(f"Structured extraction completed for MPN {mpn} (score {completeness_score}, stage {workflow_stage})")
+
+        except Exception as e:
+            logger.error(f"Structured PDF extraction failed for batch {batch_id}: {e}", exc_info=True)
+            # Rollback and mark source as failed
+            await db.rollback()
+            source = await db.get(Source, batch_id)
+            if source:
+                source.status = 'failed'
+                source.source_metadata['error'] = str(e)
+                db.add(source)
+                await db.commit()
+import os
+from app.core.config import settings
+
+@router.post('/save-pdf-source')
+async def save_pdf_source(
+    file: UploadFile = File(...),
+    mpn: str = Form(...),
+    project_id: str = Form(...),
+    use_case: str = Form(...),
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        batch_id = str(uuid.uuid4())
+        pdf_bytes = await file.read()
+        
+        # Validate file size (optional)
+        MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+        if len(pdf_bytes) > MAX_FILE_SIZE:
+            raise HTTPException(400, f"File size exceeds {MAX_FILE_SIZE // (1024*1024)} MB limit")
+        
+        # Create source record with PDF bytes in content_data
+        source = Source(
+            id=batch_id,
+            source_type="pdf_pending_extraction",
+            source_url=file.filename,
+            project_id=project_id,
+            status="pending",
+            content_data=pdf_bytes,  # ✅ store directly
+            source_metadata={
+                "mpn": mpn,
+                "use_case": use_case,
+                "extracted": False
+                # no file_path needed
+            }
+        )
+        db.add(source)
+        
+        # Check for existing placeholder product
+        stmt = select(Product).where(
+            Product.project_id == project_id,
+            Product.product_code == mpn
+        )
+        result = await db.execute(stmt)
+        existing = result.scalar_one_or_none()
+        
+        if not existing:
+            product = Product(
+                product_code=mpn,
+                product_name=f"Pending extraction: {mpn}",
+                mpn=mpn,
+                project_id=project_id,
+                workflow_stage="aggregation",
+                enrichment_status="pending",
+                source_url=file.filename,
+                completeness_score=0
+            )
+            db.add(product)
+        logger.info(f"Saving source with content_data size: {len(pdf_bytes)} bytes")
+
+        await db.commit()
+        saved_source = await db.get(Source, batch_id)
+        logger.info(
+    f"Verified content_data size: {len(saved_source.content_data) if saved_source.content_data else 0} bytes"
+)
+        return {
+            "status": "success",
+            "batch_id": batch_id,
+            "message": f"PDF saved for MPN {mpn}"
+        }
+    except Exception as e:
+        logger.error(f"Failed to save PDF source: {e}")
+        raise HTTPException(500, str(e))
+    
+@router.post('/extract-pending')
+async def extract_pending_pdf(
+    data: dict,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        mpn = data.get('mpn')
+        project_id = data.get('project_id')
+        
+        # Validate required fields
+        if not mpn or not project_id:
+            raise HTTPException(400, "Missing required fields: mpn and project_id")
+        
+        # Use json_extract_path_text to safely extract MPN from JSON metadata
+        stmt = select(Source).where(
+            Source.source_type == "pdf_pending_extraction",
+            func.json_extract_path_text(Source.source_metadata, 'mpn') == mpn,
+            Source.project_id == project_id
+        )
+        result = await db.execute(stmt)
+        source = result.scalar_one_or_none()
+        
+        if not source:
+            raise HTTPException(404, f"PDF source not found for MPN: {mpn}")
+        
+        # Extract and process in background
+        background_tasks.add_task(
+            process_pdf_extraction_for_product,
+            source.id, mpn, project_id
+        )
+        
+        return {"status": "processing", "batch_id": source.id}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to start pending PDF extraction for MPN {mpn}: {e}", exc_info=True)
+        raise HTTPException(500, f"Internal server error: {str(e)}")
+async def process_pdf_extraction_for_product(
+    batch_id: str,
+    mpn: str,
+    project_id: str
+) -> None:
+    async with async_session_factory() as db:
+        try:
+            source = await db.get(Source, batch_id)
+            if not source or source.source_type != "pdf_pending_extraction":
+                logger.error(f"Invalid source for batch {batch_id}")
+                return
+                
+            if source.source_metadata.get("extracted"):
+                logger.info(f"PDF for {mpn} already extracted, skipping")
+                return
+            
+            # Get PDF bytes from database
+            pdf_bytes = source.content_data
+            if not pdf_bytes:
+                raise ValueError("No PDF content found in source")
+            
+            # Reuse the structured extraction logic
+            await process_structured_pdf_extraction(
+                batch_id, pdf_bytes, mpn, project_id, source.source_url
+            )
+            
+            # Mark as extracted (optionally clear content_data to save space)
+            source.source_metadata["extracted"] = True
+            source.content_data = None  # free up space after extraction
+            db.add(source)
+            await db.commit()
+            
+        except Exception as e:
+            logger.error(f"Failed to extract pending PDF for {mpn}: {e}")
+            source = await db.get(Source, batch_id)
+            if source:
+                source.status = "failed"
+                source.source_metadata["error"] = str(e)
+                db.add(source)
+                await db.commit()

@@ -1,5 +1,6 @@
 from  typing import List,Optional,Dict
-from pydantic import BaseModel
+from pydantic import BaseModel,Field
+
 
 
 class FreshAggregationRequest(BaseModel):
@@ -15,3 +16,10 @@ class PDFExtractionResponse(BaseModel):
     description: Optional[str] = ""
     image_url: Optional[str] = ""
     specifications: Optional[Dict[str, str]] = {}
+
+class StructuredExtractionRequest(BaseModel):
+    mpn:str
+    project_id:str
+    use_case:str
+class SingleProductExtraction(BaseModel):
+    data: Dict[str, PDFExtractionResponse] = Field(default_factory=dict)

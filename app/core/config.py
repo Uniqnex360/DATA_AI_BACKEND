@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     enrichment_threshold:int
     gemini_api_key:str
     anthropic_api_key:str
+    PDF_UPLOAD_DIR: str = "/app/uploads/pdf"
     claude_model: str = "claude-sonnet-4-5"
     gemini_model: str = "gemini-2.5-flash"
     enrichment_confidence_threashold:float=0.8
