@@ -570,7 +570,7 @@ async def save_pdf_source(
         pdf_bytes = await file.read()
         
         # Validate file size (optional)
-        MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+        MAX_FILE_SIZE = 20 * 1024 * 1024  # 10 MB
         if len(pdf_bytes) > MAX_FILE_SIZE:
             raise HTTPException(400, f"File size exceeds {MAX_FILE_SIZE // (1024*1024)} MB limit")
         
