@@ -13,6 +13,7 @@ from app.core.config import settings
 from app.aggregation.response_schemas import AggregationResponse, CleaningResponse, EnrichmentResponse, ExtractionResponse, StandardizationResponse, UnificationResponse, ValidationResponse
 from app.aggregation.services.cleaning_service import LLMCleaningResponse
 from app.schemas.aggregation import UnifiedStandardizedResponse
+from app.schemas.pdf_extraction import PDFExtractionResponse
 client = OpenAI(api_key=settings.openai_api_key, timeout=60.0)
 genai.configure(api_key=settings.gemini_api_key)
 logger = logging.getLogger('llm')
@@ -80,7 +81,8 @@ SCHEMA_MAP = {
     "LLMCleaningResponse": LLMCleaningResponse,
     "StandardizationResponse": StandardizationResponse,
     "UnifiedStandardizedResponse": UnifiedStandardizedResponse,
-    "TargetedQueryResponse": TargetedQueryResponse
+    "TargetedQueryResponse": TargetedQueryResponse,
+    "PDFExtractionResponse":PDFExtractionResponse
 }
 
 

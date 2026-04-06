@@ -11,6 +11,7 @@ import traceback
 from sqlmodel import update
 import io
 import pandas as pd
+from app.core.config import settings
 from app.core.database import get_session, async_session_factory
 from app.models.pipeline import AggregationJob, AuditTrail, CleansingIssue, RawExtraction, Source
 from app.models.product import Product
@@ -567,7 +568,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
             failed_products: List[Dict[str, str]] = []
             routed_to_enrichment = 0
             ready_for_export = 0
-            enrichment_threshold = 90
+            enrichment_threshold = settings.enrichment_threshold
             logger.info(
                 f"Starting aggregation job {job_id} for {total} products")
             for idx, product in enumerate(products):
@@ -1021,7 +1022,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                 product.features = golden.get('features') or product.features
                 project = await db_session.get(Project, product.project_id)
                 use_case = project.use_case.lower() if project.use_case else ""
-                enrichment_threshold = 90
+                enrichment_threshold = settings.enrichment_threshold
                 if 'back filling' in use_case.lower() or 'validation' in use_case.lower():
                     existing_attrs = {}
                     conflicts = {}

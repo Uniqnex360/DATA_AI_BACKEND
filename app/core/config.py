@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     openai_api_key:str
     llm_model:str='gpt-4o-mini'
     MIGRATION_MODE: str = "safe" 
+    enrichment_threshold:int
     gemini_api_key:str
     anthropic_api_key:str
     claude_model: str = "claude-sonnet-4-5"

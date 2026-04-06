@@ -1,5 +1,4 @@
 from sqlalchemy import cast, String,case
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, outerjoin, and_
@@ -11,7 +10,6 @@ from app.models.product import Product
 from app.models.project import Project
 import logging
 from sqlalchemy.orm import aliased
-
 from app.schemas.project import ProjectCreate, ProjectResponse
 logger = logging.getLogger("projects_router")
 router = APIRouter()
@@ -22,82 +20,69 @@ def normalize_source_status(status: str | None, project_status: str | None = Non
         return "In Progress"
     if project_status == "completed":
         return "Completed"
-    
     if not status:
         return "Yet to Start"
-    
     status = status.lower().strip()
-    
     if status == "completed":
         return "Completed"
     if status in ("processing", "failed"):
         return "In Progress"
-    
     return "Yet to Start"
-
 @router.get("/", response_model=List[ProjectResponse])
 async def list_projects(
     operation_mode: str | None = None,
-    tab: str | None = None,  # <--- NEW PARAMETER
+    tab: str | None = None,  
     db: AsyncSession = Depends(get_session),
 ):
     try:
         active_job = aliased(AggregationJob)
         active_source = aliased(Source)
 
-        score = func.coalesce(Product.completeness_score, 0)
-
-        # ---------------------------------------------------------
-        # COUNT LOGIC (Now controlled by the 'tab' parameter)
-        # ---------------------------------------------------------
+        # ✅ Subquery for product count (independent of other joins)
         if tab == "aggregation":
-            # Aggregation Tab: Show products >= 90
-            product_count_expr = func.sum(
-                case(
-                    (
-                        and_(
-                            Product.workflow_stage == "aggregation",
-                            Product.enrichment_status.in_(["pending", "failed"])
-                        ),
-                        1
-                    ),
-                    else_=0
+            product_count_subq = (
+                select(func.count(Product.id))
+                .where(
+                    and_(
+                        Product.project_id == Project.id,
+                        Product.workflow_stage == "aggregation",
+                        Product.enrichment_status.in_(["pending", "failed", "completed"])
+                    )
                 )
-            ).label("product_count")
-            
+                .scalar_subquery()
+                .label("product_count")
+            )
         elif tab == "enrichment":
-            # Enrichment Tab: Show products < 90
-            product_count_expr = func.sum(
-                case(
-                    (
-                        and_(
-                            Product.workflow_stage == "enrichment",
-                            Product.enrichment_status.in_(["pending", "failed"])
-                        ),
-                        1
-                    ),
-                    else_=0
+            product_count_subq = (
+                select(func.count(Product.id))
+                .where(
+                    and_(
+                        Product.project_id == Project.id,
+                        Product.workflow_stage == "enrichment",
+                        Product.enrichment_status.in_(["pending", "failed"])
+                    )
                 )
-            ).label("product_count")
-            
+                .scalar_subquery()
+                .label("product_count")
+            )
         else:
-            # Fallback: Total products
-            product_count_expr = func.count(Product.id).label("product_count")
+            product_count_subq = (
+                select(func.count(Product.id))
+                .where(Product.project_id == Project.id)
+                .scalar_subquery()
+                .label("product_count")
+            )
 
-
-        # ---------------------------------------------------------
-        # QUERY BUILDER
-        # ---------------------------------------------------------
+        # Main query (now uses the subquery)
         statement = (
             select(
                 Project,
-                product_count_expr,
+                product_count_subq,
                 func.max(active_job.status).label("processing_status"),
                 func.max(
                     cast(active_source.source_metadata["processing_status"], String)
                 ).label("source_status"),
             )
-            .outerjoin(Product, Product.project_id == Project.id)
             .outerjoin(
                 active_job,
                 and_(
@@ -111,14 +96,14 @@ async def list_projects(
             )
         )
 
-        # FILTER LOGIC (Controlled by operation_mode)
         if operation_mode:
-            statement = statement.where(Project.operation_mode == operation_mode)
+            if ',' in operation_mode:
+                modes = operation_mode.split(',')
+                statement = statement.where(Project.operation_mode.in_(modes))
+            else:
+                statement = statement.where(Project.operation_mode == operation_mode)
 
-        statement = (
-            statement.group_by(Project.id)
-            .order_by(Project.created_at.desc())
-        )
+        statement = statement.group_by(Project.id).order_by(Project.created_at.desc())
 
         result = await db.execute(statement)
         rows = result.all()
@@ -126,7 +111,7 @@ async def list_projects(
         projects = []
         for row in rows:
             project = row[0]
-            product_count = row[1] or 0 
+            product_count = row[1] or 0
             processing_status = row[2]
             source_status = row[3]
             clean_source_status = source_status.replace('"', "") if source_status else None
@@ -179,14 +164,11 @@ async def get_project_filters(
     try:
         category_stmt = select(Product.category_1)
         brand_stmt = select(Brand.name).join(Product, Product.brand_id == Brand.id)
-
         if project_id:
             category_stmt = category_stmt.where(Product.project_id == project_id)
             brand_stmt = brand_stmt.where(Product.project_id == project_id)
-
         category_result = await db.execute(category_stmt)
         category_rows = category_result.all()
-
         categories = sorted(
             {
                 row[0].strip()
@@ -194,10 +176,8 @@ async def get_project_filters(
                 if row[0] and isinstance(row[0], str) and row[0].strip()
             }
         )
-
         brand_result = await db.execute(brand_stmt)
         brand_rows = brand_result.all()
-
         brands = sorted(
             {
                 row[0].strip()
@@ -205,12 +185,10 @@ async def get_project_filters(
                 if row[0] and isinstance(row[0], str) and row[0].strip()
             }
         )
-
         return {
             "categories": categories,
             "brands": brands,
         }
-
     except Exception as e:
         logger.error(
             f"Failed to fetch filters for project {project_id}: {e}",

@@ -1,3 +1,4 @@
+from  app.core.config import settings
 from email.policy import HTTP
 import trace
 
@@ -5,7 +6,7 @@ from curl_cffi import AsyncSession
 from fastapi import APIRouter, BackgroundTasks,Depends, HTTPException
 from datetime import datetime
 import aiohttp
-from openai import timeout
+from openai import BaseModel, timeout
 from app.aggregation.services.pdf_service import PDFExtractionService
 from app.core.database import get_session
 from app.llm import call_llm_with_schema
@@ -14,7 +15,7 @@ from app.models.product import Product
 from app.schemas.pdf_extraction import FreshAggregationRequest
 import uuid
 import logging
-from typing import List,Optional,Dict
+from typing import List,Optional,Dict   
 from app.search.searxng_service import SearXNGSearchService
 from app.core.database import async_session_factory
 logger=logging.getLogger('pdf extraction')
@@ -96,7 +97,8 @@ async def download_and_extract_pdf(pdf_url:str)->Optional[str]:
     except Exception as e:
         logger.warning(f"Failed to download/extract PDF {pdf_url}: {e}")
     return None
-    
+
+
 async def extract_product_with_claude(mpn:str,pdf_text:str,source_url:str)->Optional[Dict]:
     try:
         prompt=f"""
@@ -127,96 +129,135 @@ async def extract_product_with_claude(mpn:str,pdf_text:str,source_url:str)->Opti
         }
             
         }
-        extracted=await call_llm_with_schema(prompt=prompt,response_model=schema,llm_provider='claude',estimated_tokens=4000)
+        extracted=await call_llm_with_schema(prompt=prompt,response_model="PDFExtractionResponse",llm_provider='claude',estimated_tokens=4000)
         if extracted:
-            extracted['mpn']=mpn
-            extracted['source_url']=source_url
-            return extracted
+            result = extracted.model_dump() if hasattr(extracted, 'model_dump') else extracted.dict()
+            result['mpn']=mpn
+            result['source_url']=source_url
+            return result
     except Exception as e:
         logger.error(f"Claude extraction failed for {mpn}: {e}")
     return None
-
-async def process_fresh_pdf_aggregation(batch_id:str,mpns:List[str],project_id:str):
+async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_id: str):
     try:
         async with async_session_factory() as db:
             try:
-                products=[]
-                successful=0
-                failed_mpns=[]
-                for idx,mpn in enumerate(mpns):
+                products = []
+                successful = 0
+                routed_to_enrichment_count = 0
+                ready_for_export_count = 0
+                enrichment_threshold = settings.enrichment_threshold
+                failed_mpns = []
+                
+                for idx, mpn in enumerate(mpns):
                     try:
                         logger.info(f"Processing MPN {idx+1}/{len(mpns)}: {mpn}")
-                        pdf_urls=await search_pdfs_url(mpn,brand='')
+                        pdf_urls = await search_pdfs_url(mpn, brand='')
                         if not pdf_urls:
-                            logger.warning(f"No PDF urls  found for {mpn}")
+                            logger.warning(f"No PDF urls found for {mpn}")
                             failed_mpns.append(mpn)
                             continue
-                        product_data=None
+                            
+                        product_data = None
                         for pdf_url in pdf_urls:
-                            pdf_text=await download_and_extract_pdf(pdf_url)
+                            pdf_text = await download_and_extract_pdf(pdf_url)
                             if pdf_text:
-                                product_data=await extract_product_with_claude(mpn,pdf_text,pdf_url)
+                                product_data = await extract_product_with_claude(mpn, pdf_text, pdf_url)
                                 if product_data:
                                     break
+                                    
                         if product_data:
-                            product=Product(
+                            specifications = product_data.get('specifications', {})
+                            spec_count = len(specifications)
+                            completeness_score = min(spec_count * 5, 100)
+                            
+                            if completeness_score < enrichment_threshold:
+                                workflow_stage = 'enrichment'
+                                needs_enrichment = True
+                                is_ready_for_export = False
+                                routed_to_enrichment_at = datetime.utcnow()
+                                enrichment_status = 'pending'
+                                routed_to_enrichment_count += 1
+                            else:
+                                workflow_stage = 'aggregation'
+                                needs_enrichment = False
+                                is_ready_for_export = True
+                                routed_to_enrichment_at = None
+                                enrichment_status = 'completed'
+                                ready_for_export_count += 1
+                            
+                            product = Product(
                                 product_code=mpn,
-                                product_name=product_data.get('product_name',f"Product {mpn}"),
+                                product_name=product_data.get('product_name', f"Product {mpn}"),
                                 brand_name=product_data.get("brand_name", ""),
                                 mpn=mpn,
                                 sku=product_data.get("sku", ""),
-                                taxonomy=product_data.get('taxonomy',''),
-                                description=product_data.get('description',''),
+                                taxonomy=product_data.get('taxonomy', ''),
+                                description=product_data.get('description', ''),
                                 image_url_1=product_data.get('image_url'),
                                 project_id=project_id,
-                                workflow_stage='aggregation',
-                                enrichment_status='pending',
-                                attributes=product_data.get('specifications',{}),
+                                workflow_stage=workflow_stage,
+                                enrichment_status=enrichment_status,
+                                ready_for_export=is_ready_for_export,
+                                needs_enrichment=needs_enrichment,
+                                routed_to_enrichment_at=routed_to_enrichment_at,
+                                attributes=specifications,
                                 source_url=product_data.get('source_url', ""),
-                                completeness_score=0
+                                completeness_score=completeness_score
                             )
                             db.add(product)
                             products.append(product_data)
-                            successful+=1
-                            logger.info(f"Successfully extracted product for {mpn}")
+                            successful += 1
+                            logger.info(f"Successfully extracted product for {mpn} (score {completeness_score})")
                         else:
                             failed_mpns.append(mpn)
                             logger.warning(f"Failed to extract product for {mpn}")
-                        
+                            
                     except Exception as e:
                         logger.error(f"Error processing MPN {mpn}: {e}")
                         failed_mpns.append(mpn)
+                        
                     if (idx + 1) % 3 == 0 or idx + 1 == len(mpns):
-                        source=await db.get(Source,batch_id)
+                        source = await db.get(Source, batch_id)
                         if source:
-                            source.source_metadata['successful']=successful
-                            source.source_metadata['failed']=len(failed_mpns)
-                            source.source_metadata['current_index']=idx+1
-                            source.source_metadata['products']=products
-                            source.source_metadata['failed_mpns']=failed_mpns
+                            source.source_metadata.update({
+                                'successful': successful,
+                                'failed': len(failed_mpns),
+                                'current_index': idx + 1,
+                                'products': products,
+                                'failed_mpns': failed_mpns,
+                                'routed_to_enrichment': routed_to_enrichment_count,
+                                'ready_for_export': ready_for_export_count
+                            })
                             db.add(source)
                             await db.commit()
-                source=await db.get(Source,batch_id)
+                            
+                source = await db.get(Source, batch_id)
                 if source:
-                    source.status='completed'
-                    source.source_metadata['completed_at']=datetime.utcnow().isoformat()
-                    source.source_metadata['products']=products
-                    source.source_metadata['failed_mpns']=failed_mpns
+                    source.status = 'completed'
+                    source.source_metadata.update({
+                        'completed_at': datetime.utcnow().isoformat(),
+                        'products': products,
+                        'failed_mpns': failed_mpns,
+                        'routed_to_enrichment': routed_to_enrichment_count,
+                        'ready_for_export': ready_for_export_count
+                    })
                     db.add(source)
                     await db.commit()
-                logger.info(f"Fresh aggregation completed :{successful} succesful,{len(failed_mpns)} failed")
+                    
+                logger.info(f"Fresh aggregation completed: {successful} successful, {len(failed_mpns)} failed, {routed_to_enrichment_count} to enrichment, {ready_for_export_count} ready")
                             
             except Exception as e:
-                logger.error(f"Fresh PDF aggregation failed :{e}")
-                source=await db.get(Source,batch_id)
+                logger.error(f"Fresh PDF aggregation failed: {e}")
+                source = await db.get(Source, batch_id)
                 if source:
-                    source.status='failed'
-                    source.source_metadata['error']=str(e)
+                    source.status = 'failed'
+                    source.source_metadata['error'] = str(e)
                     db.add(source)
                     await db.commit()
     except Exception as e:
-        logger.error(f"Fresh PDF aggregation failed :{e}")
-    
+        logger.error(f"Fresh PDF aggregation failed: {e}")
+        
 @router.get('/batch-status/{batch_id}')
 async def get_batch_status(batch_id:str,db:AsyncSession=Depends(get_session)):
     try:
