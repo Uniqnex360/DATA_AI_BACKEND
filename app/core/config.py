@@ -4,7 +4,6 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME:str='Data AI Backend'
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://localhost:3000","https://data-ai-frontend-dusky.vercel.app"]
-    SECRET_KEY:str
     ALGORITHM:str="HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
     DATABASE_URL: str
@@ -12,6 +11,7 @@ class Settings(BaseSettings):
     DB_MAX_OVERFLOW:int=10
     DB_ECHO_LOG: bool = False
     openai_api_key:str
+    ALGORITHM:str
     llm_model:str='gpt-4o-mini'
     MIGRATION_MODE: str = "safe" 
     enrichment_threshold:int
@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     cloudinary_cloud_name:str 
     cloudinary_api_key:str 
     cloudinary_api_secret:str 
+    SECRET_KEY:str
     cloudinary_folder:str=''
     serpapi_key:str
     class Config:

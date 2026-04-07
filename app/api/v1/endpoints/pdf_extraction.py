@@ -2,11 +2,11 @@ from io import BytesIO
 import pdfplumber
 import json
 from  app.core.config import settings
-from email.policy import HTTP
 from sqlmodel import select
-from sqlalchemy import cast, String
+from sqlalchemy import  func, case
 from sqlalchemy import func  
-from curl_cffi import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from fastapi import APIRouter, BackgroundTasks,Depends, File, Form, HTTPException, UploadFile
 from datetime import datetime
 import aiohttp
@@ -16,6 +16,7 @@ from app.core.database import get_session
 from app.llm import call_llm_with_schema
 from app.models.pipeline import Source
 from app.models.product import Product
+from app.models.project import Project
 from app.schemas.pdf_extraction import FreshAggregationRequest, PDFExtractionResponse
 import uuid
 import logging
@@ -24,6 +25,44 @@ from app.search.searxng_service import SearXNGSearchService
 from app.core.database import async_session_factory
 logger=logging.getLogger('pdf extraction')
 router = APIRouter()
+async def sync_project_status(db, project_id: str) -> None:
+    project = await db.get(Project, project_id)
+    if not project:
+        return
+
+    stmt = select(
+        func.count(Product.id),
+        func.sum(case((Product.enrichment_status == "completed", 1), else_=0)),
+        func.sum(case((Product.enrichment_status == "failed", 1), else_=0)),
+        func.sum(case((Product.enrichment_status == "processing", 1), else_=0)),
+        func.sum(case((Product.enrichment_status == "pending", 1), else_=0)),
+    ).where(Product.project_id == project_id)
+
+    result = await db.execute(stmt)
+    row = result.one()
+
+    total = row[0] or 0
+    completed = row[1] or 0
+    failed = row[2] or 0
+    processing = row[3] or 0
+    pending = row[4] or 0
+
+    if total == 0:
+        project.status = "draft"
+    elif processing > 0:
+        project.status = "processing"
+    elif completed == total:
+        project.status = "completed"
+    elif failed == total:
+        project.status = "failed"
+    elif completed > 0:
+        project.status = "partially_completed"
+    else:
+        project.status = "draft"
+
+    db.add(project)
+    await db.commit()
+    
 @router.post('/fresh-aggregation')
 async def fresh_aggregation(request:FreshAggregationRequest,background_tasks:BackgroundTasks,db:AsyncSession=Depends(get_session)):
     try:
@@ -35,7 +74,8 @@ async def fresh_aggregation(request:FreshAggregationRequest,background_tasks:Bac
             'total':len(request.mpns),
             'successful':0,
             'failed':0,
-            'products':[]
+            'products':[],
+            'processing_status': 'processing'
         })
         db.add(source)
         await db.commit()
@@ -226,10 +266,12 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                         'products': products,
                         'failed_mpns': failed_mpns,
                         'routed_to_enrichment': routed_to_enrichment_count,
+                        'processing_status': 'completed',    
                         'ready_for_export': ready_for_export_count
                     })
                     db.add(source)
                     await db.commit()
+                    await sync_project_status(db, project_id)
                 logger.info(f"Fresh aggregation completed: {successful} successful, {len(failed_mpns)} failed, {routed_to_enrichment_count} to enrichment, {ready_for_export_count} ready")
             except Exception as e:
                 logger.error(f"Fresh PDF aggregation failed: {e}")
@@ -237,8 +279,11 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                 if source:
                     source.status = 'failed'
                     source.source_metadata['error'] = str(e)
+                    source.source_metadata['processing_status'] = 'failed'
                     db.add(source)
                     await db.commit()
+                    await sync_project_status(db, project_id)
+                    
     except Exception as e:
         logger.error(f"Fresh PDF aggregation failed: {e}")
 @router.get('/batch-status/{batch_id}')
@@ -277,6 +322,7 @@ async def structured_pdf_extraction(
                 'mpn':mpn,
                 'use_case':use_case,
                 'started_at':datetime.utcnow().isoformat(),
+                'processing_status': 'processing',
                 'successful':0,
                 'failed':0
             }
@@ -392,8 +438,11 @@ Return ONLY a single valid JSON object in this format:
                     source.source_metadata['error'] = f"MPN {mpn} not found in PDF"
                     source.source_metadata['failed'] = 1
                     source.source_metadata['completed_at'] = datetime.utcnow().isoformat()
+                    source.source_metadata['processing_status'] = 'failed'
                     db.add(source)
                     await db.commit()
+                    await sync_project_status(db, project_id)
+                    
                 return
             if hasattr(product_info, 'model_dump'):
                 prod_dict = product_info.model_dump()
@@ -473,10 +522,12 @@ Return ONLY a single valid JSON object in this format:
                     'mpn': mpn,
                     'completeness_score': completeness_score,
                     'workflow_stage': workflow_stage,
-                    'completed_at': datetime.utcnow().isoformat()
+                    'completed_at': datetime.utcnow().isoformat(),
+                    'processing_status': 'completed'
                 })
                 db.add(source)
             await db.commit()
+            await sync_project_status(db, project_id)
             logger.info(f"Structured extraction completed for MPN {mpn} (score {completeness_score}, stage {workflow_stage})")
         except Exception as e:
             logger.error(f"Structured PDF extraction failed for batch {batch_id}: {e}", exc_info=True)
@@ -485,8 +536,10 @@ Return ONLY a single valid JSON object in this format:
             if source:
                 source.status = 'failed'
                 source.source_metadata['error'] = str(e)
+                source.source_metadata['processing_status'] = 'failed'
                 db.add(source)
                 await db.commit()
+                await sync_project_status(db, project_id)
 import os
 from app.core.config import settings
 @router.post('/save-pdf-source')
@@ -513,7 +566,8 @@ async def save_pdf_source(
             source_metadata={
                 "mpn": mpn,
                 "use_case": use_case,
-                "extracted": False
+                "extracted": False,
+                "processing_status": "pending"
             }
         )
         db.add(source)
@@ -569,6 +623,10 @@ async def extract_pending_pdf(
         source = result.scalar_one_or_none()
         if not source:
             raise HTTPException(404, f"PDF source not found for MPN: {mpn}")
+        source.status = "processing"
+        source.source_metadata["processing_status"] = "processing"
+        db.add(source)
+        await db.commit()
         background_tasks.add_task(
             process_pdf_extraction_for_product,
             source.id, mpn, project_id
@@ -600,14 +658,19 @@ async def process_pdf_extraction_for_product(
                 batch_id, pdf_bytes, mpn, project_id, source.source_url
             )
             source.source_metadata["extracted"] = True
+            source.source_metadata["processing_status"] = "completed"
             source.content_data = None  
+            source.status = "completed"
             db.add(source)
             await db.commit()
+            await sync_project_status(db, project_id)
         except Exception as e:
             logger.error(f"Failed to extract pending PDF for {mpn}: {e}")
             source = await db.get(Source, batch_id)
             if source:
                 source.status = "failed"
                 source.source_metadata["error"] = str(e)
+                source.source_metadata["processing_status"] = "failed"
                 db.add(source)
                 await db.commit()
+                await sync_project_status(db, project_id)

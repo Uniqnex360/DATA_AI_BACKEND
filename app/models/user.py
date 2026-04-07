@@ -6,5 +6,5 @@ class User(UUIDModel,table=True):
     email:str=Field(index=True,unique=True)
     hashed_password: str
     full_name: str
-    role: str = "viewer" 
+    role: str = "admin" 
     is_active: bool = True

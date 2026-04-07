@@ -1,28 +1,87 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.core.database import get_session
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
-from app.services.auth_service import authenticate_user
-from typing import Any
-from app.core.security import create_access_token, get_password_hash
-from datetime import datetime, timedelta
-from app.core.config import settings
-from app.models.user import User
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
-router=APIRouter()
-@router.post('/login/access-token')
-async def login_access_token(db:AsyncSession=Depends(get_session),form_data:OAuth2PasswordRequestForm=Depends())->Any:
-    user=await authenticate_user(db,form_data.username,form_data.password)
-    if not user:
-        raise HTTPException(status_code=400,detail='Incorrect email or password')
-    access_token_expires=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    return {
-        'access_token':create_access_token(user.id,expires_delta=access_token_expires),
-        'token_type':'bearer'
-    }
-@router.post('/register')
-async def register_user(email:str,password:str,full_name:str,db:AsyncSession=Depends(get_session)):
-    user=User(email=email,hashed_password=get_password_hash(password),full_name=full_name,role='admin',is_active=True)
+from app.core.database import get_session
+from app.models.user import User
+from app.auth.security import verify_password, create_access_token, get_password_hash
+from app.auth.dependencies import get_current_user
+from app.schemas.auth import RegisterRequest
+
+router = APIRouter()
+
+@router.post("/register")
+async def register(
+    payload: RegisterRequest,
+    db: AsyncSession = Depends(get_session),
+):
+    stmt = select(User).where(User.email == payload.email)
+    result = await db.execute(stmt)
+    existing_user = result.scalar_one_or_none()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User with this email already exists",
+        )
+
+    user = User(
+        email=payload.email,
+        hashed_password=get_password_hash(payload.password),
+        full_name=payload.full_name,
+        role="admin",  
+        is_active=True,
+    )
+
     db.add(user)
     await db.commit()
-    return {'msg':"User  created successfully!"}
+    await db.refresh(user)
+
+    return {
+        "message": "User registered successfully",
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "full_name": user.full_name,
+            "role": user.role,
+        },
+    }
+
+@router.post("/login")
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_session),
+):
+    stmt = select(User).where(User.email == form_data.username)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+        )
+
+    token = create_access_token({"sub": str(user.id), "role": user.role})
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "full_name": user.full_name,
+            "role": user.role,
+        },
+    }
+
+@router.get("/me")
+async def me(current_user: User = Depends(get_current_user)):
+    return {
+        "id": str(current_user.id),
+        "email": current_user.email,
+        "full_name": current_user.full_name,
+        "role": current_user.role,
+        "is_active": current_user.is_active,
+    }

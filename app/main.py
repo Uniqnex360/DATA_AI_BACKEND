@@ -33,6 +33,7 @@ app.include_router(hitl.router, prefix=f"{settings.API_V1_STR}/hitl", tags=["hit
 app.include_router(publishing.router, prefix=f"{settings.API_V1_STR}/publishing", tags=["publishing"])
 app.include_router(business_rules.router, prefix=f"{settings.API_V1_STR}/business-rules", tags=["business_rules"])
 app.include_router(pdf_extraction.router, prefix=f"{settings.API_V1_STR}/extraction/pdf", tags=["pdf_extraction"])
+app.include_router(auth.router,prefix=f"{settings.API_V1_STR}/auth",tags=['auth'])
 
 @app.on_event("startup")
 async def on_startup():
