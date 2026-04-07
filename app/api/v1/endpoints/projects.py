@@ -17,7 +17,7 @@ def normalize_source_status(status: str | None, project_status: str | None = Non
     if project_status == "partially_completed":
         return "Partially Completed"
     if project_status == "failed":
-        return "In Progress"
+        return "Yet to Start"
     if project_status == "completed":
         return "Completed"
     if not status:

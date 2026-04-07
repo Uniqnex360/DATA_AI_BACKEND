@@ -1,5 +1,4 @@
 from io import BytesIO
-
 import pdfplumber
 import json
 from  app.core.config import settings
@@ -51,7 +50,6 @@ async def fresh_aggregation(request:FreshAggregationRequest,background_tasks:Bac
     except Exception as e:
         logger.error(f"Failed to start fresh aggregation: {e}")
         raise HTTPException(500,str(e))
-    
 async def search_pdfs_url(mpn:str,brand:str)->List[str]:
     try:
         logger.info(f"🔍 [1/4] Starting PDF search for MPN: {mpn}")
@@ -66,11 +64,9 @@ async def search_pdfs_url(mpn:str,brand:str)->List[str]:
         pdf_urls=[]
         for query in search_queries:
             logger.info(f"🔎 Executing search: {query}")
-
             try:
                 results=await searxng._search(query)
                 logger.info(f"   Found {len(results)} results for query: {query}")
-
                 for result in results:
                     url=result.get('url','')
                     if url and url.lower().endswith('.pdf'):
@@ -78,17 +74,14 @@ async def search_pdfs_url(mpn:str,brand:str)->List[str]:
                         logger.info(f"   ✅ PDF found: {url}")
                     else:
                         logger.debug(f"   ⏭️ Skipped non-PDF: {url[:80]}...")
-                    
             except Exception as e:
                 logger.debug(f"Search failed for {query}: {e}")
         return list(set(pdf_urls))[:5]
     except Exception as e:
         logger.error(f"Failed to search pdf urls: {e}")
         raise HTTPException(500,str(e))
-    
 async def download_and_extract_pdf(pdf_url:str)->Optional[str]:
     pdf_service=PDFExtractionService(max_pages=15)
-    
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(pdf_url,timeout=30) as resp:
@@ -96,14 +89,11 @@ async def download_and_extract_pdf(pdf_url:str)->Optional[str]:
                     pdf_bytes=await resp.read()
                     text=await pdf_service.extract_text(pdf_bytes)
                     if text and len(text.strip()) > 200:
-
                         logger.info(f'Extracted {len(text)} chars from {pdf_url}')
                         return text
     except Exception as e:
         logger.warning(f"Failed to download/extract PDF {pdf_url}: {e}")
     return None
-
-
 async def extract_product_with_claude(mpn:str,pdf_text:str,source_url:str)->Optional[Dict]:
     try:
         prompt=f"""
@@ -132,7 +122,6 @@ async def extract_product_with_claude(mpn:str,pdf_text:str,source_url:str)->Opti
             "image_url": {"type": "string"},
             "specifications": {"type": "object"}
         }
-            
         }
         extracted=await call_llm_with_schema(prompt=prompt,response_model="PDFExtractionResponse",llm_provider='claude',estimated_tokens=4000)
         if extracted:
@@ -153,7 +142,6 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                 ready_for_export_count = 0
                 enrichment_threshold = settings.enrichment_threshold
                 failed_mpns = []
-                
                 for idx, mpn in enumerate(mpns):
                     try:
                         logger.info(f"Processing MPN {idx+1}/{len(mpns)}: {mpn}")
@@ -162,7 +150,6 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                             logger.warning(f"No PDF urls found for {mpn}")
                             failed_mpns.append(mpn)
                             continue
-                            
                         product_data = None
                         for pdf_url in pdf_urls:
                             pdf_text = await download_and_extract_pdf(pdf_url)
@@ -170,12 +157,10 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                 product_data = await extract_product_with_claude(mpn, pdf_text, pdf_url)
                                 if product_data:
                                     break
-                                    
                         if product_data:
                             specifications = product_data.get('specifications', {})
                             spec_count = len(specifications)
                             completeness_score = min(spec_count * 5, 100)
-                            
                             if completeness_score < enrichment_threshold:
                                 workflow_stage = 'enrichment'
                                 needs_enrichment = True
@@ -190,7 +175,6 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                 routed_to_enrichment_at = None
                                 enrichment_status = 'completed'
                                 ready_for_export_count += 1
-                            
                             product = Product(
                                 product_code=mpn,
                                 product_name=product_data.get('product_name', f"Product {mpn}"),
@@ -217,11 +201,9 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                         else:
                             failed_mpns.append(mpn)
                             logger.warning(f"Failed to extract product for {mpn}")
-                            
                     except Exception as e:
                         logger.error(f"Error processing MPN {mpn}: {e}")
                         failed_mpns.append(mpn)
-                        
                     if (idx + 1) % 3 == 0 or idx + 1 == len(mpns):
                         source = await db.get(Source, batch_id)
                         if source:
@@ -236,7 +218,6 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                             })
                             db.add(source)
                             await db.commit()
-                            
                 source = await db.get(Source, batch_id)
                 if source:
                     source.status = 'completed'
@@ -249,9 +230,7 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                     })
                     db.add(source)
                     await db.commit()
-                    
                 logger.info(f"Fresh aggregation completed: {successful} successful, {len(failed_mpns)} failed, {routed_to_enrichment_count} to enrichment, {ready_for_export_count} ready")
-                            
             except Exception as e:
                 logger.error(f"Fresh PDF aggregation failed: {e}")
                 source = await db.get(Source, batch_id)
@@ -262,7 +241,6 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                     await db.commit()
     except Exception as e:
         logger.error(f"Fresh PDF aggregation failed: {e}")
-        
 @router.get('/batch-status/{batch_id}')
 async def get_batch_status(batch_id:str,db:AsyncSession=Depends(get_session)):
     try:
@@ -277,12 +255,9 @@ async def get_batch_status(batch_id:str,db:AsyncSession=Depends(get_session)):
         }
     except Exception as e:
         raise e
-
-
 @router.post('/structured-extraction')
 async def structured_pdf_extraction(
     background_tasks: BackgroundTasks,
-    
     file: UploadFile = File(...),
     mpn: str = Form(...),
     project_id: str = Form(...),
@@ -305,7 +280,6 @@ async def structured_pdf_extraction(
                 'successful':0,
                 'failed':0
             }
-            
         )
         db.add(source)
         await db.commit()
@@ -318,7 +292,6 @@ async def structured_pdf_extraction(
     except Exception as e:
          logger.error(f"Failed to start structured extraction: {e}")
          raise HTTPException(500,str(e))
-
 async def process_structured_pdf_extraction(
     batch_id: str,
     pdf_bytes: bytes,
@@ -332,24 +305,18 @@ async def process_structured_pdf_extraction(
     """
     async with async_session_factory() as db:
         try:
-            # ----- 1. Extract text and tables from PDF -----
             full_text = ""
             tables = []
-
             with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
                 for page in pdf.pages:
-                    # Extract plain text
                     page_text = page.extract_text()
                     if page_text:
                         full_text += page_text + "\n"
-
-                    # Extract tables as list of dictionaries
                     page_tables = page.extract_tables()
                     for tbl in page_tables:
-                        if tbl and len(tbl) > 1:          # at least header + one data row
+                        if tbl and len(tbl) > 1:          
                             headers = [str(h).strip() if h else "" for h in tbl[0]]
                             for row in tbl[1:]:
-                                # Skip completely empty rows
                                 if not any(cell for cell in row):
                                     continue
                                 row_dict = {}
@@ -361,22 +328,15 @@ async def process_structured_pdf_extraction(
                                             row_dict[key] = val
                                 if row_dict:
                                     tables.append(row_dict)
-
-            # Limit text length to avoid token overflow
             truncated_text = full_text[:15000]
             truncated_tables = json.dumps(tables, indent=2)[:5000]
-
-            # ----- 2. Build prompt for Claude -----
             prompt = f"""
 You are a product data extraction expert. Extract product information for MPN "{mpn}" from the document below.
 Use only the content provided; do not search externally.
-
 Document content (text):
 {truncated_text}
-
 Table data (extracted from the document):
 {truncated_tables}
-
 Extract the following fields if present. If a field is missing, leave it empty:
 - product_name
 - brand_name
@@ -385,7 +345,6 @@ Extract the following fields if present. If a field is missing, leave it empty:
 - description
 - image_url
 - specifications
-
 Return ONLY a single valid JSON object in this format:
 {{
   "product_name": "",
@@ -397,13 +356,8 @@ Return ONLY a single valid JSON object in this format:
   "specifications": {{}}
 }}
 """
-
-            # ----- 3. Call Claude with a response model that accepts a dynamic key -----
-            # We use a dict wrapper because the key is the MPN (variable).
             from pydantic import BaseModel, Field
             from typing import Dict
-
-            
             logger.info(f"Extracted text length for {mpn}: {len(full_text)}")
             logger.info(f"Extracted text preview for {mpn}: {full_text[:1000]}")
             logger.info(f"Extracted tables count for {mpn}: {len(tables)}")
@@ -413,11 +367,8 @@ Return ONLY a single valid JSON object in this format:
                 llm_provider='claude',
                 estimated_tokens=4000
             )
-
-            # Extract the product data for the given MPN
             product_info = None
             resp_dict = None
-
             if response:
                 if hasattr(response, "model_dump"):
                     resp_dict = response.model_dump()
@@ -425,9 +376,7 @@ Return ONLY a single valid JSON object in this format:
                     resp_dict = response.dict()
                 elif isinstance(response, dict):
                     resp_dict = response
-
             logger.info(f"LLM parsed response for {mpn}: {resp_dict}")
-
             if resp_dict:
                 if isinstance(resp_dict.get("data"), dict):
                     product_info = resp_dict["data"].get(mpn)
@@ -435,10 +384,8 @@ Return ONLY a single valid JSON object in this format:
                     product_info = resp_dict[mpn]
                 elif "product_name" in resp_dict or "specifications" in resp_dict:
                     product_info = resp_dict
-
             if not product_info:
                 logger.warning(f"MPN {mpn} not found or could not be extracted from PDF")
-                # Update source as failed for this MPN
                 source = await db.get(Source, batch_id)
                 if source:
                     source.status = 'failed'
@@ -448,8 +395,6 @@ Return ONLY a single valid JSON object in this format:
                     db.add(source)
                     await db.commit()
                 return
-
-            # Convert Pydantic model to dict
             if hasattr(product_info, 'model_dump'):
                 prod_dict = product_info.model_dump()
             elif hasattr(product_info, 'dict'):
@@ -458,12 +403,8 @@ Return ONLY a single valid JSON object in this format:
                 prod_dict = product_info
             else:
                 raise ValueError(f"Unexpected product_info type: {type(product_info)}")
-
-            # ----- 4. Calculate completeness score -----
             spec_count = len(prod_dict.get('specifications', {}))
             completeness_score = min(spec_count * 5, 100)
-
-            # ----- 5. Determine workflow stage -----
             enrichment_threshold = getattr(settings, 'enrichment_threshold', 90)
             if completeness_score < enrichment_threshold:
                 workflow_stage = 'enrichment'
@@ -484,9 +425,7 @@ Return ONLY a single valid JSON object in this format:
             )
         )
             existing_product = existing_product.scalar_one_or_none()
-
             if existing_product:
-                # Update the existing product
                 existing_product.product_name = prod_dict.get('product_name', f"Product {mpn}")
                 existing_product.brand_name = prod_dict.get('brand_name', "")
                 existing_product.sku = prod_dict.get('sku', "")
@@ -503,7 +442,6 @@ Return ONLY a single valid JSON object in this format:
                 existing_product.completeness_score = completeness_score
                 db.add(existing_product)
             else:
-                # ----- 6. Create product -----
                 product = Product(
                     product_code=mpn,
                     product_name=prod_dict.get('product_name', f"Product {mpn}"),
@@ -525,8 +463,6 @@ Return ONLY a single valid JSON object in this format:
                 )
                 db.add(product)
             await db.flush()
-
-            # ----- 7. Update source metadata -----
             source = await db.get(Source, batch_id)
             if source:
                 source.status = 'completed'
@@ -540,13 +476,10 @@ Return ONLY a single valid JSON object in this format:
                     'completed_at': datetime.utcnow().isoformat()
                 })
                 db.add(source)
-
             await db.commit()
             logger.info(f"Structured extraction completed for MPN {mpn} (score {completeness_score}, stage {workflow_stage})")
-
         except Exception as e:
             logger.error(f"Structured PDF extraction failed for batch {batch_id}: {e}", exc_info=True)
-            # Rollback and mark source as failed
             await db.rollback()
             source = await db.get(Source, batch_id)
             if source:
@@ -556,7 +489,6 @@ Return ONLY a single valid JSON object in this format:
                 await db.commit()
 import os
 from app.core.config import settings
-
 @router.post('/save-pdf-source')
 async def save_pdf_source(
     file: UploadFile = File(...),
@@ -568,37 +500,29 @@ async def save_pdf_source(
     try:
         batch_id = str(uuid.uuid4())
         pdf_bytes = await file.read()
-        
-        # Validate file size (optional)
-        MAX_FILE_SIZE = 20 * 1024 * 1024  # 10 MB
+        MAX_FILE_SIZE = 20 * 1024 * 1024  
         if len(pdf_bytes) > MAX_FILE_SIZE:
             raise HTTPException(400, f"File size exceeds {MAX_FILE_SIZE // (1024*1024)} MB limit")
-        
-        # Create source record with PDF bytes in content_data
         source = Source(
             id=batch_id,
             source_type="pdf_pending_extraction",
             source_url=file.filename,
             project_id=project_id,
             status="pending",
-            content_data=pdf_bytes,  # ✅ store directly
+            content_data=pdf_bytes,  
             source_metadata={
                 "mpn": mpn,
                 "use_case": use_case,
                 "extracted": False
-                # no file_path needed
             }
         )
         db.add(source)
-        
-        # Check for existing placeholder product
         stmt = select(Product).where(
             Product.project_id == project_id,
             Product.product_code == mpn
         )
         result = await db.execute(stmt)
         existing = result.scalar_one_or_none()
-        
         if not existing:
             product = Product(
                 product_code=mpn,
@@ -612,7 +536,6 @@ async def save_pdf_source(
             )
             db.add(product)
         logger.info(f"Saving source with content_data size: {len(pdf_bytes)} bytes")
-
         await db.commit()
         saved_source = await db.get(Source, batch_id)
         logger.info(
@@ -626,7 +549,6 @@ async def save_pdf_source(
     except Exception as e:
         logger.error(f"Failed to save PDF source: {e}")
         raise HTTPException(500, str(e))
-    
 @router.post('/extract-pending')
 async def extract_pending_pdf(
     data: dict,
@@ -636,12 +558,8 @@ async def extract_pending_pdf(
     try:
         mpn = data.get('mpn')
         project_id = data.get('project_id')
-        
-        # Validate required fields
         if not mpn or not project_id:
             raise HTTPException(400, "Missing required fields: mpn and project_id")
-        
-        # Use json_extract_path_text to safely extract MPN from JSON metadata
         stmt = select(Source).where(
             Source.source_type == "pdf_pending_extraction",
             func.json_extract_path_text(Source.source_metadata, 'mpn') == mpn,
@@ -649,18 +567,13 @@ async def extract_pending_pdf(
         )
         result = await db.execute(stmt)
         source = result.scalar_one_or_none()
-        
         if not source:
             raise HTTPException(404, f"PDF source not found for MPN: {mpn}")
-        
-        # Extract and process in background
         background_tasks.add_task(
             process_pdf_extraction_for_product,
             source.id, mpn, project_id
         )
-        
         return {"status": "processing", "batch_id": source.id}
-        
     except HTTPException:
         raise
     except Exception as e:
@@ -677,27 +590,19 @@ async def process_pdf_extraction_for_product(
             if not source or source.source_type != "pdf_pending_extraction":
                 logger.error(f"Invalid source for batch {batch_id}")
                 return
-                
             if source.source_metadata.get("extracted"):
                 logger.info(f"PDF for {mpn} already extracted, skipping")
                 return
-            
-            # Get PDF bytes from database
             pdf_bytes = source.content_data
             if not pdf_bytes:
                 raise ValueError("No PDF content found in source")
-            
-            # Reuse the structured extraction logic
             await process_structured_pdf_extraction(
                 batch_id, pdf_bytes, mpn, project_id, source.source_url
             )
-            
-            # Mark as extracted (optionally clear content_data to save space)
             source.source_metadata["extracted"] = True
-            source.content_data = None  # free up space after extraction
+            source.content_data = None  
             db.add(source)
             await db.commit()
-            
         except Exception as e:
             logger.error(f"Failed to extract pending PDF for {mpn}: {e}")
             source = await db.get(Source, batch_id)

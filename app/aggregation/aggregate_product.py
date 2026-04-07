@@ -1,3 +1,8 @@
+from typing import Dict, List, Optional
+from app.llm import call_llm_with_schema
+from app.aggregation.stages import (
+    aggregation,
+)
 from typing import Dict, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.aggregation.pipeline import AggregationPipeline
@@ -24,12 +29,9 @@ import logging
 from app.schemas.aggregation import UnifiedStandardizedResponse
 from app.utils.image_validator import validate_image_url
 logger = logging.getLogger("aggregate_product")
-from app.aggregation.stages import (
-    aggregation,
-)
 _llm_semaphore = asyncio.Semaphore(5)
-from app.aggregation.services.search_service import SerpApiSearchService
-from app.aggregation.services.download_service import HttpDownloadService
+
+
 def build_pipeline() -> AggregationPipeline:
     return AggregationPipeline(
         search_service=SerpApiSearchService(max_results=5),
@@ -40,25 +42,23 @@ def build_pipeline() -> AggregationPipeline:
             PdfExtractor(),
         ]),
     )
+
+
 def chunk_attributes(attributes: List[str], chunk_size: int = 10) -> List[List[str]]:
     return [attributes[i:i + chunk_size] for i in range(0, len(attributes), chunk_size)]
-from typing import Dict, List, Optional
-from sqlalchemy.ext.asyncio import AsyncSession
-import logging
 
-from app.aggregation.services.search_service import SerpApiSearchService
-from app.aggregation.services.download_service import HttpDownloadService
-from app.llm import call_llm_with_schema
+
 logger = logging.getLogger("aggregate_product")
+
 
 async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
     from bs4 import BeautifulSoup
     from urllib.parse import urljoin
     soup = BeautifulSoup(html, 'html.parser')
-    candidates = []  
+    candidates = []
 
     HARD_BLOCK_KEYWORDS = [
-        'logo', 'icon', 'banner', 'button', 'spacer', 'placeholder', 'loading', 
+        'logo', 'icon', 'banner', 'button', 'spacer', 'placeholder', 'loading',
         'pixel', 'tracking', 'social', 'share', 'facebook', 'twitter', 'instagram',
         'og-image', 'social-share', 'carton', 'box', 'camozzi', 'default', 'nophoto'
     ]
@@ -71,42 +71,49 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
     meta = soup.find('meta', property='og:image')
     if meta and meta.get('content'):
         url = urljoin(base_url, meta['content'])
-        if not is_junk(url): 
-            candidates.append((url, 100))  
+        if not is_junk(url):
+            candidates.append((url, 100))
 
     # 2. twitter:image
     meta = soup.find('meta', attrs={'name': 'twitter:image'})
     if meta and meta.get('content'):
         url = urljoin(base_url, meta['content'])
-        if not is_junk(url): 
+        if not is_junk(url):
             candidates.append((url, 90))
 
     # 3. Standard img tags
     for img in soup.find_all('img'):
         src = img.get('src')
-        if not src: continue
+        if not src:
+            continue
         url = urljoin(base_url, src)
-        if is_junk(url): continue 
+        if is_junk(url):
+            continue
 
         alt = img.get('alt', '')
         score = 0
-        if any(k in url.lower() for k in ['product', 'main', 'hero']): score += 20
-        if alt and any(k in alt.lower() for k in ['product', 'main', 'hero']): score += 10
-        
+        if any(k in url.lower() for k in ['product', 'main', 'hero']):
+            score += 20
+        if alt and any(k in alt.lower() for k in ['product', 'main', 'hero']):
+            score += 10
+
         try:
             width = img.get('width')
             height = img.get('height')
-            if width and int(width) > 250: score += 15
-            if height and int(height) > 250: score += 15
-        except: pass
+            if width and int(width) > 250:
+                score += 15
+            if height and int(height) > 250:
+                score += 15
+        except:
+            pass
         candidates.append((url, score))
 
     candidates.sort(key=lambda x: x[1], reverse=True)
     for url, score in candidates:
-        if score > 20:   
+        if score > 20:
             logger.info(f" Fallback selected image with score {score}: {url}")
             return url
-    return None 
+    return None
 
 # async def aggregate_product(
 #     mpn: str = None,
@@ -149,7 +156,7 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
 #             primary_attributes=attrs_to_process,
 #             existing_data=existing_data,
 #             db=db,
-#             use_case=use_case  
+#             use_case=use_case
 #         )
 #         logger.info(f"Aggregating {mpn} in '{prompt_config['mode']}' mode")
 #         attrs_to_process=attribute_chunk if attribute_chunk is not None else primary_attributes
@@ -165,7 +172,7 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
 #         )
 #         result['mode'] = prompt_config['mode']
 #         result['expected_attributes'] = prompt_config['expected_attributes']
-#         result['existing_data'] = existing_data 
+#         result['existing_data'] = existing_data
 #         return result
 
 #     except Exception as e:
@@ -176,8 +183,8 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
 #             'golden_record': {
 #                 'attributes': {},
 #                 'confidence': 0.0,
-#                 'sources_consulted': [] 
-                
+#                 'sources_consulted': []
+
 #             }
 #         }
 
@@ -191,7 +198,7 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
 #     project_id: str = None,
 #     attribute_chunk: Optional[List[str]] = None
 # ) -> Dict:
-    
+
 #     try:
 #         logger.info(f"Starting 8-stage aggregation for {mpn}")
 #         logger.info("Stage 1: URL Discovery")
@@ -212,9 +219,9 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
 #         logger.info(f"Stage 2: Extraction from {len(urls)} sources")
 #         download_service = HttpDownloadService(timeout=30)
 #         all_extractions = []
-#         _url_semaphore = asyncio.Semaphore(2)        
+#         _url_semaphore = asyncio.Semaphore(2)
 #         async def process_url(url):
-#             async with _url_semaphore: 
+#             async with _url_semaphore:
 #                 try:
 #                     content = await download_service.download(url)
 #                     if content is None:
@@ -233,7 +240,7 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
 #                             extraction_result = await call_llm_with_schema(
 #                                     prompt=prompt_config['prompt'],
 #                                     response_model="ExtractionResponse",
-#                                     estimated_tokens=3000 
+#                                     estimated_tokens=3000
 #                             )
 #                             attr_dicts = []
 #                             image_url=None
@@ -260,11 +267,11 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
 #                             return {
 #                                 'url': url,
 #                                 'domain': domain,
-#                                 'attributes': attr_dicts, 
+#                                 'attributes': attr_dicts,
 #                                 'image_url': image_url,
 #                                 'source_type': 'html'
 #                             }
-#                     elif content['type'] == 'pdf':   
+#                     elif content['type'] == 'pdf':
 #                             from app.aggregation.services.pdf_service import PDFExtractionService
 #                             pdf_service = PDFExtractionService(max_pages=10)
 #                             pdf_text = await pdf_service.extract_text(content['raw_bytes'])
@@ -278,11 +285,11 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
 #                                 taxonomy=taxonomy or "",
 #                                 primary_attributes=attribute_chunk or primary_attributes or [],
 #                                 pdf_text=pdf_text
-#                 )               
+#                 )
 #                                 extraction_result = await call_llm_with_schema(
 #                                     prompt=prompt_config['prompt'],
 #                                     response_model="ExtractionResponse",
-#                                     estimated_tokens=4000  
+#                                     estimated_tokens=4000
 #                                 )
 #                                 if extraction_result and extraction_result.product_detected:
 #                                     attr_dicts = []
@@ -302,7 +309,7 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
 #                                         'url': url,
 #                                         'domain': domain,
 #                                         'attributes': attr_dicts,
-#                                         'image_url': image_url, 
+#                                         'image_url': image_url,
 #                                         'source_type': 'pdf'
 #                                     }
 #                 except Exception as e:
@@ -321,7 +328,7 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
 #             }
 #         logger.info(f"Stage 2 extracted {sum(len(s['attributes']) for s in all_extractions)} total attributes")
 #         def extract_best_image(all_extractions: List[Dict]) -> Optional[str]:
-            
+
 #             for source in all_extractions:
 #                 img_url = source.get('image_url')
 #                 if img_url and isinstance(img_url, str) and img_url.strip():
@@ -490,9 +497,10 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
 #             'reason': str(e),
 #             'golden_record': {'attributes': {}}
 #         }
-        
+
+
 def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
-    
+
     mapping = {}
     for group in groups:
         canonical = group.canonical_name
@@ -524,7 +532,7 @@ def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
         })
     return unified_sources
 
-#Third Case
+# Third Case
 # async def aggregate_product(
 #     mpn: str,
 #     title: str,
@@ -544,7 +552,7 @@ def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
 
 #         # Always use open-source engine
 #         from app.opensource_aggregation.adapter import opensource_aggregate_product
-        
+
 #         result = await opensource_aggregate_product(
 #             mpn=mpn,
 #             title=title,
@@ -567,6 +575,7 @@ def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
 #             'golden_record': {'attributes': {}}
 #         }
 
+
 async def aggregate_product(
     mpn: str,
     title: str,
@@ -577,21 +586,21 @@ async def aggregate_product(
     primary_attributes: Optional[List[str]] = None,
     db: Optional[AsyncSession] = None,
     project_id: str = None,
-    llm_provider:str='openai',
+    llm_provider: str = 'openai',
     attribute_chunk: Optional[List[str]] = None,
-    existing_excel_attrs:Optional[Dict[str,str]]=None
+    existing_excel_attrs: Optional[Dict[str, str]] = None
 ) -> Dict:
-    
+
     try:
         logger.info(f"Starting aggregation for {mpn}")
         logger.info("Stage 1: URL Discovery")
-        search_service = SmartSearchService(llm_provider,max_results=5)
+        search_service = SmartSearchService(llm_provider, max_results=5)
 
-        # Prepare query (same as before)
-        query = title if (mpn in title and brand in title) else f"{brand} {mpn} {title}"
+        query = title if (
+            mpn in title and brand in title) else f"{brand} {mpn} {title}"
         query = query.strip()
         urls, candidate_images = await search_service.get_urls(
-            query, mpn=mpn, brand=brand, title=title,sku=sku
+            query, mpn=mpn, brand=brand, title=title, sku=sku
         )
 
         if not urls:
@@ -603,8 +612,8 @@ async def aggregate_product(
 
         logger.info(f"Stage 2: Download & Extraction from {len(urls)} sources")
         download_service = HttpDownloadService(
-    timeout=30,
-)
+            timeout=30,
+        )
         all_extractions = []
         _url_semaphore = asyncio.Semaphore(2)
 
@@ -616,11 +625,14 @@ async def aggregate_product(
                         return None
 
                     if content['type'] == 'html':
-                        html_text = content['raw_bytes'].decode('utf-8', errors='ignore')
-                        logger.info(f"Downloaded HTML from {url} - size: {len(html_text)} bytes")
+                        html_text = content['raw_bytes'].decode(
+                            'utf-8', errors='ignore')
+                        logger.info(
+                            f"Downloaded HTML from {url} - size: {len(html_text)} bytes")
                         attrs_to_use = primary_attributes or []
                         if attribute_chunk:
-                            other_attrs = [a for a in attrs_to_use if a not in attribute_chunk]
+                            other_attrs = [
+                                a for a in attrs_to_use if a not in attribute_chunk]
                             attrs_to_use = attribute_chunk + other_attrs
                         prompt_config = build_extraction_prompt(
                             product_name=title,
@@ -650,9 +662,10 @@ async def aggregate_product(
                                     'confidence': attr.confidence if hasattr(attr, 'confidence') else 0.9
                                 })
                         if not image_url:
-                            image_url = await extract_best_image(html_text, url,mpn)
+                            image_url = await extract_best_image(html_text, url, mpn)
                             if image_url:
-                                logger.info(f"Fallback extracted image: {image_url}")
+                                logger.info(
+                                    f"Fallback extracted image: {image_url}")
 
                         domain = urlparse(url).netloc
                         return {
@@ -668,11 +681,13 @@ async def aggregate_product(
                         pdf_service = PDFExtractionService(max_pages=10)
                         pdf_text = await pdf_service.extract_text(content['raw_bytes'])
                         if pdf_text and len(pdf_text.strip()) > 100:
-                            logger.info(f"Extracted {len(pdf_text)} chars from PDF")
-                            attrs_to_use=primary_attributes or []
+                            logger.info(
+                                f"Extracted {len(pdf_text)} chars from PDF")
+                            attrs_to_use = primary_attributes or []
                             if attribute_chunk:
-                                other_attrs=[a for a in attrs_to_use if a not in attribute_chunk]
-                                attrs_to_use=attribute_chunk + other_attrs
+                                other_attrs = [
+                                    a for a in attrs_to_use if a not in attribute_chunk]
+                                attrs_to_use = attribute_chunk + other_attrs
                             prompt_config = build_pdf_extraction_prompt(
                                 product_name=title,
                                 mpn=mpn,
@@ -684,7 +699,7 @@ async def aggregate_product(
                             extraction_result = await call_llm_with_schema(
                                 prompt=prompt_config['prompt'],
                                 response_model="ExtractionResponse",
-                                llm_provider=llm_provider,                                
+                                llm_provider=llm_provider,
                                 estimated_tokens=4000
                             )
                             if extraction_result and extraction_result.product_detected:
@@ -723,19 +738,17 @@ async def aggregate_product(
                 'golden_record': {'attributes': {}}
             }
 
-        logger.info(f"Stage 2 extracted {sum(len(s['attributes']) for s in all_extractions)} total attributes")
+        logger.info(
+            f"Stage 2 extracted {sum(len(s['attributes']) for s in all_extractions)} total attributes")
 
-        # ------------------------------------------------------------
-        # Stage 3: Combined Cleaning + Unification + Standardization
-        # ------------------------------------------------------------
+        
         logger.info("Stage 3: Combined Cleaning, Unification & Standardization")
 
-        # Collect all attributes with source info
         raw_attrs_for_combine = []
         for src_idx, source in enumerate(all_extractions):
             for attr in source['attributes']:
                 raw_attrs_for_combine.append({
-                    'temp_id': f"{src_idx}_{len(raw_attrs_for_combine)}",  
+                    'temp_id': f"{src_idx}_{len(raw_attrs_for_combine)}",
                     'name': attr['name'],
                     'value': attr['value'],
                     'unit': attr.get('unit'),
@@ -744,14 +757,14 @@ async def aggregate_product(
                 })
         project = await db.get(Project, project_id) if db and project_id else None
         use_case = project.use_case.lower() if project and project.use_case else ""
-        combine_prompt = _build_combined_prompt(raw_attrs_for_combine, brand, mpn, title, taxonomy,existing_excel_attrs=existing_excel_attrs,use_case=use_case)
-        # logger.info(f"COMBINED PROMPT:\n{combine_prompt}")
+        combine_prompt = _build_combined_prompt(
+            raw_attrs_for_combine, brand, mpn, title, taxonomy, existing_excel_attrs=existing_excel_attrs, use_case=use_case)
         async for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)):
             with attempt:
                 combined_result = await call_llm_with_schema(
                     prompt=combine_prompt,
-                    response_model="UnifiedStandardizedResponse",  
-                    llm_provider=llm_provider,                    
+                    response_model="UnifiedStandardizedResponse",
+                    llm_provider=llm_provider,
                     estimated_tokens=3000 + len(raw_attrs_for_combine) * 200,
                     max_tokens=4000
                 )
@@ -761,8 +774,10 @@ async def aggregate_product(
         valid_source_urls = {source['url'] for source in all_extractions}
         for attr in golden_attributes:
             if hasattr(attr, 'sources') and attr.sources:
-                attr.sources=[src for src in attr.sources if src in valid_source_urls]
-        logger.info(f"Stage 3 produced {len(golden_attributes)} unified attributes")
+                attr.sources = [
+                    src for src in attr.sources if src in valid_source_urls]
+        logger.info(
+            f"Stage 3 produced {len(golden_attributes)} unified attributes")
 
         # Optionally, you can still keep per-source images for later selection
         # def extract_best_image(all_extractions: List[Dict]) -> Optional[str]:
@@ -778,7 +793,7 @@ async def aggregate_product(
         # ------------------------------------------------------------
         # Stage 4: Excel Validation (conditional)
         # ------------------------------------------------------------
-        
+
         validation_conflicts = {}
         excel_overrides = {}
 
@@ -793,7 +808,6 @@ async def aggregate_product(
                     if isinstance(attr, dict) and attr.get('name'):
                         excel_attrs[attr['name']] = attr.get('value', '')
 
-            # Build a map of golden attribute values for validation
             web_attrs = {attr.name: attr.value for attr in golden_attributes}
 
             validation_config = build_validation_prompt(
@@ -809,13 +823,11 @@ async def aggregate_product(
                 estimated_tokens=1500
             )
 
-            # Apply backfill/override logic based on use_case
             if "back filling" in use_case and "validation" not in use_case:
                 for val in validation_result.validations:
                     if not val.matches and val.recommendation == "use_web":
                         excel_overrides[val.attribute_name] = val.web_value
                         validation_conflicts[val.attribute_name] = val.web_value
-                        # Override the golden attribute value if needed
                         for attr in golden_attributes:
                             if attr.name == val.attribute_name:
                                 attr.value = val.web_value
@@ -836,18 +848,13 @@ async def aggregate_product(
                     if not val.matches and val.recommendation == "use_web":
                         validation_conflicts[val.attribute_name] = val.web_value
 
-        # ------------------------------------------------------------
-        # Stage 5: Multi-source Aggregation (simplified – mostly confidence)
-        # ------------------------------------------------------------
         logger.info("Stage 5: Multi-source Aggregation")
-        # Since we already unified, we just need to compute a consensus rate.
-        # For simplicity, we can average confidences or keep the highest.
         if golden_attributes:
-            avg_conf = sum(a.confidence for a in golden_attributes) / len(golden_attributes)
+            avg_conf = sum(a.confidence for a in golden_attributes) / \
+                len(golden_attributes)
         else:
             avg_conf = 0.0
 
-        # If you still need the old aggregation format, convert to list of dicts
         golden_attr_dicts = [
             {
                 'name': a.name,
@@ -859,9 +866,6 @@ async def aggregate_product(
             for a in golden_attributes
         ]
 
-        # ------------------------------------------------------------
-        # Stage 6: Marketing Enrichment
-        # ------------------------------------------------------------
         logger.info("Stage 6: Marketing Enrichment")
         enrichment_config = build_enrichment_prompt(
             golden_attributes=golden_attr_dicts,
@@ -876,14 +880,14 @@ async def aggregate_product(
             estimated_tokens=2000,
             max_tokens=4000
         )
-        
+
         best_image = extract_best_image_fallback(all_extractions)
         if not best_image and candidate_images:
             for candidate in candidate_images:
-                is_valid=await validate_image_url(candidate)
+                is_valid = await validate_image_url(candidate)
                 if is_valid:
                     logger.info(f"Fallback to SearXNG image: {candidate}")
-                    best_image=candidate
+                    best_image = candidate
                     break
 
         return {
@@ -893,7 +897,7 @@ async def aggregate_product(
                 'short_description': enrichment_result.short_description or "",
                 'long_description': enrichment_result.long_description,
                 'features': enrichment_result.features,
-                'sources_consulted': list({s['url'] for s in all_extractions}), 
+                'sources_consulted': list({s['url'] for s in all_extractions}),
                 'confidence': avg_conf
             },
             'validation_conflicts': validation_conflicts,
@@ -909,15 +913,16 @@ async def aggregate_product(
             'reason': str(e),
             'golden_record': {'attributes': {}}
         }
-        
+
+
 def _build_combined_prompt(
     raw_attrs: List[Dict],
     brand: str,
     mpn: str,
     title: str,
     taxonomy: str,
-    existing_excel_attrs:Optional[Dict[str,str]]=None,
-    use_case:str=None
+    existing_excel_attrs: Optional[Dict[str, str]] = None,
+    use_case: str = None
 ) -> str:
     attr_lines = []
     for a in raw_attrs:
@@ -928,12 +933,12 @@ def _build_combined_prompt(
             line += f"\n  Source: {a['source_url']}"
         attr_lines.append(line)
     attributes_text = "\n\n".join(attr_lines)
-    excel_section=''
+    excel_section = ''
     if existing_excel_attrs and any(v.get('value') for v in existing_excel_attrs.values()):
-        excel_lines=[]
-        for name,val in existing_excel_attrs.items():
+        excel_lines = []
+        for name, val in existing_excel_attrs.items():
             v = val.get('value', '')
-            u=val.get('uom','')
+            u = val.get('uom', '')
             if v:
                 excel_lines.append(f"  {name}: {v}{' ' + u if u else ''}")
         if excel_lines:
@@ -1221,7 +1226,7 @@ CRITICAL FINAL CHECKS before returning:
   ✓ Does "Adhesive Material" say "PVC"? If yes → it is wrong; set to empty or correct value if possible (look for a source that says "Rubber").
   ✓ Have all primary attributes been considered? If a primary attribute is missing because no matching specification was found, still include it with an empty value and note in original_values that it was not found.
 {excel_section}
-{validation_section }
+{validation_section}
 ═══════════════════════════════════════════════════════
 INPUT ATTRIBUTES
 ═══════════════════════════════════════════════════════

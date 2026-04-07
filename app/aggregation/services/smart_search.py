@@ -7,7 +7,6 @@ import asyncio
 logger = logging.getLogger("smart_search")
 class UrlFilterResponse(BaseModel):
     selected_urls: List[str]
-
 class SmartSearchResponse(BaseModel):
     selected_urls: List[str]
     candidate_image_urls: List[str] = []
@@ -29,18 +28,13 @@ class SmartSearchService(ISearchService):
     async def _build_targeted_query(self, mpn: str, brand: str, title: str, sku: str = None) -> str:
         from app.aggregation.aggregate_product import call_llm_with_schema
         from pydantic import BaseModel
-
-        
-
         prompt = f"""
     You are a product data researcher. Given a product, generate the single best 
     Google search query to find its official specifications or datasheet page.
-
     Product:
     - Brand: {brand}
     - MPN: {mpn}
     - Title: {title}
-
     Rules:
     - The query should target the manufacturer's official site or the most authoritative 
     distributor/retailer for this type of product
@@ -54,8 +48,6 @@ class SmartSearchService(ISearchService):
     - Food product → "Heinz Tomato Ketchup 57 site:heinz.com product details"
     - Electronics → "Sony WH-1000XM5 site:sony.com specifications"
     - If possible, include `inurl:product` or `inurl:p/` to target product pages directly.
-
-
     Return JSON: {{"search_query": "your query here"}}
     """
         try:
@@ -70,12 +62,9 @@ class SmartSearchService(ISearchService):
                 return result.search_query
         except Exception as e:
             logger.warning(f"Targeted query generation failed: {e}")
-
-        # Fallback — generic query
         return f"{brand} {mpn} specifications"
     async def get_urls(self, query: str, mpn: str, brand: str, title: str, sku: str = None) -> tuple[List[str], List[str]]:
         from app.aggregation.aggregate_product import call_llm_with_schema
-
         BLOCKED_DOMAINS = [
             "zhihu.com", "baidu.com", "weibo.com",
             "superuser.com", "tenforums.com", "stackoverflow.com",
@@ -92,22 +81,14 @@ class SmartSearchService(ISearchService):
             "forum.toolsinaction.com", "toolsinaction.com",
             "forums.dewalt.com", "community.dewalt.com",
         ]
-
-        # Step 1 — Build queries
         base_query = self.searxng._build_query(mpn, brand, title, sku=sku)
         targeted_query_str = await self._build_targeted_query(mpn, brand, title, sku)
-        
-
-        # Step 2 — Run all searches concurrently
         web_task = self.searxng._search(base_query)
         targeted_task = self.searxng._search(targeted_query_str)
         image_task = self.searxng.search_images(f"{brand} {mpn} {title}")
-
         web_results, targeted_results, image_results = await asyncio.gather(
             web_task, targeted_task, image_task, return_exceptions=True
         )
-
-        # Step 3 — Handle exceptions
         if isinstance(web_results, Exception):
             logger.error(f"Web search failed: {web_results}")
             web_results = []
@@ -117,15 +98,10 @@ class SmartSearchService(ISearchService):
         if isinstance(image_results, Exception):
             logger.warning(f"Image search failed: {image_results}")
             image_results = []
-
         if not web_results and not targeted_results:
             logger.warning(f"SearXNG returned no results for {mpn}")
             return [], []
-
-        # Step 4 — Build image URLs
         image_urls = list({img.get("img_src") for img in image_results if img.get("img_src")})
-
-        # Step 5 — Merge targeted + web (targeted first for priority)
         seen_urls = set()
         merged = []
         for r in (targeted_results + web_results):
@@ -133,8 +109,6 @@ class SmartSearchService(ISearchService):
             if url and url not in seen_urls:
                 seen_urls.add(url)
                 merged.append(r)
-
-        # Step 6 — Filter blocked domains
         merged = [
             r for r in merged
             if not any(d in r.get('url', '').lower() for d in BLOCKED_DOMAINS)
@@ -147,11 +121,9 @@ class SmartSearchService(ISearchService):
             logger.info(f"  URL: {r.get('url', '')[:100]}")
             logger.info(f"  Title: {r.get('title', '')[:80]}")
             logger.info(f"  Content: {r.get('content', '')[:100]}")
-        # Step 7 — Pre-filter: must mention brand or MPN
         brand_lower = (brand or "").lower()
         mpn_lower = (mpn or "").lower()
         sku_lower = (sku or "").lower()
-
         def is_relevant(r: dict) -> bool:
             text = (
                 r.get('title', '') + ' ' +
@@ -163,7 +135,6 @@ class SmartSearchService(ISearchService):
                 brand_lower in text or
                 (sku_lower and len(sku_lower) > 4 and sku_lower in text)
             )
-
         relevant_results = [r for r in merged if is_relevant(r)]
         if relevant_results:
             web_results = relevant_results
@@ -171,29 +142,22 @@ class SmartSearchService(ISearchService):
         else:
             logger.warning(f"Pre-filter: no relevant results for {mpn} — all off-topic")
             return [], image_urls[:3]
-
-        # Step 8 — Format for LLM
         web_text = "\n".join(
             f"[{i+1}] {r.get('title', 'No title')}\n    URL: {r['url']}\n    Description: {r.get('content', '')[:150]}"
             for i, r in enumerate(web_results[:15])
         )
         image_text = "\n".join(f"- {url}" for url in image_urls[:10])
-
         prompt = f"""
     PRODUCT:
     - Brand: {brand}
     - MPN: {mpn}
     - Name: {title}
-
     WEB SEARCH RESULTS:
     {web_text}
-
     POSSIBLE PRODUCT IMAGES (from image search):
     {image_text or "None found"}
-
     TASK:
     Select up to {self.max_results} URLs most likely to contain technical specs, datasheets, or product data for THIS SPECIFIC PRODUCT.
-
     STRICT RULES:
     - ONLY select URLs from the list above — never invent URLs
     - ONLY select pages specifically about {brand} {mpn}
@@ -206,12 +170,10 @@ class SmartSearchService(ISearchService):
     - PREFER: specific product pages with the MPN in the URL, manufacturer official
     product pages, industrial distributors, PDF datasheets
     - If fewer than 2 good URLs exist, return only the valid ones — do not pad with irrelevant URLs
-
     Return a JSON object with:
     - "selected_urls": list of chosen web URLs (empty list if none are relevant)
     - "candidate_image_urls": list of image URLs matching this product (max 3)
     """
-
         try:
             result = await call_llm_with_schema(
                 prompt=prompt,
@@ -230,6 +192,4 @@ class SmartSearchService(ISearchService):
                 return filtered, candidate_imgs
         except Exception as e:
             logger.exception(f"LLM filtering failed: {e}")
-
-        # Fallback
         return [r["url"] for r in web_results[:self.max_results]], image_urls[:3]
