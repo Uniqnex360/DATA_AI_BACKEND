@@ -7,7 +7,7 @@ from app.models.product import Product
 from app.models.project import Project
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select, func, and_
+from sqlmodel import select, func, and_,case
 from app.core.database import get_session
 from app.models.pipeline import CleansingIssue, Source
 import logging
@@ -192,15 +192,47 @@ async def run_cleaning_task(
                 stmt = select(Source).where(Source.project_id == project_id)
                 result = await db.execute(stmt)
                 sources = result.scalars().all()
+
                 for source in sources:
                     metadata = dict(source.source_metadata or {})
                     metadata["processing_status"] = "completed"
                     source.source_metadata = metadata
                     db.add(source)
+
                 project = await db.get(Project, project_id)
                 if project:
-                    project.status = 'failed'
+                    status_stmt = select(
+                        func.count(Product.id),
+                        func.sum(case((Product.enrichment_status == "completed", 1), else_=0)),
+                        func.sum(case((Product.enrichment_status == "failed", 1), else_=0)),
+                        func.sum(case((Product.enrichment_status == "processing", 1), else_=0)),
+                        func.sum(case((Product.enrichment_status == "pending", 1), else_=0)),
+                    ).where(Product.project_id == project_id)
+
+                    status_result = await db.execute(status_stmt)
+                    row = status_result.one()
+
+                    total = row[0] or 0
+                    completed = row[1] or 0
+                    failed = row[2] or 0
+                    processing = row[3] or 0
+                    pending = row[4] or 0
+
+                    if total == 0:
+                        project.status = "draft"
+                    elif processing > 0:
+                        project.status = "processing"
+                    elif completed == total:
+                        project.status = "completed"
+                    elif failed == total:
+                        project.status = "failed"
+                    elif completed > 0:
+                        project.status = "partially_completed"
+                    else:
+                        project.status = "draft"
+
                     db.add(project)
+
                 await db.commit()
             except Exception as status_error:
                 await db.rollback()
