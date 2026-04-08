@@ -9,7 +9,7 @@ from app.models.product import Product
 from typing import List, Optional
 import logging
 from sqlalchemy.orm.attributes import flag_modified
-
+from urllib.parse import quote
 from app.utils.aggregate_download import generate_products_excel
 from app.utils.usecase_validator import validate_file_against_use_case
 import json
@@ -35,8 +35,6 @@ router = APIRouter()
 ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
 MAX_FILE_SIZE = 10 * 1024 * 1024
 MAX_ROWS = 1000
-
-
 def merge_attributes_preserving_order(
     primary_attributes: List[str],
     existing_attrs: dict,
@@ -54,8 +52,6 @@ def merge_attributes_preserving_order(
         if attr_name not in merged:
             merged[attr_name] = ai_val
     return merged
-
-
 @router.get("/", response_model=List[SourceResponse])
 async def getAllSources(db: AsyncSession = Depends(get_session)):
     try:
@@ -67,8 +63,6 @@ async def getAllSources(db: AsyncSession = Depends(get_session)):
         logger.error(f"Failed to fetch sources: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Could not retrieve import history")
-
-
 @router.post("/", status_code=status.HTTP_202_ACCEPTED)
 async def extract_from_source(
     payload: ExtractionRequest,
@@ -110,8 +104,6 @@ async def extract_from_source(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="System failed to initialize the extraction pipeline"
         )
-
-
 @router.get("/priorities/{project_id}", response_model=List[SourcePriorityResponse], status_code=status.HTTP_200_OK)
 async def get_project_priorities(project_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -131,8 +123,6 @@ async def get_project_priorities(project_id: str, db: AsyncSession = Depends(get
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal system error while retrieving source rankings"
         )
-
-
 @router.get('/project/{project_id}', response_model=List[SourceResponse])
 async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -147,14 +137,10 @@ async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get
     except Exception as e:
         logger.error(f"Failed to fetch project sources:{e}")
         return []
-
-
 def sanitize_for_excel(val):
     if not isinstance(val, str):
         return val
     return re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', val)
-
-
 def clean_for_excel(val, attr_name=None):
     if val is None or val == "":
         return ""
@@ -179,8 +165,6 @@ def clean_for_excel(val, attr_name=None):
     if val_str.lower() in ["n/a", "none", "null", "nan", "not available", "increase", "*"]:
         return ""
     return sanitize_for_excel(val_str)
-
-
 @router.get("/{source_id}/download")
 async def download_file(
     source_id: str,
@@ -194,13 +178,42 @@ async def download_file(
                 status_code=404, detail="Source record not found")
         if download_type == 'input':
             if source.content_data:
+                filename = f"Input_{source.source_url}"
+                encoded_filename = quote(filename)
+                if source.source_url.lower().endswith('.pdf'):
+                    media_type = 'application/pdf'
+                else:
+                    media_type = "application/octet-stream"
                 return StreamingResponse(
                     io.BytesIO(source.content_data),
-                    media_type="application/octet-stream",
+                    media_type=media_type,
                     headers={
-                        "Content-Disposition": f"attachment; filename=Input_{source.source_url}"}
+                        "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+                        "Content-Length": str(len(source.content_data))
+                    }
                 )
-            return StreamingResponse(io.BytesIO(b"No data available"), media_type="text/plain")
+            else:
+                mpns = source.source_metadata.get('mpns', [])
+                if not mpns:
+                    mpn = source.source_metadata.get('mpn')
+                    mpns = [mpn] if mpn else []
+                if mpns:
+                    content = f"MPNs submitted for extraction:\n\n" + "\n".join(mpns)
+                    content += f"\n\nTotal: {len(mpns)} MPN(s)"
+                    content += f"\nUse Case: {source.source_metadata.get('use_case', 'N/A')}"
+                    return StreamingResponse(
+                        io.BytesIO(content.encode('utf-8')),
+                        media_type="text/plain",
+                        headers={
+                            "Content-Disposition": f"attachment; filename=mpns_{str(source.id)[:8]}.txt",
+                            "Content-Length": str(len(content))
+                        }
+                    )
+                else:
+                    return StreamingResponse(
+                        io.BytesIO(b"No data available"), 
+                        media_type="text/plain"
+                    )
         elif download_type == 'output':
             stmt = select(Product).where(
                 Product.project_id == source.project_id,
@@ -209,27 +222,36 @@ async def download_file(
             result = await db.execute(stmt)
             products = result.scalars().all()
             if not products:
+                mpns = source.source_metadata.get('mpns', [])
+                if not mpns:
+                    mpn = source.source_metadata.get('mpn')
+                    mpns = [mpn] if mpn else []
+                if mpns:
+                    stmt = select(Product).where(
+                        Product.project_id == source.project_id,
+                        Product.product_code.in_(mpns)
+                    ).order_by(Product.created_at.asc())
+                    result = await db.execute(stmt)
+                    products = result.scalars().all()
+            if not products:
                 raise HTTPException(
                     status_code=404, detail="No enriched data found")
             project = await db.get(Project, products[0].project_id) if products else None
-            use_case_lower = (
-                project.use_case or "").lower() if project else ""
+            use_case_lower = (project.use_case or "").lower() if project else ""
             if 'back filling' in use_case_lower or 'validation' in use_case_lower:
                 MAX_ATTRIBUTES = 40
             else:
                 MAX_ATTRIBUTES = 40
             logger.info(
                 f"Using {MAX_ATTRIBUTES} attribute columns for use case: {project.use_case if project else 'Unknown'}")
-#            
             project_name = project.name if project else None
             return await generate_products_excel(products, db, global_project_name=project_name)
-
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Error generating download")
-
-
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
     request: Request,
@@ -272,7 +294,6 @@ async def batch_aggregate(
         if await db.scalar(duplicate_check):
             raise HTTPException(status.HTTP_409_CONFLICT,
                                 "File already uploaded recently.")
-
         rows = parse_import_file(content, file.filename)
         valid_rows = []
         rejected_count = 0
@@ -293,8 +314,6 @@ async def batch_aggregate(
             else:
                 rejected_count += 1
                 logger.warning(f"Rejected row: missing required fields Brand='{brand}', MPN='{mpn}', SKU='{sku}', Product_Name='{product_name}'")
-            # if str(r.get('sku', '')).strip() or str(r.get('mpn', '')).strip() or str(r.get('product_name', '')).strip() or str(r.get('brand')).strip():
-            #     valid_rows.append(r)
         if rejected_count > 0:
             logger.info(
                 f"Rejected {rejected_count} rows due to missing SKU, MPN, or Brand")
@@ -439,7 +458,6 @@ async def batch_aggregate(
             "with_mpn_count": with_mpn_count,
             "without_mpn_count": without_mpn_count,
     }
-            
         }
     except HTTPException:
         raise
@@ -450,8 +468,6 @@ async def batch_aggregate(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Batch processing failed: {str(e)}"
         )
-
-
 @router.get("/batch-status/{batch_id}")
 async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -470,8 +486,6 @@ async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_session
         logger.error(f"Error fetching batch status: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Failed to fetch batch status")
-
-
 @router.get("/{source_id}/metrics", response_model=SourceMetricsResponse)
 async def get_source_metrics(source_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -516,8 +530,6 @@ async def get_source_metrics(source_id: str, db: AsyncSession = Depends(get_sess
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Analytics engine failed to calculate metrics"
         )
-
-
 async def run_extraction_task(source_id: str, content: str):
     async with async_session_factory() as db_session:
         try:
@@ -622,8 +634,6 @@ async def run_extraction_task(source_id: str, content: str):
                         await error_session.commit()
             except:
                 pass
-
-
 @router.post('/aggregate/{source_id}', status_code=status.HTTP_202_ACCEPTED)
 async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_session)):
     try:
@@ -651,12 +661,8 @@ async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks,
         logger.error(f"Failed to trigger aggregation:{str(e)}")
         raise HTTPException(
             status_code=500, detail="Failed to start aggregation")
-
-
 def normalize_key(key: str) -> str:
     return str(key).lower().replace("_", "").replace(" ", "").strip()
-
-
 def fuzzy_match_key(key: str, key_list: List[str]) -> Optional[str]:
     def normalize(s):
         s = re.sub(r'\(.*?\)', '', s)
@@ -666,8 +672,6 @@ def fuzzy_match_key(key: str, key_list: List[str]) -> Optional[str]:
         if normalize(k) == target:
             return k
     return None
-
-
 async def run_aggregation_task(source_id: str):
     async with async_session_factory() as db_session:
         try:

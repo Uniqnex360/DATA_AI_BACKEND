@@ -408,6 +408,8 @@ async def generate_products_excel(
                 if uom and uom.lower() not in ["n/a", "na", "none", "null"]:
                     row[f"attribute_uom{current_slot}"] = clean_for_excel(uom)
             current_slot += 1
+        if p.source_url:
+            row["source_url_1"] = p.source_url
         if p.sources_consulted and isinstance(p.sources_consulted, list):
             brand = row.get('Brand') or p.brand_name or ""
             urls = list(p.sources_consulted)
