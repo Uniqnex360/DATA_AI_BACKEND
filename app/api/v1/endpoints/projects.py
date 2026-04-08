@@ -38,7 +38,6 @@ async def list_projects(
         active_job = aliased(AggregationJob)
         active_source = aliased(Source)
 
-        # ✅ Subquery for product count (independent of other joins)
         if tab == "aggregation":
             product_count_subq = (
                 select(func.count(Product.id))

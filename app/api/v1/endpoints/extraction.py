@@ -253,6 +253,7 @@ async def download_file(
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Error generating download")
+        
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
     request: Request,
@@ -269,6 +270,12 @@ async def batch_aggregate(
         if not project:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 f"Project {projectId} not found")
+        if project.operation_mode == "enrichment":
+            default_workflow_stage = "enrichment"
+        elif project.operation_mode == "cleaning":
+            default_workflow_stage = "cleaning"
+        else:
+            default_workflow_stage = "aggregation"
         file_ext = os.path.splitext(file.filename)[1].lower()
         if file_ext not in ALLOWED_EXTENSIONS:
             raise HTTPException(status.HTTP_400_BAD_REQUEST,
@@ -378,11 +385,13 @@ async def batch_aggregate(
                 product = Product(
                     product_code=str(code),
                     project_id=projectId,
+                    workflow_stage=default_workflow_stage,
                     created_at=datetime.utcnow()
                 )
                 created_count += 1
             else:
                 product.project_id = projectId
+                product.workflow_stage=default_workflow_stage
                 updated_count += 1
             product.product_name = row.get("product_name", "Unknown")
             product.mpn = row.get("mpn")
