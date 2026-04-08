@@ -169,6 +169,7 @@ def clean_for_excel(val, attr_name=None):
 async def download_file(
     source_id: str,
     download_type: str = Query("input", alias="type"),
+    format: str = Query("pdf", alias="format"), 
     db: AsyncSession = Depends(get_session)
 ):
     try:
