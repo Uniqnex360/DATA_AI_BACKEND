@@ -1087,6 +1087,7 @@ async def save_pending_mpns(
         logger.error(f"Failed to save pending MPNs: {e}", exc_info=True)
         await db.rollback()
         raise HTTPException(500, str(e))
+    
 async def process_unstructured_pdf_extraction(
     batch_id: str,
     pdf_bytes: bytes,
@@ -1101,10 +1102,22 @@ async def process_unstructured_pdf_extraction(
             full_text = ""
             with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
                 logger.info(f"✅ PDF opened successfully, {len(pdf.pages)} pages")
-                for page in pdf.pages:
-                    page_text = page.extract_text()
-                    if page_text:
-                        full_text += page_text + "\n"
+                for i, page in enumerate(pdf.pages):
+                    logger.info(f"📄 Processing page {i+1}/{len(pdf.pages)}...")
+                    try:
+                        page_text = page.extract_text()
+                        if page_text:
+                            full_text += page_text + "\n"
+                            logger.info(f"   ✅ Page {i+1}: extracted {len(page_text)} chars")
+                        else:
+                            logger.info(f"   ⚠️ Page {i+1}: no text extracted")
+                        
+                        
+                    except Exception as e:
+                        logger.warning(f"   ❌ Page {i+1} failed: {e}")
+                        continue
+                    
+                    
             
             truncated_text = full_text[:15000]
             prompt = f"""
