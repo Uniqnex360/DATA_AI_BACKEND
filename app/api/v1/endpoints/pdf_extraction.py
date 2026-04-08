@@ -1096,8 +1096,11 @@ async def process_unstructured_pdf_extraction(
 ) -> None:
     async with async_session_factory() as db:
         try:
+            logger.info(f"🚀 Starting unstructured extraction for {mpn} (batch: {batch_id})")
+            logger.info(f"📄 Opening PDF: {filename} ({len(pdf_bytes)} bytes)")
             full_text = ""
             with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
+                logger.info(f"✅ PDF opened successfully, {len(pdf.pages)} pages")
                 for page in pdf.pages:
                     page_text = page.extract_text()
                     if page_text:
