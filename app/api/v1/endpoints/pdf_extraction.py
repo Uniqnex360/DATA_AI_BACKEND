@@ -5,12 +5,10 @@ import json
 from app.core.config import settings
 from sqlmodel import select
 from sqlalchemy import func, case
-from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from datetime import datetime
 import aiohttp
-from openai import BaseModel, project, timeout
 from app.aggregation.services.pdf_service import PDFExtractionService
 from app.core.database import get_session
 from app.llm import call_llm_with_schema
@@ -835,8 +833,171 @@ async def save_pdf_source(
     except Exception as e:
         logger.error(f"Failed to save PDF source: {e}")
         raise HTTPException(500, str(e))
+async def process_multi_pdf_extraction_for_single_mpn(
+    batch_id: str,
+    mpn: str,
+    project_id: str
+) -> None:
+    """Extract a single MPN from a multi-PDF source."""
+    async with async_session_factory() as db:
+        try:
+            import pickle
+            source = await db.get(Source, batch_id)
+            if not source:
+                logger.error(f"Source not found: {batch_id}")
+                return
+            
+            # Get the stored PDFs
+            pdf_documents = pickle.loads(source.content_data) if source.content_data else []
+            
+            if not pdf_documents:
+                raise ValueError("No PDFs found in source")
+            
+            logger.info(f"📄 Processing MPN {mpn} from multi-PDF source with {len(pdf_documents)} PDFs")
+            
+            # Extract text from all PDFs
+            pdf_texts = []
+            for pdf_doc in pdf_documents:
+                try:
+                    full_text = ""
+                    with pdfplumber.open(BytesIO(pdf_doc['content'])) as pdf:
+                        for page in pdf.pages[:15]:
+                            page_text = page.extract_text()
+                            if page_text:
+                                full_text += page_text + "\n"
+                    
+                    pdf_texts.append({
+                        'filename': pdf_doc['filename'],
+                        'text': full_text[:20000],
+                        'length': len(full_text)
+                    })
+                    logger.info(f"   Extracted {len(full_text)} chars from {pdf_doc['filename']}")
+                except Exception as e:
+                    logger.error(f"   Failed to extract {pdf_doc['filename']}: {e}")
+            
+            # Find best matching PDF
+            best_pdf = None
+            best_score = 0
+            
+            for pdf_text in pdf_texts:
+                if not pdf_text['text']:
+                    continue
+                
+                score = 0
+                text_lower = pdf_text['text'].lower()
+                mpn_lower = mpn.lower()
+                
+                if mpn_lower in text_lower:
+                    score += 100
+                
+                mpn_parts = mpn_lower.replace('-', ' ').replace('_', ' ').split()
+                for part in mpn_parts:
+                    if len(part) > 2 and part in text_lower:
+                        score += 20
+                
+                if mpn_lower in pdf_text['filename'].lower():
+                    score += 50
+                
+                if score > best_score:
+                    best_score = score
+                    best_pdf = pdf_text
+            
+            if best_pdf and best_score > 0:
+                logger.info(f"   ✅ Best match: {best_pdf['filename']} (score: {best_score})")
+                
+                # ✅ Complete prompt
+                truncated_text = best_pdf['text'][:15000]
+                prompt = f"""
+You are a product data extraction expert. Extract product information for MPN "{mpn}" from the document below.
+The document is a product specification/catalog PDF. Extract whatever product specifications you can find.
 
+Document content:
+{truncated_text}
 
+Look for:
+- Product name/title
+- Brand/manufacturer name
+- Technical specifications (dimensions, weight, materials, features)
+- Product category/taxonomy
+
+Extract the following fields if present. If missing, leave empty:
+- product_name
+- brand_name
+- sku
+- taxonomy
+- description
+- image_url
+- specifications (as key-value pairs)
+
+Return ONLY a single valid JSON object in this format:
+{{
+  "product_name": "",
+  "brand_name": "",
+  "sku": "",
+  "taxonomy": "",
+  "description": "",
+  "image_url": "",
+  "specifications": {{}}
+}}
+"""
+                
+                # ✅ Complete Claude call
+                response = await call_llm_with_schema(
+                    prompt=prompt,
+                    response_model="PDFExtractionResponse",
+                    llm_provider='claude',
+                    estimated_tokens=4000
+                )
+                
+                prod_dict = parse_llm_response(response, mpn)
+                
+                if prod_dict:
+                    product = await upsert_product_from_extraction(
+                        db, project_id, mpn, prod_dict, best_pdf['filename']
+                    )
+                    
+                    # Update source metadata
+                    extracted_count = source.source_metadata.get("extracted", 0) + 1
+                    source.source_metadata["extracted"] = extracted_count
+                    
+                    if extracted_count >= source.source_metadata.get("total_mpns", 0):
+                        source.status = "completed"
+                        source.source_metadata["processing_status"] = "completed"
+                    
+                    db.add(source)
+                    await db.commit()
+                    await sync_project_status(db, project_id)
+                    
+                    logger.info(f"   ✅ Extracted data for {mpn} (score: {product.completeness_score}%)")
+                else:
+                    raise ValueError("Could not parse LLM response")
+            else:
+                raise ValueError(f"No matching PDF found for {mpn}")
+                
+        except Exception as e:
+            logger.error(f"❌ Failed to extract {mpn} from multi-PDF: {e}", exc_info=True)
+            await db.rollback()
+            
+            # Update product as failed
+            stmt = select(Product).where(
+                Product.project_id == project_id,
+                Product.product_code == mpn
+            )
+            result = await db.execute(stmt)
+            product = result.scalar_one_or_none()
+            if product:
+                product.enrichment_status = "failed"
+                db.add(product)
+                
+            # Update source if all failed
+            source = await db.get(Source, batch_id)
+            if source:
+                source.source_metadata["processing_status"] = "failed"
+                source.source_metadata["error"] = str(e)
+                db.add(source)
+            
+            await db.commit()
+            await sync_project_status(db, project_id)
 @router.post('/extract-pending')
 async def extract_pending_pdf(
     data: dict,
@@ -846,32 +1007,52 @@ async def extract_pending_pdf(
     try:
         mpn = data.get('mpn')
         project_id = data.get('project_id')
+        
         if not mpn or not project_id:
-            raise HTTPException(
-                400, "Missing required fields: mpn and project_id")
+            raise HTTPException(400, "Missing required fields: mpn and project_id")
+        
+        # ✅ Find ALL sources of these types for this project
         stmt = select(Source).where(
-            Source.source_type == "pdf_pending_extraction",
-            func.json_extract_path_text(Source.source_metadata, 'mpn') == mpn,
+            Source.source_type.in_(["pdf_pending_extraction", "pdf_unstructured_pending", "pdf_multi_pending"]),
             Source.project_id == project_id
         )
         result = await db.execute(stmt)
-        source = result.scalar_one_or_none()
+        sources = result.scalars().all()
+        
+        # ✅ Find the source that contains this MPN
+        source = None
+        for s in sources:
+            mpns = s.source_metadata.get('mpns', [])
+            single_mpn = s.source_metadata.get('mpn')
+            if mpn in mpns or mpn == single_mpn:
+                source = s
+                break
+        
         if not source:
             raise HTTPException(404, f"PDF source not found for MPN: {mpn}")
+        
         source.status = "processing"
         source.source_metadata["processing_status"] = "processing"
         db.add(source)
         await db.commit()
-        background_tasks.add_task(
-            process_pdf_extraction_for_product,
-            source.id, mpn, project_id
-        )
+        
+        # Route to appropriate extraction function
+        if source.source_type == "pdf_multi_pending":
+            background_tasks.add_task(
+                process_multi_pdf_extraction_for_single_mpn,
+                source.id, mpn, project_id
+            )
+        else:
+            background_tasks.add_task(
+                process_pdf_extraction_for_product,
+                source.id, mpn, project_id
+            )
+        
         return {"status": "processing", "batch_id": source.id}
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(
-            f"Failed to start pending PDF extraction for MPN {mpn}: {e}", exc_info=True)
+        logger.error(f"Failed to start extraction: {e}", exc_info=True)
         raise HTTPException(500, f"Internal server error: {str(e)}")
 
 
@@ -1192,6 +1373,363 @@ Return ONLY a single valid JSON object in this format:
                 source.status = 'failed'
                 source.source_metadata['error'] = str(e)
                 source.source_metadata['processing_status'] = 'failed'
+                db.add(source)
+                await db.commit()
+                await sync_project_status(db, project_id)
+@router.post('/multi-pdf-extraction')
+async def multi_pdf_extraction(
+    background_tasks: BackgroundTasks,
+    files: List[UploadFile] = File(...),
+    mpns: str = Form(...),  # Comma-separated MPNs
+    project_id: str = Form(...),
+    use_case: str = Form(...),
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    Upload multiple PDFs with multiple MPNs.
+    SAVES ONLY - Extraction happens later from Aggregation tab.
+    """
+    try:
+        # Parse MPNs
+        mpn_list = [m.strip() for m in mpns.split(',') if m.strip()]
+        
+        if len(mpn_list) == 0:
+            raise HTTPException(400, "At least one MPN is required")
+        
+        if len(files) == 0:
+            raise HTTPException(400, "At least one PDF file is required")
+        
+        if len(files) > 20:
+            raise HTTPException(400, "Maximum 20 PDF files allowed")
+        
+        if len(mpn_list) > 50:
+            raise HTTPException(400, "Maximum 50 MPNs allowed")
+        
+        batch_id = str(uuid.uuid4())
+        
+        # Validate and read all PDFs
+        pdf_documents = []
+        total_size = 0
+        MAX_TOTAL_SIZE = 100 * 1024 * 1024  # 100 MB total
+        
+        for file in files:
+            if not file.filename.lower().endswith('.pdf'):
+                raise HTTPException(400, f"File '{file.filename}' is not a PDF")
+            
+            pdf_bytes = await file.read()
+            total_size += len(pdf_bytes)
+            
+            if total_size > MAX_TOTAL_SIZE:
+                raise HTTPException(400, f"Total file size exceeds {MAX_TOTAL_SIZE // (1024*1024)} MB")
+            
+            pdf_documents.append({
+                'filename': file.filename,
+                'content': pdf_bytes,
+                'size': len(pdf_bytes)
+            })
+        
+        # Create source record with ALL PDFs stored
+        source = Source(
+            id=batch_id,
+            source_type="pdf_multi_pending",
+            source_url=f"multi_pdf_{len(pdf_documents)}_files_{len(mpn_list)}_mpns",
+            project_id=project_id,
+            status="pending",
+            content_data=None,  # Will store PDFs separately or in metadata
+            source_metadata={
+                "mpns": mpn_list,
+                "use_case": use_case,
+                "pdf_files": [{'filename': p['filename'], 'size': p['size']} for p in pdf_documents],
+                "total_pdfs": len(pdf_documents),
+                "total_mpns": len(mpn_list),
+                "total_size": total_size,
+                "created_at": datetime.utcnow().isoformat(),
+                "extracted": 0,
+                "processing_status": "pending",
+                "extraction_type": "multi",
+                "is_unstructured": False
+            }
+        )
+        db.add(source)
+        
+        # Store PDF contents in a separate table or as binary
+        # For simplicity, we can store them in source.content_data as a pickle/zip
+        # Or create a separate PDF storage table
+        import pickle
+        source.content_data = pickle.dumps(pdf_documents)
+        
+        # Create placeholder products for each MPN
+        products_added = 0
+        for mpn in mpn_list:
+            stmt = select(Product).where(
+                Product.project_id == project_id,
+                Product.product_code == mpn
+            )
+            result = await db.execute(stmt)
+            existing = result.scalar_one_or_none()
+            
+            if not existing:
+                product = Product(
+                    product_code=mpn,
+                    product_name=f"Pending: {mpn}",
+                    mpn=mpn,
+                    project_id=project_id,
+                    workflow_stage="aggregation",
+                    enrichment_status="pending",
+                    source_url=f"multi_pdf_batch_{batch_id[:8]}",
+                    completeness_score=0,
+                    attributes={}
+                )
+                db.add(product)
+                products_added += 1
+        
+        await db.commit()
+        
+        # ✅ NO background task - save only!
+        # background_tasks.add_task(...)  # REMOVED
+        
+        return {
+            "status": "success",
+            "batch_id": batch_id,
+            "message": f"Saved {len(mpn_list)} MPN(s) and {len(pdf_documents)} PDF(s). Extract from Aggregation tab.",
+            "mpns_count": len(mpn_list),
+            "pdfs_count": len(pdf_documents),
+            "products_created": products_added
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to save multi-PDF extraction: {e}", exc_info=True)
+        raise HTTPException(500, str(e))
+    
+async def process_multi_pdf_extraction(
+    batch_id: str,
+    pdf_documents: List[Dict],
+    mpns: List[str],
+    project_id: str
+) -> None:
+    """
+    Background task: Process multiple PDFs for multiple MPNs.
+    Intelligently matches MPNs to PDFs based on content.
+    """
+    async with async_session_factory() as db:
+        try:
+            logger.info(f"🚀 Starting multi-PDF extraction: {len(mpns)} MPNs, {len(pdf_documents)} PDFs")
+            
+            source = await db.get(Source, batch_id)
+            if source:
+                source.status = "processing"
+                source.source_metadata["processing_status"] = "processing"
+                db.add(source)
+                await db.commit()
+            
+            # Step 1: Extract text from all PDFs
+            pdf_texts = []
+            for pdf_doc in pdf_documents:
+                try:
+                    full_text = ""
+                    with pdfplumber.open(BytesIO(pdf_doc['content'])) as pdf:
+                        for page in pdf.pages[:15]:  # Limit to 15 pages per PDF
+                            page_text = page.extract_text()
+                            if page_text:
+                                full_text += page_text + "\n"
+                    
+                    pdf_texts.append({
+                        'filename': pdf_doc['filename'],
+                        'text': full_text[:20000],  # Limit text per PDF
+                        'length': len(full_text)
+                    })
+                    logger.info(f"📄 Extracted {len(full_text)} chars from {pdf_doc['filename']}")
+                except Exception as e:
+                    logger.error(f"Failed to extract {pdf_doc['filename']}: {e}")
+                    pdf_texts.append({
+                        'filename': pdf_doc['filename'],
+                        'text': "",
+                        'length': 0,
+                        'error': str(e)
+                    })
+            
+            # Step 2: For each MPN, find the most relevant PDF
+            successful = 0
+            failed = 0
+            results = []
+            
+            for mpn in mpns:
+                try:
+                    logger.info(f"🔍 Processing MPN: {mpn}")
+                    
+                    # Find product
+                    stmt = select(Product).where(
+                        Product.project_id == project_id,
+                        Product.product_code == mpn
+                    )
+                    result = await db.execute(stmt)
+                    product = result.scalar_one_or_none()
+                    
+                    if not product:
+                        logger.warning(f"Product not found for MPN: {mpn}")
+                        failed += 1
+                        continue
+                    
+                    # Update product status
+                    product.enrichment_status = "processing"
+                    db.add(product)
+                    
+                    # Find best matching PDF for this MPN
+                    best_pdf = None
+                    best_score = 0
+                    
+                    for pdf_text in pdf_texts:
+                        if not pdf_text['text']:
+                            continue
+                        
+                        # Score based on MPN presence in text
+                        score = 0
+                        text_lower = pdf_text['text'].lower()
+                        mpn_lower = mpn.lower()
+                        
+                        # Direct MPN match
+                        if mpn_lower in text_lower:
+                            score += 100
+                        
+                        # Partial matches
+                        mpn_parts = mpn_lower.replace('-', ' ').replace('_', ' ').split()
+                        for part in mpn_parts:
+                            if len(part) > 2 and part in text_lower:
+                                score += 20
+                        
+                        # Filename match
+                        if mpn_lower in pdf_text['filename'].lower():
+                            score += 50
+                        
+                        if score > best_score:
+                            best_score = score
+                            best_pdf = pdf_text
+                    
+                    if best_pdf and best_score > 0:
+                        logger.info(f"   ✅ Best match: {best_pdf['filename']} (score: {best_score})")
+                        
+                        # Extract data using Claude
+                        truncated_text = best_pdf['text'][:15000]
+                        extraction_type = "unstructured"  # Default for multi-PDF
+                        
+                        prompt = f"""
+You are a product data extraction expert. Extract product information for MPN "{mpn}" from the document below.
+The document is a product specification/catalog PDF. Extract whatever product specifications you can find.
+
+Document content:
+{truncated_text}
+
+Look for:
+- Product name/title
+- Brand/manufacturer name
+- Technical specifications (dimensions, weight, materials, features)
+- Product category/taxonomy
+
+Extract the following fields if present. If missing, leave empty:
+- product_name
+- brand_name
+- sku
+- taxonomy
+- description
+- image_url
+- specifications (as key-value pairs)
+
+Return ONLY a single valid JSON object in this format:
+{{
+  "product_name": "",
+  "brand_name": "",
+  "sku": "",
+  "taxonomy": "",
+  "description": "",
+  "image_url": "",
+  "specifications": {{}}
+}}
+"""
+                        
+                        response = await call_llm_with_schema(
+                            prompt=prompt,
+                            response_model="PDFExtractionResponse",
+                            llm_provider='claude',
+                            estimated_tokens=4000
+                        )
+                        
+                        prod_dict = parse_llm_response(response, mpn)
+                        
+                        if prod_dict:
+                            product = await upsert_product_from_extraction(
+                                db, project_id, mpn, prod_dict, best_pdf['filename']
+                            )
+                            successful += 1
+                            results.append({
+                                'mpn': mpn,
+                                'status': 'success',
+                                'pdf': best_pdf['filename'],
+                                'score': best_score,
+                                'completeness': product.completeness_score
+                            })
+                            logger.info(f"    Extracted data for {mpn} (score: {product.completeness_score}%)")
+                        else:
+                            raise ValueError("Could not extract data")
+                    else:
+                        logger.warning(f"    No matching PDF found for {mpn}")
+                        product.enrichment_status = "failed"
+                        db.add(product)
+                        failed += 1
+                        results.append({
+                            'mpn': mpn,
+                            'status': 'failed',
+                            'reason': 'No matching PDF found'
+                        })
+                
+                except Exception as e:
+                    logger.error(f"    Failed to process {mpn}: {e}")
+                    failed += 1
+                    results.append({
+                        'mpn': mpn,
+                        'status': 'failed',
+                        'reason': str(e)
+                    })
+                    
+                    # Update product as failed
+                    stmt = select(Product).where(
+                        Product.project_id == project_id,
+                        Product.product_code == mpn
+                    )
+                    result = await db.execute(stmt)
+                    product = result.scalar_one_or_none()
+                    if product:
+                        product.enrichment_status = "failed"
+                        db.add(product)
+            
+            # Update source with final results
+            source = await db.get(Source, batch_id)
+            if source:
+                source.status = "completed" if successful > 0 else "failed"
+                source.source_metadata.update({
+                    "processing_status": "completed" if successful > 0 else "failed",
+                    "successful": successful,
+                    "failed": failed,
+                    "results": results,
+                    "completed_at": datetime.utcnow().isoformat()
+                })
+                db.add(source)
+            
+            await db.commit()
+            await sync_project_status(db, project_id)
+            
+            logger.info(f" Multi-PDF extraction completed: {successful} successful, {failed} failed")
+            
+        except Exception as e:
+            logger.error(f" Multi-PDF extraction failed: {e}", exc_info=True)
+            await db.rollback()
+            
+            source = await db.get(Source, batch_id)
+            if source:
+                source.status = "failed"
+                source.source_metadata["error"] = str(e)
+                source.source_metadata["processing_status"] = "failed"
                 db.add(source)
                 await db.commit()
                 await sync_project_status(db, project_id)
