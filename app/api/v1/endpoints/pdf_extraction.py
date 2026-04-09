@@ -809,7 +809,7 @@ async def save_pdf_source(
         if not existing:
             product = Product(
                 product_code=mpn,
-                product_name=f"Pending extraction: {mpn}",
+                product_name=f"{mpn}",
                 mpn=mpn,
                 project_id=project_id,
                 workflow_stage="aggregation",
@@ -1244,7 +1244,7 @@ async def save_pending_mpns(
             if not existing:
                 product = Product(
                     product_code=mpn,
-                    product_name=f"Pending: {mpn}",
+                    product_name=f"{mpn}",
                     mpn=mpn,
                     project_id=request.project_id,
                     workflow_stage='aggregation',
@@ -1471,7 +1471,7 @@ async def multi_pdf_extraction(
             if not existing:
                 product = Product(
                     product_code=mpn,
-                    product_name=f"Pending: {mpn}",
+                    product_name=f"{mpn}",
                     mpn=mpn,
                     project_id=project_id,
                     workflow_stage="aggregation",

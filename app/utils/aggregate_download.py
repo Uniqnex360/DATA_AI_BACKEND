@@ -15,7 +15,8 @@ import json
 async def generate_products_excel(
     products: List[Product],
     db: AsyncSession,
-    global_project_name: Optional[str] = None
+    global_project_name: Optional[str] = None,
+    filename: Optional[str] = None 
 ) -> StreamingResponse:
     if not products:
         raise HTTPException(status_code=404, detail="No products to export")
@@ -425,7 +426,8 @@ async def generate_products_excel(
     with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Enriched Data')
     excel_buffer.seek(0)
-    filename = f"Enriched_Export_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+    if not filename:
+        filename = f"Enriched_Export_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
     return StreamingResponse(
         excel_buffer,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

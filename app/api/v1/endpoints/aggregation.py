@@ -40,7 +40,14 @@ async def update_project_status(db_session: AsyncSession, project_id: str) -> No
 
     result = await db_session.execute(stmt)
     stats = result.first()
-
+    enrichment_stmt = select(func.count(Product.id)).where(
+        and_(
+            Product.project_id == project_id,
+            Product.workflow_stage == 'enrichment'
+        )
+    )
+    enrichment_result = await db_session.execute(enrichment_stmt)
+    enrichment_count = enrichment_result.scalar() or 0
     total = stats.total or 0
     completed = stats.completed or 0
     failed = stats.failed or 0
@@ -56,6 +63,8 @@ async def update_project_status(db_session: AsyncSession, project_id: str) -> No
     elif failed == total and total > 0:
         status_value = "failed"
     elif total > 0 and completed > 0:
+        status_value = "partially_completed"
+    elif enrichment_count > 0 and total > 0:
         status_value = "partially_completed"
     else:
         status_value = "yet_to_start"

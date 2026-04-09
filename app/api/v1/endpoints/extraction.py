@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from sqlalchemy import func
+from io import BytesIO
 from app.models.pipeline import AuditTrail, RawExtraction, Source, SourcePriority
 from app.core.database import get_session, async_session_factory
 from app.models.product import Product
@@ -165,6 +166,7 @@ def clean_for_excel(val, attr_name=None):
     if val_str.lower() in ["n/a", "none", "null", "nan", "not available", "increase", "*"]:
         return ""
     return sanitize_for_excel(val_str)
+    
 @router.get("/{source_id}/download")
 async def download_file(
     source_id: str,
@@ -179,7 +181,43 @@ async def download_file(
                 status_code=404, detail="Source record not found")
         if download_type == 'input':
             if source.content_data:
-                filename = f"Input_{source.source_url}"
+                if source.source_type == "pdf_multi_pending":
+                    try:
+                        import pickle
+                        pdf_documents = pickle.loads(source.content_data)
+                        if len(pdf_documents) == 1:
+                            pdf_doc = pdf_documents[0]
+                            filename = pdf_doc['filename']
+                            encoded_filename = quote(filename)
+                            return StreamingResponse(
+                                BytesIO(pdf_doc['content']),
+                                media_type='application/pdf',
+                                headers={
+                                    "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+                                    "Content-Length": str(len(pdf_doc['content']))
+                                }
+                            )
+                        else:
+                            import zipfile
+                            zip_buffer = BytesIO()
+                            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                                for pdf_doc in pdf_documents:
+                                    zip_file.writestr(pdf_doc['filename'], pdf_doc['content'])
+                            zip_buffer.seek(0)
+                            
+                            zip_filename = f"multi_pdf_batch_{str(source.id)[:8]}.zip"
+                            encoded_filename = quote(zip_filename)
+                            return StreamingResponse(
+                                zip_buffer,
+                                media_type='application/zip',
+                                headers={
+                                    "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+                                    "Content-Length": str(zip_buffer.getbuffer().nbytes)
+                                }
+                            )
+                    except Exception as e:
+                        raise e
+                filename = source.source_url
                 encoded_filename = quote(filename)
                 if source.source_url.lower().endswith('.pdf'):
                     media_type = 'application/pdf'
@@ -235,18 +273,34 @@ async def download_file(
                     result = await db.execute(stmt)
                     products = result.scalars().all()
             if not products:
-                raise HTTPException(
-                    status_code=404, detail="No enriched data found")
+                raise HTTPException(status_code=404, detail="No enriched data found")
+            
             project = await db.get(Project, products[0].project_id) if products else None
+            project_name = project.name if project else None
             use_case_lower = (project.use_case or "").lower() if project else ""
+            
+            if source.source_url and source.source_url.endswith('.pdf'):
+                output_filename = source.source_url.rsplit('.', 1)[0] + '.xlsx'
+            elif source.source_type == "pdf_multi_pending":
+                pdf_files = source.source_metadata.get('pdf_files', [])
+                if pdf_files and len(pdf_files) > 0:
+                    first_pdf = pdf_files[0].get('filename', 'extracted')
+                    output_filename = first_pdf.rsplit('.', 1)[0] + '.xlsx'
+                else:
+                    output_filename = source.source_url.rsplit('.', 1)[0] + '.xlsx' if '.' in source.source_url else f"{source.source_url}.xlsx"
+            elif source.source_type == "pdf_fresh_pending":
+                output_filename = f"{project_name}_extracted.xlsx" if project_name else "fresh_extracted.xlsx"
+            elif source.source_url and '.' in source.source_url:
+                output_filename = source.source_url.rsplit('.', 1)[0] + '.xlsx'
+            else:
+                output_filename = f"{source.source_url}.xlsx" if source.source_url else "extracted.xlsx"
             if 'back filling' in use_case_lower or 'validation' in use_case_lower:
                 MAX_ATTRIBUTES = 40
             else:
                 MAX_ATTRIBUTES = 40
             logger.info(
                 f"Using {MAX_ATTRIBUTES} attribute columns for use case: {project.use_case if project else 'Unknown'}")
-            project_name = project.name if project else None
-            return await generate_products_excel(products, db, global_project_name=project_name)
+            return await generate_products_excel(products, db, global_project_name=project_name, filename=output_filename)
     except HTTPException:
         raise
     except Exception as e:
