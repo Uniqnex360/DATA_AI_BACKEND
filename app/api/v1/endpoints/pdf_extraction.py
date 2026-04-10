@@ -58,11 +58,12 @@ router = APIRouter()
 #         project.status = "draft"
 #     db.add(project)
 #     await db.commit()
-
 async def sync_project_status(db, project_id: str) -> None:
     project = await db.get(Project, project_id)
     if not project:
         return
+    
+    # Count products
     stmt = select(
         func.count(Product.id),
         func.sum(case((Product.enrichment_status == "completed", 1), else_=0)),
@@ -78,20 +79,34 @@ async def sync_project_status(db, project_id: str) -> None:
     processing = row[3] or 0
     pending = row[4] or 0
     
+    # ✅ Check if source failed with no products
+    source_stmt = select(Source).where(
+        Source.project_id == project_id,
+        Source.status == "failed"
+    )
+    source_result = await db.execute(source_stmt)
+    failed_source = source_result.scalars().first()
+    
     if total == 0:
-        project.status = "draft"
+        if failed_source:
+            project.status = "failed"  # ✅ Source failed, no products
+        else:
+            project.status = "draft"
     elif processing > 0:
         project.status = "processing"
     elif completed == total:
         project.status = "completed"
     elif failed == total:
         project.status = "failed"
-    elif completed > 0 or pending > 0:  # ✅ Simple fix - check pending too!
+    elif completed > 0 or pending > 0:
         project.status = "partially_completed"
     else:
         project.status = "draft"
+    
     db.add(project)
     await db.commit()
+    logger.info(f"Project {project_id} status updated to: {project.status}")
+    
 @router.post('/fresh-aggregation')
 async def fresh_aggregation(
     request: FreshAggregationRequest,
@@ -206,6 +221,7 @@ async def blind_pdf_extraction(
     files: List[UploadFile] = File(...),
     project_id: str = Form(...),
     use_case: str = Form(...),
+    product_hint: str = Form(...), 
     db: AsyncSession = Depends(get_session)
 ):
     try:
@@ -218,7 +234,8 @@ async def blind_pdf_extraction(
         pdf_documents = []
         total_size = 0
         MAX_TOTAL_SIZE = 50 * 1024 * 1024
-
+        if not product_hint or not product_hint.strip():
+            raise HTTPException(400, "Product hint is required")
         for file in files:
             if not file.filename.lower().endswith('.pdf'):
                 raise HTTPException(
@@ -251,7 +268,8 @@ async def blind_pdf_extraction(
                 "total_pdfs": len(pdf_documents),
                 "created_at": datetime.utcnow().isoformat(),
                 "processing_status": "processing",
-                "extraction_type": "blind"
+                "extraction_type": "blind",
+                 "product_hint": product_hint.strip(), 
             }
         )
         db.add(source)
@@ -325,13 +343,17 @@ async def process_blind_pdf_extraction(
     project_id: str
 ) -> None:
     async with async_session_factory() as db:
+        
         try:
             import pickle
             source = await db.get(Source, batch_id)
             if not source:
                 logger.error(f"Source not found: {batch_id}")
                 return
-
+            product_hint = source.source_metadata.get("product_hint")
+            if not product_hint:
+                logger.error("No product hint found in source metadata")
+                return
             pdf_documents = pickle.loads(
                 source.content_data) if source.content_data else []
 
@@ -369,7 +391,8 @@ async def process_blind_pdf_extraction(
 
                     products_found = await identify_products_in_pdf(
                         full_text[:20000],
-                        pdf_doc['filename']
+                        pdf_doc['filename'],
+                        product_hint
                     )
 
                     if not products_found:
@@ -438,6 +461,7 @@ async def process_blind_pdf_extraction(
                 db.add(source)
                 await db.commit()
                 await db.refresh(source)
+                await sync_project_status(db, project_id)
                 logger.info(f"✅ Source {batch_id} updated to {source.status}")
             await sync_project_status(db, project_id)
 
@@ -454,39 +478,40 @@ async def process_blind_pdf_extraction(
                 db.add(source)
                 await db.commit()
                 await sync_project_status(db, project_id)
-
-
-async def identify_products_in_pdf(pdf_text: str, filename: str) -> List[Dict]:
-    """Identify all products mentioned in the PDF."""
+async def identify_products_in_pdf(pdf_text: str, filename: str, product_hint: str) -> List[Dict]:
+    # ✅ STRICT PRE-CHECK: If hint is not in the document text, skip Claude entirely
+    text_lower = pdf_text.lower()
+    hint_lower = product_hint.lower()
+    
+    # Check if hint appears anywhere in the document
+    if hint_lower not in text_lower:
+        logger.info(f"❌ Hint '{product_hint}' NOT found in document '{filename}', skipping extraction")
+        return []
+    
+    logger.info(f"✅ Hint '{product_hint}' found in document, proceeding with Claude extraction")
+    
     prompt = f"""
-You are a product identification expert. Analyze the following document content and identify ALL distinct products mentioned.
+You are a product identification expert. Your task is to find products that match the following description.
+
+PRODUCT HINT: "{product_hint}"
 
 Document: {filename}
 Content:
 {pdf_text[:15000]}
 
-Identify each unique product. Look for:
-- Product names/titles (usually in headings, bold text, or at the start of sections)
-- Model numbers or series names
-- Product families (e.g., "iPhone 14 Series", "ThinkPad X1 Line")
-- Individual product variations (e.g., "iPhone 14 Pro", "iPhone 14 Pro Max")
+CRITICAL INSTRUCTIONS:
+1. The hint "{product_hint}" appears in this document.
+2. Find the product that contains or is associated with this hint.
+3. If the hint appears in a product name, model number, SKU, or description, extract that product.
+4. Return ONLY the product that contains the hint.
 
-Return a JSON array of products found. For each product, provide:
-- title: The product name/title as it appears
-- context: A brief description or surrounding text (2-3 sentences)
-- confidence: Your confidence (0.0-1.0) that this is a distinct product
+For the matching product, provide:
+- title: The exact product name/title
+- context: Brief description
+- confidence: 0.0-1.0
 
 Format:
-[
-  {{
-    "title": "Product Name",
-    "context": "Brief context from the document",
-    "confidence": 0.95
-  }}
-]
-
-If no distinct products are found, return an empty array [].
-Return ONLY valid JSON array.
+[{{"title": "Product Name", "context": "Contains hint...", "confidence": 0.95}}]
 """
 
     try:
@@ -526,7 +551,6 @@ Return ONLY valid JSON array.
     except Exception as e:
         logger.error(f"Product identification failed: {e}", exc_info=True)
         return []
-
 
 async def extract_blind_product_details(pdf_text: str, product_info: Dict) -> Optional[Dict]:
     """Extract detailed specifications for an identified product."""
@@ -585,7 +609,7 @@ def generate_mpn_from_title(title: str) -> str:
     slug = re.sub(r'[^a-zA-Z0-9]', '-', title.lower())
     slug = re.sub(r'-+', '-', slug).strip('-')
     timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
-    return f"BLIND-{slug[:30]}-{timestamp[-6:]}"
+    return f"{slug[:30]}-{timestamp[-6:]}"
 
 
 async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_id: str):
