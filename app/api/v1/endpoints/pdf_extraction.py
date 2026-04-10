@@ -7,6 +7,7 @@ from sqlmodel import select
 from sqlalchemy import func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
+from sqlalchemy.orm.attributes import flag_modified
 from datetime import datetime
 import aiohttp
 from app.aggregation.services.pdf_service import PDFExtractionService
@@ -24,6 +25,39 @@ from app.core.database import async_session_factory
 logger = logging.getLogger('pdf extraction')
 router = APIRouter()
 
+
+# async def sync_project_status(db, project_id: str) -> None:
+#     project = await db.get(Project, project_id)
+#     if not project:
+#         return
+#     stmt = select(
+#         func.count(Product.id),
+#         func.sum(case((Product.enrichment_status == "completed", 1), else_=0)),
+#         func.sum(case((Product.enrichment_status == "failed", 1), else_=0)),
+#         func.sum(case((Product.enrichment_status == "processing", 1), else_=0)),
+#         func.sum(case((Product.enrichment_status == "pending", 1), else_=0)),
+#     ).where(Product.project_id == project_id)
+#     result = await db.execute(stmt)
+#     row = result.one()
+#     total = row[0] or 0
+#     completed = row[1] or 0
+#     failed = row[2] or 0
+#     processing = row[3] or 0
+#     pending = row[4] or 0
+#     if total == 0:
+#         project.status = "draft"
+#     elif processing > 0:
+#         project.status = "processing"
+#     elif completed == total:
+#         project.status = "completed"
+#     elif failed == total:
+#         project.status = "failed"
+#     elif completed > 0:
+#         project.status = "partially_completed"
+#     else:
+#         project.status = "draft"
+#     db.add(project)
+#     await db.commit()
 
 async def sync_project_status(db, project_id: str) -> None:
     project = await db.get(Project, project_id)
@@ -43,6 +77,7 @@ async def sync_project_status(db, project_id: str) -> None:
     failed = row[2] or 0
     processing = row[3] or 0
     pending = row[4] or 0
+    
     if total == 0:
         project.status = "draft"
     elif processing > 0:
@@ -51,14 +86,12 @@ async def sync_project_status(db, project_id: str) -> None:
         project.status = "completed"
     elif failed == total:
         project.status = "failed"
-    elif completed > 0:
+    elif completed > 0 or pending > 0:  # ✅ Simple fix - check pending too!
         project.status = "partially_completed"
     else:
         project.status = "draft"
     db.add(project)
     await db.commit()
-
-
 @router.post('/fresh-aggregation')
 async def fresh_aggregation(
     request: FreshAggregationRequest,
@@ -139,9 +172,9 @@ async def search_pdfs_url(mpn: str, brand: str) -> List[str]:
                     url = result.get('url', '')
                     if url and url.lower().endswith('.pdf'):
                         pdf_urls.append(url)
-                        logger.info(f"   ✅ PDF found: {url}")
+                        logger.info(f"PDF found: {url}")
                     else:
-                        logger.debug(f"   ⏭️ Skipped non-PDF: {url[:80]}...")
+                        logger.debug(f"Skipped non-PDF: {url[:80]}...")
             except Exception as e:
                 logger.debug(f"Search failed for {query}: {e}")
         return list(set(pdf_urls))[:5]
@@ -165,6 +198,85 @@ async def download_and_extract_pdf(pdf_url: str) -> Optional[str]:
     except Exception as e:
         logger.warning(f"Failed to download/extract PDF {pdf_url}: {e}")
     return None
+
+
+@router.post('/blind-pdf-extraction')
+async def blind_pdf_extraction(
+    background_tasks: BackgroundTasks,
+    files: List[UploadFile] = File(...),
+    project_id: str = Form(...),
+    use_case: str = Form(...),
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        if len(files) == 0:
+            raise HTTPException(400, "At least one PDF file is required")
+        if len(files) > 10:
+            raise HTTPException(400, "Maximum 10 PDF files allowed")
+
+        batch_id = str(uuid.uuid4())
+        pdf_documents = []
+        total_size = 0
+        MAX_TOTAL_SIZE = 50 * 1024 * 1024
+
+        for file in files:
+            if not file.filename.lower().endswith('.pdf'):
+                raise HTTPException(
+                    400, f"File '{file.filename}' is not a PDF")
+
+            pdf_bytes = await file.read()
+            total_size += len(pdf_bytes)
+
+            if total_size > MAX_TOTAL_SIZE:
+                raise HTTPException(
+                    400, f"Total file size exceeds {MAX_TOTAL_SIZE // (1024*1024)} MB")
+
+            pdf_documents.append({
+                'filename': file.filename,
+                'content': pdf_bytes,
+                'size': len(pdf_bytes)
+            })
+
+        import pickle
+        source = Source(
+            id=batch_id,
+            source_type="pdf_blind_extraction",
+            source_url=f"blind_pdf_{len(pdf_documents)}_files",
+            project_id=project_id,
+            status="processing",  # Start as processing, not pending
+            content_data=pickle.dumps(pdf_documents),
+            source_metadata={
+                "use_case": use_case,
+                "pdf_files": [{'filename': p['filename'], 'size': p['size']} for p in pdf_documents],
+                "total_pdfs": len(pdf_documents),
+                "created_at": datetime.utcnow().isoformat(),
+                "processing_status": "processing",
+                "extraction_type": "blind"
+            }
+        )
+        db.add(source)
+        await db.commit()
+
+        # Fire and forget - process immediately
+        background_tasks.add_task(
+            process_blind_pdf_extraction,
+            batch_id,
+            project_id
+        )
+
+        return {
+            "status": "processing",
+            "batch_id": batch_id,
+            "message": f"Processing {len(pdf_documents)} PDF(s). Products will appear in Aggregation tab when ready.",
+            "pdfs_count": len(pdf_documents)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Failed to start blind PDF extraction: {e}", exc_info=True)
+        raise HTTPException(500, str(e))
 
 
 async def extract_product_with_claude(mpn: str, pdf_text: str, source_url: str) -> Optional[Dict]:
@@ -206,6 +318,274 @@ async def extract_product_with_claude(mpn: str, pdf_text: str, source_url: str) 
     except Exception as e:
         logger.error(f"Claude extraction failed for {mpn}: {e}")
     return None
+
+
+async def process_blind_pdf_extraction(
+    batch_id: str,
+    project_id: str
+) -> None:
+    async with async_session_factory() as db:
+        try:
+            import pickle
+            source = await db.get(Source, batch_id)
+            if not source:
+                logger.error(f"Source not found: {batch_id}")
+                return
+
+            pdf_documents = pickle.loads(
+                source.content_data) if source.content_data else []
+
+            if not pdf_documents:
+                raise ValueError("No PDFs found in source")
+
+            source.status = "processing"
+            source.source_metadata["processing_status"] = "processing"
+            db.add(source)
+            await db.commit()
+
+            logger.info(
+                f" Processing blind extraction: {len(pdf_documents)} PDFs")
+
+            all_extracted_products = []
+            successful = 0
+            failed = 0
+
+            for pdf_doc in pdf_documents:
+                try:
+                    logger.info(f"📄 Processing: {pdf_doc['filename']}")
+
+                    full_text = ""
+                    with pdfplumber.open(BytesIO(pdf_doc['content'])) as pdf:
+                        for page in pdf.pages[:20]:
+                            page_text = page.extract_text()
+                            if page_text:
+                                full_text += page_text + "\n"
+
+                    if not full_text.strip():
+                        logger.warning(
+                            f"No text extracted from {pdf_doc['filename']}")
+                        failed += 1
+                        continue
+
+                    products_found = await identify_products_in_pdf(
+                        full_text[:20000],
+                        pdf_doc['filename']
+                    )
+
+                    if not products_found:
+                        logger.warning(
+                            f"No products identified in {pdf_doc['filename']}")
+                        failed += 1
+                        continue
+
+                    logger.info(
+                        f"   Found {len(products_found)} potential products")
+
+                    for product_info in products_found:
+                        try:
+                            if isinstance(product_info, str):
+                                product_info = {
+                                    "title": product_info, "context": "", "confidence": 0.7}
+                            if not isinstance(product_info, dict):
+                                logger.warning(
+                                    f"Skipping non-dict product_info: {type(product_info)}")
+                                continue
+
+                            extracted = await extract_blind_product_details(
+                                full_text[:15000],
+                                product_info
+                            )
+
+                            if extracted:
+                                auto_mpn = generate_mpn_from_title(
+                                    extracted.get('product_name', 'Unknown'))
+
+                                product = await upsert_product_from_extraction(
+                                    db, project_id, auto_mpn, extracted, pdf_doc['filename']
+                                )
+
+                                all_extracted_products.append({
+                                    'mpn': auto_mpn,
+                                    'name': extracted.get('product_name'),
+                                    'source': pdf_doc['filename'],
+                                    'completeness': product.completeness_score
+                                })
+
+                                successful += 1
+                                logger.info(
+                                    f"Extracted: {extracted.get('product_name')} (score: {product.completeness_score}%)")
+
+                        except Exception as e:
+                            logger.error(
+                                f"Failed to extract product: {e}")
+                            continue
+
+                except Exception as e:
+                    logger.error(
+                        f"   Failed to process {pdf_doc['filename']}: {e}")
+                    failed += 1
+            source = await db.get(Source, batch_id)  # 
+            if source:
+                source.status = "completed" if successful > 0 else "failed"
+                source.source_metadata.update({
+                    "processing_status": "completed" if successful > 0 else "failed",
+                    "successful": successful,
+                    "failed": failed,
+                    "extracted_products": all_extracted_products,
+                    "completed_at": datetime.utcnow().isoformat()
+                })
+                flag_modified(source, "source_metadata")  #
+                db.add(source)
+                await db.commit()
+                await db.refresh(source)
+                logger.info(f"✅ Source {batch_id} updated to {source.status}")
+            await sync_project_status(db, project_id)
+
+            logger.info(f" Blind extraction completed: {successful} products extracted")
+
+        except Exception as e:
+            logger.error(f" Blind extraction failed: {e}", exc_info=True)
+            await db.rollback()
+            source = await db.get(Source, batch_id)
+            if source:
+                source.status = "failed"
+                source.source_metadata["error"] = str(e)
+                source.source_metadata["processing_status"] = "failed"
+                db.add(source)
+                await db.commit()
+                await sync_project_status(db, project_id)
+
+
+async def identify_products_in_pdf(pdf_text: str, filename: str) -> List[Dict]:
+    """Identify all products mentioned in the PDF."""
+    prompt = f"""
+You are a product identification expert. Analyze the following document content and identify ALL distinct products mentioned.
+
+Document: {filename}
+Content:
+{pdf_text[:15000]}
+
+Identify each unique product. Look for:
+- Product names/titles (usually in headings, bold text, or at the start of sections)
+- Model numbers or series names
+- Product families (e.g., "iPhone 14 Series", "ThinkPad X1 Line")
+- Individual product variations (e.g., "iPhone 14 Pro", "iPhone 14 Pro Max")
+
+Return a JSON array of products found. For each product, provide:
+- title: The product name/title as it appears
+- context: A brief description or surrounding text (2-3 sentences)
+- confidence: Your confidence (0.0-1.0) that this is a distinct product
+
+Format:
+[
+  {{
+    "title": "Product Name",
+    "context": "Brief context from the document",
+    "confidence": 0.95
+  }}
+]
+
+If no distinct products are found, return an empty array [].
+Return ONLY valid JSON array.
+"""
+
+    try:
+        response = await call_llm_with_schema(
+            prompt=prompt,
+            response_model="ProductIdentificationResponse",
+            llm_provider='claude',
+            estimated_tokens=3000
+        )
+
+        if response is None:
+            return []
+        
+        if hasattr(response, 'root'):
+            result = response.root
+        elif hasattr(response, 'model_dump'):
+            result = response.model_dump()
+        elif isinstance(response, list):
+            result = response
+        else:
+            logger.warning(f"Unexpected response type: {type(response)}")
+            return []
+        
+        validated = []
+        for item in result:
+            if isinstance(item, str):
+                validated.append({"title": item, "context": f"Found in {filename}", "confidence": 0.7})
+            elif isinstance(item, dict):
+                if 'context' not in item:
+                    item['context'] = f"Found in {filename}"
+                if 'confidence' not in item:
+                    item['confidence'] = 0.7
+                validated.append(item)
+        
+        return validated
+
+    except Exception as e:
+        logger.error(f"Product identification failed: {e}", exc_info=True)
+        return []
+
+
+async def extract_blind_product_details(pdf_text: str, product_info: Dict) -> Optional[Dict]:
+    """Extract detailed specifications for an identified product."""
+
+    title = product_info.get('title', 'Unknown Product')
+    context = product_info.get('context', '')
+
+    prompt = f"""
+You are a product data extraction expert. Extract detailed information for this product:
+
+Product: {title}
+Context from document: {context}
+
+Document content:
+{pdf_text[:12000]}
+
+Extract the following fields. If not found, leave empty:
+- product_name: Full product name
+- brand_name: Manufacturer/brand name
+- sku: Stock Keeping Unit (if available)
+- taxonomy: Product category (e.g., "Electronics > Computers > Laptops")
+- description: Product description/summary
+- image_url: Main product image URL (if referenced)
+- specifications: Key technical specifications as key-value pairs
+
+Return ONLY a single valid JSON object in this format:
+{{
+  "product_name": "",
+  "brand_name": "",
+  "sku": "",
+  "taxonomy": "",
+  "description": "",
+  "image_url": "",
+  "specifications": {{}}
+}}
+"""
+
+    try:
+        response = await call_llm_with_schema(
+            prompt=prompt,
+            response_model="PDFExtractionResponse",
+            llm_provider='claude',
+            estimated_tokens=4000
+        )
+        
+
+        return parse_llm_response(response, title)
+
+    except Exception as e:
+        logger.error(f"Blind product extraction failed for {title}: {e}")
+        return None
+
+
+def generate_mpn_from_title(title: str) -> str:
+    import re
+    slug = re.sub(r'[^a-zA-Z0-9]', '-', title.lower())
+    slug = re.sub(r'-+', '-', slug).strip('-')
+    timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+    return f"BLIND-{slug[:30]}-{timestamp[-6:]}"
 
 
 async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_id: str):
@@ -325,7 +705,7 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                             products.append(product_data)
                             successful += 1
                             logger.info(
-                                f"✅ Successfully extracted product for {mpn} (score {completeness_score})")
+                                f" Successfully extracted product for {mpn} (score {completeness_score})")
                         else:
                             failed_mpns.append(mpn)
                             logger.warning(
@@ -699,7 +1079,8 @@ async def process_structured_pdf_extraction(
                     page_tables = page.extract_tables()
                     for tbl in page_tables:
                         if tbl and len(tbl) > 1:
-                            headers = [str(h).strip() if h else "" for h in tbl[0]]
+                            headers = [
+                                str(h).strip() if h else "" for h in tbl[0]]
                             for row in tbl[1:]:
                                 if not any(cell for cell in row):
                                     continue
@@ -712,7 +1093,7 @@ async def process_structured_pdf_extraction(
                                             row_dict[key] = val
                                 if row_dict:
                                     tables.append(row_dict)
-            
+
             truncated_text = full_text[:15000]
             truncated_tables = json.dumps(tables, indent=2)[:5000]
             prompt = f"""
@@ -724,22 +1105,22 @@ Table data:
 Extract: product_name, brand_name, sku, taxonomy, description, image_url, specifications
 Return ONLY valid JSON.
 """
-            logger.info(f"Extracted text length: {len(full_text)}, tables: {len(tables)}")
-            
+            logger.info(
+                f"Extracted text length: {len(full_text)}, tables: {len(tables)}")
+
             response = await call_llm_with_schema(
                 prompt=prompt,
                 response_model="PDFExtractionResponse",
                 llm_provider='claude',
                 estimated_tokens=4000
             )
-            
-            # ✅ Use reusable functions
+
             prod_dict = parse_llm_response(response, mpn)
             if not prod_dict:
                 raise ValueError(f"Could not extract data for MPN {mpn}")
-            
+
             product = await upsert_product_from_extraction(db, project_id, mpn, prod_dict, filename)
-            
+
             source = await db.get(Source, batch_id)
             if source:
                 source.status = 'completed'
@@ -751,11 +1132,12 @@ Return ONLY valid JSON.
                     'completed_at': datetime.utcnow().isoformat()
                 })
                 db.add(source)
-            
+
             await db.commit()
             await sync_project_status(db, project_id)
-            logger.info(f"Structured extraction completed for {mpn} (score {product.completeness_score})")
-            
+            logger.info(
+                f"Structured extraction completed for {mpn} (score {product.completeness_score})")
+
         except Exception as e:
             logger.error(f"Structured extraction failed: {e}", exc_info=True)
             await db.rollback()
@@ -767,6 +1149,7 @@ Return ONLY valid JSON.
                 db.add(source)
                 await db.commit()
                 await sync_project_status(db, project_id)
+
 
 @router.post('/save-pdf-source')
 async def save_pdf_source(
@@ -833,12 +1216,13 @@ async def save_pdf_source(
     except Exception as e:
         logger.error(f"Failed to save PDF source: {e}")
         raise HTTPException(500, str(e))
+
+
 async def process_multi_pdf_extraction_for_single_mpn(
     batch_id: str,
     mpn: str,
     project_id: str
 ) -> None:
-    """Extract a single MPN from a multi-PDF source."""
     async with async_session_factory() as db:
         try:
             import pickle
@@ -846,15 +1230,17 @@ async def process_multi_pdf_extraction_for_single_mpn(
             if not source:
                 logger.error(f"Source not found: {batch_id}")
                 return
-            
+
             # Get the stored PDFs
-            pdf_documents = pickle.loads(source.content_data) if source.content_data else []
-            
+            pdf_documents = pickle.loads(
+                source.content_data) if source.content_data else []
+
             if not pdf_documents:
                 raise ValueError("No PDFs found in source")
-            
-            logger.info(f"📄 Processing MPN {mpn} from multi-PDF source with {len(pdf_documents)} PDFs")
-            
+
+            logger.info(
+                f"📄 Processing MPN {mpn} from multi-PDF source with {len(pdf_documents)} PDFs")
+
             # Extract text from all PDFs
             pdf_texts = []
             for pdf_doc in pdf_documents:
@@ -865,47 +1251,50 @@ async def process_multi_pdf_extraction_for_single_mpn(
                             page_text = page.extract_text()
                             if page_text:
                                 full_text += page_text + "\n"
-                    
+
                     pdf_texts.append({
                         'filename': pdf_doc['filename'],
                         'text': full_text[:20000],
                         'length': len(full_text)
                     })
-                    logger.info(f"   Extracted {len(full_text)} chars from {pdf_doc['filename']}")
+                    logger.info(
+                        f"   Extracted {len(full_text)} chars from {pdf_doc['filename']}")
                 except Exception as e:
-                    logger.error(f"   Failed to extract {pdf_doc['filename']}: {e}")
-            
+                    logger.error(
+                        f"   Failed to extract {pdf_doc['filename']}: {e}")
+
             # Find best matching PDF
             best_pdf = None
             best_score = 0
-            
+
             for pdf_text in pdf_texts:
                 if not pdf_text['text']:
                     continue
-                
+
                 score = 0
                 text_lower = pdf_text['text'].lower()
                 mpn_lower = mpn.lower()
-                
+
                 if mpn_lower in text_lower:
                     score += 100
-                
-                mpn_parts = mpn_lower.replace('-', ' ').replace('_', ' ').split()
+
+                mpn_parts = mpn_lower.replace(
+                    '-', ' ').replace('_', ' ').split()
                 for part in mpn_parts:
                     if len(part) > 2 and part in text_lower:
                         score += 20
-                
+
                 if mpn_lower in pdf_text['filename'].lower():
                     score += 50
-                
+
                 if score > best_score:
                     best_score = score
                     best_pdf = pdf_text
-            
+
             if best_pdf and best_score > 0:
-                logger.info(f"   ✅ Best match: {best_pdf['filename']} (score: {best_score})")
-                
-                # ✅ Complete prompt
+                logger.info(
+                    f"    Best match: {best_pdf['filename']} (score: {best_score})")
+
                 truncated_text = best_pdf['text'][:15000]
                 prompt = f"""
 You are a product data extraction expert. Extract product information for MPN "{mpn}" from the document below.
@@ -940,44 +1329,46 @@ Return ONLY a single valid JSON object in this format:
   "specifications": {{}}
 }}
 """
-                
-                # ✅ Complete Claude call
+
                 response = await call_llm_with_schema(
                     prompt=prompt,
                     response_model="PDFExtractionResponse",
                     llm_provider='claude',
                     estimated_tokens=4000
                 )
-                
+
                 prod_dict = parse_llm_response(response, mpn)
-                
+
                 if prod_dict:
                     product = await upsert_product_from_extraction(
                         db, project_id, mpn, prod_dict, best_pdf['filename']
                     )
-                    
+
                     # Update source metadata
-                    extracted_count = source.source_metadata.get("extracted", 0) + 1
+                    extracted_count = source.source_metadata.get(
+                        "extracted", 0) + 1
                     source.source_metadata["extracted"] = extracted_count
-                    
+
                     if extracted_count >= source.source_metadata.get("total_mpns", 0):
                         source.status = "completed"
                         source.source_metadata["processing_status"] = "completed"
-                    
+
                     db.add(source)
                     await db.commit()
                     await sync_project_status(db, project_id)
-                    
-                    logger.info(f"   ✅ Extracted data for {mpn} (score: {product.completeness_score}%)")
+
+                    logger.info(
+                        f"    Extracted data for {mpn} (score: {product.completeness_score}%)")
                 else:
                     raise ValueError("Could not parse LLM response")
             else:
                 raise ValueError(f"No matching PDF found for {mpn}")
-                
+
         except Exception as e:
-            logger.error(f"❌ Failed to extract {mpn} from multi-PDF: {e}", exc_info=True)
+            logger.error(
+                f" Failed to extract {mpn} from multi-PDF: {e}", exc_info=True)
             await db.rollback()
-            
+
             # Update product as failed
             stmt = select(Product).where(
                 Product.project_id == project_id,
@@ -988,16 +1379,18 @@ Return ONLY a single valid JSON object in this format:
             if product:
                 product.enrichment_status = "failed"
                 db.add(product)
-                
+
             # Update source if all failed
             source = await db.get(Source, batch_id)
             if source:
                 source.source_metadata["processing_status"] = "failed"
                 source.source_metadata["error"] = str(e)
                 db.add(source)
-            
+
             await db.commit()
             await sync_project_status(db, project_id)
+
+
 @router.post('/extract-pending')
 async def extract_pending_pdf(
     data: dict,
@@ -1007,19 +1400,19 @@ async def extract_pending_pdf(
     try:
         mpn = data.get('mpn')
         project_id = data.get('project_id')
-        
+
         if not mpn or not project_id:
-            raise HTTPException(400, "Missing required fields: mpn and project_id")
-        
-        # ✅ Find ALL sources of these types for this project
+            raise HTTPException(
+                400, "Missing required fields: mpn and project_id")
+
         stmt = select(Source).where(
-            Source.source_type.in_(["pdf_pending_extraction", "pdf_unstructured_pending", "pdf_multi_pending"]),
+            Source.source_type.in_(
+                ["pdf_pending_extraction", "pdf_unstructured_pending", "pdf_multi_pending", "pdf_blind_pending","pdf_blind_extraction"  ]),
             Source.project_id == project_id
         )
         result = await db.execute(stmt)
         sources = result.scalars().all()
-        
-        # ✅ Find the source that contains this MPN
+
         source = None
         for s in sources:
             mpns = s.source_metadata.get('mpns', [])
@@ -1027,27 +1420,33 @@ async def extract_pending_pdf(
             if mpn in mpns or mpn == single_mpn:
                 source = s
                 break
-        
+
         if not source:
             raise HTTPException(404, f"PDF source not found for MPN: {mpn}")
-        
+
         source.status = "processing"
         source.source_metadata["processing_status"] = "processing"
         db.add(source)
         await db.commit()
-        
+
         # Route to appropriate extraction function
         if source.source_type == "pdf_multi_pending":
             background_tasks.add_task(
                 process_multi_pdf_extraction_for_single_mpn,
                 source.id, mpn, project_id
             )
+        elif source.source_type == "pdf_blind_pending" or source.source_type == "pdf_blind_extraction":
+            background_tasks.add_task(
+                process_blind_pdf_extraction,
+                source.id,
+                project_id
+            )
         else:
             background_tasks.add_task(
                 process_pdf_extraction_for_product,
                 source.id, mpn, project_id
             )
-        
+
         return {"status": "processing", "batch_id": source.id}
     except HTTPException:
         raise
@@ -1073,7 +1472,8 @@ async def process_pdf_extraction_for_product(
             pdf_bytes = source.content_data
             if not pdf_bytes:
                 raise ValueError("No PDF content found in source")
-            is_unstructured = source.source_metadata.get("is_unstructured", False)
+            is_unstructured = source.source_metadata.get(
+                "is_unstructured", False)
             if is_unstructured:
                 await process_unstructured_pdf_extraction(
                     batch_id, pdf_bytes, mpn, project_id, source.source_url
@@ -1099,11 +1499,11 @@ async def process_pdf_extraction_for_product(
                 await db.commit()
                 await sync_project_status(db, project_id)
 
+
 def parse_llm_response(response, mpn: str) -> Optional[Dict]:
-    """Parse LLM response into product dict - works for both structured and unstructured."""
     product_info = None
     resp_dict = None
-    
+
     if response:
         if hasattr(response, "model_dump"):
             resp_dict = response.model_dump()
@@ -1111,9 +1511,9 @@ def parse_llm_response(response, mpn: str) -> Optional[Dict]:
             resp_dict = response.dict()
         elif isinstance(response, dict):
             resp_dict = response
-    
+
     logger.info(f"LLM parsed response for {mpn}: {resp_dict}")
-    
+
     if resp_dict:
         if isinstance(resp_dict.get("data"), dict):
             product_info = resp_dict["data"].get(mpn)
@@ -1121,10 +1521,10 @@ def parse_llm_response(response, mpn: str) -> Optional[Dict]:
             product_info = resp_dict[mpn]
         elif "product_name" in resp_dict or "specifications" in resp_dict:
             product_info = resp_dict
-    
+
     if not product_info:
         return None
-    
+
     # Convert to dict
     if hasattr(product_info, 'model_dump'):
         return product_info.model_dump()
@@ -1135,6 +1535,7 @@ def parse_llm_response(response, mpn: str) -> Optional[Dict]:
     else:
         raise ValueError(f"Unexpected product_info type: {type(product_info)}")
 
+
 async def upsert_product_from_extraction(
     db: AsyncSession,
     project_id: str,
@@ -1143,11 +1544,11 @@ async def upsert_product_from_extraction(
     source_url: str
 ) -> Product:
     """Create or update product from extracted data - works for both types."""
-    
+
     spec_count = len(prod_dict.get('specifications', {}))
     completeness_score = min(spec_count * 5, 100)
     enrichment_threshold = getattr(settings, 'enrichment_threshold', 90)
-    
+
     if completeness_score < enrichment_threshold:
         workflow_stage = 'enrichment'
         needs_enrichment = True
@@ -1160,7 +1561,7 @@ async def upsert_product_from_extraction(
         ready_for_export = True
         routed_to_enrichment_at = None
         enrichment_status = 'completed'
-    
+
     existing_product = await db.execute(
         select(Product).where(
             Product.project_id == project_id,
@@ -1168,9 +1569,10 @@ async def upsert_product_from_extraction(
         )
     )
     existing_product = existing_product.scalar_one_or_none()
-    
+
     if existing_product:
-        existing_product.product_name = prod_dict.get('product_name', f"Product {mpn}")
+        existing_product.product_name = prod_dict.get(
+            'product_name', f"Product {mpn}")
         existing_product.brand_name = prod_dict.get('brand_name', "")
         existing_product.sku = prod_dict.get('sku', "")
         existing_product.taxonomy = prod_dict.get('taxonomy', '')
@@ -1208,7 +1610,8 @@ async def upsert_product_from_extraction(
         )
         db.add(product)
         return product
-    
+
+
 @router.post('/save-pending-mpns')
 async def save_pending_mpns(
     request: FreshAggregationRequest,
@@ -1268,7 +1671,8 @@ async def save_pending_mpns(
         logger.error(f"Failed to save pending MPNs: {e}", exc_info=True)
         await db.rollback()
         raise HTTPException(500, str(e))
-    
+
+
 async def process_unstructured_pdf_extraction(
     batch_id: str,
     pdf_bytes: bytes,
@@ -1278,28 +1682,28 @@ async def process_unstructured_pdf_extraction(
 ) -> None:
     async with async_session_factory() as db:
         try:
-            logger.info(f"🚀 Starting unstructured extraction for {mpn} (batch: {batch_id})")
-            logger.info(f"📄 Opening PDF: {filename} ({len(pdf_bytes)} bytes)")
+            logger.info(
+                f" Starting unstructured extraction for {mpn} (batch: {batch_id})")
+            logger.info(f" Opening PDF: {filename} ({len(pdf_bytes)} bytes)")
             full_text = ""
             with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
-                logger.info(f"✅ PDF opened successfully, {len(pdf.pages)} pages")
+                logger.info(
+                    f"PDF opened successfully, {len(pdf.pages)} pages")
                 for i, page in enumerate(pdf.pages):
-                    logger.info(f"📄 Processing page {i+1}/{len(pdf.pages)}...")
+                    logger.info(f"Processing page {i+1}/{len(pdf.pages)}...")
                     try:
                         page_text = page.extract_text()
                         if page_text:
                             full_text += page_text + "\n"
-                            logger.info(f"   ✅ Page {i+1}: extracted {len(page_text)} chars")
+                            logger.info(
+                                f"   Page {i+1}: extracted {len(page_text)} chars")
                         else:
-                            logger.info(f"   ⚠️ Page {i+1}: no text extracted")
-                        
-                        
+                            logger.info(f"  Page {i+1}: no text extracted")
+
                     except Exception as e:
-                        logger.warning(f"   ❌ Page {i+1} failed: {e}")
+                        logger.warning(f"   Page {i+1} failed: {e}")
                         continue
-                    
-                    
-            
+
             truncated_text = full_text[:15000]
             prompt = f"""
 You are a product data extraction expert. Extract product information for MPN "{mpn}" from the unstructured document below.
@@ -1335,20 +1739,20 @@ Return ONLY a single valid JSON object in this format:
 }}
 """
             logger.info(f"Extracted text length for {mpn}: {len(full_text)}")
-            
+
             response = await call_llm_with_schema(
                 prompt=prompt,
                 response_model="PDFExtractionResponse",
                 llm_provider='claude',
                 estimated_tokens=4000
             )
-            
+
             prod_dict = parse_llm_response(response, mpn)
             if not prod_dict:
                 raise ValueError(f"Could not extract data for MPN {mpn}")
-            
+
             product = await upsert_product_from_extraction(db, project_id, mpn, prod_dict, filename)
-            
+
             source = await db.get(Source, batch_id)
             if source:
                 source.status = 'completed'
@@ -1360,11 +1764,12 @@ Return ONLY a single valid JSON object in this format:
                     'completed_at': datetime.utcnow().isoformat()
                 })
                 db.add(source)
-            
+
             await db.commit()
             await sync_project_status(db, project_id)
-            logger.info(f"Unstructured extraction completed for {mpn} (score {product.completeness_score})")
-            
+            logger.info(
+                f"Unstructured extraction completed for {mpn} (score {product.completeness_score})")
+
         except Exception as e:
             logger.error(f"Unstructured extraction failed: {e}", exc_info=True)
             await db.rollback()
@@ -1376,6 +1781,8 @@ Return ONLY a single valid JSON object in this format:
                 db.add(source)
                 await db.commit()
                 await sync_project_status(db, project_id)
+
+
 @router.post('/multi-pdf-extraction')
 async def multi_pdf_extraction(
     background_tasks: BackgroundTasks,
@@ -1392,42 +1799,44 @@ async def multi_pdf_extraction(
     try:
         # Parse MPNs
         mpn_list = [m.strip() for m in mpns.split(',') if m.strip()]
-        
+
         if len(mpn_list) == 0:
             raise HTTPException(400, "At least one MPN is required")
-        
+
         if len(files) == 0:
             raise HTTPException(400, "At least one PDF file is required")
-        
+
         if len(files) > 20:
             raise HTTPException(400, "Maximum 20 PDF files allowed")
-        
+
         if len(mpn_list) > 50:
             raise HTTPException(400, "Maximum 50 MPNs allowed")
-        
+
         batch_id = str(uuid.uuid4())
-        
+
         # Validate and read all PDFs
         pdf_documents = []
         total_size = 0
         MAX_TOTAL_SIZE = 100 * 1024 * 1024  # 100 MB total
-        
+
         for file in files:
             if not file.filename.lower().endswith('.pdf'):
-                raise HTTPException(400, f"File '{file.filename}' is not a PDF")
-            
+                raise HTTPException(
+                    400, f"File '{file.filename}' is not a PDF")
+
             pdf_bytes = await file.read()
             total_size += len(pdf_bytes)
-            
+
             if total_size > MAX_TOTAL_SIZE:
-                raise HTTPException(400, f"Total file size exceeds {MAX_TOTAL_SIZE // (1024*1024)} MB")
-            
+                raise HTTPException(
+                    400, f"Total file size exceeds {MAX_TOTAL_SIZE // (1024*1024)} MB")
+
             pdf_documents.append({
                 'filename': file.filename,
                 'content': pdf_bytes,
                 'size': len(pdf_bytes)
             })
-        
+
         # Create source record with ALL PDFs stored
         source = Source(
             id=batch_id,
@@ -1451,13 +1860,13 @@ async def multi_pdf_extraction(
             }
         )
         db.add(source)
-        
+
         # Store PDF contents in a separate table or as binary
         # For simplicity, we can store them in source.content_data as a pickle/zip
         # Or create a separate PDF storage table
         import pickle
         source.content_data = pickle.dumps(pdf_documents)
-        
+
         # Create placeholder products for each MPN
         products_added = 0
         for mpn in mpn_list:
@@ -1467,7 +1876,7 @@ async def multi_pdf_extraction(
             )
             result = await db.execute(stmt)
             existing = result.scalar_one_or_none()
-            
+
             if not existing:
                 product = Product(
                     product_code=mpn,
@@ -1482,12 +1891,9 @@ async def multi_pdf_extraction(
                 )
                 db.add(product)
                 products_added += 1
-        
+
         await db.commit()
-        
-        # ✅ NO background task - save only!
-        # background_tasks.add_task(...)  # REMOVED
-        
+
         return {
             "status": "success",
             "batch_id": batch_id,
@@ -1496,13 +1902,15 @@ async def multi_pdf_extraction(
             "pdfs_count": len(pdf_documents),
             "products_created": products_added
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to save multi-PDF extraction: {e}", exc_info=True)
+        logger.error(
+            f"Failed to save multi-PDF extraction: {e}", exc_info=True)
         raise HTTPException(500, str(e))
-    
+
+
 async def process_multi_pdf_extraction(
     batch_id: str,
     pdf_documents: List[Dict],
@@ -1515,15 +1923,16 @@ async def process_multi_pdf_extraction(
     """
     async with async_session_factory() as db:
         try:
-            logger.info(f"🚀 Starting multi-PDF extraction: {len(mpns)} MPNs, {len(pdf_documents)} PDFs")
-            
+            logger.info(
+                f"🚀 Starting multi-PDF extraction: {len(mpns)} MPNs, {len(pdf_documents)} PDFs")
+
             source = await db.get(Source, batch_id)
             if source:
                 source.status = "processing"
                 source.source_metadata["processing_status"] = "processing"
                 db.add(source)
                 await db.commit()
-            
+
             # Step 1: Extract text from all PDFs
             pdf_texts = []
             for pdf_doc in pdf_documents:
@@ -1534,31 +1943,33 @@ async def process_multi_pdf_extraction(
                             page_text = page.extract_text()
                             if page_text:
                                 full_text += page_text + "\n"
-                    
+
                     pdf_texts.append({
                         'filename': pdf_doc['filename'],
                         'text': full_text[:20000],  # Limit text per PDF
                         'length': len(full_text)
                     })
-                    logger.info(f"📄 Extracted {len(full_text)} chars from {pdf_doc['filename']}")
+                    logger.info(
+                        f"📄 Extracted {len(full_text)} chars from {pdf_doc['filename']}")
                 except Exception as e:
-                    logger.error(f"Failed to extract {pdf_doc['filename']}: {e}")
+                    logger.error(
+                        f"Failed to extract {pdf_doc['filename']}: {e}")
                     pdf_texts.append({
                         'filename': pdf_doc['filename'],
                         'text': "",
                         'length': 0,
                         'error': str(e)
                     })
-            
+
             # Step 2: For each MPN, find the most relevant PDF
             successful = 0
             failed = 0
             results = []
-            
+
             for mpn in mpns:
                 try:
                     logger.info(f"🔍 Processing MPN: {mpn}")
-                    
+
                     # Find product
                     stmt = select(Product).where(
                         Product.project_id == project_id,
@@ -1566,54 +1977,55 @@ async def process_multi_pdf_extraction(
                     )
                     result = await db.execute(stmt)
                     product = result.scalar_one_or_none()
-                    
+
                     if not product:
                         logger.warning(f"Product not found for MPN: {mpn}")
                         failed += 1
                         continue
-                    
+
                     # Update product status
                     product.enrichment_status = "processing"
                     db.add(product)
-                    
+
                     # Find best matching PDF for this MPN
                     best_pdf = None
                     best_score = 0
-                    
+
                     for pdf_text in pdf_texts:
                         if not pdf_text['text']:
                             continue
-                        
+
                         # Score based on MPN presence in text
                         score = 0
                         text_lower = pdf_text['text'].lower()
                         mpn_lower = mpn.lower()
-                        
+
                         # Direct MPN match
                         if mpn_lower in text_lower:
                             score += 100
-                        
+
                         # Partial matches
-                        mpn_parts = mpn_lower.replace('-', ' ').replace('_', ' ').split()
+                        mpn_parts = mpn_lower.replace(
+                            '-', ' ').replace('_', ' ').split()
                         for part in mpn_parts:
                             if len(part) > 2 and part in text_lower:
                                 score += 20
-                        
+
                         # Filename match
                         if mpn_lower in pdf_text['filename'].lower():
                             score += 50
-                        
+
                         if score > best_score:
                             best_score = score
                             best_pdf = pdf_text
-                    
+
                     if best_pdf and best_score > 0:
-                        logger.info(f"   ✅ Best match: {best_pdf['filename']} (score: {best_score})")
-                        
-                        # Extract data using Claude
+                        logger.info(
+                            f"Best match: {best_pdf['filename']} (score: {best_score})")
+
                         truncated_text = best_pdf['text'][:15000]
-                        extraction_type = "unstructured"  # Default for multi-PDF
-                        
+                        extraction_type = "unstructured"
+
                         prompt = f"""
 You are a product data extraction expert. Extract product information for MPN "{mpn}" from the document below.
 The document is a product specification/catalog PDF. Extract whatever product specifications you can find.
@@ -1647,16 +2059,16 @@ Return ONLY a single valid JSON object in this format:
   "specifications": {{}}
 }}
 """
-                        
+
                         response = await call_llm_with_schema(
                             prompt=prompt,
                             response_model="PDFExtractionResponse",
                             llm_provider='claude',
                             estimated_tokens=4000
                         )
-                        
+
                         prod_dict = parse_llm_response(response, mpn)
-                        
+
                         if prod_dict:
                             product = await upsert_product_from_extraction(
                                 db, project_id, mpn, prod_dict, best_pdf['filename']
@@ -1669,7 +2081,8 @@ Return ONLY a single valid JSON object in this format:
                                 'score': best_score,
                                 'completeness': product.completeness_score
                             })
-                            logger.info(f"    Extracted data for {mpn} (score: {product.completeness_score}%)")
+                            logger.info(
+                                f"    Extracted data for {mpn} (score: {product.completeness_score}%)")
                         else:
                             raise ValueError("Could not extract data")
                     else:
@@ -1682,7 +2095,7 @@ Return ONLY a single valid JSON object in this format:
                             'status': 'failed',
                             'reason': 'No matching PDF found'
                         })
-                
+
                 except Exception as e:
                     logger.error(f"    Failed to process {mpn}: {e}")
                     failed += 1
@@ -1691,7 +2104,7 @@ Return ONLY a single valid JSON object in this format:
                         'status': 'failed',
                         'reason': str(e)
                     })
-                    
+
                     # Update product as failed
                     stmt = select(Product).where(
                         Product.project_id == project_id,
@@ -1702,7 +2115,7 @@ Return ONLY a single valid JSON object in this format:
                     if product:
                         product.enrichment_status = "failed"
                         db.add(product)
-            
+
             # Update source with final results
             source = await db.get(Source, batch_id)
             if source:
@@ -1715,16 +2128,17 @@ Return ONLY a single valid JSON object in this format:
                     "completed_at": datetime.utcnow().isoformat()
                 })
                 db.add(source)
-            
+
             await db.commit()
             await sync_project_status(db, project_id)
-            
-            logger.info(f" Multi-PDF extraction completed: {successful} successful, {failed} failed")
-            
+
+            logger.info(
+                f" Multi-PDF extraction completed: {successful} successful, {failed} failed")
+
         except Exception as e:
             logger.error(f" Multi-PDF extraction failed: {e}", exc_info=True)
             await db.rollback()
-            
+
             source = await db.get(Source, batch_id)
             if source:
                 source.status = "failed"

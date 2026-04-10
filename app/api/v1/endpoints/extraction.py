@@ -263,12 +263,24 @@ async def download_file(
             if not products:
                 mpns = source.source_metadata.get('mpns', [])
                 if not mpns:
+                    extracted_products = source.source_metadata.get('extracted_products', [])
                     mpn = source.source_metadata.get('mpn')
-                    mpns = [mpn] if mpn else []
+                    mpns = [p.get('mpn') for p in extracted_products if p.get('mpn')]
                 if mpns:
                     stmt = select(Product).where(
                         Product.project_id == source.project_id,
                         Product.product_code.in_(mpns)
+                    ).order_by(Product.created_at.asc())
+                    result = await db.execute(stmt)
+                    products = result.scalars().all()
+            if not products:
+                pdf_files = source.source_metadata.get('pdf_files', [])
+                filenames = [f.get('filename') for f in pdf_files if f.get('filename')]
+        
+                if filenames:
+                    stmt = select(Product).where(
+                        Product.project_id == source.project_id,
+                        Product.source_url.in_(filenames)
                     ).order_by(Product.created_at.asc())
                     result = await db.execute(stmt)
                     products = result.scalars().all()

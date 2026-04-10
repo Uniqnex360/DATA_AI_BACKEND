@@ -23,3 +23,10 @@ class StructuredExtractionRequest(BaseModel):
     use_case:str
 class SingleProductExtraction(BaseModel):
     data: Dict[str, PDFExtractionResponse] = Field(default_factory=dict)
+class ProductIdentificationItem(BaseModel):
+    title: str
+    context: str
+    confidence: float
+
+class ProductIdentificationResponse(BaseModel):
+    products: List[ProductIdentificationItem]
