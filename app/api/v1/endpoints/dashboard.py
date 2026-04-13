@@ -74,11 +74,14 @@ async def calculate_metrics(
         if proj:
             project_name = proj.name
             total_projects = 1
-            active_projects = 1 if proj.status == "active" else 0
+            active_projects = 1 if proj.status in ("processing", "partially_completed") else 0
     else:
         proj_stats = await db.execute(
-            select(func.count(Project.id), func.sum(case((Project.status == "active", 1), else_=0)))
-        )
+    select(
+        func.count(Project.id), 
+        func.sum(case((Project.status.in_(["processing", "partially_completed"]), 1), else_=0))
+    )
+)
         p_row = proj_stats.first()
         total_projects = p_row[0] or 0
         active_projects = p_row[1] or 0
@@ -531,4 +534,94 @@ async def get_category_distribution(
     except Exception as e:
         logger.error(
             f"Failed to load category distribution metrics: {e}", exc_info=True)
+        return []
+@router.get("/needs-attention")
+async def get_needs_attention(
+    project_id: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    date_field: DateField = Query("created_at"),
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        start_dt = parse_date(start_date, end=False)
+        end_dt = parse_date(end_date, end=True)
+        filters = build_product_filters(project_id, start_dt, end_dt, date_field=date_field)
+        
+        # Uncategorized products
+        uncategorized_stmt = select(func.count(Product.id)).where(
+            *filters,
+            (Product.taxonomy == None) | (Product.taxonomy == "")
+        )
+        uncategorized = (await db.execute(uncategorized_stmt)).scalar() or 0
+        
+        # Invalid attributes (placeholder - you may have a CleansingIssue table)
+        invalid_attributes = 0  # Replace with actual query
+        
+        # Pending aggregation
+        pending_stmt = select(func.count(Product.id)).where(
+            *filters,
+            Product.enrichment_status == "pending"
+        )
+        pending = (await db.execute(pending_stmt)).scalar() or 0
+        
+        # Failed jobs
+        failed_stmt = select(func.count(Product.id)).where(
+            *filters,
+            Product.enrichment_status == "failed"
+        )
+        failed = (await db.execute(failed_stmt)).scalar() or 0
+        
+        return {
+            "uncategorized": uncategorized,
+            "invalidAttributes": invalid_attributes,
+            "pendingAggregation": pending,
+            "failedJobs": failed
+        }
+    except Exception as e:
+        logger.error(f"Failed to get needs attention: {e}", exc_info=True)
+        return {"uncategorized": 0, "invalidAttributes": 0, "pendingAggregation": 0, "failedJobs": 0}
+
+@router.get("/recent-activity")
+async def get_recent_activity(
+    project_id: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    date_field: DateField = Query("created_at"),
+    limit: int = Query(10),
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        start_dt = parse_date(start_date, end=False)
+        end_dt = parse_date(end_date, end=True)
+        filters = build_product_filters(project_id, start_dt, end_dt, date_field=date_field)
+        
+        stmt = select(
+            Product.id,
+            Product.product_name,
+            Product.product_code,
+            Product.enrichment_status,
+            Product.updated_at
+        ).where(
+            *filters
+        ).order_by(
+            Product.updated_at.desc()
+        ).limit(limit)
+        
+        result = await db.execute(stmt)
+        rows = result.all()
+        
+        activities = []
+        for row in rows:
+            activity_type = "completed" if row.enrichment_status == "completed" else row.enrichment_status
+            activities.append({
+                "type": activity_type,
+                "title": row.product_name or row.product_code,
+                "subtitle": f"Status: {row.enrichment_status}",
+                "ts": row.updated_at.isoformat() if row.updated_at else ""
+            })
+        
+        return activities
+    except Exception as e:
+        logger.error(f"Failed to get recent activity: {e}", exc_info=True)
         return []
