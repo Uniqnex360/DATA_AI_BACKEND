@@ -1190,7 +1190,7 @@ async def save_pdf_source(
         if len(pdf_bytes) > MAX_FILE_SIZE:
             raise HTTPException(
                 400, f"File size exceeds {MAX_FILE_SIZE // (1024*1024)} MB limit")
-        is_unstructured = 'Unstructured' in use_case
+        is_unstructured = 'Unstructured PDF Extraction' in use_case
         source = Source(
             id=batch_id,
             source_type="pdf_pending_extraction",

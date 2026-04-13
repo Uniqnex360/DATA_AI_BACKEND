@@ -12,5 +12,6 @@ class Project(UUIDModel, table=True):
     status: str = Field(default="draft") 
     use_case: Optional[str] = Field(default=None)
     operation_mode: Optional[str] = Field(default="aggregation") 
-    
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow, sa_column_kwargs={"onupdate": datetime.utcnow})
     products: List["Product"] = Relationship(back_populates="project")

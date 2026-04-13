@@ -10,6 +10,7 @@ from app.models.product import Product
 from app.models.project import Project
 import logging
 from sqlalchemy.orm import aliased
+from datetime import datetime
 from app.schemas.project import ProjectCreate, ProjectResponse
 logger = logging.getLogger("projects_router")
 router = APIRouter()
@@ -28,6 +29,7 @@ def normalize_source_status(status: str | None, project_status: str | None = Non
     if status in ("processing", "failed"):
         return "In Progress"
     return "Yet to Start"
+
 @router.get("/", response_model=List[ProjectResponse])
 async def list_projects(
     operation_mode: str | None = None,
@@ -141,7 +143,10 @@ async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Project '{payload.name}' already exists"
             )
-        project = Project(**payload.model_dump())
+        project_data = payload.model_dump()
+        project_data['created_at'] = datetime.utcnow()
+        project_data['updated_at'] = datetime.utcnow()
+        project = Project(**project_data)
         db.add(project)
         await db.commit()
         await db.refresh(project)
