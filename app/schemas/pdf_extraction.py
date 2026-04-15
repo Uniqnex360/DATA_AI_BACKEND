@@ -7,6 +7,7 @@ class FreshAggregationRequest(BaseModel):
     mpns:List[str]
     project_id:str
     use_case:str
+    detailed_data: Optional[List[Dict]] = None 
 
 class PDFExtractionResponse(BaseModel):
     product_name: Optional[str] = ""

@@ -53,8 +53,27 @@ async def read_products(
             project_data = await db.get(Project, project_id)
 
         
+        product_list = []
+        for p in products:
+            p_dict = p.dict() if hasattr(p, 'dict') else p.__dict__
+            
+            # Get existing attributes
+            existing = set()
+            if p.attributes:
+                existing.update(p.attributes.keys())
+            if p.dynamic_attributes:
+                for attr in p.dynamic_attributes:
+                    if isinstance(attr, dict) and attr.get('name'):
+                        existing.add(attr['name'])
+            
+            # Get expected attributes from similar products
+            expected = await get_expected_attributes_async(p, db)
+            
+            # Missing = expected - existing
+            p_dict['missing_attributes'] = [a for a in expected if a not in existing]
+            product_list.append(p_dict)
         return {
-            "products": products,
+            "products": product_list,
             "total": total,
             "project": project_data, 
             "skip": skip,
@@ -153,4 +172,54 @@ db: AsyncSession = Depends(get_session),):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch project attributes",
         )
-        
+async def get_expected_attributes_async(product: Product, db: AsyncSession) -> List[str]:
+    """Async version to get expected attributes from similar products"""
+    try:
+        if not product.taxonomy and not product.category_1:
+            return []
+
+        stmt = select(Product).where(
+            Product.id != product.id,
+            Product.enrichment_status == "completed",
+        )
+
+        if product.taxonomy:
+            stmt = stmt.where(Product.taxonomy == product.taxonomy)
+        elif product.category_1:
+            stmt = stmt.where(Product.category_1 == product.category_1)
+
+        stmt = stmt.limit(10)
+
+        result = await db.execute(stmt)
+        similar_products = result.scalars().all()
+
+        if not similar_products:
+            return []
+
+        attribute_counts = {}
+
+        for p in similar_products:
+            attrs = set()
+
+            if p.attributes:
+                attrs.update(p.attributes.keys())
+
+            if p.dynamic_attributes:
+                for attr in p.dynamic_attributes:
+                    if isinstance(attr, dict) and attr.get("name"):
+                        attrs.add(attr["name"])
+
+            for attr in attrs:
+                attribute_counts[attr] = attribute_counts.get(attr, 0) + 1
+
+        # Attributes that appear in at least 30% of similar products
+        threshold = max(1, len(similar_products) * 0.3)
+        expected = [
+            attr for attr, count in attribute_counts.items() if count >= threshold
+        ]
+
+        return sorted(expected)
+
+    except Exception:
+        # Optionally log the exception here
+        return []
