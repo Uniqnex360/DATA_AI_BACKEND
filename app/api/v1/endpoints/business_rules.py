@@ -287,37 +287,28 @@ async def update_rule_status(
         )
         result = await db.execute(stmt)
         rule = result.scalars().first()
-        
         if not rule:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Rule '{rule_id}' not found"
             )
-        
         if rule.is_system:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="System rules cannot be modified"
             )
-        
-        # If deactivating rule, also deactivate all its prompts
         if new_status == RuleStatus.INACTIVE:
             prompt_stmt = select(RulePrompt).where(RulePrompt.rule_id == rule.id)
             prompt_result = await db.execute(prompt_stmt)
             prompts = prompt_result.scalars().all()
-            
             for prompt in prompts:
                 prompt.status = RuleStatus.INACTIVE
                 prompt.updated_at = datetime.utcnow()
                 db.add(prompt)
-        
         rule.status = new_status
         rule.updated_at = datetime.utcnow()
-        
         db.add(rule)
         await db.commit()
-        
-        # Reload with prompts
         final_stmt = (
             select(BusinessRule)
             .options(selectinload(BusinessRule.prompts))
@@ -325,9 +316,7 @@ async def update_rule_status(
         )
         final_result = await db.execute(final_stmt)
         updated_rule = final_result.scalars().one()
-        
         return updated_rule
-        
     except HTTPException:
         raise
     except Exception as e:
@@ -337,8 +326,6 @@ async def update_rule_status(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update rule status"
         )
-
-
 @router.delete('/prompts/{prompt_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_prompt(
     prompt_id: str,
@@ -347,18 +334,13 @@ async def delete_prompt(
     """Delete a prompt"""
     try:
         prompt = await db.get(RulePrompt, prompt_id)
-        
         if not prompt:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail='Prompt not found'
             )
-        
         rule_id = prompt.rule_id
-        
         await db.delete(prompt)
-        
-        # Check if rule should be deactivated
         stmt = (
             select(BusinessRule)
             .options(selectinload(BusinessRule.prompts))
@@ -366,16 +348,13 @@ async def delete_prompt(
         )
         result = await db.execute(stmt)
         rule = result.scalars().one_or_none()
-        
         if rule:
             active_prompts = [p for p in rule.prompts if p.status == RuleStatus.ACTIVE]
             if not active_prompts and rule.status == RuleStatus.ACTIVE:
                 rule.status = RuleStatus.INACTIVE
                 rule.updated_at = datetime.utcnow()
                 db.add(rule)
-        
         await db.commit()
-        
     except HTTPException:
         raise
     except Exception as e:
@@ -385,8 +364,6 @@ async def delete_prompt(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete prompt"
         )
-
-
 @router.delete('/{rule_id}', status_code=status.HTTP_204_NO_CONTENT)
 async def delete_business_rule(
     rule_id: str,
@@ -402,22 +379,18 @@ async def delete_business_rule(
         )
         result = await db.execute(stmt)
         rule = result.scalars().first()
-        
         if not rule:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Rule '{rule_id}' not found"
             )
-        
         if rule.is_system:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="System rules cannot be deleted"
             )
-        
         await db.delete(rule)
         await db.commit()
-        
     except HTTPException:
         raise
     except Exception as e:

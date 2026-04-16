@@ -36,6 +36,8 @@ class BusinessRuleBase(BaseModel):
     category: RuleCategory
     description: Optional[str] = None
     status: RuleStatus = RuleStatus.ACTIVE
+    operation_mode:Optional[str]=None
+    use_case:Optional[str]=None
     @validator('title')
     def validate_title(cls,v):
         if not v  or not v.strip():
@@ -54,6 +56,8 @@ class BusinessRuleUpdate(BaseModel):
     description: Optional[str] = None
     category:Optional[str]=None
     status: Optional[RuleStatus] = None
+    operation_mode:Optional[str]=None
+    use_case:Optional[str]=None
 
 class BusinessRuleResponse(BusinessRuleBase):
     id: str

@@ -22,6 +22,8 @@ class BusinessRule(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     is_system: bool = Field(default=False)
+    operation_mode:Optional[str]=Field(default=None,index=True)
+    use_case:Optional[str]=Field(default=None,index=True)
 
     @staticmethod
     def generate_rule_id(title: str) -> str:
