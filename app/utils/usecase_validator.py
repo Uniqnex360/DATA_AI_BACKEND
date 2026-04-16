@@ -96,9 +96,9 @@ def validate_file_against_use_case(rows: List[Dict[str, Any]], use_case: str) ->
     use_case_lower = use_case.lower() if use_case else ""
     if 'data cleaning and standardization' in use_case_lower:
         return validate_cleaning_requirements(rows, use_case)
-    elif 'with categories' in use_case_lower and 'back filling' not in use_case_lower:
+    elif 'products with category assignments' in use_case_lower and 'back filling' not in use_case_lower:
         return validate_with_categories_flexible(rows, use_case)
-    elif 'without categories' in use_case_lower:
+    elif 'products without category assignments' in use_case_lower:
         return validate_without_categories(rows, use_case)
     elif 'back filling' in use_case_lower and 'validation' not in use_case_lower:
         return validate_backfill_requirements(rows, use_case)

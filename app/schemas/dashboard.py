@@ -1,5 +1,7 @@
+from re import I
+
 from pydantic import BaseModel
-from typing import Optional,List
+from typing import Literal, Optional,List
 class CategoryStat(BaseModel):
     category_name:str
     count:int
@@ -59,3 +61,18 @@ class CategoryAttributeStat(BaseModel):
     aggregationAttributes: int
     enrichmentAttributes: int
     completedAttributes: int
+ProjectStatus = Literal["active", "completed", "stalled", "new"]
+
+class ProjectOverview(BaseModel):
+    id:str
+    name:str
+    description:Optional[str]=None
+    totalProducts:int
+    aggregated:int
+    aggregationFailed:int
+    enrichment:int
+    enrichmentFailed:int
+    cleaning:int
+    overallPct:int
+    status:ProjectStatus
+    lastActive:str

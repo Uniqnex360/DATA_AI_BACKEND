@@ -6,7 +6,7 @@ from sqlmodel import select, func, case
 from app.core.database import get_session
 from app.models.product import Product
 from app.models.project import Project
-from app.schemas.dashboard import BrandAttributeStat, BrandFlowStat, CategoryAttributeStat, CategoryDistributionStat, CategoryFlowStat, DashboardMetricsResponse, TimelineStat
+from app.schemas.dashboard import BrandAttributeStat, BrandFlowStat, CategoryAttributeStat, CategoryDistributionStat, CategoryFlowStat, DashboardMetricsResponse, ProjectOverview, TimelineStat
 from typing import Optional, List
 from datetime import datetime, date, time, timezone
 logger = logging.getLogger("dashboard_metrics")
@@ -46,13 +46,13 @@ async def calculate_metrics(
 
     stats = (await db.execute(stmt)).first()
 
-    # ✅ Move these BEFORE using them
+    
     completed_count = stats.aggregated or 0
     failed_count = stats.failed or 0
     pending_count = stats.pending or 0
     total_products = stats.total or 0
 
-    # Category distribution
+    
     cat_expression = Product.taxonomy
     cat_stmt = (
         select(cat_expression, func.count(Product.id))
@@ -64,7 +64,7 @@ async def calculate_metrics(
     cat_result = await db.execute(cat_stmt)
     categories = [{"category_name": row[0] or "Uncategorized", "count": row[1]} for row in cat_result.all()]
 
-    # Project stats
+    
     total_projects = 0
     active_projects = 0
     project_name = "Global Overview"
@@ -77,7 +77,7 @@ async def calculate_metrics(
             total_projects = 1
             active_projects = 1 if proj.status in ("processing", "partially_completed") else 0
     else:
-        # ✅ Global projects count
+        
         proj_stats = await db.execute(
             select(
                 func.count(Project.id),
@@ -88,7 +88,7 @@ async def calculate_metrics(
         total_projects = p_row[0] or 0
         active_projects = p_row[1] or 0
 
-    # Initialize counters
+    
     aggregated_products = 0
     cleaned_products = 0
     enriched_products = 0
@@ -117,17 +117,17 @@ async def calculate_metrics(
             enriched_products = max(enriched_products, enrichment_workflow_count)
 
     else:
-        # ✅ Global metrics - fixed
+        
         aggregated_products = completed_count
         
-        # Count products in enrichment workflow
+        
         enrichment_workflow_stmt = select(func.count(Product.id)).where(
             *filters,
             ((Product.workflow_stage == "enrichment") | (Product.needs_enrichment == True))
         )
         enriched_products = (await db.execute(enrichment_workflow_stmt)).scalar() or 0
         
-        # Count cleaned products (completed in cleaning mode)
+        
         cleaning_stmt = select(func.count(Product.id)).join(
             Project, Product.project_id == Project.id
         ).where(
@@ -554,3 +554,82 @@ async def get_recent_activity(
     except Exception as e:
         logger.error(f"Failed to get recent activity: {e}", exc_info=True)
         return []
+@router.get("/projects-overview", response_model=List[ProjectOverview])
+async def get_projects_overview(
+    status_filter: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_session)
+):
+    """Get aggregated project statistics for the projects overview table"""
+    try:
+        
+        stmt = select(
+            Project.id,
+            Project.name,
+            Project.status,
+            Project.updated_at,
+            func.count(Product.id).label("total_products")
+        ).outerjoin(
+            Product, Project.id == Product.project_id
+        ).group_by(
+            Project.id
+        )
+        
+        result = await db.execute(stmt)
+        projects = result.all()
+        
+        overview_list = []
+        for proj in projects:
+            
+            status_counts = await db.execute(
+                select(
+                    func.count(Product.id),
+                    func.sum(case((Product.enrichment_status == "completed", 1), else_=0)),
+                    func.sum(case((Product.enrichment_status == "failed", 1), else_=0)),
+                    func.sum(case((Product.workflow_stage == "enrichment", 1), else_=0)),
+                    func.sum(case((Product.workflow_stage == "cleaning", 1), else_=0)),
+                ).where(Product.project_id == proj.id)
+            )
+            counts = status_counts.first()
+            
+            total = counts[0] or 0
+            aggregated = counts[1] or 0
+            failed = counts[2] or 0
+            enrichment = counts[3] or 0
+            cleaning = counts[4] or 0
+            
+            overall_pct = round((aggregated / total) * 100) if total > 0 else 0
+            
+            overview_list.append({
+                "id": str(proj.id),
+                "name": proj.name,
+                "totalProducts": total,
+                "aggregated": aggregated,
+                "aggregationFailed": failed,
+                "enrichment": enrichment,
+                "enrichmentFailed": 0,  
+                "cleaning": cleaning,
+                "overallPct": overall_pct,
+                "status": map_project_status(proj.status),
+                "lastActive": proj.updated_at.strftime("%Y-%m-%d") if proj.updated_at else "Never"
+            })
+        
+        
+        if status_filter and status_filter != "all":
+            overview_list = [p for p in overview_list if p["status"] == status_filter]
+        
+        return overview_list
+        
+    except Exception as e:
+        logger.error(f"Failed to get projects overview: {e}", exc_info=True)
+        return []
+
+
+def map_project_status(status: str) -> str:
+    status_map = {
+        "draft": "new",
+        "processing": "active",
+        "partially_completed": "active",
+        "completed": "completed",
+        "failed": "stalled"
+    }
+    return status_map.get(status, "new")
