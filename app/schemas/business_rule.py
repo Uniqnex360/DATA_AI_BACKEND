@@ -7,6 +7,7 @@ from app.models.enums import RuleCategory, RuleStatus
 class RulePromptBase(BaseModel):
     prompt_name:str
     prompt_text:str
+    stage: str
     description:Optional[str]=None
     priority:int=100
     variables:Optional[List[str]]=None

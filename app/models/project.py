@@ -9,6 +9,7 @@ class Project(UUIDModel, table=True):
     __tablename__ = 'catalog_projects'
     name: str = Field(index=True)
     client: Optional[str] = None
+    aggregation_type:Optional[str] = Field(default=None)
     status: str = Field(default="draft") 
     use_case: Optional[str] = Field(default=None)
     operation_mode: Optional[str] = Field(default="aggregation") 

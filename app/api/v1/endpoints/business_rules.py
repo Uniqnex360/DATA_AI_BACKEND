@@ -277,7 +277,6 @@ async def update_rule_status(
     new_status: RuleStatus,
     db: AsyncSession = Depends(get_session)
 ):
-    """Update business rule status (Active/Inactive)"""
     try:
         stmt = select(BusinessRule).where(
             or_(
@@ -331,7 +330,6 @@ async def delete_prompt(
     prompt_id: str,
     db: AsyncSession = Depends(get_session)
 ):
-    """Delete a prompt"""
     try:
         prompt = await db.get(RulePrompt, prompt_id)
         if not prompt:
@@ -369,7 +367,6 @@ async def delete_business_rule(
     rule_id: str,
     db: AsyncSession = Depends(get_session)
 ):
-    """Delete a business rule and all its prompts"""
     try:
         stmt = select(BusinessRule).where(
             or_(
@@ -400,3 +397,46 @@ async def delete_business_rule(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete rule"
         )
+@router.patch("/prompts/{prompt_id}/status")
+async def update_prompt_status(
+    prompt_id: str,
+    new_status: RuleStatus,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        prompt = await db.get(RulePrompt, prompt_id)
+        if not prompt:
+            raise HTTPException(status_code=404, detail="Prompt not found")
+        rule = await db.get(BusinessRule, prompt.rule_id)
+        if not rule:
+            raise HTTPException(status_code=404, detail="Rule not found")
+        if new_status == RuleStatus.ACTIVE:
+            stmt = (
+                select(RulePrompt)
+                .join(BusinessRule, RulePrompt.rule_id == BusinessRule.id)
+                .where(
+                    RulePrompt.stage == prompt.stage,
+                    BusinessRule.operation_mode == rule.operation_mode,
+                    BusinessRule.use_case == rule.use_case,
+                    RulePrompt.id != prompt.id,
+                    RulePrompt.status == RuleStatus.ACTIVE,
+                )
+            )
+            result = await db.execute(stmt)
+            others = result.scalars().all()
+            for p in others:
+                p.status = RuleStatus.INACTIVE
+                p.updated_at = datetime.utcnow()
+                db.add(p)
+        prompt.status = new_status
+        prompt.updated_at = datetime.utcnow()
+        db.add(prompt)
+        await db.commit()
+        await db.refresh(prompt)
+        return prompt
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        print(f"Error updating prompt status for {prompt_id}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")

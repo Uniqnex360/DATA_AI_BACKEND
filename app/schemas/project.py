@@ -9,6 +9,7 @@ class ProjectCreate(BaseModel):
     use_case: Optional[str] = None
     operation_mode:Optional[str]='aggregation'
     status: Optional[str] = "draft"
+    aggregation_type: Optional[str] = None  
 
 
 class ProjectUpdate(BaseModel):

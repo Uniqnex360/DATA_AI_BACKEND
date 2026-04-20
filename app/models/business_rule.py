@@ -37,6 +37,7 @@ class RulePrompt(SQLModel, table=True):
     __tablename__ = "rule_prompts"
     id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
     rule_id: str = Field(foreign_key="business_rules.id", index=True)
+    stage:str=Field(index=True)
     prompt_name: str = Field(max_length=255)
     prompt_text: str
     description: Optional[str] = None

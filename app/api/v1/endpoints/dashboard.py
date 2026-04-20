@@ -559,7 +559,6 @@ async def get_projects_overview(
     status_filter: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_session)
 ):
-    """Get aggregated project statistics for the projects overview table"""
     try:
         
         stmt = select(
