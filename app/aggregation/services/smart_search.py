@@ -33,46 +33,46 @@ class SmartSearchService(ISearchService):
     async def _build_targeted_query(self, mpn: str, brand: str, title: str, sku: str = None, operation_mode: str = "aggregation", use_case: str = "") -> str:
         from app.aggregation.aggregate_product import call_llm_with_schema
         from pydantic import BaseModel
-        engine = RuleEngine(self.db)
-        prompt = await engine.get_active_prompt(
-        stage="discovery_query",
-        operation_mode=operation_mode,
-        use_case=use_case,
-        context={
-            "brand": brand,
-            "mpn": mpn,
-            "title": title,
-            "sku": sku or ""
-        }
-    )
-        if not prompt:  
-            logger.error("No search service prompt configured.")
-            return {
-                                "status": "failed",
-                                "reason": "No search service prompt configured."
-                            }
-    #     prompt = f"""
-    # You are a product data researcher. Given a product, generate the single best 
-    # Google search query to find its official specifications or datasheet page.
-    # Product:
-    # - Brand: {brand}
-    # - MPN: {mpn}
-    # - Title: {title}
-    # Rules:
-    # - The query should target the manufacturer's official site or the most authoritative 
-    # distributor/retailer for this type of product
-    #  - If the MPN contains hyphens or looks like a specific kit (e.g. DCF403-1PS-NA), DO NOT restrict it to a single site using the 'site:' operator. Just use the brand and MPN.
-    # - Keep it short and precise — brand + MPN + best site or keyword
-    # - Examples:
-    # - Dewalt power tool → "Dewalt DCF414-B-NA site:dewalt.com specifications"
-    # - Heli-Coil insert → "Heli-Coil 1084-10CNPF250 site:grainger.com OR site:mscdirect.com"
-    # - Nike shoes → "Nike Air Max 90 site:nike.com specifications"
-    # - Car part → "Bosch 0986479D27 site:bosch-automotive.com OR site:rockauto.com"
-    # - Food product → "Heinz Tomato Ketchup 57 site:heinz.com product details"
-    # - Electronics → "Sony WH-1000XM5 site:sony.com specifications"
-    # - If possible, include `inurl:product` or `inurl:p/` to target product pages directly.
-    # Return JSON: {{"search_query": "your query here"}}
-    # """
+    #     engine = RuleEngine(self.db)
+    #     prompt = await engine.get_active_prompt(
+    #     stage="discovery_query",
+    #     operation_mode=operation_mode,
+    #     use_case=use_case,
+    #     context={
+    #         "brand": brand,
+    #         "mpn": mpn,
+    #         "title": title,
+    #         "sku": sku or ""
+    #     }
+    # )
+    #     if not prompt:  
+    #         logger.error("No search service prompt configured.")
+    #         return {
+    #                             "status": "failed",
+    #                             "reason": "No search service prompt configured."
+    #                         }
+        prompt = f"""
+    You are a product data researcher. Given a product, generate the single best 
+    Google search query to find its official specifications or datasheet page.
+    Product:
+    - Brand: {brand}
+    - MPN: {mpn}
+    - Title: {title}
+    Rules:
+    - The query should target the manufacturer's official site or the most authoritative 
+    distributor/retailer for this type of product
+     - If the MPN contains hyphens or looks like a specific kit (e.g. DCF403-1PS-NA), DO NOT restrict it to a single site using the 'site:' operator. Just use the brand and MPN.
+    - Keep it short and precise — brand + MPN + best site or keyword
+    - Examples:
+    - Dewalt power tool → "Dewalt DCF414-B-NA site:dewalt.com specifications"
+    - Heli-Coil insert → "Heli-Coil 1084-10CNPF250 site:grainger.com OR site:mscdirect.com"
+    - Nike shoes → "Nike Air Max 90 site:nike.com specifications"
+    - Car part → "Bosch 0986479D27 site:bosch-automotive.com OR site:rockauto.com"
+    - Food product → "Heinz Tomato Ketchup 57 site:heinz.com product details"
+    - Electronics → "Sony WH-1000XM5 site:sony.com specifications"
+    - If possible, include `inurl:product` or `inurl:p/` to target product pages directly.
+    Return JSON: {{"search_query": "your query here"}}
+    """
     
         try:
             result = await call_llm_with_schema(
