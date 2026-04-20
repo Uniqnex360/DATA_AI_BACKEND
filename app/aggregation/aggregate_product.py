@@ -136,7 +136,7 @@ async def aggregate_product(
     try:
         logger.info(f"Starting aggregation for {mpn}")
         logger.info("Stage 1: URL Discovery")
-        search_service = SmartSearchService(llm_provider, max_results=5)
+        search_service = SmartSearchService(llm_provider,db=db, max_results=5)
         query = title if (
             mpn in title and brand in title) else f"{brand} {mpn} {title}"
         query = query.strip()
