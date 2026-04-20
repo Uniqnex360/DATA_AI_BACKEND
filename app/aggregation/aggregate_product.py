@@ -119,302 +119,6 @@ def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
         })
     return unified_sources
 
-# async def aggregate_product(
-#     mpn: str,
-#     title: str,
-#     sku: Optional[str] = None,
-#     upc: Optional[str] = None,
-#     brand: Optional[str] = None,
-#     taxonomy: Optional[str] = None,
-#     primary_attributes: Optional[List[str]] = None,
-#     db: Optional[AsyncSession] = None,
-#     project_id: str = None,
-#     llm_provider: str = 'openai',
-#     attribute_chunk: Optional[List[str]] = None,
-#     existing_excel_attrs: Optional[Dict[str, str]] = None
-# ) -> Dict:
-#     try:
-#         logger.info(f"Starting aggregation for {mpn}")
-#         logger.info("Stage 1: URL Discovery")
-#         search_service = SmartSearchService(llm_provider, max_results=5)
-#         query = title if (
-#             mpn in title and brand in title) else f"{brand} {mpn} {title}"
-#         query = query.strip()
-#         urls, candidate_images = await search_service.get_urls(
-#             query, mpn=mpn, brand=brand, title=title, sku=sku
-#         )
-#         if not urls:
-#             return {
-#                 'status': 'failed',
-#                 'reason': 'No sources found',
-#                 'golden_record': {'attributes': {}}
-#             }
-#         logger.info(f"Stage 2: Download & Extraction from {len(urls)} sources")
-#         download_service = HttpDownloadService(
-#             timeout=30,
-#         )
-#         all_extractions = []
-#         _url_semaphore = asyncio.Semaphore(2)
-#         async def process_url(url):
-#             async with _url_semaphore:
-#                 try:
-#                     content = await download_service.download(url)
-#                     if content is None:
-#                         return None
-#                     if content['type'] == 'html':
-#                         html_text = content['raw_bytes'].decode(
-#                             'utf-8', errors='ignore')
-#                         logger.info(
-#                             f"Downloaded HTML from {url} - size: {len(html_text)} bytes")
-#                         attrs_to_use = primary_attributes or []
-#                         if attribute_chunk:
-#                             other_attrs = [
-#                                 a for a in attrs_to_use if a not in attribute_chunk]
-#                             attrs_to_use = attribute_chunk + other_attrs
-#                         prompt_config = build_extraction_prompt(
-#                             product_name=title,
-#                             mpn=mpn,
-#                             brand=brand or "",
-#                             taxonomy=taxonomy or "",
-#                             primary_attributes=attrs_to_use,
-#                             html_content=html_text,
-#                             candidate_images=candidate_images
-#                         )
-#                         extraction_result = await call_llm_with_schema(
-#                             prompt=prompt_config['prompt'],
-#                             response_model="ExtractionResponse",
-#                             llm_provider=llm_provider,
-#                             estimated_tokens=3000
-#                         )
-#                         attr_dicts = []
-#                         image_url = None
-#                         if extraction_result and extraction_result.product_detected:
-#                             if hasattr(extraction_result, 'image_url'):
-#                                 image_url = extraction_result.image_url
-#                             for attr in extraction_result.attributes:
-#                                 attr_dicts.append({
-#                                     'name': attr.name,
-#                                     'value': attr.value,
-#                                     'unit': attr.unit if hasattr(attr, 'unit') else None,
-#                                     'confidence': attr.confidence if hasattr(attr, 'confidence') else 0.9
-#                                 })
-#                         if not image_url:
-#                             image_url = await extract_best_image(html_text, url, mpn)
-#                             if image_url:
-#                                 logger.info(
-#                                     f"Fallback extracted image: {image_url}")
-#                         domain = urlparse(url).netloc
-#                         return {
-#                             'url': url,
-#                             'domain': domain,
-#                             'attributes': attr_dicts,
-#                             'image_url': image_url,
-#                             'source_type': 'html'
-#                         }
-#                     elif content['type'] == 'pdf':
-#                         from app.aggregation.services.pdf_service import PDFExtractionService
-#                         pdf_service = PDFExtractionService(max_pages=10)
-#                         pdf_text = await pdf_service.extract_text(content['raw_bytes'])
-#                         if pdf_text and len(pdf_text.strip()) > 100:
-#                             logger.info(
-#                                 f"Extracted {len(pdf_text)} chars from PDF")
-#                             attrs_to_use = primary_attributes or []
-#                             if attribute_chunk:
-#                                 other_attrs = [
-#                                     a for a in attrs_to_use if a not in attribute_chunk]
-#                                 attrs_to_use = attribute_chunk + other_attrs
-#                             prompt_config = build_pdf_extraction_prompt(
-#                                 product_name=title,
-#                                 mpn=mpn,
-#                                 brand=brand or "",
-#                                 taxonomy=taxonomy or "",
-#                                 primary_attributes=attrs_to_use,
-#                                 pdf_text=pdf_text
-#                             )
-#                             extraction_result = await call_llm_with_schema(
-#                                 prompt=prompt_config['prompt'],
-#                                 response_model="ExtractionResponse",
-#                                 llm_provider=llm_provider,
-#                                 estimated_tokens=4000
-#                             )
-#                             if extraction_result and extraction_result.product_detected:
-#                                 attr_dicts = []
-#                                 image_url = None
-#                                 if hasattr(extraction_result, 'image_url'):
-#                                     image_url = extraction_result.image_url
-#                                 for attr in extraction_result.attributes:
-#                                     attr_dicts.append({
-#                                         'name': attr.name,
-#                                         'value': attr.value,
-#                                         'unit': getattr(attr, 'unit', None),
-#                                         'confidence': getattr(attr, 'confidence', 0.95)
-#                                     })
-#                                 domain = urlparse(url).netloc
-#                                 return {
-#                                     'url': url,
-#                                     'domain': domain,
-#                                     'attributes': attr_dicts,
-#                                     'image_url': image_url,
-#                                     'source_type': 'pdf'
-#                                 }
-#                     return None
-#                 except Exception as e:
-#                     logger.warning(f"Extraction failed for {url}: {e}")
-#                     return None
-#         tasks = [process_url(url) for url in urls[:5]]
-#         results = await asyncio.gather(*tasks)
-#         all_extractions = [r for r in results if r is not None]
-#         if not all_extractions:
-#             return {
-#                 'status': 'failed',
-#                 'reason': 'No valid extractions',
-#                 'golden_record': {'attributes': {}}
-#             }
-#         logger.info(
-#             f"Stage 2 extracted {sum(len(s['attributes']) for s in all_extractions)} total attributes")
-#         logger.info("Stage 3: Combined Cleaning, Unification & Standardization")
-#         raw_attrs_for_combine = []
-#         for src_idx, source in enumerate(all_extractions):
-#             for attr in source['attributes']:
-#                 raw_attrs_for_combine.append({
-#                     'temp_id': f"{src_idx}_{len(raw_attrs_for_combine)}",
-#                     'name': attr['name'],
-#                     'value': attr['value'],
-#                     'unit': attr.get('unit'),
-#                     'source_url': source['url'],
-#                     'confidence': attr.get('confidence', 0.9)
-#                 })
-#         project = await db.get(Project, project_id) if db and project_id else None
-#         use_case = project.use_case.lower() if project and project.use_case else ""
-#         combine_prompt = _build_combined_prompt(
-#             raw_attrs_for_combine, brand, mpn, title, taxonomy, existing_excel_attrs=existing_excel_attrs, use_case=use_case)
-#         async for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)):
-#             with attempt:
-#                 combined_result = await call_llm_with_schema(
-#                     prompt=combine_prompt,
-#                     response_model="UnifiedStandardizedResponse",
-#                     llm_provider=llm_provider,
-#                     estimated_tokens=3000 + len(raw_attrs_for_combine) * 200,
-#                     max_tokens=4000
-#                 )
-#         golden_attributes = combined_result.attributes
-#         valid_source_urls = {source['url'] for source in all_extractions}
-#         for attr in golden_attributes:
-#             if hasattr(attr, 'sources') and attr.sources:
-#                 attr.sources = [
-#                     src for src in attr.sources if src in valid_source_urls]
-#         logger.info(
-#             f"Stage 3 produced {len(golden_attributes)} unified attributes")
-#         validation_conflicts = {}
-#         excel_overrides = {}
-#         if "back filling" in use_case or "validation" in use_case:
-#             logger.info("Stage 4: Excel Validation")
-#             stmt = select(Product).where(Product.product_code == mpn)
-#             result = await db.execute(stmt)
-#             product = result.scalars().first()
-#             excel_attrs = {}
-#             if product and product.dynamic_attributes:
-#                 for attr in product.dynamic_attributes:
-#                     if isinstance(attr, dict) and attr.get('name'):
-#                         excel_attrs[attr['name']] = attr.get('value', '')
-#             web_attrs = {attr.name: attr.value for attr in golden_attributes}
-#             validation_config = build_validation_prompt(
-#                 excel_attributes=excel_attrs,
-#                 web_attributes=web_attrs,
-#                 mpn=mpn,
-#                 taxonomy=taxonomy or ""
-#             )
-#             validation_result = await call_llm_with_schema(
-#                 prompt=validation_config['prompt'],
-#                 response_model="ValidationResponse",
-#                 llm_provider=llm_provider,
-#                 estimated_tokens=1500
-#             )
-#             if "back filling" in use_case and "validation" not in use_case:
-#                 for val in validation_result.validations:
-#                     if not val.matches and val.recommendation == "use_web":
-#                         excel_overrides[val.attribute_name] = val.web_value
-#                         validation_conflicts[val.attribute_name] = val.web_value
-#                         for attr in golden_attributes:
-#                             if attr.name == val.attribute_name:
-#                                 attr.value = val.web_value
-#             elif "validation" in use_case and "back filling" not in use_case:
-#                 for val in validation_result.validations:
-#                     if not val.matches and val.recommendation == "use_web":
-#                         validation_conflicts[val.attribute_name] = val.web_value
-#             elif "back filling" in use_case and "validation" in use_case:
-#                 for val in validation_result.validations:
-#                     if not val.matches and val.recommendation == "use_web":
-#                         excel_overrides[val.attribute_name] = val.web_value
-#                         validation_conflicts[val.attribute_name] = val.web_value
-#                         for attr in golden_attributes:
-#                             if attr.name == val.attribute_name:
-#                                 attr.value = val.web_value
-#             else:
-#                 for val in validation_result.validations:
-#                     if not val.matches and val.recommendation == "use_web":
-#                         validation_conflicts[val.attribute_name] = val.web_value
-#         logger.info("Stage 5: Multi-source Aggregation")
-#         if golden_attributes:
-#             avg_conf = sum(a.confidence for a in golden_attributes) / \
-#                 len(golden_attributes)
-#         else:
-#             avg_conf = 0.0
-#         golden_attr_dicts = [
-#             {
-#                 'name': a.name,
-#                 'value': a.value,
-#                 'unit': a.unit,
-#                 'confidence': a.confidence,
-#                 'sources': a.sources
-#             }
-#             for a in golden_attributes
-#         ]
-#         logger.info("Stage 6: Marketing Enrichment")
-#         enrichment_config = build_enrichment_prompt(
-#             golden_attributes=golden_attr_dicts,
-#             product_name=title,
-#             brand=brand or "",
-#             taxonomy=taxonomy or ""
-#         )
-#         enrichment_result = await call_llm_with_schema(
-#             prompt=enrichment_config['prompt'],
-#             response_model="EnrichmentResponse",
-#             llm_provider=llm_provider,
-#             estimated_tokens=2000,
-#             max_tokens=4000
-#         )
-#         best_image = extract_best_image_fallback(all_extractions)
-#         if not best_image and candidate_images:
-#             for candidate in candidate_images:
-#                 is_valid = await validate_image_url(candidate)
-#                 if is_valid:
-#                     logger.info(f"Fallback to SearXNG image: {candidate}")
-#                     best_image = candidate
-#                     break
-#         return {
-#             'status': 'success',
-#             'golden_record': {
-#                 'attributes': {attr['name']: attr for attr in golden_attr_dicts},
-#                 'short_description': enrichment_result.short_description or "",
-#                 'long_description': enrichment_result.long_description,
-#                 'features': enrichment_result.features,
-#                 'sources_consulted': list({s['url'] for s in all_extractions}),
-#                 'confidence': avg_conf
-#             },
-#             'validation_conflicts': validation_conflicts,
-#             'excel_overrides': excel_overrides,
-#             'image_url': best_image,
-#             'mode': 'backfill' if 'back filling' in use_case else 'standard'
-#         }
-#     except Exception as e:
-#         logger.error(f"Pipeline failed for {mpn}: {e}", exc_info=True)
-#         return {
-#             'status': 'failed',
-#             'reason': str(e),
-#             'golden_record': {'attributes': {}}
-#         }
-
 async def aggregate_product(
     mpn: str,
     title: str,
@@ -430,25 +134,14 @@ async def aggregate_product(
     existing_excel_attrs: Optional[Dict[str, str]] = None
 ) -> Dict:
     try:
-        if not db:
-            raise ValueError("DB session required for dynamic prompt system.")
-        project = await db.get(Project, project_id) if db and project_id else None
-        operation_mode = (project.operation_mode or "aggregation").lower() if project else "aggregation"
-        use_case = project.use_case if project and project.use_case else ""
-        
-        engine = RuleEngine(db)
         logger.info(f"Starting aggregation for {mpn}")
         logger.info("Stage 1: URL Discovery")
-        search_service = SmartSearchService(llm_provider,db=db, max_results=5)
-        
-        b = (brand or "").strip()
-        if mpn in title and b and b in title:
-            query = title
-        else:
-            query = f"{b} {mpn} {title}".strip()
+        search_service = SmartSearchService(llm_provider, max_results=5)
+        query = title if (
+            mpn in title and brand in title) else f"{brand} {mpn} {title}"
         query = query.strip()
         urls, candidate_images = await search_service.get_urls(
-            query, mpn=mpn, brand=brand, title=title, sku=sku,operation_mode=operation_mode,use_case=use_case
+            query, mpn=mpn, brand=brand, title=title, sku=sku
         )
         if not urls:
             return {
@@ -462,7 +155,6 @@ async def aggregate_product(
         )
         all_extractions = []
         _url_semaphore = asyncio.Semaphore(2)
-        
         async def process_url(url):
             async with _url_semaphore:
                 try:
@@ -479,32 +171,17 @@ async def aggregate_product(
                             other_attrs = [
                                 a for a in attrs_to_use if a not in attribute_chunk]
                             attrs_to_use = attribute_chunk + other_attrs
-                        primary_attrs_display = "\n".join([f"- {attr}" for attr in attrs_to_use]) if attrs_to_use else "None"
-                        candidate_section = ""
-                        if candidate_images:
-                            candidate_section = "\n".join([f"- {img}" for img in candidate_images[:5]])
-                        prompt = await engine.get_active_prompt(
-                        stage="extraction",
-                        operation_mode=operation_mode,
-                        use_case=use_case,
-                        context={
-                            "mpn": mpn,
-                            "brand": brand or "",
-                            "product_name": title,
-                            "taxonomy": taxonomy or "",
-                            "primary_attributes": attrs_to_use,
-                             "primary_attrs_display": primary_attrs_display,  
-                            "html_content": html_text,
-                            "candidate_images": candidate_images,
-                            "candidate_section": candidate_section,
-                            "source_url": url,
-                        }
+                        prompt_config = build_extraction_prompt(
+                            product_name=title,
+                            mpn=mpn,
+                            brand=brand or "",
+                            taxonomy=taxonomy or "",
+                            primary_attributes=attrs_to_use,
+                            html_content=html_text,
+                            candidate_images=candidate_images
                         )
-                        if not prompt:
-                            logger.error("No extraction prompt configured.")
-                            return None
                         extraction_result = await call_llm_with_schema(
-                            prompt=prompt,
+                            prompt=prompt_config['prompt'],
                             response_model="ExtractionResponse",
                             llm_provider=llm_provider,
                             estimated_tokens=3000
@@ -546,36 +223,16 @@ async def aggregate_product(
                                 other_attrs = [
                                     a for a in attrs_to_use if a not in attribute_chunk]
                                 attrs_to_use = attribute_chunk + other_attrs
-                            primary_attrs_display = "\n".join([f"- {attr}" for attr in attrs_to_use]) if attrs_to_use else "None"
-                            candidate_section = ""
-                            if candidate_images:
-                                candidate_section = "\n".join([f"- {img}" for img in candidate_images[:5]])
-                            prompt = await engine.get_active_prompt(
-                            stage="extraction",
-                            operation_mode=operation_mode,
-                            use_case=use_case,
-                            context={
-                                "mpn": mpn,
-                                "brand": brand or "",
-                                "product_name": title,
-                                "taxonomy": taxonomy or "",
-                                "primary_attributes": attrs_to_use,
-                                "primary_attrs_display": primary_attrs_display,  
-                                "pdf_text": pdf_text,
-                                "html_content": pdf_text,   
-                                "source_url": url,
-                                "candidate_images": candidate_images,
-                                "candidate_section": candidate_section
-                            }
-                        )   
-                            if not prompt:
-                                logger.error("No extraction prompt configured.")
-                                return {
-                                    "status": "failed",
-                                    "reason": "No extraction rule configured"
-                                }
+                            prompt_config = build_pdf_extraction_prompt(
+                                product_name=title,
+                                mpn=mpn,
+                                brand=brand or "",
+                                taxonomy=taxonomy or "",
+                                primary_attributes=attrs_to_use,
+                                pdf_text=pdf_text
+                            )
                             extraction_result = await call_llm_with_schema(
-                                prompt=prompt,
+                                prompt=prompt_config['prompt'],
                                 response_model="ExtractionResponse",
                                 llm_provider=llm_provider,
                                 estimated_tokens=4000
@@ -627,44 +284,17 @@ async def aggregate_product(
                     'source_url': source['url'],
                     'confidence': attr.get('confidence', 0.9)
                 })
-        attr_lines = []
-        for a in raw_attrs_for_combine:
-            line = f"ID: {a['temp_id']}\n  Name: {a['name']}\n  Value: {a['value']}"
-            if a.get('unit'):
-                line += f"\n  Unit: {a['unit']}"
-            if a.get('source_url'):
-                line += f"\n  Source: {a['source_url']}"
-            attr_lines.append(line)
-        attributes_text = "\n\n".join(attr_lines)
-        combine_prompt = await engine.get_active_prompt(
-            stage="combine",
-            operation_mode=operation_mode,
-            use_case=use_case,
-            context={
-                "raw_attributes": raw_attrs_for_combine,
-                "attributes_text": attributes_text,
-                "brand": brand or "",
-                "mpn": mpn,
-                "title": title,
-                "taxonomy": taxonomy or "",
-                "existing_excel_attrs": existing_excel_attrs or {},
-                "excel_section": "",    
-                 "validation_section": ""
-            }
-        )
-        if not combine_prompt:
-            logger.error("No combine prompt configured.")
-            return {
-                "status": "failed",
-                "reason": "No combine rule configured"
-            }
+        project = await db.get(Project, project_id) if db and project_id else None
+        use_case = project.use_case.lower() if project and project.use_case else ""
+        combine_prompt = _build_combined_prompt(
+            raw_attrs_for_combine, brand, mpn, title, taxonomy, existing_excel_attrs=existing_excel_attrs, use_case=use_case)
         async for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)):
             with attempt:
                 combined_result = await call_llm_with_schema(
                     prompt=combine_prompt,
                     response_model="UnifiedStandardizedResponse",
                     llm_provider=llm_provider,
-                    estimated_tokens = min(8000,3000 + len(raw_attrs_for_combine) * 200),
+                    estimated_tokens=3000 + len(raw_attrs_for_combine) * 200,
                     max_tokens=4000
                 )
         golden_attributes = combined_result.attributes
@@ -688,26 +318,14 @@ async def aggregate_product(
                     if isinstance(attr, dict) and attr.get('name'):
                         excel_attrs[attr['name']] = attr.get('value', '')
             web_attrs = {attr.name: attr.value for attr in golden_attributes}
-            validation_prompt = await engine.get_active_prompt(
-            stage="validation",
-            operation_mode=operation_mode,
-            use_case=use_case,
-            context={
-                "excel_attributes": excel_attrs,
-                "web_attributes": web_attrs,
-                "mpn": mpn,
-                "taxonomy": taxonomy or "",
-            }
-        )
-            if not validation_prompt:
-                logger.error("No validation prompt configured.")
-                return {
-                    "status": "failed",
-                    "reason": "No validation prompt configured"
-                }
-
+            validation_config = build_validation_prompt(
+                excel_attributes=excel_attrs,
+                web_attributes=web_attrs,
+                mpn=mpn,
+                taxonomy=taxonomy or ""
+            )
             validation_result = await call_llm_with_schema(
-                prompt=validation_prompt,
+                prompt=validation_config['prompt'],
                 response_model="ValidationResponse",
                 llm_provider=llm_provider,
                 estimated_tokens=1500
@@ -742,13 +360,6 @@ async def aggregate_product(
                 len(golden_attributes)
         else:
             avg_conf = 0.0
-        simplified_attrs = {}
-        for a in golden_attributes:
-            simplified_attrs[a.name] = {
-                'value': a.value,
-                'unit': a.unit if a.unit else '',
-                'confidence': a.confidence
-            }
         golden_attr_dicts = [
             {
                 'name': a.name,
@@ -760,34 +371,14 @@ async def aggregate_product(
             for a in golden_attributes
         ]
         logger.info("Stage 6: Marketing Enrichment")
-        attrs_lines = []
-        for attr in golden_attr_dicts:
-            line = f"{attr['name']}: {attr['value']}"
-            if attr.get('unit'):
-                line += f" {attr['unit']}"
-            attrs_lines.append(line)
-        attrs_text = "\n".join(attrs_lines)
-        enrichment_prompt = await engine.get_active_prompt(
-            stage="enrichment",
-            operation_mode=operation_mode,
-            use_case=use_case,
-            context={
-                "golden_attributes": golden_attr_dicts,
-                "attrs_text": attrs_text,
-                "product_name": title,
-                "brand": brand or "",
-                "taxonomy": taxonomy or "",
-            }
+        enrichment_config = build_enrichment_prompt(
+            golden_attributes=golden_attr_dicts,
+            product_name=title,
+            brand=brand or "",
+            taxonomy=taxonomy or ""
         )
-        if not enrichment_prompt:
-            logger.error("No enrichment prompt configured.")
-            return {
-                "status": "failed",
-                "reason": "No enrichment rule configured"
-            }
-
         enrichment_result = await call_llm_with_schema(
-            prompt=enrichment_prompt,
+            prompt=enrichment_config['prompt'],
             response_model="EnrichmentResponse",
             llm_provider=llm_provider,
             estimated_tokens=2000,
@@ -804,7 +395,7 @@ async def aggregate_product(
         return {
             'status': 'success',
             'golden_record': {
-                'attributes': simplified_attrs, 
+                'attributes': {attr['name']: attr for attr in golden_attr_dicts},
                 'short_description': enrichment_result.short_description or "",
                 'long_description': enrichment_result.long_description,
                 'features': enrichment_result.features,
@@ -823,6 +414,415 @@ async def aggregate_product(
             'reason': str(e),
             'golden_record': {'attributes': {}}
         }
+
+# async def aggregate_product(
+#     mpn: str,
+#     title: str,
+#     sku: Optional[str] = None,
+#     upc: Optional[str] = None,
+#     brand: Optional[str] = None,
+#     taxonomy: Optional[str] = None,
+#     primary_attributes: Optional[List[str]] = None,
+#     db: Optional[AsyncSession] = None,
+#     project_id: str = None,
+#     llm_provider: str = 'openai',
+#     attribute_chunk: Optional[List[str]] = None,
+#     existing_excel_attrs: Optional[Dict[str, str]] = None
+# ) -> Dict:
+#     try:
+#         if not db:
+#             raise ValueError("DB session required for dynamic prompt system.")
+#         project = await db.get(Project, project_id) if db and project_id else None
+#         operation_mode = (project.operation_mode or "aggregation").lower() if project else "aggregation"
+#         use_case = project.use_case if project and project.use_case else ""
+        
+#         engine = RuleEngine(db)
+#         logger.info(f"Starting aggregation for {mpn}")
+#         logger.info("Stage 1: URL Discovery")
+#         search_service = SmartSearchService(llm_provider,db=db, max_results=5)
+        
+#         b = (brand or "").strip()
+#         if mpn in title and b and b in title:
+#             query = title
+#         else:
+#             query = f"{b} {mpn} {title}".strip()
+#         query = query.strip()
+#         urls, candidate_images = await search_service.get_urls(
+#             query, mpn=mpn, brand=brand, title=title, sku=sku,operation_mode=operation_mode,use_case=use_case
+#         )
+#         if not urls:
+#             return {
+#                 'status': 'failed',
+#                 'reason': 'No sources found',
+#                 'golden_record': {'attributes': {}}
+#             }
+#         logger.info(f"Stage 2: Download & Extraction from {len(urls)} sources")
+#         download_service = HttpDownloadService(
+#             timeout=30,
+#         )
+#         all_extractions = []
+#         _url_semaphore = asyncio.Semaphore(2)
+        
+#         async def process_url(url):
+#             async with _url_semaphore:
+#                 try:
+#                     content = await download_service.download(url)
+#                     if content is None:
+#                         return None
+#                     if content['type'] == 'html':
+#                         html_text = content['raw_bytes'].decode(
+#                             'utf-8', errors='ignore')
+#                         logger.info(
+#                             f"Downloaded HTML from {url} - size: {len(html_text)} bytes")
+#                         attrs_to_use = primary_attributes or []
+#                         if attribute_chunk:
+#                             other_attrs = [
+#                                 a for a in attrs_to_use if a not in attribute_chunk]
+#                             attrs_to_use = attribute_chunk + other_attrs
+#                         primary_attrs_display = "\n".join([f"- {attr}" for attr in attrs_to_use]) if attrs_to_use else "None"
+#                         candidate_section = ""
+#                         if candidate_images:
+#                             candidate_section = "\n".join([f"- {img}" for img in candidate_images[:5]])
+#                         prompt = await engine.get_active_prompt(
+#                         stage="extraction",
+#                         operation_mode=operation_mode,
+#                         use_case=use_case,
+#                         context={
+#                             "mpn": mpn,
+#                             "brand": brand or "",
+#                             "product_name": title,
+#                             "taxonomy": taxonomy or "",
+#                             "primary_attributes": attrs_to_use,
+#                              "primary_attrs_display": primary_attrs_display,  
+#                             "html_content": html_text,
+#                             "candidate_images": candidate_images,
+#                             "candidate_section": candidate_section,
+#                             "source_url": url,
+#                         }
+#                         )
+#                         if not prompt:
+#                             logger.error("No extraction prompt configured.")
+#                             return None
+#                         extraction_result = await call_llm_with_schema(
+#                             prompt=prompt,
+#                             response_model="ExtractionResponse",
+#                             llm_provider=llm_provider,
+#                             estimated_tokens=3000
+#                         )
+#                         attr_dicts = []
+#                         image_url = None
+#                         if extraction_result and extraction_result.product_detected:
+#                             if hasattr(extraction_result, 'image_url'):
+#                                 image_url = extraction_result.image_url
+#                             for attr in extraction_result.attributes:
+#                                 attr_dicts.append({
+#                                     'name': attr.name,
+#                                     'value': attr.value,
+#                                     'unit': attr.unit if hasattr(attr, 'unit') else None,
+#                                     'confidence': attr.confidence if hasattr(attr, 'confidence') else 0.9
+#                                 })
+#                         if not image_url:
+#                             image_url = await extract_best_image(html_text, url, mpn)
+#                             if image_url:
+#                                 logger.info(
+#                                     f"Fallback extracted image: {image_url}")
+#                         domain = urlparse(url).netloc
+#                         return {
+#                             'url': url,
+#                             'domain': domain,
+#                             'attributes': attr_dicts,
+#                             'image_url': image_url,
+#                             'source_type': 'html'
+#                         }
+#                     elif content['type'] == 'pdf':
+#                         from app.aggregation.services.pdf_service import PDFExtractionService
+#                         pdf_service = PDFExtractionService(max_pages=10)
+#                         pdf_text = await pdf_service.extract_text(content['raw_bytes'])
+#                         if pdf_text and len(pdf_text.strip()) > 100:
+#                             logger.info(
+#                                 f"Extracted {len(pdf_text)} chars from PDF")
+#                             attrs_to_use = primary_attributes or []
+#                             if attribute_chunk:
+#                                 other_attrs = [
+#                                     a for a in attrs_to_use if a not in attribute_chunk]
+#                                 attrs_to_use = attribute_chunk + other_attrs
+#                             primary_attrs_display = "\n".join([f"- {attr}" for attr in attrs_to_use]) if attrs_to_use else "None"
+#                             candidate_section = ""
+#                             if candidate_images:
+#                                 candidate_section = "\n".join([f"- {img}" for img in candidate_images[:5]])
+#                             prompt = await engine.get_active_prompt(
+#                             stage="extraction",
+#                             operation_mode=operation_mode,
+#                             use_case=use_case,
+#                             context={
+#                                 "mpn": mpn,
+#                                 "brand": brand or "",
+#                                 "product_name": title,
+#                                 "taxonomy": taxonomy or "",
+#                                 "primary_attributes": attrs_to_use,
+#                                 "primary_attrs_display": primary_attrs_display,  
+#                                 "pdf_text": pdf_text,
+#                                 "html_content": pdf_text,   
+#                                 "source_url": url,
+#                                 "candidate_images": candidate_images,
+#                                 "candidate_section": candidate_section
+#                             }
+#                         )   
+#                             if not prompt:
+#                                 logger.error("No extraction prompt configured.")
+#                                 return {
+#                                     "status": "failed",
+#                                     "reason": "No extraction rule configured"
+#                                 }
+#                             extraction_result = await call_llm_with_schema(
+#                                 prompt=prompt,
+#                                 response_model="ExtractionResponse",
+#                                 llm_provider=llm_provider,
+#                                 estimated_tokens=4000
+#                             )
+#                             if extraction_result and extraction_result.product_detected:
+#                                 attr_dicts = []
+#                                 image_url = None
+#                                 if hasattr(extraction_result, 'image_url'):
+#                                     image_url = extraction_result.image_url
+#                                 for attr in extraction_result.attributes:
+#                                     attr_dicts.append({
+#                                         'name': attr.name,
+#                                         'value': attr.value,
+#                                         'unit': getattr(attr, 'unit', None),
+#                                         'confidence': getattr(attr, 'confidence', 0.95)
+#                                     })
+#                                 domain = urlparse(url).netloc
+#                                 return {
+#                                     'url': url,
+#                                     'domain': domain,
+#                                     'attributes': attr_dicts,
+#                                     'image_url': image_url,
+#                                     'source_type': 'pdf'
+#                                 }
+#                     return None
+#                 except Exception as e:
+#                     logger.warning(f"Extraction failed for {url}: {e}")
+#                     return None
+#         tasks = [process_url(url) for url in urls[:5]]
+#         results = await asyncio.gather(*tasks)
+#         all_extractions = [r for r in results if r is not None]
+#         if not all_extractions:
+#             return {
+#                 'status': 'failed',
+#                 'reason': 'No valid extractions',
+#                 'golden_record': {'attributes': {}}
+#             }
+#         logger.info(
+#             f"Stage 2 extracted {sum(len(s['attributes']) for s in all_extractions)} total attributes")
+#         logger.info("Stage 3: Combined Cleaning, Unification & Standardization")
+#         raw_attrs_for_combine = []
+#         for src_idx, source in enumerate(all_extractions):
+#             for attr in source['attributes']:
+#                 raw_attrs_for_combine.append({
+#                     'temp_id': f"{src_idx}_{len(raw_attrs_for_combine)}",
+#                     'name': attr['name'],
+#                     'value': attr['value'],
+#                     'unit': attr.get('unit'),
+#                     'source_url': source['url'],
+#                     'confidence': attr.get('confidence', 0.9)
+#                 })
+#         attr_lines = []
+#         for a in raw_attrs_for_combine:
+#             line = f"ID: {a['temp_id']}\n  Name: {a['name']}\n  Value: {a['value']}"
+#             if a.get('unit'):
+#                 line += f"\n  Unit: {a['unit']}"
+#             if a.get('source_url'):
+#                 line += f"\n  Source: {a['source_url']}"
+#             attr_lines.append(line)
+#         attributes_text = "\n\n".join(attr_lines)
+#         combine_prompt = await engine.get_active_prompt(
+#             stage="combine",
+#             operation_mode=operation_mode,
+#             use_case=use_case,
+#             context={
+#                 "raw_attributes": raw_attrs_for_combine,
+#                 "attributes_text": attributes_text,
+#                 "brand": brand or "",
+#                 "mpn": mpn,
+#                 "title": title,
+#                 "taxonomy": taxonomy or "",
+#                 "existing_excel_attrs": existing_excel_attrs or {},
+#                 "excel_section": "",    
+#                  "validation_section": ""
+#             }
+#         )
+#         if not combine_prompt:
+#             logger.error("No combine prompt configured.")
+#             return {
+#                 "status": "failed",
+#                 "reason": "No combine rule configured"
+#             }
+#         async for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)):
+#             with attempt:
+#                 combined_result = await call_llm_with_schema(
+#                     prompt=combine_prompt,
+#                     response_model="UnifiedStandardizedResponse",
+#                     llm_provider=llm_provider,
+#                     estimated_tokens = min(8000,3000 + len(raw_attrs_for_combine) * 200),
+#                     max_tokens=4000
+#                 )
+#         golden_attributes = combined_result.attributes
+#         valid_source_urls = {source['url'] for source in all_extractions}
+#         for attr in golden_attributes:
+#             if hasattr(attr, 'sources') and attr.sources:
+#                 attr.sources = [
+#                     src for src in attr.sources if src in valid_source_urls]
+#         logger.info(
+#             f"Stage 3 produced {len(golden_attributes)} unified attributes")
+#         validation_conflicts = {}
+#         excel_overrides = {}
+#         if "back filling" in use_case or "validation" in use_case:
+#             logger.info("Stage 4: Excel Validation")
+#             stmt = select(Product).where(Product.product_code == mpn)
+#             result = await db.execute(stmt)
+#             product = result.scalars().first()
+#             excel_attrs = {}
+#             if product and product.dynamic_attributes:
+#                 for attr in product.dynamic_attributes:
+#                     if isinstance(attr, dict) and attr.get('name'):
+#                         excel_attrs[attr['name']] = attr.get('value', '')
+#             web_attrs = {attr.name: attr.value for attr in golden_attributes}
+#             validation_prompt = await engine.get_active_prompt(
+#             stage="validation",
+#             operation_mode=operation_mode,
+#             use_case=use_case,
+#             context={
+#                 "excel_attributes": excel_attrs,
+#                 "web_attributes": web_attrs,
+#                 "mpn": mpn,
+#                 "taxonomy": taxonomy or "",
+#             }
+#         )
+#             if not validation_prompt:
+#                 logger.error("No validation prompt configured.")
+#                 return {
+#                     "status": "failed",
+#                     "reason": "No validation prompt configured"
+#                 }
+
+#             validation_result = await call_llm_with_schema(
+#                 prompt=validation_prompt,
+#                 response_model="ValidationResponse",
+#                 llm_provider=llm_provider,
+#                 estimated_tokens=1500
+#             )
+#             if "back filling" in use_case and "validation" not in use_case:
+#                 for val in validation_result.validations:
+#                     if not val.matches and val.recommendation == "use_web":
+#                         excel_overrides[val.attribute_name] = val.web_value
+#                         validation_conflicts[val.attribute_name] = val.web_value
+#                         for attr in golden_attributes:
+#                             if attr.name == val.attribute_name:
+#                                 attr.value = val.web_value
+#             elif "validation" in use_case and "back filling" not in use_case:
+#                 for val in validation_result.validations:
+#                     if not val.matches and val.recommendation == "use_web":
+#                         validation_conflicts[val.attribute_name] = val.web_value
+#             elif "back filling" in use_case and "validation" in use_case:
+#                 for val in validation_result.validations:
+#                     if not val.matches and val.recommendation == "use_web":
+#                         excel_overrides[val.attribute_name] = val.web_value
+#                         validation_conflicts[val.attribute_name] = val.web_value
+#                         for attr in golden_attributes:
+#                             if attr.name == val.attribute_name:
+#                                 attr.value = val.web_value
+#             else:
+#                 for val in validation_result.validations:
+#                     if not val.matches and val.recommendation == "use_web":
+#                         validation_conflicts[val.attribute_name] = val.web_value
+#         logger.info("Stage 5: Multi-source Aggregation")
+#         if golden_attributes:
+#             avg_conf = sum(a.confidence for a in golden_attributes) / \
+#                 len(golden_attributes)
+#         else:
+#             avg_conf = 0.0
+#         simplified_attrs = {}
+#         for a in golden_attributes:
+#             simplified_attrs[a.name] = {
+#                 'value': a.value,
+#                 'unit': a.unit if a.unit else '',
+#                 'confidence': a.confidence
+#             }
+#         golden_attr_dicts = [
+#             {
+#                 'name': a.name,
+#                 'value': a.value,
+#                 'unit': a.unit,
+#                 'confidence': a.confidence,
+#                 'sources': a.sources
+#             }
+#             for a in golden_attributes
+#         ]
+#         logger.info("Stage 6: Marketing Enrichment")
+#         attrs_lines = []
+#         for attr in golden_attr_dicts:
+#             line = f"{attr['name']}: {attr['value']}"
+#             if attr.get('unit'):
+#                 line += f" {attr['unit']}"
+#             attrs_lines.append(line)
+#         attrs_text = "\n".join(attrs_lines)
+#         enrichment_prompt = await engine.get_active_prompt(
+#             stage="enrichment",
+#             operation_mode=operation_mode,
+#             use_case=use_case,
+#             context={
+#                 "golden_attributes": golden_attr_dicts,
+#                 "attrs_text": attrs_text,
+#                 "product_name": title,
+#                 "brand": brand or "",
+#                 "taxonomy": taxonomy or "",
+#             }
+#         )
+#         if not enrichment_prompt:
+#             logger.error("No enrichment prompt configured.")
+#             return {
+#                 "status": "failed",
+#                 "reason": "No enrichment rule configured"
+#             }
+
+#         enrichment_result = await call_llm_with_schema(
+#             prompt=enrichment_prompt,
+#             response_model="EnrichmentResponse",
+#             llm_provider=llm_provider,
+#             estimated_tokens=2000,
+#             max_tokens=4000
+#         )
+#         best_image = extract_best_image_fallback(all_extractions)
+#         if not best_image and candidate_images:
+#             for candidate in candidate_images:
+#                 is_valid = await validate_image_url(candidate)
+#                 if is_valid:
+#                     logger.info(f"Fallback to SearXNG image: {candidate}")
+#                     best_image = candidate
+#                     break
+#         return {
+#             'status': 'success',
+#             'golden_record': {
+#                 'attributes': simplified_attrs, 
+#                 'short_description': enrichment_result.short_description or "",
+#                 'long_description': enrichment_result.long_description,
+#                 'features': enrichment_result.features,
+#                 'sources_consulted': list({s['url'] for s in all_extractions}),
+#                 'confidence': avg_conf
+#             },
+#             'validation_conflicts': validation_conflicts,
+#             'excel_overrides': excel_overrides,
+#             'image_url': best_image,
+#             'mode': 'backfill' if 'back filling' in use_case else 'standard'
+#         }
+#     except Exception as e:
+#         logger.error(f"Pipeline failed for {mpn}: {e}", exc_info=True)
+#         return {
+#             'status': 'failed',
+#             'reason': str(e),
+#             'golden_record': {'attributes': {}}
+#         }
         
 def _build_combined_prompt(
     raw_attrs: List[Dict],
