@@ -31,3 +31,5 @@ class ProductIdentificationItem(BaseModel):
 
 class ProductIdentificationResponse(BaseModel):
     products: List[ProductIdentificationItem]
+class AttributeMappingResponse(BaseModel):
+    mapping: Dict[str, str] = Field(..., description="Mapping from variant to canonical attribute names")

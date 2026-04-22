@@ -1,7 +1,6 @@
 from typing import Dict, List
 from datetime import datetime
 from sqlalchemy import or_
-
 from app.models.cleaning import CleaningTask
 from app.models.product import Product
 from app.models.project import Project
@@ -25,8 +24,6 @@ from app.utils.aggregate_download import generate_products_excel
 from app.utils.cleaning_helper import append_cleaning_task_log, create_cleaning_task, get_cleaning_task_or_404, update_cleaning_task_status
 logger = logging.getLogger("cleansing_router")
 router = APIRouter()
-
-
 @router.get("/issues")
 async def get_all_issues(db: AsyncSession = Depends(get_session)):
     try:
@@ -37,8 +34,6 @@ async def get_all_issues(db: AsyncSession = Depends(get_session)):
     except Exception as e:
         logger.error(f"Failed to fetch cleansing issues: {e}")
         return []
-
-
 @router.post("/resolve/{issue_id}")
 async def resolve_issue(issue_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -52,26 +47,195 @@ async def resolve_issue(issue_id: str, db: AsyncSession = Depends(get_session)):
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
-# @router.post("/projects/{project_id}/clean")
-# async def clean_project(
+    
+# async def run_cleaning_task(
 #     project_id: str,
-#     request:AggregateLLMRequest,
-#     background_tasks: BackgroundTasks,
-#     db: AsyncSession = Depends(get_session)
+#     product_ids: List[str],
+#     task_id: str,
+#     llm_provider: str,
 # ):
-#     project = await db.get(Project, project_id)
-#     if not project:
-#         raise HTTPException(status_code=404, detail="Project not found")
-#     task_id = str(uuid.uuid4())
-#     task_status_store[task_id] = {
-#         "status": "pending",
-#         "logs": []
-#     }
-#     logger.info(f"Created cleaning task: {task_id} for project {project_id}")
-#     background_tasks.add_task(run_project_cleaning, project_id, task_id, request.llm_provider,db)
-#     return {"status": "accepted", "task_id": task_id}
-
-
+#     async with async_session_factory() as db:
+#         try:
+#             await update_cleaning_task_status(db, task_id, "running")
+#             await append_cleaning_task_log(db, task_id, f"Starting cleaning for project {project_id}")
+#             service = LLMCleaningService(
+#                 llm_provider=llm_provider,
+#                 db=db,
+#                 project_id=project_id,
+#                 concurrency_limit=10
+#             )
+#             if product_ids:
+#                 stmt = select(Product).where(Product.id.in_(product_ids))
+#                 await append_cleaning_task_log(
+#                     db, task_id, f"Cleaning {len(product_ids)} selected product(s)"
+#                 )
+#             else:
+#                 stmt = select(Product).where(Product.project_id == project_id)
+#                 await append_cleaning_task_log(
+#                     db, task_id, "Cleaning all products in project"
+#                 )
+#             result = await db.execute(stmt)
+#             products = result.scalars().all()
+#             if not products:
+#                 await append_cleaning_task_log(db, task_id, "No products found")
+#                 await update_cleaning_task_status(db, task_id, "failed", "No products found")
+#                 return
+#             total = len(products)
+#             updated_count = 0
+#             failed_count = 0
+#             for product in products:
+#                 try:
+#                     product.enrichment_status = "processing"
+#                     product.updated_at = datetime.utcnow()
+#                     db.add(product)
+#                     await db.commit()
+#                     await db.refresh(product)
+#                     if not product.dynamic_attributes:
+#                         product.enrichment_status = "completed"
+#                         product.updated_at = datetime.utcnow()
+#                         db.add(product)
+#                         await db.commit()
+#                         continue
+#                     attributes = []
+#                     for attr_idx, attr in enumerate(product.dynamic_attributes):
+#                         if attr.get("value"):
+#                             attributes.append(
+#                                 AttributeInput(
+#                                     id=str(attr_idx),
+#                                     name=attr.get("name", ""),
+#                                     value=attr.get("value", ""),
+#                                     unit=attr.get("unit") or attr.get("uom"),
+#                                     source="existing_data",
+#                                 )
+#                             )
+#                     if not attributes:
+#                         product.enrichment_status = "completed"
+#                         product.updated_at = datetime.utcnow()
+#                         db.add(product)
+#                         await db.commit()
+#                         continue
+#                     context = ProductContext(
+#                         mpn=product.product_code,
+#                         brand=product.brand_name,
+#                         product_name=product.product_name,
+#                         taxonomy=product.taxonomy,
+#                     )
+#                     await append_cleaning_task_log(
+#                         db,
+#                         task_id,
+#                         f"Cleaning product {product.product_code or product.id} with {len(attributes)} attribute(s)",
+#                     )
+#                     cleaning_result = await service.clean_attributes(attributes, context)
+#                     updated = await save_cleaned_attributes(
+#                         db, product.id, cleaning_result, product.dynamic_attributes
+#                     )
+#                     product.enrichment_status = "completed"
+#                     product.updated_at = datetime.utcnow()
+#                     db.add(product)
+#                     await db.commit()
+#                     if updated:
+#                         updated_count += 1
+#                 except Exception as product_error:
+#                     failed_count += 1
+#                     logger.error(
+#                         f"Failed cleaning product {product.id}: {product_error}",
+#                         exc_info=True,
+#                     )
+#                     try:
+#                         product.enrichment_status = "failed"
+#                         product.updated_at = datetime.utcnow()
+#                         db.add(product)
+#                         await db.commit()
+#                     except Exception as commit_error:
+#                         await db.rollback()
+#                         logger.error(
+#                             f"Failed updating failed status for product {product.id}: {commit_error}",
+#                             exc_info=True,
+#                         )
+#                     try:
+#                         await append_cleaning_task_log(
+#                             db,
+#                             task_id,
+#                             f"Failed cleaning product {product.product_code or product.id}: {str(product_error)}",
+#                         )
+#                     except Exception as log_error:
+#                         logger.error(
+#                             f"Failed writing product error log for task {task_id}: {log_error}",
+#                             exc_info=True,
+#                         )
+#             await append_cleaning_task_log(
+#                 db,
+#                 task_id,
+#                 f"Cleaning completed. Updated {updated_count}/{total}, failed {failed_count}",
+#             )
+#             try:
+#                 stmt = select(Source).where(Source.project_id == project_id)
+#                 result = await db.execute(stmt)
+#                 sources = result.scalars().all()
+#                 for source in sources:
+#                     metadata = dict(source.source_metadata or {})
+#                     metadata["processing_status"] = "completed"
+#                     source.source_metadata = metadata
+#                     db.add(source)
+#                 project = await db.get(Project, project_id)
+#                 if project:
+#                     status_stmt = select(
+#                         func.count(Product.id),
+#                         func.sum(case((Product.enrichment_status == "completed", 1), else_=0)),
+#                         func.sum(case((Product.enrichment_status == "failed", 1), else_=0)),
+#                         func.sum(case((Product.enrichment_status == "processing", 1), else_=0)),
+#                         func.sum(case((Product.enrichment_status == "pending", 1), else_=0)),
+#                     ).where(Product.project_id == project_id)
+#                     status_result = await db.execute(status_stmt)
+#                     row = status_result.one()
+#                     total = row[0] or 0
+#                     completed = row[1] or 0
+#                     failed = row[2] or 0
+#                     processing = row[3] or 0
+#                     pending = row[4] or 0
+#                     if total == 0:
+#                         project.status = "draft"
+#                     elif processing > 0:
+#                         project.status = "processing"
+#                     elif completed == total:
+#                         project.status = "completed"
+#                     elif failed == total:
+#                         project.status = "failed"
+#                     elif completed > 0:
+#                         project.status = "partially_completed"
+#                     else:
+#                         project.status = "draft"
+#                     db.add(project)
+#                 await db.commit()
+#             except Exception as status_error:
+#                 await db.rollback()
+#                 logger.error(
+#                     f"Failed to update source/project failure status for project {project_id}: {status_error}",
+#                     exc_info=True,
+#                 )
+#             except Exception as e:
+#                 raise e
+#             await update_cleaning_task_status(db, task_id, "completed")
+#         except Exception as e:
+#             logger.error(f"Cleaning task {task_id} failed: {e}", exc_info=True)
+#             try:
+#                 await db.rollback()
+#             except Exception:
+#                 logger.exception(
+#                     "Rollback failed during cleaning task failure")
+#             try:
+#                 await append_cleaning_task_log(
+#                     db,
+#                     task_id,
+#                     f"Task failed: {str(e)}",
+#                 )
+#             except Exception:
+#                 logger.exception("Failed to append failure log")
+#             try:
+#                 await update_cleaning_task_status(db, task_id, "failed", str(e))
+#             except Exception:
+#                 logger.exception("Failed to mark task as failed")
+    
 async def run_cleaning_task(
     project_id: str,
     product_ids: List[str],
@@ -83,7 +247,11 @@ async def run_cleaning_task(
             await update_cleaning_task_status(db, task_id, "running")
             await append_cleaning_task_log(db, task_id, f"Starting cleaning for project {project_id}")
             service = LLMCleaningService(
-                llm_provider=llm_provider, concurrency_limit=10)
+                llm_provider=llm_provider,
+                db=db,
+                project_id=project_id,
+                concurrency_limit=10
+            )
             if product_ids:
                 stmt = select(Product).where(Product.id.in_(product_ids))
                 await append_cleaning_task_log(
@@ -101,6 +269,56 @@ async def run_cleaning_task(
                 await update_cleaning_task_status(db, task_id, "failed", "No products found")
                 return
             total = len(products)
+            await append_cleaning_task_log(db, task_id, "Pass 1: Collecting all attribute names...")
+            
+            all_attribute_names = set()
+            for product in products:
+                if product.dynamic_attributes:
+                    for attr in product.dynamic_attributes:
+                        name = attr.get("name", "").strip()
+                        if name:
+                            all_attribute_names.add(name)
+            
+            await append_cleaning_task_log(db, task_id, f"Found {len(all_attribute_names)} unique attribute names")
+            
+            # ========== PASS 2: Get global name mapping from LLM ==========
+            await append_cleaning_task_log(db, task_id, "Pass 2: Creating global attribute name mapping...")
+            
+            global_mapping = await service.get_global_name_mapping(
+                list(all_attribute_names),
+                project_id
+            )
+            
+            if global_mapping:
+                await append_cleaning_task_log(db, task_id, f"Global mapping created with {len(global_mapping)} entries")
+                
+                # Apply mapping to all products
+                for product in products:
+                    if product.dynamic_attributes:
+                        updated = False
+                        new_attrs = []
+                        for attr in product.dynamic_attributes:
+                            attr_copy = dict(attr)
+                            old_name = attr_copy.get("name", "")
+                            if old_name in global_mapping:
+                                new_name = global_mapping[old_name]
+                                if new_name != old_name:
+                                    attr_copy["name"] = new_name
+                                    updated = True
+                            new_attrs.append(attr_copy)
+                        
+                        if updated:
+                            product.dynamic_attributes = new_attrs
+                            flag_modified(product, "dynamic_attributes")
+                            db.add(product)
+                
+                await db.commit()
+                await append_cleaning_task_log(db, task_id, "Global name mapping applied to all products")
+            else:
+                await append_cleaning_task_log(db, task_id, "No global mapping created, proceeding with individual cleaning")
+            
+            # ========== PASS 3: Clean individual attribute values ==========
+            await append_cleaning_task_log(db, task_id, "Pass 3: Cleaning individual attribute values...")
             updated_count = 0
             failed_count = 0
             for product in products:
@@ -192,13 +410,11 @@ async def run_cleaning_task(
                 stmt = select(Source).where(Source.project_id == project_id)
                 result = await db.execute(stmt)
                 sources = result.scalars().all()
-
                 for source in sources:
                     metadata = dict(source.source_metadata or {})
                     metadata["processing_status"] = "completed"
                     source.source_metadata = metadata
                     db.add(source)
-
                 project = await db.get(Project, project_id)
                 if project:
                     status_stmt = select(
@@ -208,16 +424,13 @@ async def run_cleaning_task(
                         func.sum(case((Product.enrichment_status == "processing", 1), else_=0)),
                         func.sum(case((Product.enrichment_status == "pending", 1), else_=0)),
                     ).where(Product.project_id == project_id)
-
                     status_result = await db.execute(status_stmt)
                     row = status_result.one()
-
                     total = row[0] or 0
                     completed = row[1] or 0
                     failed = row[2] or 0
                     processing = row[3] or 0
                     pending = row[4] or 0
-
                     if total == 0:
                         project.status = "draft"
                     elif processing > 0:
@@ -230,9 +443,7 @@ async def run_cleaning_task(
                         project.status = "partially_completed"
                     else:
                         project.status = "draft"
-
                     db.add(project)
-
                 await db.commit()
             except Exception as status_error:
                 await db.rollback()
@@ -262,8 +473,7 @@ async def run_cleaning_task(
                 await update_cleaning_task_status(db, task_id, "failed", str(e))
             except Exception:
                 logger.exception("Failed to mark task as failed")
-
-
+                
 async def add_log(db: AsyncSession, task_id: str, message: str):
     task = await db.get(CleaningTask, task_id)
     if not task:
@@ -275,8 +485,7 @@ async def add_log(db: AsyncSession, task_id: str, message: str):
     task.updated_at = datetime.utcnow()
     db.add(task)
     await db.commit()
-
-
+    
 @router.post("/run")
 async def run_cleaning(
     request: RunCleaningRequest,
@@ -303,89 +512,7 @@ async def run_cleaning(
         logger.error(f"Failed to start cleaning task: {e}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Failed to start cleaning task")
-# async def run_project_cleaning(project_id: str, task_id: str, llm_provider: str, db: AsyncSession):
-#     try:
-#         add_log(task_id, f"Starting cleaning for project {project_id}")
-#         task_status_store[task_id]["status"] = "running"
-#         service = LLMCleaningService(llm_provider=llm_provider, concurrency_limit=10)
-#         stmt = select(Product).where(Product.project_id == project_id)
-#         result = await db.execute(stmt)
-#         products = result.scalars().all()
-#         total = len(products)
-#         updated_count = 0
-#         failed_count = 0
-#         add_log(task_id, f"Found {total} products to process")
-#         for idx, product in enumerate(products):
-#             logger.info(f"Processing product {product.product_code}")
-#             product.enrichment_status = "processing"
-#             await db.flush()
-#             if not product.dynamic_attributes:
-#                 add_log(task_id, f"  No dynamic attributes, marking completed")
-#                 product.enrichment_status = "completed"
-#                 await db.flush()
-#                 continue
-#             attributes = []
-#             for attr_idx, attr in enumerate(product.dynamic_attributes):
-#                 if attr.get('value'):
-#                     attributes.append(AttributeInput(
-#                         id=str(attr_idx),
-#                         name=attr.get('name', ''),
-#                         value=attr.get('value', ''),
-#                         unit=attr.get('unit') or attr.get('uom'),
-#                         source="existing_data"
-#                     ))
-#             if not attributes:
-#                 add_log(task_id, f"  No attributes with values, marking completed")
-#                 product.enrichment_status = "completed"
-#                 await db.flush()
-#                 continue
-#             context = ProductContext(
-#                 mpn=product.product_code,
-#                 brand=product.brand_name,
-#                 product_name=product.product_name,
-#                 taxonomy=product.taxonomy
-#             )
-#             try:
-#                 add_log(task_id, f"  Calling LLM cleaning for {len(attributes)} attributes")
-#                 cleaning_result = await service.clean_attributes(attributes, context)
-#                 updated = await save_cleaned_attributes(db, product.id, cleaning_result, product.dynamic_attributes)
-#                 if updated:
-#                     logger.info(f"Product {product.product_code} updated in database")
-#                     updated_count += 1
-#                     add_log(task_id, f"  Product updated and marked completed")
-#                 else:
-#                     logger.info(f"No changes for product {product.product_code}")
-#                     add_log(task_id, f"  No changes needed, marked completed")
-#             except Exception as e:
-#                 failed_count += 1
-#                 add_log(task_id, f"  ERROR: {str(e)}")
-#                 logger.error(f"Failed for product {product.product_code}: {e}")
-#                 product.enrichment_status = "failed"
-#                 await db.flush()
-#         await db.commit()
-#         project = await db.get(Project, project_id)
-#         if project:
-#             remaining_stmt = select(func.count(Product.id)).where(
-#                 and_(
-#                     Product.project_id == project_id,
-#                     Product.enrichment_status.in_(['pending', 'processing'])
-#                 )
-#             )
-#             remaining = await db.scalar(remaining_stmt) or 0
-#             if remaining == 0:
-#                 project.status = "completed"
-#                 await db.commit()
-#                 add_log(task_id, f"Project marked as completed")
-#         add_log(task_id, f"Cleaning completed. Updated {updated_count}/{total} products, {failed_count} failed.")
-#         task_status_store[task_id]["status"] = "completed"
-#         task_status_store[task_id]["completed_at"] = datetime.utcnow().isoformat()
-#     except Exception as e:
-#         await db.rollback()
-#         logger.error(f"run_project_cleaning failed: {e}")
-#         task_status_store[task_id]["status"] = "failed"
-#         task_status_store[task_id]["error"] = str(e)
-
-
+        
 @router.get("/tasks/{task_id}")
 async def get_task_status(task_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -402,8 +529,7 @@ async def get_task_status(task_id: str, db: AsyncSession = Depends(get_session))
             f"Error getting task status for {task_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Failed to fetch task status")
-
-
+        
 async def save_cleaned_attributes(
     db_session: AsyncSession,
     product_id: str,
@@ -449,8 +575,7 @@ async def save_cleaned_attributes(
         logger.error(
             f"Failed saving cleaned attributes for product {product_id}: {e}", exc_info=True)
         raise
-
-
+    
 @router.get("/tasks/{task_id}/logs")
 async def get_task_logs(task_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -463,14 +588,12 @@ async def get_task_logs(task_id: str, db: AsyncSession = Depends(get_session)):
             f"Error getting task logs for {task_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Failed to fetch task logs")
-
-
+        
 @router.get("/projects/{project_id}/download")
 async def download_cleaned_project(
     project_id: str,
     db: AsyncSession = Depends(get_session)
 ):
-    """Download cleaned products as an Excel file."""
     project = await db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -576,8 +699,6 @@ async def download_cleaned_project(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
-
-
 @router.put("/products/{product_id}/attributes")
 async def update_product_attributes(
     product_id: str,
@@ -588,7 +709,12 @@ async def update_product_attributes(
         product = await db.get(Product, product_id)
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
-        cleaning_service = LLMCleaningService(llm_provider="openai")   
+        project_id = product.project_id
+        cleaning_service = LLMCleaningService(
+            llm_provider="openai",
+            db=db,
+            project_id=project_id
+        )
         if product.dynamic_attributes:
             for attr in product.dynamic_attributes:
                 attr_name = attr.get('name')
@@ -644,87 +770,6 @@ async def update_product_attributes(
         await db.rollback()
         logger.error(f"Failed to update attributes: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-# @router.post("/products/{product_id}/clean")
-# async def clean_single_product(
-#     product_id: str,
-#     request: AggregateLLMRequest,
-#     background_tasks: BackgroundTasks,
-#     db: AsyncSession = Depends(get_session)
-# ):
-#     """Clean a single product"""
-#     product = await db.get(Product, product_id)
-#     if not product:
-#         raise HTTPException(status_code=404, detail="Product not found")
-#     task_id = str(uuid.uuid4())
-#     task_status_store[task_id] = {
-#         "status": "pending",
-#         "logs": []
-#     }
-#     background_tasks.add_task(run_single_product_cleaning, product_id, task_id, request.llm_provider, db)
-#     return {"status": "accepted", "task_id": task_id}
-# async def run_single_product_cleaning(product_id: str, task_id: str, llm_provider: str, db: AsyncSession):
-#     try:
-#         add_log(task_id, f"Starting cleaning for product {product_id}")
-#         task_status_store[task_id]["status"] = "running"
-#         product = await db.get(Product, product_id)
-#         if not product:
-#             add_log(task_id, f"Product not found")
-#             task_status_store[task_id]["status"] = "failed"
-#             return
-#         product.enrichment_status = "processing"
-#         await db.flush()
-#         if not product.dynamic_attributes:
-#             add_log(task_id, f"No dynamic attributes, marking completed")
-#             product.enrichment_status = "completed"
-#             await db.commit()
-#             task_status_store[task_id]["status"] = "completed"
-#             return
-#         service = LLMCleaningService(llm_provider=llm_provider, concurrency_limit=1)
-#         attributes = []
-#         for attr_idx, attr in enumerate(product.dynamic_attributes):
-#             if attr.get('value'):
-#                 attributes.append(AttributeInput(
-#                     id=str(attr_idx),
-#                     name=attr.get('name', ''),
-#                     value=attr.get('value', ''),
-#                     unit=attr.get('unit') or attr.get('uom'),
-#                     source="existing_data"
-#                 ))
-#         if not attributes:
-#             add_log(task_id, f"No attributes with values, marking completed")
-#             product.enrichment_status = "completed"
-#             await db.commit()
-#             task_status_store[task_id]["status"] = "completed"
-#             return
-#         context = ProductContext(
-#             mpn=product.product_code,
-#             brand=product.brand_name,
-#             product_name=product.product_name,
-#             taxonomy=product.taxonomy
-#         )
-#         add_log(task_id, f"Calling LLM cleaning for {len(attributes)} attributes")
-#         cleaning_result = await service.clean_attributes(attributes, context)
-#         updated = await save_cleaned_attributes(db, product.id, cleaning_result, product.dynamic_attributes)
-#         if updated:
-#             add_log(task_id, f"Product updated")
-#         else:
-#             add_log(task_id, f"No changes needed")
-#         product.enrichment_status = "completed"
-#         await db.commit()
-#         add_log(task_id, f"Cleaning completed")
-#         task_status_store[task_id]["status"] = "completed"
-#     except Exception as e:
-#         await db.rollback()
-#         logger.error(f"Single product cleaning failed: {e}")
-#         add_log(task_id, f"ERROR: {str(e)}")
-#         task_status_store[task_id]["status"] = "failed"
-#         try:
-#             product = await db.get(Product, product_id)
-#             if product:
-#                 product.enrichment_status = "failed"
-#                 await db.commit()
-#         except:
-#             pass
 @router.put("/products/bulk-attributes")
 async def bulk_update_product_attributes(
     request: BulkUpdateAttributesRequest,
@@ -733,41 +778,36 @@ async def bulk_update_product_attributes(
     try:
         if not request.product_ids:
             raise HTTPException(status_code=400, detail="No product IDs provided")
-
         if not request.attributes:
             raise HTTPException(status_code=400, detail="No attributes provided")
-
         stmt = select(Product).where(Product.id.in_(request.product_ids))
         result = await db.execute(stmt)
         products = result.scalars().all()
-
         if not products:
             raise HTTPException(status_code=404, detail="No products found")
-
-        cleaning_service = LLMCleaningService(llm_provider="openai")
+        project_id = products[0].project_id if products else None
+        cleaning_service = LLMCleaningService(
+            llm_provider="openai",
+            db=db,
+            project_id=project_id
+        )
         updated_count = 0
-
         for product in products:
             if not product.dynamic_attributes:
                 continue
-
             updated = False
             new_attrs = [dict(attr) for attr in product.dynamic_attributes]
-
             context = ProductContext(
                 mpn=product.product_code,
                 brand=product.brand_name,
                 product_name=product.product_name,
                 taxonomy=product.taxonomy
             )
-
             for idx, attr in enumerate(new_attrs):
                 attr_name = attr.get("name")
                 if attr_name not in request.attributes:
                     continue
-
                 raw_value = request.attributes[attr_name]
-
                 attribute_input = AttributeInput(
                     id=str(idx),
                     name=attr_name,
@@ -775,13 +815,11 @@ async def bulk_update_product_attributes(
                     unit=attr.get("unit") or attr.get("uom"),
                     source="bulk_update"
                 )
-
                 try:
                     cleaning_result = await cleaning_service.clean_attributes(
                         [attribute_input],
                         context
                     )
-
                     if cleaning_result.cleaned_attributes:
                         cleaned = cleaning_result.cleaned_attributes[0]
                         attr["value"] = cleaned.cleaned_value
@@ -789,38 +827,30 @@ async def bulk_update_product_attributes(
                         attr["uom"] = cleaned.unit or ""
                     else:
                         attr["value"] = raw_value
-
                 except Exception as e:
                     logger.error(
                         f"Bulk cleaning failed for product {product.id}, attribute {attr_name}: {e}",
                         exc_info=True,
                     )
                     attr["value"] = raw_value
-
                 updated = True
-
             if updated:
                 product.dynamic_attributes = new_attrs
                 flag_modified(product, "dynamic_attributes")
-
                 if product.validation_conflicts:
                     for attr_name in request.attributes.keys():
                         if attr_name in product.validation_conflicts:
                             del product.validation_conflicts[attr_name]
                     flag_modified(product, "validation_conflicts")
-
                 product.updated_at = datetime.utcnow()
                 db.add(product)
                 updated_count += 1
-
         await db.commit()
-
         return {
             "status": "success",
             "message": f"Updated {updated_count} product(s)",
             "updated_count": updated_count
         }
-
     except HTTPException:
         raise
     except Exception as e:
@@ -830,7 +860,6 @@ async def bulk_update_product_attributes(
             status_code=500,
             detail="Failed to bulk update attributes"
         )
-
 @router.post("/download-selected")
 async def download_selected_cleaned_products(
     request: ExportSelectedCleaningRequest,
@@ -839,25 +868,18 @@ async def download_selected_cleaned_products(
     try:
         if not request.product_ids and not request.project_ids:
             raise HTTPException(status_code=400, detail="No products or projects selected")
-
         stmt = select(Product)
-
         filters = []
         if request.product_ids:
             filters.append(Product.id.in_(request.product_ids))
         if request.project_ids:
             filters.append(Product.project_id.in_(request.project_ids))
-
         stmt = stmt.where(or_(*filters)).order_by(Product.created_at.asc())
-
         result = await db.execute(stmt)
         products = result.scalars().all()
-
         if not products:
             raise HTTPException(status_code=404, detail="No products found")
-
         return await generate_products_excel(products, db)
-
     except HTTPException:
         raise
     except Exception as e:
