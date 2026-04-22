@@ -223,3 +223,108 @@ async def get_expected_attributes_async(product: Product, db: AsyncSession) -> L
     except Exception:
         # Optionally log the exception here
         return []
+
+@router.get("/stats/project/{project_id}")
+async def get_project_product_stats(
+    project_id: UUID,
+    db: AsyncSession = Depends(get_session)
+) -> Dict[str, int]:
+    """
+    Get product statistics for a specific project.
+    Returns counts of products by enrichment status.
+    """
+    try:
+        # Query to count products by enrichment_status
+        stmt = select(
+            Product.enrichment_status,
+            func.count(Product.id).label('count')
+        ).where(
+            Product.project_id == project_id
+        ).group_by(Product.enrichment_status)
+        
+        result = await db.execute(stmt)
+        rows = result.all()
+        
+        # Initialize counters
+        stats = {
+            "total": 0,
+            "completed": 0,
+            "pending": 0,
+            "processing": 0,
+            "failed": 0,
+        }
+        
+        # Populate from query results
+        for status, count in rows:
+            stats["total"] += count
+            if status == "completed":
+                stats["completed"] = count
+            elif status == "pending":
+                stats["pending"] = count
+            elif status == "processing":
+                stats["processing"] = count
+            elif status == "failed":
+                stats["failed"] = count
+        
+        return stats
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch stats for project {project_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch project statistics"
+        )
+
+
+@router.get("/stats/projects/batch")
+async def get_multiple_project_stats(
+    project_ids: List[UUID] = Query(...),
+    db: AsyncSession = Depends(get_session)
+) -> Dict[str, Dict[str, int]]:
+    """
+    Get product statistics for multiple projects at once.
+    Returns a dictionary mapping project_id to its stats.
+    """
+    try:
+        result = {}
+        
+        for project_id in project_ids:
+            stmt = select(
+                Product.enrichment_status,
+                func.count(Product.id).label('count')
+            ).where(
+                Product.project_id == project_id
+            ).group_by(Product.enrichment_status)
+            
+            query_result = await db.execute(stmt)
+            rows = query_result.all()
+            
+            stats = {
+                "total": 0,
+                "completed": 0,
+                "pending": 0,
+                "processing": 0,
+                "failed": 0,
+            }
+            
+            for status, count in rows:
+                stats["total"] += count
+                if status == "completed":
+                    stats["completed"] = count
+                elif status == "pending":
+                    stats["pending"] = count
+                elif status == "processing":
+                    stats["processing"] = count
+                elif status == "failed":
+                    stats["failed"] = count
+            
+            result[str(project_id)] = stats
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch batch stats: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch project statistics"
+        )
