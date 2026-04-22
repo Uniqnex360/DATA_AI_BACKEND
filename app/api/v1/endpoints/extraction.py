@@ -333,6 +333,7 @@ async def batch_aggregate(
             raise HTTPException(status.HTTP_400_BAD_REQUEST,
                                 "Project ID is required.")
         project = await db.get(Project, projectId)
+        logger.info(f"Project {projectId} operation_mode: {project.operation_mode}")
         if not project:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 f"Project {projectId} not found")
@@ -342,6 +343,7 @@ async def batch_aggregate(
             default_workflow_stage = "cleaning"
         else:
             default_workflow_stage = "aggregation"
+        logger.info(f"Setting workflow_stage to: {default_workflow_stage}")
         file_ext = os.path.splitext(file.filename)[1].lower()
         if file_ext not in ALLOWED_EXTENSIONS:
             raise HTTPException(status.HTTP_400_BAD_REQUEST,
