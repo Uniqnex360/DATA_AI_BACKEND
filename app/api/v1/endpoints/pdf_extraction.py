@@ -156,10 +156,10 @@ async def search_pdfs_url(mpn: str, brand: str) -> List[str]:
             f"{mpn} data sheet pdf",
             f"{brand} {mpn} product pdf" if brand else f"{mpn} product pdf"
         ]
-        logger.info(f"📋 Search queries: {search_queries}")
+        logger.info(f" Search queries: {search_queries}")
         pdf_urls = []
         for query in search_queries:
-            logger.info(f"🔎 Executing search: {query}")
+            logger.info(f" Executing search: {query}")
             try:
                 results = await searxng._search(query)
                 logger.info(
