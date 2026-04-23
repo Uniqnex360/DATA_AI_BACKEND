@@ -29,7 +29,6 @@ def normalize_source_status(status: str | None, project_status: str | None = Non
     if status in ("processing", "failed"):
         return "In Progress"
     return "Yet to Start"
-
 @router.get("/", response_model=List[ProjectResponse])
 async def list_projects(
     operation_mode: str | None = None,
@@ -39,7 +38,6 @@ async def list_projects(
     try:
         active_job = aliased(AggregationJob)
         active_source = aliased(Source)
-
         if tab == "aggregation":
             product_count_subq = (
                 select(func.count(Product.id))
@@ -73,12 +71,22 @@ async def list_projects(
                 .scalar_subquery()
                 .label("product_count")
             )
-
-        # Main query (now uses the subquery)
+        completeness_subq = (
+            select(func.avg(Product.completeness_score))
+            .where(
+                and_(
+                    Product.project_id == Project.id,
+                    Product.workflow_stage == "aggregation"
+                )
+            )
+            .scalar_subquery()
+            .label("completeness_score")
+        )
         statement = (
             select(
                 Project,
                 product_count_subq,
+                completeness_subq,  
                 func.max(active_job.status).label("processing_status"),
                 func.max(
                     cast(active_source.source_metadata["processing_status"], String)
@@ -96,34 +104,29 @@ async def list_projects(
                 active_source.project_id == Project.id,
             )
         )
-
         if operation_mode:
             if ',' in operation_mode:
                 modes = operation_mode.split(',')
                 statement = statement.where(Project.operation_mode.in_(modes))
             else:
                 statement = statement.where(Project.operation_mode == operation_mode)
-
         statement = statement.group_by(Project.id).order_by(Project.created_at.desc())
-
         result = await db.execute(statement)
         rows = result.all()
-
         projects = []
         for row in rows:
             project = row[0]
             product_count = row[1] or 0
-            processing_status = row[2]
-            source_status = row[3]
+            completeness_score = row[2] or 0  
+            processing_status = row[3]
+            source_status = row[4]
             clean_source_status = source_status.replace('"', "") if source_status else None
-
             project_response = ProjectResponse.model_validate(project)
             project_response.product_count = product_count
+            project_response.completeness_score = round(completeness_score, 1) if completeness_score else 0  
             project_response.processing_status = processing_status or "pending"
             project_response.source_status = normalize_source_status(clean_source_status, project_status=project.status)
-
             projects.append(project_response)
-
         return projects
     except Exception as e:
         logger.error(f"Failed to fetch projects: {e}", exc_info=True)

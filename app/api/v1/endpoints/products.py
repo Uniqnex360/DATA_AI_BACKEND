@@ -85,59 +85,37 @@ async def create_product(*, db: AsyncSession = Depends(get_session), product_in:
     return await product_service.create(db=db, obj_in=product_in)
 
 
-@router.post('/{product_code}/enrich')
-async def trigger_enrichment(product_code: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_session)):
-    product = await product_service.get_by_code(db, product_code)
-    if not product:
-        raise HTTPException(status_code=404, detail='Product not found')
-    background_tasks.add_task(run_enrichment_task, product_code)
-    return {"status": "Enrichment started", "product": product.product_name}
-
-
 @router.get("/filters")
 async def get_project_filters(
     project_id: str | None = None,
+    brand_name: Optional[str] = None,
+    category_1: Optional[str] = None,
     db: AsyncSession = Depends(get_session),
 ):
     try:
-        category_stmt = select(Product.category_1)
-        brand_stmt = select(Brand.name).join(
-            Product, Product.brand_id == Brand.id)
+        category_stmt = select(Product.category_1).where(Product.category_1.isnot(None))
+        brand_stmt = select(Brand.name).join(Product, Product.brand_id == Brand.id).where(Brand.name.isnot(None))
+        
         if project_id:
-            category_stmt = category_stmt.where(
-                Product.project_id == project_id)
+            category_stmt = category_stmt.where(Product.project_id == project_id)
             brand_stmt = brand_stmt.where(Product.project_id == project_id)
-        category_result = await db.execute(category_stmt)
+        if brand_name:
+            category_stmt = category_stmt.where(Product.brand_name == brand_name)
+        if category_1:
+            brand_stmt = brand_stmt.where(Product.category_1 == category_1)
+        
+        category_result = await db.execute(category_stmt.distinct())
         category_rows = category_result.all()
-        categories = sorted(
-            {
-                row[0].strip()
-                for row in category_rows
-                if row[0] and isinstance(row[0], str) and row[0].strip()
-            }
-        )
-        brand_result = await db.execute(brand_stmt)
+        categories = sorted([row[0].strip() for row in category_rows if row[0]])
+        
+        brand_result = await db.execute(brand_stmt.distinct())
         brand_rows = brand_result.all()
-        brands = sorted(
-            {
-                row[0].strip()
-                for row in brand_rows
-                if row[0] and isinstance(row[0], str) and row[0].strip()
-            }
-        )
-        return {
-            "categories": categories,
-            "brands": brands,
-        }
+        brands = sorted([row[0].strip() for row in brand_rows if row[0]])
+        
+        return {"categories": categories, "brands": brands}
     except Exception as e:
-        logger.error(
-            f"Failed to fetch filters for project {project_id}: {e}",
-            exc_info=True,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch project filters",
-        )
+        logger.error(f"Failed to fetch filters for project {project_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch project filters")
 
 
 @router.get("/attributes")

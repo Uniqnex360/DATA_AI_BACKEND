@@ -28,6 +28,7 @@ class ProjectResponse(BaseModel):
     operation_mode:Optional[str]=None
     source_status: str | None = None
     created_at: Optional[datetime] = None
+    completeness_score:Optional[int]=None
     product_count:int=0
     processing_status:str='pending'
     class Config:
