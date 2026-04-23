@@ -90,6 +90,7 @@ async def get_project_filters(
     project_id: str | None = None,
     brand_name: Optional[str] = None,
     category_1: Optional[str] = None,
+    workflow_stage: str | None = None,
     db: AsyncSession = Depends(get_session),
 ):
     try:
@@ -99,6 +100,9 @@ async def get_project_filters(
         if project_id:
             category_stmt = category_stmt.where(Product.project_id == project_id)
             brand_stmt = brand_stmt.where(Product.project_id == project_id)
+        if workflow_stage:
+            category_stmt = category_stmt.where(Product.workflow_stage == workflow_stage)
+            brand_stmt = brand_stmt.where(Product.workflow_stage == workflow_stage)
         if brand_name:
             category_stmt = category_stmt.where(Product.brand_name == brand_name)
         if category_1:
