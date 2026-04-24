@@ -30,6 +30,7 @@ class ProjectResponse(BaseModel):
     created_at: Optional[datetime] = None
     completeness_score:Optional[int]=None
     product_count:int=0
+    aggregation_type: str | None = None
     processing_status:str='pending'
     class Config:
         from_attributes = True
