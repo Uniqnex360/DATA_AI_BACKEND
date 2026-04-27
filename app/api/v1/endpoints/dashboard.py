@@ -554,6 +554,7 @@ async def get_recent_activity(
     except Exception as e:
         logger.error(f"Failed to get recent activity: {e}", exc_info=True)
         return []
+    
 @router.get("/projects-overview", response_model=List[ProjectOverview])
 async def get_projects_overview(
     page: int = Query(1, ge=1),
@@ -563,15 +564,15 @@ async def get_projects_overview(
     db: AsyncSession = Depends(get_session),
 ):
     try:
-        # Step 1: Get paginated project IDs with optional status filter
+        
         id_stmt = select(Project.id).order_by(Project.created_at.desc())
         
         if search:
             id_stmt = id_stmt.where(Project.name.ilike(f"%{search}%"))
         
-        # Apply status filter on the raw project status
+        
         if status and status != "all":
-            # Map frontend status to backend status values
+            
             status_map = {
                 "active": ["processing", "partially_completed"],
                 "completed": ["completed"],
@@ -589,7 +590,7 @@ async def get_projects_overview(
         if not project_ids:
             return []
         
-        # Step 2: Get full data for those specific projects
+        
         stmt = select(
             Project.id,
             Project.name,

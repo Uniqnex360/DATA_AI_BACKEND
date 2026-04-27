@@ -51,6 +51,7 @@ async def list_projects(
                 .scalar_subquery()
                 .label("product_count")
             )
+            aggregated_count_subq=(select(func.count(Product.id)).where(Product.project_id==Project.id,Product.workflow_stage=='aggregation',Product.enrichment_status=='completed')).scalar_subquery().label('aggregated_count')
         elif tab == "enrichment":
             product_count_subq = (
                 select(func.count(Product.id))
@@ -86,6 +87,7 @@ async def list_projects(
             select(
                 Project,
                 product_count_subq,
+                aggregated_count_subq,  
                 completeness_subq,  
                 func.max(active_job.status).label("processing_status"),
                 func.max(
@@ -123,6 +125,7 @@ async def list_projects(
             clean_source_status = source_status.replace('"', "") if source_status else None
             project_response = ProjectResponse.model_validate(project)
             project_response.product_count = product_count
+            project.response.aggregated_count=aggregated_count or 0
             project_response.completeness_score = round(completeness_score, 1) if completeness_score else 0  
             project_response.processing_status = processing_status or "pending"
             project_response.source_status = normalize_source_status(clean_source_status, project_status=project.status)
@@ -134,6 +137,7 @@ async def list_projects(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch projects",
         )
+    
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_session)):
     print(f"Received payload: {payload}")
