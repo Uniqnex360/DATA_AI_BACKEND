@@ -1203,6 +1203,7 @@ async def export_project_data(project_id: str, db: AsyncSession = Depends(get_se
         logger.error(f"Export failed for project {project_id}: {e}")
         raise HTTPException(
             status_code=500, detail="Failed to generate export file")
+        
 @router.post('/export/batch', status_code=200)
 async def batch_export_products(request: BatchExportRequest, db: AsyncSession = Depends(get_session)):
     try:
@@ -1227,6 +1228,7 @@ async def batch_export_products(request: BatchExportRequest, db: AsyncSession = 
         logger.error(f'Batch export failed {e}')
         raise HTTPException(
             status_code=500, detail='Failed to download results!')
+    
 @router.get("/project/{project_id}/products-with-movement")
 async def get_products_with_movement(
     project_id: str,

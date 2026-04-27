@@ -422,9 +422,12 @@ async def batch_aggregate(
                 if inferred:
                     row["taxonomy"] = inferred
                     inferred_count += 1
+        original_filename=file.filename or 'import'
+        base_name = original_filename.rsplit('.', 1)[0] if '.' in original_filename else original_filename
+        source_url = re.sub(r'[^a-zA-Z0-9_-]', '_', base_name)
         new_source = Source(
             source_type="excel" if file_ext in ['.xlsx', '.xls'] else "csv",
-            source_url=f"Import_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            source_url=source_url,
             project_id=projectId,
             status="completed",
             uploaded_at=datetime.utcnow(),

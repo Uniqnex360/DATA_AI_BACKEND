@@ -427,9 +427,14 @@ async def generate_products_excel(
         df.to_excel(writer, index=False, sheet_name='Enriched Data')
     excel_buffer.seek(0)
     if not filename:
-        filename = f"Enriched_Export_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+        filename ="Enriched_Export.xlsx"
+    if not filename.endswith('.xlsx'):
+        filename=f"{filename}.xlsx"
+        
+    from urllib.parse import quote
+    encoded_filename = quote(filename)
     return StreamingResponse(
         excel_buffer,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
     )

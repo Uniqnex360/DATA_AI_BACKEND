@@ -860,6 +860,7 @@ async def bulk_update_product_attributes(
             status_code=500,
             detail="Failed to bulk update attributes"
         )
+        
 @router.post("/download-selected")
 async def download_selected_cleaned_products(
     request: ExportSelectedCleaningRequest,
