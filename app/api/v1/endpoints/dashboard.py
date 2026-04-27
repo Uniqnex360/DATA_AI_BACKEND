@@ -554,6 +554,7 @@ async def get_recent_activity(
     except Exception as e:
         logger.error(f"Failed to get recent activity: {e}", exc_info=True)
         return []
+    
 @router.get("/projects-overview", response_model=List[ProjectOverview])
 async def get_projects_overview(
     status_filter: Optional[str] = Query(None),
@@ -565,6 +566,8 @@ async def get_projects_overview(
             Project.id,
             Project.name,
             Project.status,
+            Project.operation_mode,
+            Project.use_case,
             Project.updated_at,
             func.count(Product.id).label("total_products")
         ).outerjoin(
@@ -609,7 +612,9 @@ async def get_projects_overview(
                 "cleaning": cleaning,
                 "overallPct": overall_pct,
                 "status": map_project_status(proj.status),
-                "lastActive": proj.updated_at.strftime("%Y-%m-%d") if proj.updated_at else "Never"
+                "lastActive": proj.updated_at.strftime("%Y-%m-%d") if proj.updated_at else "Never",
+                'operationMode':proj.operation_mode or "",
+                "useCase":proj.use_case or "",
             })
         
         

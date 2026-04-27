@@ -76,3 +76,5 @@ class ProjectOverview(BaseModel):
     overallPct:int
     status:ProjectStatus
     lastActive:str
+    operationMode:str
+    useCase:str
