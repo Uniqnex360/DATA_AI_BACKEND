@@ -557,11 +557,27 @@ async def get_recent_activity(
     
 @router.get("/projects-overview", response_model=List[ProjectOverview])
 async def get_projects_overview(
-    status_filter: Optional[str] = Query(None),
-    db: AsyncSession = Depends(get_session)
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    search: str | None = None,
+    status: str | None = None,
+    db: AsyncSession = Depends(get_session),
 ):
     try:
+        # Step 1: Get paginated project IDs
+        id_stmt = select(Project.id).order_by(Project.created_at.desc())
+        if search:
+            id_stmt = id_stmt.where(Project.name.ilike(f"%{search}%"))
         
+        offset = (page - 1) * page_size
+        id_stmt = id_stmt.offset(offset).limit(page_size)
+        id_result = await db.execute(id_stmt)
+        project_ids = [row[0] for row in id_result.all()]
+        
+        if not project_ids:
+            return []
+        
+        # Step 2: Get full data for those specific projects
         stmt = select(
             Project.id,
             Project.name,
@@ -572,8 +588,12 @@ async def get_projects_overview(
             func.count(Product.id).label("total_products")
         ).outerjoin(
             Product, Project.id == Product.project_id
+        ).where(
+            Project.id.in_(project_ids)
         ).group_by(
             Project.id
+        ).order_by(
+            Project.created_at.desc()
         )
         
         result = await db.execute(stmt)
@@ -581,7 +601,6 @@ async def get_projects_overview(
         
         overview_list = []
         for proj in projects:
-            
             status_counts = await db.execute(
                 select(
                     func.count(Product.id),
@@ -601,33 +620,27 @@ async def get_projects_overview(
             
             overall_pct = round((aggregated / total) * 100) if total > 0 else 0
             
-            overview_list.append({
-                "id": str(proj.id),
-                "name": proj.name,
-                "totalProducts": total,
-                "aggregated": aggregated,
-                "aggregationFailed": failed,
-                "enrichment": enrichment,
-                "enrichmentFailed": 0,  
-                "cleaning": cleaning,
-                "overallPct": overall_pct,
-                "status": map_project_status(proj.status),
-                "lastActive": proj.updated_at.strftime("%Y-%m-%d") if proj.updated_at else "Never",
-                'operationMode':proj.operation_mode or "",
-                "useCase":proj.use_case or "",
-            })
-        
-        
-        if status_filter and status_filter != "all":
-            overview_list = [p for p in overview_list if p["status"] == status_filter]
+            overview_list.append(ProjectOverview(
+                id=str(proj.id),
+                name=proj.name,
+                totalProducts=total,
+                aggregated=aggregated,
+                aggregationFailed=failed,
+                enrichment=enrichment,
+                enrichmentFailed=0,
+                cleaning=cleaning,
+                overallPct=overall_pct,
+                status=map_project_status(proj.status),
+                lastActive=proj.updated_at.strftime("%Y-%m-%d") if proj.updated_at else "Never",
+                operationMode=proj.operation_mode or "",
+                useCase=proj.use_case or "",
+            ))
         
         return overview_list
         
     except Exception as e:
         logger.error(f"Failed to get projects overview: {e}", exc_info=True)
         return []
-
-
 def map_project_status(status: str) -> str:
     status_map = {
         "draft": "new",
