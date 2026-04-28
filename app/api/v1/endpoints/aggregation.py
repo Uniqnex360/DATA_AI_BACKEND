@@ -650,20 +650,20 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             product.completeness_score = min(len(ai_attributes) * 5, 100)
                             is_enrichment_attempt=product.workflow_stage=='enrichment'
                             product.sources_consulted = golden.get('sources_consulted', [])
-                            if product.completeness_score<enrichment_threshold:
-                                product.workflow_stage='enrichment'
-                                product.needs_enrichment=True
-                                product.ready_for_export=False
-                                product.routed_to_enrichment_at=datetime.utcnow()
-                                product.enrichment_status='pending'
-                                routed_to_enrichment+=1
-                            else:
-                                product.workflow_stage='aggregation'
-                                product.needs_enrichment=False
-                                product.ready_for_export=True
-                                product.enrichment_status='completed'  
-                                product.routed_to_enrichment_at = None
-                                ready_for_export+=1
+                            # if product.completeness_score<enrichment_threshold:
+                            #     product.workflow_stage='enrichment'
+                            #     product.needs_enrichment=True
+                            #     product.ready_for_export=False
+                            #     product.routed_to_enrichment_at=datetime.utcnow()
+                            #     product.enrichment_status='pending'
+                            #     routed_to_enrichment+=1
+                            # else:
+                            product.workflow_stage='aggregation'
+                            product.needs_enrichment=False
+                            product.ready_for_export=True
+                            product.enrichment_status='completed'  
+                            product.routed_to_enrichment_at = None
+                            ready_for_export+=1
                             track_llm_usage(product,llm_provider,is_enrichment_attempt,logger)
                             await db_session.flush()
                             await check_data_quality(db_session, product.product_code, ai_attributes)
@@ -700,20 +700,20 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             product.sources_consulted = golden.get(
                                 'sources_consulted', [])
                             is_enrichment_attempt = product.workflow_stage == 'enrichment'
-                            if product.completeness_score < enrichment_threshold:
-                                product.workflow_stage = 'enrichment'
-                                product.needs_enrichment = True
-                                product.ready_for_export = False
-                                product.routed_to_enrichment_at = datetime.utcnow()
-                                product.enrichment_status='pending'
-                                routed_to_enrichment+=1
-                            else:
-                                product.workflow_stage = 'aggregation'
-                                product.needs_enrichment = False
-                                product.ready_for_export = True
-                                product.enrichment_status = 'completed'
-                                product.routed_to_enrichment_at = None 
-                                ready_for_export+=1
+                            # if product.completeness_score < enrichment_threshold:
+                            #     product.workflow_stage = 'enrichment'
+                            #     product.needs_enrichment = True
+                            #     product.ready_for_export = False
+                            #     product.routed_to_enrichment_at = datetime.utcnow()
+                            #     product.enrichment_status='pending'
+                            #     routed_to_enrichment+=1
+                            # else:
+                            product.workflow_stage = 'aggregation'
+                            product.needs_enrichment = False
+                            product.ready_for_export = True
+                            product.enrichment_status = 'completed'
+                            product.routed_to_enrichment_at = None 
+                            ready_for_export+=1
                             track_llm_usage(product,llm_provider,is_enrichment_attempt,logger)
                             db_session.add(product)
                             await db_session.flush()
@@ -963,18 +963,18 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                             f"⚠ No image found during single product aggregation of {product.product_code}")
                     product.completeness_score = min(len(ai_data) * 5, 100)
                     product.sources_consulted = golden.get('sources_consulted', [])
-                    if product.completeness_score < enrichment_threshold:
-                        product.workflow_stage = 'enrichment'
-                        product.needs_enrichment = True
-                        product.ready_for_export = False
-                        product.routed_to_enrichment_at = datetime.utcnow()
-                        product.enrichment_status = 'pending'
-                    else:
-                        product.workflow_stage = 'aggregation'
-                        product.needs_enrichment = False
-                        product.ready_for_export = True
-                        product.enrichment_status = 'completed'
-                        product.routed_to_enrichment_at = None
+                    # if product.completeness_score < enrichment_threshold:
+                    #     product.workflow_stage = 'enrichment'
+                    #     product.needs_enrichment = True
+                    #     product.ready_for_export = False
+                    #     product.routed_to_enrichment_at = datetime.utcnow()
+                    #     product.enrichment_status = 'pending'
+                    # else:
+                    product.workflow_stage = 'aggregation'
+                    product.needs_enrichment = False
+                    product.ready_for_export = True
+                    product.enrichment_status = 'completed'
+                    product.routed_to_enrichment_at = None
                     track_llm_usage(product,llm_provider,is_enrichment_attempt,logger)
                     await check_data_quality(db_session, product.product_code, ai_data)
                     logger.info(
@@ -1001,18 +1001,18 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     product.enrichment_status = 'completed'
                     product.completeness_score = min(len(ai_data) * 5, 100)
                     product.sources_consulted = golden.get('sources_consulted', [])
-                    if product.completeness_score < enrichment_threshold:
-                        product.workflow_stage = 'enrichment'
-                        product.needs_enrichment = True
-                        product.ready_for_export = False
-                        product.routed_to_enrichment_at = datetime.utcnow()
-                        product.enrichment_status = 'pending'  
-                    else:
-                        product.workflow_stage = 'aggregation'
-                        product.needs_enrichment = False
-                        product.ready_for_export = True
-                        product.enrichment_status = 'completed'
-                        product.routed_to_enrichment_at = None
+                    # if product.completeness_score < enrichment_threshold:
+                    #     product.workflow_stage = 'enrichment'
+                    #     product.needs_enrichment = True
+                    #     product.ready_for_export = False
+                    #     product.routed_to_enrichment_at = datetime.utcnow()
+                    #     product.enrichment_status = 'pending'  
+                    # else:
+                    product.workflow_stage = 'aggregation'
+                    product.needs_enrichment = False
+                    product.ready_for_export = True
+                    product.enrichment_status = 'completed'
+                    product.routed_to_enrichment_at = None
                     track_llm_usage(product,llm_provider,is_enrichment_attempt,logger)
                 await update_project_status(db_session, product.project_id)
                 project = await db_session.get(Project, product.project_id)
@@ -1240,7 +1240,7 @@ async def get_products_with_movement(
             and_(
                 Product.project_id == project_id,
                 Product.workflow_stage == 'aggregation',
-                Product.enrichment_status.in_(['pending', 'processing', 'failed'])
+                Product.enrichment_status.in_(['pending', 'processing', 'failed', 'completed']) 
             )
         )
         enrichment_stmt = select(Product).where(
