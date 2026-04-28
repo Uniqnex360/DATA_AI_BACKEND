@@ -188,6 +188,7 @@ async def get_projects_with_aggregation_stats(
     except Exception as e:
         logger.error(f"Stats Error: {e}", exc_info=True)
         return []
+    
 @router.post("/project/{project_id}", response_model=AggregationTriggerResponse, status_code=status.HTTP_202_ACCEPTED)
 async def trigger_project_aggregation(
     project_id: str,

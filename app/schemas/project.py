@@ -33,5 +33,8 @@ class ProjectResponse(BaseModel):
     aggregated_count: Optional[int] = 0
     aggregation_type: str | None = None
     processing_status:str='pending'
+    cleaned_count:int=0
+    failed_count:int=0
+    pending_count:int=0
     class Config:
         from_attributes = True

@@ -1,4 +1,4 @@
-from sqlalchemy import cast, String,case
+from sqlalchemy import cast, String,case, null
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, outerjoin, and_
@@ -38,6 +38,8 @@ async def list_projects(
     try:
         active_job = aliased(AggregationJob)
         active_source = aliased(Source)
+        aggregated_count_subq = select(null()).label('aggregated_count')  # Default
+        
         if tab == "aggregation":
             product_count_subq = (
                 select(func.count(Product.id))
@@ -51,7 +53,12 @@ async def list_projects(
                 .scalar_subquery()
                 .label("product_count")
             )
-            aggregated_count_subq=(select(func.count(Product.id)).where(Product.project_id==Project.id,Product.workflow_stage=='aggregation',Product.enrichment_status=='completed')).scalar_subquery().label('aggregated_count')
+            aggregated_count_subq = (
+                select(func.count(Product.id))
+                .where(Product.project_id == Project.id, Product.workflow_stage == 'aggregation', Product.enrichment_status == 'completed')
+                .scalar_subquery()
+                .label('aggregated_count')
+            )
         elif tab == "enrichment":
             product_count_subq = (
                 select(func.count(Product.id))
@@ -72,64 +79,81 @@ async def list_projects(
                 .scalar_subquery()
                 .label("product_count")
             )
+        
+        cleaned_count_subq = (
+            select(func.count(Product.id))
+            .where(and_(Product.project_id == Project.id, Product.enrichment_status == 'completed'))
+            .scalar_subquery().label('cleaned_count')
+        )
+        failed_count_subq = (
+            select(func.count(Product.id))
+            .where(and_(Product.project_id == Project.id, Product.enrichment_status == 'failed'))
+            .scalar_subquery().label('failed_count')
+        )
+        pending_count_subq = (
+            select(func.count(Product.id))
+            .where(and_(Product.project_id == Project.id, Product.enrichment_status == 'pending'))
+            .scalar_subquery().label('pending_count')
+        )
         completeness_subq = (
             select(func.avg(Product.completeness_score))
-            .where(
-                and_(
-                    Product.project_id == Project.id,
-                    Product.workflow_stage == "aggregation"
-                )
-            )
+            .where(and_(Product.project_id == Project.id, Product.workflow_stage == "aggregation"))
             .scalar_subquery()
             .label("completeness_score")
         )
+        
         statement = (
             select(
                 Project,
                 product_count_subq,
-                aggregated_count_subq,  
-                completeness_subq,  
+                cleaned_count_subq,
+                failed_count_subq,
+                pending_count_subq,
+                aggregated_count_subq,
+                completeness_subq,
                 func.max(active_job.status).label("processing_status"),
-                func.max(
-                    cast(active_source.source_metadata["processing_status"], String)
-                ).label("source_status"),
+                func.max(cast(active_source.source_metadata["processing_status"], String)).label("source_status"),
             )
-            .outerjoin(
-                active_job,
-                and_(
-                    active_job.project_id == cast(Project.id, String),
-                    active_job.status.in_(["pending", "processing", "completed", "failed"]),
-                ),
-            )
-            .outerjoin(
-                active_source,
-                active_source.project_id == Project.id,
-            )
+            .outerjoin(active_job, and_(active_job.project_id == cast(Project.id, String), active_job.status.in_(["pending", "processing", "completed", "failed"])))
+            .outerjoin(active_source, active_source.project_id == Project.id)
         )
+        
         if operation_mode:
             if ',' in operation_mode:
                 modes = operation_mode.split(',')
                 statement = statement.where(Project.operation_mode.in_(modes))
             else:
                 statement = statement.where(Project.operation_mode == operation_mode)
+        
         statement = statement.group_by(Project.id).order_by(Project.created_at.desc())
         result = await db.execute(statement)
         rows = result.all()
         projects = []
+        
         for row in rows:
             project = row[0]
             product_count = row[1] or 0
-            completeness_score = row[2] or 0  
-            processing_status = row[3]
-            source_status = row[4]
+            cleaned_count = row[2] or 0
+            failed_count = row[3] or 0
+            pending_count = row[4] or 0
+            aggregated_count = row[5] or 0
+            completeness_score = row[6] or 0
+            processing_status = row[7]
+            source_status = row[8]
+            
             clean_source_status = source_status.replace('"', "") if source_status else None
+            
             project_response = ProjectResponse.model_validate(project)
             project_response.product_count = product_count
-            project.response.aggregated_count=aggregated_count or 0
-            project_response.completeness_score = round(completeness_score, 1) if completeness_score else 0  
+            project_response.cleaned_count = cleaned_count
+            project_response.failed_count = failed_count
+            project_response.pending_count = pending_count
+            project_response.aggregated_count = aggregated_count
+            project_response.completeness_score = round(completeness_score, 1) if completeness_score else 0
             project_response.processing_status = processing_status or "pending"
             project_response.source_status = normalize_source_status(clean_source_status, project_status=project.status)
             projects.append(project_response)
+        
         return projects
     except Exception as e:
         logger.error(f"Failed to fetch projects: {e}", exc_info=True)
@@ -137,7 +161,6 @@ async def list_projects(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch projects",
         )
-    
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_session)):
     print(f"Received payload: {payload}")
@@ -167,6 +190,7 @@ async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Could not create project"
         )
+        
 @router.get("/filters")
 async def get_project_filters(
     project_id: str | None = None,
