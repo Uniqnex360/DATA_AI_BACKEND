@@ -319,7 +319,19 @@ async def download_file(
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Error generating download")
-        
+def clean_numeric_string(value):
+    if value is None or value == '':
+        return ''
+    s = str(value).strip()
+    if not s:
+        return ''
+    try:
+        f = float(s)
+        if f == int(f):
+            return str(int(f))
+    except (ValueError, OverflowError):
+        pass
+    return s        
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
     request: Request,
@@ -376,7 +388,7 @@ async def batch_aggregate(
         with_mpn_count=0
         without_mpn_count=0
         for r in rows:
-            mpn = str(r.get('mpn', '')).strip()
+            mpn = clean_numeric_string(r.get('mpn', ''))
             brand = str(r.get('brand', '')).strip()
             sku=str(r.get('sku','')).strip()
             product_name=str(r.get('product_name',"")).strip()
@@ -448,7 +460,7 @@ async def batch_aggregate(
         created_count = 0
         updated_count = 0
         for idx, row in enumerate(rows):
-            code = row.get("mpn") or row.get("sku") or f"UNK-{uuid4()}"
+            code = clean_numeric_string(row.get("mpn")) or clean_numeric_string(row.get("sku")) or f"UNK-{uuid4()}"
             stmt = select(Product).where(Product.product_code == str(code),Product.project_id==projectId)
             result = await db.execute(stmt)
             product = result.scalars().first()
@@ -465,8 +477,8 @@ async def batch_aggregate(
                 product.workflow_stage=default_workflow_stage
                 updated_count += 1
             product.product_name = row.get("product_name", "Unknown")
-            product.mpn = row.get("mpn")
-            product.sku = row.get("sku")
+            product.mpn = clean_numeric_string(row.get("mpn"))
+            product.sku = clean_numeric_string(row.get("sku"))
             product.taxonomy = row.get("taxonomy")
             product.source_url = new_source.source_url
             if row.get('dynamic_attributes'):
