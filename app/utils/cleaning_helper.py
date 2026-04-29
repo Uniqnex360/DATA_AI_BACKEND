@@ -1,9 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
 from app.models.cleaning import CleaningTask
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
+from app.utils.timezone import now_ist
 logger=logging.getLogger('cleaning helper')
+
 async def create_cleaning_task(db: AsyncSession, task_id: str) -> CleaningTask:
     try:
         task = CleaningTask(
@@ -11,8 +13,8 @@ async def create_cleaning_task(db: AsyncSession, task_id: str) -> CleaningTask:
             status="pending",
             logs=[],
             error=None,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=now_ist(),
+            updated_at=now_ist(),
         )
         db.add(task)
         await db.commit()
@@ -51,7 +53,7 @@ async def update_cleaning_task_status(
 
         task.status = status
         task.error = error
-        task.updated_at = datetime.utcnow()
+        task.updated_at = now_ist()
 
         db.add(task)
         await db.commit()
@@ -72,11 +74,11 @@ async def append_cleaning_task_log(
             logger.warning(f"Tried to append log to missing task {task_id}")
             return
 
-        timestamp = datetime.utcnow().isoformat()
-        logs = task.logs or []
+        timestamp = now_ist().isoformat()
+        logs = list(task.logs or [])
         logs.append(f"{timestamp} - {message}")
         task.logs = logs
-        task.updated_at = datetime.utcnow()
+        task.updated_at = now_ist()
 
         db.add(task)
         await db.commit()

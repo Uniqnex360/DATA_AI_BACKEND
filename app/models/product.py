@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 from sqlmodel import Relationship
 from app.models.vendor import Vendor
 from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
+from app.utils.timezone import now_ist
 class Product(UUIDModel,table=True):
     __tablename__='product_master'
     id: UUID = Field(default_factory=uuid4, primary_key=True)
@@ -81,7 +82,7 @@ class Product(UUIDModel,table=True):
     discontinue_status:Optional[str]=None
     dynamic_attributes: List[dict] = Field(default=[], sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=now_ist, sa_column_kwargs={"onupdate": now_ist})
     short_description:Optional[str]=None
     long_description:Optional[str]=None
     features:Optional[List]=Field(default=None,sa_column=Column(JSON))

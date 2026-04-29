@@ -13,7 +13,7 @@ from sqlalchemy import func, case
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm.attributes import flag_modified
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import aiohttp
 from app.aggregation.services.pdf_service import PDFExtractionService
 from app.core.database import get_session
@@ -29,6 +29,7 @@ from app.search.searxng_service import SearXNGSearchService
 from app.core.database import async_session_factory
 from app.services.excel_mpn_service import ExcelMPNService
 from app.utils.pdf_helpers import extract_pdf_text, score_pdf_text_for_mpn, slice_text_around_mpn
+from app.utils.timezone import now_ist
 logger = logging.getLogger('pdf extraction')
 router = APIRouter()
 
@@ -95,8 +96,7 @@ async def fresh_aggregation(
             batch_id = existing_source.id
             existing_source.status = "processing"
             existing_source.source_metadata["processing_status"] = "processing"
-            existing_source.source_metadata["started_at"] = datetime.utcnow(
-            ).isoformat()
+            existing_source.source_metadata["started_at"] = now_ist().isoformat()
             flag_modified(existing_source, "source_metadata")
             db.add(existing_source)
         else:
@@ -110,7 +110,7 @@ async def fresh_aggregation(
                 source_metadata={
                     "mpns": request.mpns,
                     "use_case": request.use_case,
-                    "started_at": datetime.utcnow().isoformat(),
+                    "started_at": now_ist().isoformat(),
                     "total": len(request.mpns),
                     "successful": 0,
                     "failed": 0,
@@ -241,7 +241,7 @@ async def blind_pdf_extraction(
                 "use_case": use_case,
                 "pdf_files": [{'filename': p['filename'], 'size': p['size']} for p in pdf_documents],
                 "total_pdfs": len(pdf_documents),
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": now_ist().isoformat(),
                 "processing_status": "processing",
                 "extraction_type": "blind",
                 "product_hint": product_hint.strip(),
@@ -420,7 +420,7 @@ async def process_blind_pdf_extraction(
                     "successful": successful,
                     "failed": failed,
                     "extracted_products": all_extracted_products,
-                    "completed_at": datetime.utcnow().isoformat()
+                    "completed_at": now_ist().isoformat()
                 })
                 flag_modified(source, "source_metadata")
                 db.add(source)
@@ -573,7 +573,7 @@ async def extract_blind_product_details(pdf_text: str, product_info: Dict, db: A
 def generate_mpn_from_title(title: str) -> str:
     slug = re.sub(r'[^a-zA-Z0-9]', '-', title.lower())
     slug = re.sub(r'-+', '-', slug).strip('-')
-    timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+    timestamp = now_ist().strftime('%Y%m%d%H%M%S')
     return f"{slug[:30]}-{timestamp[-6:]}"
 
 
@@ -643,7 +643,7 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                 workflow_stage = 'enrichment'
                                 needs_enrichment = True
                                 is_ready_for_export = False
-                                routed_to_enrichment_at = datetime.utcnow()
+                                routed_to_enrichment_at = now_ist()
                                 enrichment_status = 'pending'
                                 routed_to_enrichment_count += 1
                             else:
@@ -760,6 +760,7 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                 'routed_to_enrichment': routed_to_enrichment_count,
                                 'ready_for_export': ready_for_export_count
                             })
+                            flag_modified(source, "source_metadata")
                             db.add(source)
                             await db.commit()
                             await sync_project_status(db, project_id)
@@ -767,13 +768,14 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                 if source:
                     source.status = 'completed' if successful > 0 else 'failed'
                     source.source_metadata.update({
-                        'completed_at': datetime.utcnow().isoformat(),
+                        'completed_at': now_ist().isoformat(),
                         'products': products,
                         'failed_mpns': failed_mpns,
                         'routed_to_enrichment': routed_to_enrichment_count,
                         'processing_status': 'completed' if successful > 0 else 'failed',
                         'ready_for_export': ready_for_export_count
                     })
+                    flag_modified(source, "source_metadata")
                     db.add(source)
                     await db.commit()
                     await sync_project_status(db, project_id)
@@ -831,7 +833,7 @@ async def structured_pdf_extraction(
             source_metadata={
                 'mpn': mpn,
                 'use_case': use_case,
-                'started_at': datetime.utcnow().isoformat(),
+                'started_at': now_ist().isoformat(),
                 'processing_status': 'processing',
                 'successful': 0,
                 'failed': 0
@@ -916,7 +918,7 @@ async def process_structured_pdf_extraction(
                         "processing_status": "failed",
                         "error": error_msg,
                         "error_type": "missing_prompt",
-                        "failed_at": datetime.utcnow().isoformat()
+                        "failed_at": now_ist().isoformat()
                     })
                     flag_modified(source, "source_metadata")
                     db.add(source)
@@ -956,8 +958,9 @@ async def process_structured_pdf_extraction(
                     'failed': 0,
                     'completeness_score': product.completeness_score,
                     'processing_status': 'completed',
-                    'completed_at': datetime.utcnow().isoformat()
+                    'completed_at': now_ist().isoformat()
                 })
+                flag_modified(source, "source_metadata") 
                 db.add(source)
             await db.commit()
             await sync_project_status(db, project_id)
@@ -1170,8 +1173,8 @@ async def process_multi_pdf_extraction_for_single_mpn(
                     if extracted_count >= source.source_metadata.get("total_mpns", 0):
                         source.status = "completed"
                         source.source_metadata["processing_status"] = "completed"
-                        source.source_metadata["completed_at"] = datetime.utcnow(
-                        ).isoformat()
+                        source.source_metadata["completed_at"] = now_ist().isoformat()
+
                     db.add(source)
                     await db.commit()
                     await sync_project_status(db, project_id)
@@ -1422,7 +1425,7 @@ async def save_pending_mpns(
             source_metadata={
                 'mpns': request.mpns,
                 'use_case': request.use_case,
-                'created_at': datetime.utcnow().isoformat(),
+                'created_at': now_ist().isoformat(),
                 'total': len(request.mpns),
                 'extracted': 0,
                 'processing_status': 'pending',
@@ -1556,7 +1559,7 @@ async def process_unstructured_pdf_extraction(
                         "processing_status": "failed",
                         "error": error_msg,
                         "error_type": "missing_prompt",
-                        "failed_at": datetime.utcnow().isoformat()
+                        "failed_at": now_ist().isoformat()
                     })
                     flag_modified(source, "source_metadata")
                     db.add(source)
@@ -1594,8 +1597,9 @@ async def process_unstructured_pdf_extraction(
                     'failed': 0,
                     'completeness_score': product.completeness_score,
                     'processing_status': 'completed',
-                    'completed_at': datetime.utcnow().isoformat()
+                    'completed_at': now_ist().isoformat()
                 })
+                flag_modified(source, "source_metadata") 
                 db.add(source)
             await db.commit()
             await sync_project_status(db, project_id)
@@ -1666,7 +1670,7 @@ async def multi_pdf_extraction(
                 "total_pdfs": len(pdf_documents),
                 "total_mpns": len(mpn_list),
                 "total_size": total_size,
-                "created_at": datetime.utcnow().isoformat(),
+                "created_at": now_ist().isoformat(),
                 "extracted": 0,
                 "processing_status": "pending",
                 "extraction_type": "multi",
@@ -1788,7 +1792,6 @@ async def process_multi_pdf_extraction(
                             f"Best match: {best_pdf['filename']} (score: {best_score})")
                         truncated_text = slice_text_around_mpn(
                             best_pdf["text"], mpn, window=15000, back=6000)
-                        extraction_type = "unstructured"
                     #     prompt = f"""
                     # You are a product data extraction expert. Extract product information for MPN "{mpn}" from the document below.
                     # The document is a product specification/catalog PDF. Extract whatever product specifications you can find.
@@ -1893,8 +1896,9 @@ async def process_multi_pdf_extraction(
                     "successful": successful,
                     "failed": failed,
                     "results": results,
-                    "completed_at": datetime.utcnow().isoformat()
+                    "completed_at": now_ist().isoformat()
                 })
+                flag_modified(source, "source_metadata")
                 db.add(source)
             await db.commit()
             await sync_project_status(db, project_id)
@@ -1933,7 +1937,7 @@ async def process_excel_mpns(
             raise HTTPException(400, "No MPNs to process")
         source.status = "processing"
         source.source_metadata['processing_status'] = 'processing'
-        source.source_metadata['started_at'] = datetime.utcnow().isoformat()
+        source.source_metadata['started_at'] = now_ist().isoformat()
         db.add(source)
         await db.commit()
         if 'Fresh PDF Aggregation' in use_case:
@@ -2019,7 +2023,7 @@ async def upload_mpns_from_excel(
                 'mpns': result['mpns'],
                 'detailed_data': result.get('detailed_data', []),
                 'parse_metadata': result['metadata'],
-                'created_at': datetime.utcnow().isoformat(),
+                'created_at': now_ist().isoformat(),
                 'processing_status': 'pending'
             }
         )

@@ -16,13 +16,13 @@ from app.utils.usecase_validator import validate_file_against_use_case
 import json
 import io
 import hashlib
+from app.utils.timezone import now_ist
 import asyncio
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.aggregation.aggregate_product import aggregate_product
 from app.schemas.extraction import ExtractionRequest, SourceMetricsResponse, SourceResponse
 from app.schemas.pipeline import SourcePriorityResponse
-from app.aggregation.prompt_builder import get_taxonomy_attribute_hints
 import pandas as pd
 import os
 from app.models.project import Project
@@ -31,6 +31,7 @@ from app.utils.parsers import infer_taxonomy_for_row, parse_import_file
 from app.utils.matching import get_or_create_brand, get_or_create_vendor, get_or_create_industry
 from app.utils.sanitize import sanitize_ai_data
 from app.api.v1.endpoints.aggregation import extract_ai_value_text
+
 logger = logging.getLogger("extraction_router")
 router = APIRouter()
 ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
@@ -75,7 +76,7 @@ async def extract_from_source(
             logger.error(f'No project ID in manual extraction')
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail="Project ID is required,Please select a project first!")
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = now_ist().strftime("%Y%m%d_%H%M%S")
         formatted_name = f"Manual_{timestamp}_{payload.sourceUrl}"
         new_source = Source(
             source_type=payload.sourceType,
@@ -332,6 +333,7 @@ def clean_numeric_string(value):
     except (ValueError, OverflowError):
         pass
     return s        
+
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
     request: Request,
@@ -372,7 +374,7 @@ async def batch_aggregate(
                     status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "File too large")
         content = bytes(content)
         file_hash = hashlib.sha256(content).hexdigest()
-        recent_cutoff = datetime.utcnow() - timedelta(hours=24)
+        recent_cutoff = now_ist() - timedelta(hours=24)
         duplicate_check = select(Source).where(
             Source.project_id == projectId,
             func.json_extract_path_text(
@@ -442,7 +444,7 @@ async def batch_aggregate(
             source_url=source_url,
             project_id=projectId,
             status="completed",
-            uploaded_at=datetime.utcnow(),
+            uploaded_at=now_ist(),
             content_data=content,
             source_metadata={
                 "file_hash": file_hash,
@@ -469,7 +471,7 @@ async def batch_aggregate(
                     product_code=str(code),
                     project_id=projectId,
                     workflow_stage=default_workflow_stage,
-                    created_at=datetime.utcnow()
+                    created_at=now_ist()
                 )
                 created_count += 1
             else:
@@ -688,7 +690,7 @@ async def run_extraction_task(source_id: str, content: str):
                         product_keys={"sku": sku, "mpn": sku},
                         raw_attributes=raw_attributes,
                         confidence=0.0,
-                        extracted_at=datetime.utcnow()
+                        extracted_at=now_ist()
                     ))
                     successful += 1
                 except Exception as e:
@@ -790,16 +792,16 @@ async def run_aggregation_task(source_id: str):
             products_ready_for_export=0
             logger.info(
                 f"Starting aggregation task for source {source_id}, found {total} pending products.")
-            for product in products:
-                logger.info(
-                    f" DB CHECK [{product.product_code}]: Taxonomy='{product.taxonomy}', Attrs={product.dynamic_attributes}")
-                primary_attr_names = []
-                if product.dynamic_attributes:
-                    primary_attr_names = [
-                        attr['name'] for attr in product.dynamic_attributes
-                        if isinstance(attr, dict) and attr.get('name')
-                    ]
-                logger.info(f"PRIORITY LIST: {primary_attr_names}")
+            # for product in products:
+            #     logger.info(
+            #         f" DB CHECK [{product.product_code}]: Taxonomy='{product.taxonomy}', Attrs={product.dynamic_attributes}")
+            #     primary_attr_names = []
+            #     if product.dynamic_attributes:
+            #         primary_attr_names = [
+            #             attr['name'] for attr in product.dynamic_attributes
+            #             if isinstance(attr, dict) and attr.get('name')
+            #         ]
+            #     logger.info(f"PRIORITY LIST: {primary_attr_names}")
             for idx, product in enumerate(products):
                 try:
                     logger.info(
@@ -954,7 +956,7 @@ async def run_aggregation_task(source_id: str):
                             raw_attributes=ai_attributes,
                             confidence=aggregation_result.get(
                                 'golden_record', {}).get('confidence', 0.9),
-                            extracted_at=datetime.utcnow()
+                            extracted_at=now_ist()
                         ))
                         flag_modified(product, "sources_consulted")
                         db_session.add(product)
@@ -975,7 +977,7 @@ async def run_aggregation_task(source_id: str):
                 "processing_status": "completed",
                 "aggregated_successful": successful,
                 "aggregated_failed": failed,
-                "last_aggregation_time": datetime.utcnow().isoformat()
+                "last_aggregation_time": now_ist().isoformat()
             })
             source.source_metadata = meta
             db_session.add(source)

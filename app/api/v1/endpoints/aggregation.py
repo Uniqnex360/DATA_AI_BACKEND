@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, and_, case
 from typing import Optional, List, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 from sqlalchemy.orm.attributes import flag_modified
 from fastapi.responses import StreamingResponse
@@ -26,6 +26,8 @@ from app.utils.image_validator import validate_image_url
 from app.utils.sanitize import sanitize_ai_data
 from app.aggregation.worker_pool import get_worker_pool
 logger = logging.getLogger("aggregation_router")
+from app.utils.timezone import now_ist
+
 router = APIRouter()
 async def update_project_status(db_session: AsyncSession, project_id: str) -> None:
     stmt = select(
@@ -107,29 +109,7 @@ async def get_active_job_for_project(db: AsyncSession, project_id: str) -> Optio
     )
     result = await db.execute(stmt)
     return result.scalars().first()
-async def cleanup_old_jobs(db: AsyncSession, days: int = 7) -> int:
-    cutoff_date = datetime.utcnow() - timedelta(days=days)
-    stmt = select(AggregationJob).where(
-        and_(
-            AggregationJob.status.in_(['completed', 'failed', 'cancelled']),
-            AggregationJob.completed_at < cutoff_date
-        )
-    )
-    result = await db.execute(stmt)
-    old_jobs = result.scalars().all()
-    count = 0
-    for job in old_jobs:
-        await db.delete(job)
-        count += 1
-    if count > 0:
-        await db.commit()
-        logger.info(f"Cleaned up {count} old aggregation jobs")
-    return count
-def calculate_progress(job: AggregationJob) -> float:
-    if job.total_products == 0:
-        return 0.0
-    processed = job.successful + job.failed
-    return round((processed / job.total_products) * 100, 2)
+
 @router.get("/projects/stats", response_model=List[ProjectStats])
 async def get_projects_with_aggregation_stats(
     db: AsyncSession = Depends(get_session)
@@ -239,10 +219,10 @@ async def trigger_project_aggregation(
             total_products=pending_count,
             successful=0,
             failed=0,
-            started_at=datetime.utcnow(),
+            started_at=now_ist(),
             details={
                 'project_name': project.name,
-                'triggered_at': datetime.utcnow().isoformat(),
+                'triggered_at': now_ist().isoformat(),
                 'llm_provider': request.llm_provider
             }
         )
@@ -322,7 +302,7 @@ async def cancel_project_aggregation(
                 detail="No active aggregation job found"
             )
         active_job.status = 'cancelled'
-        active_job.completed_at = datetime.utcnow()
+        active_job.completed_at = now_ist()
         active_job.error_message = 'Cancelled by user'
         db.add(active_job)
         await db.commit()
@@ -654,7 +634,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             #     product.workflow_stage='enrichment'
                             #     product.needs_enrichment=True
                             #     product.ready_for_export=False
-                            #     product.routed_to_enrichment_at=datetime.utcnow()
+                            #     product.routed_to_enrichment_at=now_ist()
                             #     product.enrichment_status='pending'
                             #     routed_to_enrichment+=1
                             # else:
@@ -704,7 +684,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             #     product.workflow_stage = 'enrichment'
                             #     product.needs_enrichment = True
                             #     product.ready_for_export = False
-                            #     product.routed_to_enrichment_at = datetime.utcnow()
+                            #     product.routed_to_enrichment_at = now_ist()
                             #     product.enrichment_status='pending'
                             #     routed_to_enrichment+=1
                             # else:
@@ -747,11 +727,11 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
             job.successful = successful
             job.failed = failed
             job.current_product = None
-            job.completed_at = datetime.utcnow()
+            job.completed_at = now_ist()
             job.details = {
                 **job.details,
                 'failed_products': failed_products[:50],
-                'completed_at': datetime.utcnow().isoformat(),
+                'completed_at': now_ist().isoformat(),
                 'total_processed': total,
                 'successful_processed': successful,
                 'failed_processed': failed,
@@ -776,7 +756,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                 new_metadata['routed_to_enrichment'] = routed_to_enrichment
                 new_metadata['ready_for_export'] = ready_for_export
                 new_metadata['enrichment_threshold'] = enrichment_threshold
-                new_metadata['last_run'] = datetime.utcnow().isoformat()
+                new_metadata['last_run'] = now_ist().isoformat()
                 source.source_metadata = new_metadata
                 flag_modified(source, "source_metadata")
                 db_session.add(source)
@@ -801,7 +781,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                 try:
                     job.status = 'failed'
                     job.error_message = str(e)[:500]
-                    job.completed_at = datetime.utcnow()
+                    job.completed_at = now_ist()
                     db_session.add(job)
                     await db_session.commit()
                     await refresh_project_status(job.project_id)
@@ -967,7 +947,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     #     product.workflow_stage = 'enrichment'
                     #     product.needs_enrichment = True
                     #     product.ready_for_export = False
-                    #     product.routed_to_enrichment_at = datetime.utcnow()
+                    #     product.routed_to_enrichment_at = now_ist()
                     #     product.enrichment_status = 'pending'
                     # else:
                     product.workflow_stage = 'aggregation'
@@ -1005,7 +985,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     #     product.workflow_stage = 'enrichment'
                     #     product.needs_enrichment = True
                     #     product.ready_for_export = False
-                    #     product.routed_to_enrichment_at = datetime.utcnow()
+                    #     product.routed_to_enrichment_at = now_ist()
                     #     product.enrichment_status = 'pending'  
                     # else:
                     product.workflow_stage = 'aggregation'
@@ -1030,7 +1010,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                             new_metadata = dict(source.source_metadata) if source.source_metadata else {}
                             processing_status = project.status if project else 'completed'
                             new_metadata['processing_status'] = processing_status
-                            new_metadata['completed_at'] = datetime.utcnow().isoformat()
+                            new_metadata['completed_at'] = now_ist().isoformat()
                             source.source_metadata = new_metadata
                             flag_modified(source, "source_metadata")
                             db_session.add(source)
@@ -1147,63 +1127,7 @@ async def check_data_quality(
                 details=f"Placeholder or invalid value detected: '{val_str}'",
                 resolved=False
             ))
-@router.delete("/jobs/cleanup")
-async def cleanup_old_aggregation_jobs(
-    days: int = 7,
-    db: AsyncSession = Depends(get_session)
-) -> Dict[str, Any]:
-    try:
-        count = await cleanup_old_jobs(db, days)
-        return {
-            'status': 'success',
-            'message': f'Cleaned up {count} old jobs',
-            'deleted_count': count
-        }
-    except Exception as e:
-        logger.error(f"Failed to cleanup jobs: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to cleanup old jobs"
-        )
-async def export_project_data(project_id: str, db: AsyncSession = Depends(get_session)):
-    try:
-        stmt = select(Product).where(Product.project_id == project_id)
-        result = await db.execute(stmt)
-        products = result.scalars().all()
-        if not products:
-            raise HTTPException(
-                status_code=404, detail="No products found in this project")
-        export_data = []
-        for p in products:
-            row = {
-                "Product ID": str(p.id),
-                "MPN": p.product_code,
-                "Name": p.product_name,
-                "Brand": p.brand_name,
-                "Status": p.enrichment_status,
-                "Completeness": f"{p.completeness_score}%"
-            }
-            if p.attributes:
-                for key, val in p.attributes.items():
-                    clean_key = key.replace('_', ' ').title()
-                    row[clean_key] = str(val)
-            export_data.append(row)
-        df = pd.DataFrame(export_data)
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Aggregated Data')
-        output.seek(0)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-        filename = f"Project_Export_{timestamp}.xlsx"
-        return StreamingResponse(output, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', headers={
-            "Content-Disposition": f"attachment; filename={filename}"
-        })
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Export failed for project {project_id}: {e}")
-        raise HTTPException(
-            status_code=500, detail="Failed to generate export file")
+
         
 @router.post('/export/batch', status_code=200)
 async def batch_export_products(request: BatchExportRequest, db: AsyncSession = Depends(get_session)):
@@ -1269,7 +1193,7 @@ async def get_products_with_movement(
             "aggregation_products": [p.dict() for p in aggregation_products],
             "enrichment_products": [p.dict() for p in enrichment_products],
             "completed_products": completed_products,
-            "last_updated": datetime.utcnow().isoformat()
+            "last_updated": now_ist().isoformat()
         }
     except Exception as e:
         logger.error(f"Failed to get products with movement: {e}")
