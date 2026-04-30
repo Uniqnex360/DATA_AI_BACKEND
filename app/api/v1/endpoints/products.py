@@ -2,6 +2,7 @@ from typing import Any, List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
+from app.models.attribute import Attribute
 from app.models.brand import Brand
 from app.services.product_service import product_service
 from sqlmodel import select, func
@@ -11,6 +12,7 @@ from uuid import UUID
 import uuid
 from app.models.project import Project
 from app.models.product import Product
+from app.models.product_attribute_link import ProductAttributeLinkModel
 logger = logging.getLogger('products')
 router = APIRouter()
 
@@ -60,10 +62,20 @@ async def read_products(
             existing = set()
             if p.attributes:
                 existing.update(p.attributes.keys())
-            if p.dynamic_attributes:
-                for attr in p.dynamic_attributes:
-                    if isinstance(attr, dict) and attr.get('name'):
-                        existing.add(attr['name'])
+            attr_count = 0
+            try:
+                attr_stmt = (
+                    select(Attribute.attribute_name)
+                    .join(ProductAttributeLinkModel, ProductAttributeLinkModel.attribute_id == Attribute.id)
+                    .where(ProductAttributeLinkModel.product_id == p.id)
+                )
+                attr_result = await db.execute(attr_stmt)
+                for row in attr_result.all():
+                    existing.add(row[0])
+                    attr_count+=1
+            except Exception:
+                pass
+            p_dict['attribute_count'] = attr_count
             expected = await get_expected_attributes_async(p, db)
             p_dict['missing_attributes'] = [
                 a for a in expected if a not in existing]
@@ -129,21 +141,33 @@ async def get_project_attributes(
             default=None, description="Optional category filter"),
         db: AsyncSession = Depends(get_session),):
     try:
-        stmt = select(Product.dynamic_attributes).where(
-            Product.project_id == project_id)
+        # stmt = select(Product.dynamic_attributes).where(
+        #     Product.project_id == project_id)
+        # if category:
+        #     stmt = stmt.where(Product.category_1 == category)
+        # result = await db.execute(stmt)
+        # rows = result.scalars().all()
+        # attribute_names = set()
+        # for dynamic_attributes in rows:
+        #     if not dynamic_attributes or not isinstance(dynamic_attributes, list):
+        #         continue
+        #     for attr in dynamic_attributes:
+        #         if isinstance(attr, dict):
+        #             name = attr.get('name')
+        #             if isinstance(name, str) and name.strip():
+        # 
+        # attribute_names.add(name.strip())
+        stmt = (
+            select(Attribute.attribute_name)
+            .join(ProductAttributeLinkModel, ProductAttributeLinkModel.attribute_id == Attribute.id)
+            .join(Product, Product.id == ProductAttributeLinkModel.product_id)
+            .where(Product.project_id == project_id)
+            .distinct()
+        )
         if category:
             stmt = stmt.where(Product.category_1 == category)
         result = await db.execute(stmt)
-        rows = result.scalars().all()
-        attribute_names = set()
-        for dynamic_attributes in rows:
-            if not dynamic_attributes or not isinstance(dynamic_attributes, list):
-                continue
-            for attr in dynamic_attributes:
-                if isinstance(attr, dict):
-                    name = attr.get('name')
-                    if isinstance(name, str) and name.strip():
-                        attribute_names.add(name.strip())
+        attribute_names = set(row[0] for row in result.all())
         return {
             "attributes": sorted(attribute_names)
         }
@@ -175,13 +199,27 @@ async def get_expected_attributes_async(product: Product, db: AsyncSession) -> L
             return []
         attribute_counts = {}
         for p in similar_products:
+            # attrs = set()
+            # if p.attributes:
+            #     attrs.update(p.attributes.keys())
+            # if p.dynamic_attributes:
+            #     for attr in p.dynamic_attributes:
+            #         if isinstance(attr, dict) and attr.get("name"):
+            #             attrs.add(attr["name"])
             attrs = set()
             if p.attributes:
                 attrs.update(p.attributes.keys())
-            if p.dynamic_attributes:
-                for attr in p.dynamic_attributes:
-                    if isinstance(attr, dict) and attr.get("name"):
-                        attrs.add(attr["name"])
+            try:
+                attr_stmt = (
+                    select(Attribute.attribute_name)
+                    .join(ProductAttributeLinkModel, ProductAttributeLinkModel.attribute_id == Attribute.id)
+                    .where(ProductAttributeLinkModel.product_id == p.id)
+                )
+                attr_result = await db.execute(attr_stmt)
+                for row in attr_result.all():
+                    attrs.add(row[0])
+            except Exception:
+                pass
             for attr in attrs:
                 attribute_counts[attr] = attribute_counts.get(attr, 0) + 1
         threshold = max(1, len(similar_products) * 0.3)
@@ -224,10 +262,17 @@ async def get_project_product_stats(
             filtered_products = []
             for product in products:
                 product_attrs = set()
-                if product.dynamic_attributes:
-                    for attr in product.dynamic_attributes:
-                        if isinstance(attr, dict) and attr.get('name'):
-                            product_attrs.add(attr['name'])
+                try:
+                    attr_stmt = (
+                        select(Attribute.attribute_name)
+                        .join(ProductAttributeLinkModel, ProductAttributeLinkModel.attribute_id == Attribute.id)
+                        .where(ProductAttributeLinkModel.product_id == product.id)
+                    )
+                    attr_result = await db.execute(attr_stmt)
+                    for row in attr_result.all():
+                        product_attrs.add(row[0])
+                except Exception:
+                    pass
                 if all(attr in product_attrs for attr in bulk_attributes):
                     filtered_products.append(product)
             products = filtered_products

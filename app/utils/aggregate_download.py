@@ -170,14 +170,23 @@ async def generate_products_excel(
                 'ai_discovered': set(),
             }
         data = taxonomy_raw_data[tax]
-        if p.dynamic_attributes:
-            for attr in p.dynamic_attributes:
-                if isinstance(attr, dict) and attr.get('name'):
-                    name = attr['name'].strip()
-                    name_norm = normalize_attr_name(name)
-                    if name and name_norm not in data['user_defined_map']:
-                        data['user_defined'].append(name)
-                        data['user_defined_map'][name_norm] = name
+        try:
+            from app.models.attribute import Attribute
+            from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
+            attr_stmt = (
+                select(Attribute.attribute_name)
+                .join(ProductAttributeLinkModel, ProductAttributeLinkModel.attribute_id == Attribute.id)
+                .where(ProductAttributeLinkModel.product_id == p.id)
+            )
+            attr_result = await db.execute(attr_stmt)
+            for row in attr_result.all():
+                name = row[0].strip()
+                name_norm = normalize_attr_name(name)
+                if name and name_norm not in data['user_defined_map']:
+                    data['user_defined'].append(name)
+                    data['user_defined_map'][name_norm] = name
+        except Exception:
+            pass
         if p.attributes:
             for key in p.attributes.keys():
                 key_lower = key.lower().strip()
@@ -321,14 +330,39 @@ async def generate_products_excel(
                     row[f"image_url_{i}"] = img.get("url", "")
                 else:
                     row[f"image_url_{i}"] = str(img) if img else ""
+        # original_attrs_by_norm = {}
+        # if p.dynamic_attributes:
+        #     for attr in p.dynamic_attributes:
+        #         if isinstance(attr, dict) and attr.get('name'):
+        #             k_norm = normalize_attr_name(attr['name'])
+        #             if k_norm not in original_attrs_by_norm:
+        #                 original_attrs_by_norm[k_norm] = []
+        #             original_attrs_by_norm[k_norm].append(attr)
         original_attrs_by_norm = {}
-        if p.dynamic_attributes:
-            for attr in p.dynamic_attributes:
-                if isinstance(attr, dict) and attr.get('name'):
-                    k_norm = normalize_attr_name(attr['name'])
-                    if k_norm not in original_attrs_by_norm:
-                        original_attrs_by_norm[k_norm] = []
-                    original_attrs_by_norm[k_norm].append(attr)
+        try:
+            from app.models.attribute import Attribute, AttributeValue
+            val_stmt = (
+                select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom,
+                       AttributeValue.validation_value, AttributeValue.validation_uom)
+                .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
+                .join(ProductAttributeValueLinkModel, 
+                      ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+                .where(ProductAttributeValueLinkModel.product_id == p.id)
+            )
+            val_result = await db.execute(val_stmt)
+            for attr_name, value, uom, validation_value, validation_uom in val_result.all():
+                k_norm = normalize_attr_name(attr_name)
+                if k_norm not in original_attrs_by_norm:
+                    original_attrs_by_norm[k_norm] = []
+                original_attrs_by_norm[k_norm].append({
+                    'name': attr_name,
+                    'value': value,
+                    'uom': uom,
+                    'validation_value': validation_value,
+                    'validation_uom': validation_uom
+                })
+        except Exception:
+            pass
         used_ai_keys = set()
         used_original_indexes = {}
         for i, template_attr_name in enumerate(attribute_template, 1):

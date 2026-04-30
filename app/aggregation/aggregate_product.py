@@ -12,6 +12,9 @@ from app.aggregation.services.download_service import HttpDownloadService
 from app.aggregation.services.smart_search import SmartSearchService
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 from urllib.parse import urlparse
+from app.models.product_attribute_link import ProductAttributeValueLinkModel
+
+from app.models.attribute import Attribute, AttributeValue
 from app.aggregation.services.extraction_service import (
     ExtractionService, HtmlExtractor, PdfExtractor, PlaywrightExtractor)
 from app.models.product import Product
@@ -313,10 +316,18 @@ async def aggregate_product(
             result = await db.execute(stmt)
             product = result.scalars().first()
             excel_attrs = {}
-            if product and product.dynamic_attributes:
-                for attr in product.dynamic_attributes:
-                    if isinstance(attr, dict) and attr.get('name'):
-                        excel_attrs[attr['name']] = attr.get('value', '')
+            if product:
+                try:
+                    val_stmt=(select(Attribute.attribute_name,AttributeValue.value).join(AttributeValue,AttributeValue.attribute_id==Attribute.id).join(ProductAttributeValueLinkModel,ProductAttributeValueLinkModel.attribute_value_id==AttributeValue.id).where(ProductAttributeValueLinkModel.product_id==product.id))
+                    val_result=await db.execute(val_stmt)
+                    for attr_name,attr_value in val_result.all():
+                        excel_attrs[attr_name]=attr_value
+                except Exception as e:
+                    logger.warning(f"Failed to read Excel attributes from normalized tables: {e}")
+
+                # for attr in product.dynamic_attributes:
+                #     if isinstance(attr, dict) and attr.get('name'):
+                #         excel_attrs[attr['name']] = attr.get('value', '')
             web_attrs = {attr.name: attr.value for attr in golden_attributes}
             validation_config = build_validation_prompt(
                 excel_attributes=excel_attrs,

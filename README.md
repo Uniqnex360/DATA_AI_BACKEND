@@ -129,7 +129,6 @@ All external calls (SearXNG, LLMs, downloads) are asynchronous with retries and 
 
 - **ProductResponse** – product identifier, MPN, brand, taxonomy, current attributes.
 - **ProductAggregationResponse** – golden record with unified attributes, descriptions, features, source URLs, and confidence.
-- **AggregationJobResponse** – job status (pending, running, completed, failed), progress, error messages.
 - **RulePromptResponse** – prompt text, type (extraction, unification, enrichment, validation), status.
 - **SourceResponse** – source file metadata, project association, processing status.
 - **ValidationError** – attribute name, expected vs actual value, recommendation.

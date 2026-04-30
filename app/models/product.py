@@ -82,6 +82,11 @@ class Product(UUIDModel,table=True):
     discontinue_status:Optional[str]=None
     dynamic_attributes: List[dict] = Field(default=[], sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    category_id: Optional[UUID] = Field(
+        default=None, 
+        foreign_key="categories.id", 
+        index=True
+    )
     updated_at: datetime = Field(default_factory=now_ist, sa_column_kwargs={"onupdate": now_ist})
     short_description:Optional[str]=None
     long_description:Optional[str]=None

@@ -19,21 +19,6 @@ class BatchExportRequest(BaseModel):
     project_ids:List[str]=[]
     product_ids:List[str]=[]
 
-class AggregationJobResponse(BaseModel):
-    id: str
-    project_id: str
-    status: str
-    total_products: int
-    successful: int
-    failed: int
-    current_product: Optional[str] = None
-    error_message: Optional[str] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    progress_percent: float = 0.0
-
-    class Config:
-        from_attributes = True
 
 
 class AggregationTriggerResponse(BaseModel):

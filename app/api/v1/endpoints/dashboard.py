@@ -9,6 +9,7 @@ from app.models.project import Project
 from app.schemas.dashboard import BrandAttributeStat, BrandFlowStat, CategoryAttributeStat, CategoryDistributionStat, CategoryFlowStat, DashboardMetricsResponse, ProjectOverview, TimelineStat
 from typing import Optional, List
 from datetime import datetime, date, time, timezone
+from app.models.product_attribute_link import ProductAttributeLinkModel
 logger = logging.getLogger("dashboard_metrics")
 router = APIRouter()
 DateField = Literal["created_at", "updated_at"]
@@ -313,13 +314,13 @@ async def get_brand_attributes(
             Product.brand_name,
             Product.workflow_stage,
             Product.enrichment_status,
+            Product.id,
             Product.attributes,
-            Product.dynamic_attributes
         ).where(*filters)
         result = await db.execute(stmt)
         rows = result.all()
         brand_map = {}
-        for brand, workflow_stage, enrichment_status, attributes, dynamic_attributes in rows:
+        for brand, workflow_stage, enrichment_status, product_id, attributes in rows:
             brand_key = brand or "Unknown"
             if brand_key not in brand_map:
                 brand_map[brand_key] = {
@@ -329,11 +330,17 @@ async def get_brand_attributes(
                     "completedAttributes": 0,
                     "totalAttributes": 0
                 }
-            attr_count = 0
+            attr_count_stmt = select(func.count(ProductAttributeLinkModel.attribute_id)).where(
+                ProductAttributeLinkModel.product_id == product_id
+            )
+            attr_count_result=await db.execute(attr_count_stmt)
+            attr_count = attr_count_result.scalar() or 0
+            # if isinstance(attributes, dict):
+            #     attr_count += len(attributes)
+            # if isinstance(dynamic_attributes, list):
+            #     attr_count += len(dynamic_attributes)
             if isinstance(attributes, dict):
                 attr_count += len(attributes)
-            if isinstance(dynamic_attributes, list):
-                attr_count += len(dynamic_attributes)
             brand_map[brand_key]["totalAttributes"] += attr_count
             if workflow_stage == "aggregation":
                 brand_map[brand_key]["aggregationAttributes"] += attr_count
@@ -363,13 +370,13 @@ async def get_category_attributes(
             Product.taxonomy,
             Product.workflow_stage,
             Product.enrichment_status,
+            Product.id,
             Product.attributes,
-            Product.dynamic_attributes
         ).where(*filters)
         result = await db.execute(stmt)
         rows = result.all()
         category_map = {}
-        for taxonomy, workflow_stage, enrichment_status, attributes, dynamic_attributes in rows:
+        for taxonomy, workflow_stage, enrichment_status,product_id, attributes in rows:
             cat_key = taxonomy or "Uncategorized"
             if cat_key not in category_map:
                 category_map[cat_key] = {
@@ -379,11 +386,11 @@ async def get_category_attributes(
                     "completedAttributes": 0,
                     "totalAttributes": 0
                 }
-            attr_count = 0
+            attr_count_stmt=select(func.count(ProductAttributeLinkModel.attribute_id).where(ProductAttributeLinkModel.product_id==product_id))
+            attr_count_result=await db.execute(attr_count_stmt)
+            attr_count=attr_count_result.scalar() or 0
             if isinstance(attributes, dict):
                 attr_count += len(attributes)
-            if isinstance(dynamic_attributes, list):
-                attr_count += len(dynamic_attributes)
             category_map[cat_key]["totalAttributes"] += attr_count
             if workflow_stage == "aggregation":
                 category_map[cat_key]["aggregationAttributes"] += attr_count
@@ -529,10 +536,10 @@ async def get_recent_activity(
         end_dt = parse_date(end_date, end=True)
         filters = build_product_filters(project_id, start_dt, end_dt, date_field=date_field)
         stmt = select(
-            Product.id,
             Product.product_name,
             Product.product_code,
             Product.enrichment_status,
+            Product.id,
             Product.updated_at
         ).where(
             *filters

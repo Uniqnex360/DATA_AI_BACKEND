@@ -81,7 +81,7 @@ def parse_import_file(file_bytes: bytes, filename: str) -> List[Dict[str, Any]]:
             "length": r.get("Length"),
             "width": r.get("Width") or r.get("Widt") or r.get("width"),
             "height": r.get("Height") or r.get("height"),
-            'dynamic_attributes': dynamic_attrs,
+            'attributes': dynamic_attrs,
             'primary_attributes': dynamic_attrs[:5] if dynamic_attrs else []
         }
 

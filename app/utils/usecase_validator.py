@@ -36,23 +36,38 @@ def has_basic_info(row: Dict) -> bool:
     return has_sku and has_name
 
 
+# def count_attributes(row: Dict) -> int:
+#     count = 0
+#     for i in range(1, 21):
+#         attr_name = row.get(f"attribute_name{i}")
+#         attr_value = row.get(f"attribute_value{i}")
+#         if attr_name and attr_value:
+#             count += 1
+#     dyn_attrs = row.get("dynamic_attributes", [])
+#     if isinstance(dyn_attrs,list):
+#         for attr in dyn_attrs:
+#             if isinstance(attr, dict):
+#                 name = attr.get("name", "")
+#                 value = attr.get("value", "")
+#                 if name and value:
+#                     count+=1
+#     return count
 def count_attributes(row: Dict) -> int:
     count = 0
-    for i in range(1, 21):
+    for i in range(1, 41):
         attr_name = row.get(f"attribute_name{i}")
         attr_value = row.get(f"attribute_value{i}")
-        if attr_name and attr_value:
+        if attr_name and str(attr_name).strip() and attr_value and str(attr_value).strip():
             count += 1
-    dyn_attrs = row.get("dynamic_attributes", [])
-    if isinstance(dyn_attrs,list):
-        for attr in dyn_attrs:
+    attrs = row.get("attributes", [])
+    if isinstance(attrs, list):
+        for attr in attrs:
             if isinstance(attr, dict):
                 name = attr.get("name", "")
                 value = attr.get("value", "")
                 if name and value:
-                    count+=1
+                    count += 1
     return count
-
 
 def has_any_attribute(row: Dict) -> bool:
     return count_attributes(row) > 0

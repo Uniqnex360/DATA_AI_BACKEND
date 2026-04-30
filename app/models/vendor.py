@@ -7,6 +7,8 @@ from app.models.base import UUIDModel
 from sqlmodel import Relationship
 from typing import Optional, List, Dict, Any
 
+from app.models.industry import Industry
+
 class Vendor(UUIDModel, table=True):
     __tablename__ = "vendor_master"
     vendor_code: str = Field(unique=True, index=True)
@@ -52,7 +54,7 @@ class Vendor(UUIDModel, table=True):
     tax_info: Optional[str] = None
     products: List["Product"] = Relationship(back_populates="vendor")
 
-    industry_obj: Optional["Industry"] = Relationship(
+    industry_obj: Optional[Industry] = Relationship(
         sa_relationship_kwargs={"lazy": "selectin"}
     )
     is_active: bool = True

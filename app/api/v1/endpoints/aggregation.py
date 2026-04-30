@@ -1,3 +1,4 @@
+
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, and_, case
@@ -13,11 +14,13 @@ import io
 import pandas as pd
 from app.core.config import settings
 from app.core.database import get_session, async_session_factory
+from app.models.attribute import Attribute, AttributeValue, CategoryAttribute
 from app.models.pipeline import AggregationJob, AuditTrail, CleansingIssue, RawExtraction, Source
 from app.models.product import Product
+from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
 from app.models.project import Project
 from app.aggregation.aggregate_product import aggregate_product, chunk_attributes
-from app.schemas.aggregation import AggregateLLMRequest, AggregatedAttribute, AggregatedAttributeValue, AggregationJobResponse, AggregationTriggerResponse, BatchExportRequest, ProductAggregationResponse, ProjectStats
+from app.schemas.aggregation import AggregateLLMRequest, AggregatedAttribute, AggregatedAttributeValue, AggregationTriggerResponse, BatchExportRequest, ProductAggregationResponse, ProjectStats
 from app.utils import llm_usage
 from app.utils.aggregate_download import generate_products_excel
 from app.utils.llm_usage import track_llm_usage
@@ -249,46 +252,7 @@ async def trigger_project_aggregation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to start aggregation"
         )
-@router.get("/project/{project_id}/status", response_model=AggregationJobResponse)
-async def get_project_aggregation_status(
-    project_id: str,
-    db: AsyncSession = Depends(get_session)
-) -> AggregationJobResponse:
-    try:
-        stmt = select(AggregationJob).where(
-            AggregationJob.project_id == project_id
-        ).order_by(AggregationJob.created_at.desc()).limit(1)
-        result = await db.execute(stmt)
-        job = result.scalars().first()
-        if not job:
-            return AggregationJobResponse(
-                id='',
-                project_id=project_id,
-                status='pending',
-                total_products=0,
-                successful=0,
-                failed=0,
-                progress_percent=0.0
-            )
-        return AggregationJobResponse(
-            id=str(job.id),
-            project_id=job.project_id,
-            status=job.status,
-            total_products=job.total_products,
-            successful=job.successful,
-            failed=job.failed,
-            current_product=job.current_product,
-            error_message=job.error_message,
-            started_at=job.started_at,
-            completed_at=job.completed_at,
-            progress_percent=calculate_progress(job)
-        )
-    except Exception as e:
-        logger.error(f"Failed to get aggregation status: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch aggregation status"
-        )
+
 @router.post("/project/{project_id}/cancel")
 async def cancel_project_aggregation(
     project_id: str,
@@ -434,51 +398,186 @@ def extract_ai_value_text(ai_val: Any) -> str:
         if val is not None:
             return f"{val} {unit}".strip()
     return str(ai_val)
-def merge_dynamic_attributes(
+
+# def merge_dynamic_attributes(
+#     product: Product,
+#     ai_data: Dict[str, Any],
+#     is_validation_mode: bool = False
+# ) -> None:
+#     existing_names = {attr.get(
+#         'name') for attr in product.dynamic_attributes if isinstance(attr, dict)}
+#     for attr in product.dynamic_attributes:
+#         if not isinstance(attr, dict) or not attr.get('name'):
+#             continue
+#         attr_name = attr['name']
+#         if attr_name not in ai_data:
+#             continue
+#         ai_val = ai_data[attr_name]
+#         if isinstance(ai_val, dict):
+#             new_val = ai_val.get('value', '')
+#             new_uom = ai_val.get('unit', '') or ai_val.get('uom', '')
+#         else:
+#             new_val = str(ai_val) if ai_val else ''
+#             new_uom = ''
+#         if new_val:
+#             attr['value'] = new_val
+#             if new_uom:
+#                 attr['uom'] = new_uom
+#             if is_validation_mode:
+#                 attr['validation_value'] = new_val
+#                 attr['validation_uom'] = new_uom
+#     for attr_name, ai_val in ai_data.items():
+#         if attr_name in existing_names:
+#             continue
+#         if isinstance(ai_val, dict):
+#             value = ai_val.get('value', '')
+#             uom = ai_val.get('unit', '') or ai_val.get('uom', '')
+#         else:
+#             value = str(ai_val) if ai_val else ''
+#             uom = ''
+#         if value:
+#             product.dynamic_attributes.append({
+#                 'name': attr_name,
+#                 'value': value,
+#                 'uom': uom,
+#                 'validation_value': value if is_validation_mode else '',
+#                 'validation_uom': uom if is_validation_mode else ''
+#             })
+#     flag_modified(product, "dynamic_attributes")
+
+async def merge_dynamic_attributes(
+    db: AsyncSession,
     product: Product,
     ai_data: Dict[str, Any],
     is_validation_mode: bool = False
 ) -> None:
-    existing_names = {attr.get(
-        'name') for attr in product.dynamic_attributes if isinstance(attr, dict)}
-    for attr in product.dynamic_attributes:
-        if not isinstance(attr, dict) or not attr.get('name'):
-            continue
-        attr_name = attr['name']
-        if attr_name not in ai_data:
-            continue
-        ai_val = ai_data[attr_name]
-        if isinstance(ai_val, dict):
-            new_val = ai_val.get('value', '')
-            new_uom = ai_val.get('unit', '') or ai_val.get('uom', '')
-        else:
-            new_val = str(ai_val) if ai_val else ''
-            new_uom = ''
-        if new_val:
-            attr['value'] = new_val
-            if new_uom:
-                attr['uom'] = new_uom
-            if is_validation_mode:
-                attr['validation_value'] = new_val
-                attr['validation_uom'] = new_uom
+    from app.models.attribute import Attribute, AttributeValue
+    from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
+    
     for attr_name, ai_val in ai_data.items():
-        if attr_name in existing_names:
+        try:
+            if isinstance(ai_val, dict):
+                value = ai_val.get('value', '')
+                uom = ai_val.get('unit', '') or ai_val.get('uom', '')
+            else:
+                value = str(ai_val) if ai_val else ''
+                uom = ''
+            
+            if not value:
+                continue
+            
+            attr_stmt = select(Attribute).where(Attribute.attribute_name == attr_name)
+            attr_result = await db.execute(attr_stmt)
+            attribute = attr_result.scalars().first()
+            
+            if not attribute:
+                attribute = Attribute(
+                    attribute_name=attr_name,
+                    attribute_code=attr_name.lower().replace(" ", "_").replace("/", "_"),
+                    data_type="string",
+                )
+                db.add(attribute)
+                await db.flush()
+            
+            link_stmt = select(ProductAttributeLinkModel).where(
+                ProductAttributeLinkModel.product_id == product.id,
+                ProductAttributeLinkModel.attribute_id == attribute.id,
+            )
+            if not (await db.execute(link_stmt)).scalars().first():
+                db.add(ProductAttributeLinkModel(product_id=product.id, attribute_id=attribute.id))
+            
+            val_stmt = select(AttributeValue).where(
+                AttributeValue.attribute_id == attribute.id,
+                AttributeValue.value == str(value),
+            )
+            val_result = await db.execute(val_stmt)
+            attr_val = val_result.scalars().first()
+            
+            if not attr_val:
+                attr_val = AttributeValue(
+                    attribute_id=attribute.id,
+                    value=str(value),
+                    uom=str(uom) if uom else None,
+                    validation_value=str(value) if is_validation_mode else None,
+                    validation_uom=str(uom) if is_validation_mode and uom else None,
+                )
+                db.add(attr_val)
+                await db.flush()
+            elif is_validation_mode:
+                attr_val.validation_value = str(value)
+                attr_val.validation_uom = str(uom) if uom else None
+                db.add(attr_val)
+            
+            pv_stmt = select(ProductAttributeValueLinkModel).where(
+                ProductAttributeValueLinkModel.product_id == product.id,
+                ProductAttributeValueLinkModel.attribute_value_id == attr_val.id,
+            )
+            if not (await db.execute(pv_stmt)).scalars().first():
+                db.add(ProductAttributeValueLinkModel(
+                    product_id=product.id,
+                    attribute_value_id=attr_val.id,
+                ))
+                        
+            if product.category_id:
+                ca_stmt = select(CategoryAttribute).where(
+                    CategoryAttribute.category_id == product.category_id,
+                    CategoryAttribute.attribute_id == attribute.id,
+                )
+                if not (await db.execute(ca_stmt)).scalars().first():
+                    db.add(CategoryAttribute(
+                        category_id=product.category_id,
+                        attribute_id=attribute.id,
+                    ))
+        except Exception as e:
+            logger.error(f"Failed to save attribute {attr_name} to normalized tables: {e}")
             continue
-        if isinstance(ai_val, dict):
-            value = ai_val.get('value', '')
-            uom = ai_val.get('unit', '') or ai_val.get('uom', '')
-        else:
-            value = str(ai_val) if ai_val else ''
-            uom = ''
-        if value:
-            product.dynamic_attributes.append({
-                'name': attr_name,
-                'value': value,
-                'uom': uom,
-                'validation_value': value if is_validation_mode else '',
-                'validation_uom': uom if is_validation_mode else ''
-            })
-    flag_modified(product, "dynamic_attributes")
+async def get_product_attributes_for_aggregation(
+    db: AsyncSession,
+    product: Product
+) -> tuple[List[str], Dict[str, Dict[str, str]]]:
+    """
+    Get primary attribute names and existing data for a product.
+    Returns: (primary_attr_names, existing_data)
+    - primary_attr_names: category attrs + product attrs (deduplicated)
+    - existing_data: {attr_name: {value, uom}}
+    """
+    primary_attr_names = []
+    existing_data = {}
+    
+    # 1. Get category expected attributes
+    if product.category_id:
+        try:
+            attr_stmt = (
+                select(Attribute.attribute_name)
+                .join(CategoryAttribute, CategoryAttribute.attribute_id == Attribute.id)
+                .where(CategoryAttribute.category_id == product.category_id)
+                .order_by(CategoryAttribute.display_order)
+            )
+            attr_result = await db.execute(attr_stmt)
+            for row in attr_result.all():
+                if row[0] not in primary_attr_names:
+                    primary_attr_names.append(row[0])
+        except Exception as e:
+            logger.warning(f"Failed to get category attrs for {product.product_code}: {e}")
+    
+    # 2. Get product's existing attributes
+    try:
+        val_stmt = (
+            select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom)
+            .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
+            .join(ProductAttributeValueLinkModel, 
+                  ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+            .where(ProductAttributeValueLinkModel.product_id == product.id)
+        )
+        val_result = await db.execute(val_stmt)
+        for attr_name, value, uom in val_result.all():
+            existing_data[attr_name] = {'value': value, 'uom': uom or ''}
+            if attr_name not in primary_attr_names:
+                primary_attr_names.append(attr_name)
+    except Exception as e:
+        logger.warning(f"Failed to read existing attrs for {product.product_code}: {e}")
+    
+    return primary_attr_names, existing_data
 async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai') -> None:
     async with async_session_factory() as db_session:
         job: Optional[AggregationJob] = None
@@ -527,12 +626,11 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                         f"[Job {job_id}] Aggregating {idx+1}/{total}: {product.product_code}")
                     import gc
                     gc.collect()
-                    primary_attrs = []
-                    if product.dynamic_attributes:
-                        for attr in product.dynamic_attributes:
-                            attr_name = attr.get('name')
-                            if attr_name and str(attr_name).strip():
-                                primary_attrs.append(str(attr_name).strip())
+                    primary_attrs, _ = await get_product_attributes_for_aggregation(
+                        db_session, product
+                    )
+                    
+                    
                     logger.info(f"   └─ Taxonomy: {product.taxonomy}")
                     logger.info(f"   └─ Primary attrs: {primary_attrs}")
                     job.current_product = product.product_code
@@ -566,14 +664,17 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                         if "back filling" in use_case or "validation" in use_case:
                             conflicts = {}
                             ai_data_for_merge = {}
-                            existing_attrs = {}
-                            if product.dynamic_attributes:
-                                for attr in product.dynamic_attributes:
-                                    if isinstance(attr, dict) and attr.get('name'):
-                                        existing_attrs[attr['name']] = {
-                                            'value': attr.get('value'),
-                                            'uom': attr.get('uom') or attr.get('unit')
-                                        }
+                            # existing_attrs = {}
+                            # if product.dynamic_attributes:
+                            #     for attr in product.dynamic_attributes:
+                            #         if isinstance(attr, dict) and attr.get('name'):
+                            #             existing_attrs[attr['name']] = {
+                            #                 'value': attr.get('value'),
+                            #                 'uom': attr.get('uom') or attr.get('unit')
+                            #             }
+                            _, existing_attrs = await get_product_attributes_for_aggregation(
+                                db_session, product
+                            )
                             for ai_key, ai_val in ai_attributes.items():
                                 ai_key_clean = str(ai_key).lower().replace(
                                     " ", "").replace("_", "").replace("-", "")
@@ -655,8 +756,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                 if key not in product.attributes or (val and (not isinstance(val, dict) or val.get('value'))):
                                     product.attributes[key] = val
                             flag_modified(product, "attributes")
-                            merge_dynamic_attributes(
-                                product, ai_attributes, is_validation_mode=False)
+                            await merge_dynamic_attributes(db_session, product, ai_attributes, is_validation_mode=False)
                             found_image = aggregation_result.get('image_url')
                             if found_image and isinstance(found_image, str):
                                 found_image_str = found_image.strip()
@@ -799,12 +899,9 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                 f"Starting single product aggregation: {product.product_code}")
             is_enrichment_attempt=product.workflow_stage=='enrichment'
             logger.info(f"Product {product.product_code} - workflow_stage: {product.workflow_stage}, is_enrichment_attempt: {is_enrichment_attempt}")
-            primary_attrs = []
-            if product.dynamic_attributes:
-                for attr in product.dynamic_attributes:
-                    attr_name = attr.get('name')
-                    if attr_name and str(attr_name).strip():
-                        primary_attrs.append(str(attr_name).strip())
+            primary_attrs, _ = await get_product_attributes_for_aggregation(
+                db_session, product
+            )
             logger.info(f"   └─ Taxonomy: {product.taxonomy}")
             logger.info(f"   └─ Primary attrs: {primary_attrs}")
             if len(primary_attrs) > 10:
@@ -892,15 +989,11 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                 use_case = project.use_case.lower() if project.use_case else ""
                 enrichment_threshold = settings.enrichment_threshold
                 if 'back filling' in use_case.lower() or 'validation' in use_case.lower():
-                    existing_attrs = {}
                     conflicts = {}
                     ai_data_for_merge = {}
-                    if product.dynamic_attributes:
-                        for attr in product.dynamic_attributes:
-                            if isinstance(attr, dict):
-                                name = attr.get('name')
-                                existing_attrs[name] = {'value': attr.get(
-                                    'value'), 'uom': attr.get('uom')}
+                    _, existing_attrs = await get_product_attributes_for_aggregation(
+                        db_session, product
+                    )
                     for attr_name, ai_val in ai_data.items():
                         if isinstance(ai_val, dict) and ai_val.get("matches_excel") is False:
                             conflicts[attr_name] = extract_ai_value_text(
@@ -913,8 +1006,8 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     )
                     product.validation_conflicts = conflicts
                     flag_modified(product, "validation_conflicts")
-                    merge_dynamic_attributes(
-                        product, ai_data_for_merge, is_validation_mode=('validation' in use_case))
+                    await merge_dynamic_attributes(
+                        db_session,product, ai_data_for_merge, is_validation_mode=('validation' in use_case))
                     product.enrichment_status = 'completed'
                     await db_session.flush()
                     db_session.add(product)
@@ -964,7 +1057,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                         if key not in product.attributes or (val and (not isinstance(val, dict) or val.get('value'))):
                             product.attributes[key] = val
                     flag_modified(product, "attributes")
-                    merge_dynamic_attributes(
+                    await merge_dynamic_attributes(db_session,
                         product, ai_data, is_validation_mode=False)
                     found_image = result.get('image_url')
                     if found_image and isinstance(found_image, str) and found_image.strip():

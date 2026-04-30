@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from sqlalchemy import func
 from io import BytesIO
+from app.models.attribute import Attribute, AttributeValue
 from app.models.pipeline import AuditTrail, RawExtraction, Source, SourcePriority
 from app.core.database import get_session, async_session_factory
 from app.models.product import Product
@@ -11,7 +12,9 @@ from typing import List, Optional
 import logging
 from sqlalchemy.orm.attributes import flag_modified
 from urllib.parse import quote
+from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
 from app.utils.aggregate_download import generate_products_excel
+from app.utils.attribute_helper import ensure_category_from_path, get_category_expected_attributes, save_attributes_normalized
 from app.utils.usecase_validator import validate_file_against_use_case
 import json
 import io
@@ -483,8 +486,6 @@ async def batch_aggregate(
             product.sku = clean_numeric_string(row.get("sku"))
             product.taxonomy = row.get("taxonomy")
             product.source_url = new_source.source_url
-            if row.get('dynamic_attributes'):
-                product.dynamic_attributes = row['dynamic_attributes']
             product.category_1 = row.get('category_1')
             product.category_2 = row.get('category_2')
             product.category_3 = row.get('category_3')
@@ -539,6 +540,54 @@ async def batch_aggregate(
                 pass
             product.enrichment_status = "pending"
             db.add(product)
+            await db.flush()
+
+            # dynamic_attrs = []
+            # for i in range(1, 41):
+            #     attr_name = row.get(f'attribute_name{i}')
+            #     if attr_name and str(attr_name).strip():
+            #         dynamic_attrs.append({
+            #             'name': str(attr_name).strip(),
+            #             'value': str(row.get(f'attribute_value{i}', '')).strip(),
+            #             'uom': str(row.get(f'attribute_uom{i}', '')).strip(),
+            #             'validation_value': str(row.get(f'validation_value{i}', '')).strip(),
+            #             'validation_uom': str(row.get(f'validation_uom{i}', '')).strip()
+            #         })
+                        # Extract attributes from parsed row
+            dynamic_attrs = row.get('attributes', [])
+            # Also try attribute_name1..40 columns (fallback)
+            if not dynamic_attrs:
+                for i in range(1, 41):
+                    attr_name = row.get(f'attribute_name{i}')
+                    if attr_name and str(attr_name).strip():
+                        dynamic_attrs.append({
+                            'name': str(attr_name).strip(),
+                            'value': str(row.get(f'attribute_value{i}', '')).strip(),
+                            'uom': str(row.get(f'attribute_uom{i}', '')).strip(),
+                            'validation_value': str(row.get(f'validation_value{i}', '')).strip(),
+                            'validation_uom': str(row.get(f'validation_uom{i}', '')).strip()
+                        })
+
+            # Ensure category exists and link product
+            path_parts = []
+            for i in range(1, 9):
+                cat = getattr(product, f'category_{i}', None)
+                if cat and str(cat).strip():
+                    path_parts.append(str(cat).strip())
+            
+            category_id = None
+            if path_parts:
+                category_id = await ensure_category_from_path(db, path_parts)
+                if category_id:
+                    product.category_id = category_id
+                    db.add(product)
+
+            # Save attributes to normalized tables
+            if dynamic_attrs:
+                try:
+                    await save_attributes_normalized(db, product, dynamic_attrs, category_id)
+                except Exception as e:
+                    logger.error(f"Failed to normalize attributes for {product.product_code}: {e}")
         await db.commit()
         logger.info(
             f"Batch import saved: {created_count} new, {updated_count} updated. Waiting for manual aggregation.")
@@ -788,53 +837,112 @@ async def run_aggregation_task(source_id: str):
             successful = 0
             failed = 0
             total = len(products)
-            products_routed_to_enrichment = 0
-            products_ready_for_export=0
             logger.info(
                 f"Starting aggregation task for source {source_id}, found {total} pending products.")
-            # for product in products:
-            #     logger.info(
-            #         f" DB CHECK [{product.product_code}]: Taxonomy='{product.taxonomy}', Attrs={product.dynamic_attributes}")
-            #     primary_attr_names = []
-            #     if product.dynamic_attributes:
-            #         primary_attr_names = [
-            #             attr['name'] for attr in product.dynamic_attributes
-            #             if isinstance(attr, dict) and attr.get('name')
-            #         ]
-            #     logger.info(f"PRIORITY LIST: {primary_attr_names}")
             for idx, product in enumerate(products):
                 try:
                     logger.info(
                         f"Aggregating {idx+1}/{total}: {product.product_code}")
-                    primary_attr_names = []
-                    if product.dynamic_attributes:
-                        primary_attr_names = [
-                            attr['name'] for attr in product.dynamic_attributes
-                            if isinstance(attr, dict) and attr.get('name')]
+                    # if product.dynamic_attributes:
+                    #     primary_attr_names = [
+                    #         attr['name'] for attr in product.dynamic_attributes
+                    #         if isinstance(attr, dict) and attr.get('name')]
+                    # if product.dynamic_attributes:
+                    #     for attr in product.dynamic_attributes:
+                    #         if isinstance(attr, dict) and attr.get('name'):
+                    #             existing_data[attr['name']] = {
+                    #                 'value': attr.get('value'),
+                    #                 'uom': attr.get('uom') or attr.get('unit')
+                    #             }
+                    # logger.info(
+                    #     f" EXISTING DATA BUILT for {product.product_code}:")
+                    # logger.info(
+                    #     f"   dynamic_attributes count: {len(product.dynamic_attributes) if product.dynamic_attributes else 0}")
+                    # logger.info(
+                    #     f"   existing_data keys: {list(existing_data.keys())}")
+                    # logger.info(
+                    #     f"   existing_data sample: {dict(list(existing_data.items())[:2])}")
+                    # for k, v in existing_data.items():
+                    #     logger.info(
+                    #         f"  {k}: value='{v.get('value')}', uom='{v.get('uom')}'")
+                    # if existing_data:
+                    #     logger.info(
+                    #         f" Excel attributes: {list(existing_data.keys())[:5]}")
+                    # logger.info(
+                    #     f"Primary attributes found in DB: {primary_attr_names}")
+                    # primary_attr_names = []
+                    # existing_data = {}
+                    # try:
+                    #     stmt = (
+                    #         select(AttributeValue)
+                    #         .join(ProductAttributeValueLinkModel, 
+                    #               ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+                    #         .where(ProductAttributeValueLinkModel.product_id == product.id)
+                    #     )
+                    #     result=await db_session.execute(stmt)
+                    #     attr_values=result.scalars().all()
+                    #     for av in attr_values:
+                    #         attr_stmt=select(Attribute).where(Attribute.id==av.attribute_id)
+                    #         attr_result=await db_session.execute(attr_stmt)
+                    #         attribute = attr_result.scalars().first()
+                    #         if attribute:
+                    #             attr_name=attribute.attribute_name
+                    #             primary_attr_names.append(attr_name)
+                    #             existing_data[attr_name] = {
+                    #                 'value': av.value,
+                    #                 'uom': av.uom or ''
+                    #             }
+                    # except Exception as e:
+                    #     logger.warning(f"Failed to read normalized attributes for {product.product_code}: {e}")
+                                        # Get category expected attributes
+                    category_attrs = []
+                    if product.category_id:
+                        category_attrs = await get_category_expected_attributes(
+                            db_session, product.category_id
+                        )
+                    
+                    # Get product's existing attributes
                     existing_data = {}
-                    if product.dynamic_attributes:
-                        for attr in product.dynamic_attributes:
-                            if isinstance(attr, dict) and attr.get('name'):
-                                existing_data[attr['name']] = {
-                                    'value': attr.get('value'),
-                                    'uom': attr.get('uom') or attr.get('unit')
+                    try:
+                        stmt = (
+                            select(AttributeValue)
+                            .join(ProductAttributeValueLinkModel, 
+                                  ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+                            .where(ProductAttributeValueLinkModel.product_id == product.id)
+                        )
+                        result = await db_session.execute(stmt)
+                        attr_values = result.scalars().all()
+                        for av in attr_values:
+                            attr_stmt = select(Attribute).where(Attribute.id == av.attribute_id)
+                            attr_result = await db_session.execute(attr_stmt)
+                            attribute = attr_result.scalars().first()
+                            if attribute:
+                                attr_name = attribute.attribute_name
+                                existing_data[attr_name] = {
+                                    'value': av.value,
+                                    'uom': av.uom or ''
                                 }
-                    logger.info(
-                        f" EXISTING DATA BUILT for {product.product_code}:")
-                    logger.info(
-                        f"   dynamic_attributes count: {len(product.dynamic_attributes) if product.dynamic_attributes else 0}")
-                    logger.info(
-                        f"   existing_data keys: {list(existing_data.keys())}")
-                    logger.info(
-                        f"   existing_data sample: {dict(list(existing_data.items())[:2])}")
-                    for k, v in existing_data.items():
-                        logger.info(
-                            f"  {k}: value='{v.get('value')}', uom='{v.get('uom')}'")
+                    except Exception as e:
+                        logger.warning(f"Failed to read existing attributes for {product.product_code}: {e}")
+                    
+                    # Merge: category attrs + existing attrs (deduplicated, category first)
+                    existing_names = set(existing_data.keys())
+                    primary_attr_names = list(category_attrs)  # Start with category
+                    for name in existing_names:
+                        if name not in primary_attr_names:
+                            primary_attr_names.append(name)
+                    
+                    if not primary_attr_names:
+                        primary_attr_names = list(existing_names)
+                    
+                    logger.info(f"  Category attrs: {category_attrs}")
+                    logger.info(f"  Existing attrs: {list(existing_names)}")
+                    logger.info(f"EXISTING DATA BUILT for {product.product_code}:")
+                    logger.info(f"  primary_attr_names count: {len(primary_attr_names)}")
+                    logger.info(f"  existing_data keys: {list(existing_data.keys())}")
                     if existing_data:
-                        logger.info(
-                            f" Excel attributes: {list(existing_data.keys())[:5]}")
-                    logger.info(
-                        f"Primary attributes found in DB: {primary_attr_names}")
+                        logger.info(f"  Excel attributes: {list(existing_data.keys())[:5]}")
+                    logger.info(f"Primary attributes found in DB: {primary_attr_names}")
                     if len(primary_attr_names) > 10:
                         logger.info(
                             f" Product has {len(primary_attr_names)} attributes - using multi-pass processing")
@@ -919,20 +1027,51 @@ async def run_aggregation_task(source_id: str):
                                         "web_value") if isinstance(ai_val, dict) else ai_val
                                 else:
                                     ai_data_for_merge[ai_key] = ai_val
-                            if product.dynamic_attributes and "validation" in use_case:
-                                for attr in product.dynamic_attributes:
-                                    if isinstance(attr, dict) and attr.get('name'):
-                                        attr_name = attr['name']
-                                        if attr_name in ai_data_for_merge:
-                                            ai_val = ai_data_for_merge[attr_name]
-                                            if isinstance(ai_val, dict):
-                                                attr['validation_value'] = ai_val.get(
-                                                    'value', '')
-                                                attr['validation_uom'] = ai_val.get(
-                                                    'unit', '') or ai_val.get('uom', '')
-                                            else:
-                                                attr['validation_value'] = str(
-                                                    ai_val) if ai_val else ''
+                            # if product.dynamic_attributes and "validation" in use_case:
+                            #     for attr in product.dynamic_attributes:
+                            #         if isinstance(attr, dict) and attr.get('name'):
+                            #             attr_name = attr['name']
+                            #             if attr_name in ai_data_for_merge:
+                            #                 ai_val = ai_data_for_merge[attr_name]
+                            #                 if isinstance(ai_val, dict):
+                            #                     attr['validation_value'] = ai_val.get(
+                            #                         'value', '')
+                            #                     attr['validation_uom'] = ai_val.get(
+                            #                         'unit', '') or ai_val.get('uom', '')
+                            #                 else:
+                            #                     attr['validation_value'] = str(
+                            #                         ai_val) if ai_val else ''
+                            if existing_data and "validation" in use_case:
+                                for attr_name, attr_data in existing_data.items():
+                                    if attr_name in ai_data_for_merge:
+                                        ai_val = ai_data_for_merge[attr_name]
+                                        if isinstance(ai_val, dict):
+                                            validation_value = ai_val.get('value', '')
+                                            validation_uom = ai_val.get('unit', '') or ai_val.get('uom', '')
+                                        else:
+                                            validation_value = str(ai_val) if ai_val else ''
+                                            validation_uom = ''
+                                        
+                                        # Update validation values in attribute_value table
+                                        try:
+                                            val_stmt = select(AttributeValue).join(
+                                                ProductAttributeValueLinkModel,
+                                                ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id
+                                            ).where(
+                                                ProductAttributeValueLinkModel.product_id == product.id,
+                                                AttributeValue.attribute_id == select(Attribute.id).where(
+                                                    Attribute.attribute_name == attr_name
+                                                ).scalar_subquery()
+                                            )
+                                            val_result = await db_session.execute(val_stmt)
+                                            attr_val = val_result.scalars().first()
+                                            
+                                            if attr_val:
+                                                attr_val.validation_value = validation_value
+                                                attr_val.validation_uom = validation_uom
+                                                db_session.add(attr_val)
+                                        except Exception as e:
+                                            logger.error(f"Failed to update validation for {attr_name}: {e}")
                             product.attributes = merge_attributes_preserving_order(
                                 primary_attributes=primary_attr_names,
                                 existing_attrs=existing_data,
@@ -962,6 +1101,66 @@ async def run_aggregation_task(source_id: str):
                         db_session.add(product)
                         await db_session.commit()
                         await db_session.get(Product, product.id)
+                        try:
+                            for attr_name,attr_value in ai_attributes.items():
+                                value=attr_value.get('value') if isinstance(attr_value,dict) else str(attr_value)
+                                uom = attr_value.get("unit", "") if isinstance(attr_value, dict) else ''
+                                attr_stmt=select(Attribute).where(
+                                    func.lower(Attribute.attribute_name) == attr_name.lower().strip()
+                                )
+                                attr_result = await db_session.execute(attr_stmt)
+                                attribute=attr_result.scalars().first()
+                                if not attribute:
+                                    display_name = attr_name.strip()
+                                    if display_name:
+                                        display_name = display_name[0].upper() + display_name[1:] if len(display_name) > 1 else display_name.upper()
+                                    attribute=Attribute(attribute_name=display_name,attribute_code=attr_name.lower().replace(" ","_").replace('/',"_"),data_type="string")
+                                    db_session.add(attribute)
+                                    await db_session.flush()
+                                link_stmt=select(ProductAttributeLinkModel).where(ProductAttributeLinkModel.product_id==product.id,ProductAttributeLinkModel.attribute_id==attribute.id,)
+                                if not (await db_session.execute(link_stmt)).scalars().first():
+                                    db_session.add(ProductAttributeLinkModel(product_id=product.id,attribute_id=attribute.id))
+                                val_stmt=select(AttributeValue).where(AttributeValue.attribute_id==attribute.id,AttributeValue.value==str(value))
+                                val_result=await db_session.execute(val_stmt)
+                                attr_value_obj=val_result.scalars().first()
+                                if not attr_value_obj:
+                                    attr_value_obj = AttributeValue(
+                                        attribute_id=attribute.id,
+                                        value=str(value),
+                                        uom=str(uom) if uom else None,
+                                    )
+                                    db_session.add(attr_value_obj)
+                                    await db_session.flush()
+                                
+                                # Link Product → AttributeValue (always run)
+                                pv_stmt = select(ProductAttributeValueLinkModel).where(
+                                    ProductAttributeValueLinkModel.product_id == product.id,
+                                    ProductAttributeValueLinkModel.attribute_value_id == attr_value_obj.id,
+                                )
+                                if not (await db_session.execute(pv_stmt)).scalars().first():
+                                    db_session.add(ProductAttributeValueLinkModel(
+                                        product_id=product.id,
+                                        attribute_value_id=attr_value_obj.id
+                                    ))
+                                
+                                # Link new attribute to the product's category (always run)
+                                if product.category_id:
+                                    from app.models.attribute import CategoryAttribute
+                                    ca_stmt = select(CategoryAttribute).where(
+                                        CategoryAttribute.category_id == product.category_id,
+                                        CategoryAttribute.attribute_id == attribute.id,
+                                    )
+                                    if not (await db_session.execute(ca_stmt)).scalars().first():
+                                        db_session.add(CategoryAttribute(
+                                            category_id=product.category_id,
+                                            attribute_id=attribute.id,
+                                        ))
+                                    
+                                    
+                        except Exception as e:
+                            logger.error(f"Failed to sync AI attributes to normalized tables: {e}")
+                                    
+                                
                         successful += 1
                     else:
                         failed += 1

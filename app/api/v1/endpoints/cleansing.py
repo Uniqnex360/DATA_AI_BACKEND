@@ -1,8 +1,10 @@
 from typing import Dict, List
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import or_
+from app.models.attribute import Attribute, AttributeValue
 from app.models.cleaning import CleaningTask
 from app.models.product import Product
+from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
 from app.models.project import Project
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,11 +86,22 @@ async def run_cleaning_task(
             await append_cleaning_task_log(db, task_id, "Pass 1: Collecting all attribute names...")
             all_attribute_names = set()
             for product in products:
-                if product.dynamic_attributes:
-                    for attr in product.dynamic_attributes:
-                        name = attr.get("name", "").strip()
-                        if name:
-                            all_attribute_names.add(name)
+                # if product.dynamic_attributes:
+                #     for attr in product.dynamic_attributes:
+                #         name = attr.get("name", "").strip()
+                #         if name:
+                #             all_attribute_names.add(name)
+                try:
+                    attr_stmt = (
+                        select(Attribute.attribute_name)
+                        .join(ProductAttributeLinkModel, ProductAttributeLinkModel.attribute_id == Attribute.id)
+                        .where(ProductAttributeLinkModel.product_id == product.id)
+                    )
+                    attr_result = await db.execute(attr_stmt)
+                    for row in attr_result.all():
+                        all_attribute_names.add(row[0])
+                except Exception as e:
+                    logger.warning(f"Failed to read attributes for {product.id}: {e}")
             await append_cleaning_task_log(db, task_id, f"Found {len(all_attribute_names)} unique attribute names")
             await append_cleaning_task_log(db, task_id, "Pass 2: Creating global attribute name mapping...")
             global_mapping = await service.get_global_name_mapping(
@@ -98,22 +111,19 @@ async def run_cleaning_task(
             if global_mapping:
                 await append_cleaning_task_log(db, task_id, f"Global mapping created with {len(global_mapping)} entries")
                 for product in products:
-                    if product.dynamic_attributes:
-                        updated = False
-                        new_attrs = []
-                        for attr in product.dynamic_attributes:
-                            attr_copy = dict(attr)
-                            old_name = attr_copy.get("name", "")
-                            if old_name in global_mapping:
-                                new_name = global_mapping[old_name]
-                                if new_name != old_name:
-                                    attr_copy["name"] = new_name
-                                    updated = True
-                            new_attrs.append(attr_copy)
-                        if updated:
-                            product.dynamic_attributes = new_attrs
-                            flag_modified(product, "dynamic_attributes")
-                            db.add(product)
+                    try:
+                        for old_name, new_name in global_mapping.items():
+                            if old_name == new_name:
+                                continue
+                            # Update attribute name in attribute_master
+                            attr_stmt = select(Attribute).where(Attribute.attribute_name == old_name)
+                            attr_result = await db.execute(attr_stmt)
+                            attribute = attr_result.scalars().first()
+                            if attribute:
+                                attribute.attribute_name = new_name
+                                db.add(attribute)
+                    except Exception as e:
+                        logger.warning(f"Failed to apply global mapping for product {product.id}: {e}")
                 await db.commit()
                 await append_cleaning_task_log(db, task_id, "Global name mapping applied to all products")
             else:
@@ -128,21 +138,33 @@ async def run_cleaning_task(
                     db.add(product)
                     await db.commit()
                     await db.refresh(product)
-                    if not product.dynamic_attributes:
+                    from app.models.attribute import Attribute, AttributeValue
+                    attr_stmt = (
+                        select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom, AttributeValue.id)
+                        .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
+                        .join(ProductAttributeValueLinkModel, 
+                              ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+                        .where(ProductAttributeValueLinkModel.product_id == product.id)
+                    )
+                    attr_result = await db.execute(attr_stmt)
+                    attr_rows = attr_result.all()
+                    
+                    if not attr_rows:
                         product.enrichment_status = "completed"
                         product.updated_at = now_ist()
                         db.add(product)
                         await db.commit()
                         continue
+                    
                     attributes = []
-                    for attr_idx, attr in enumerate(product.dynamic_attributes):
-                        if attr.get("value"):
+                    for attr_idx, (attr_name, value, uom, av_id) in enumerate(attr_rows):
+                        if value:
                             attributes.append(
                                 AttributeInput(
-                                    id=str(attr_idx),
-                                    name=attr.get("name", ""),
-                                    value=attr.get("value", ""),
-                                    unit=attr.get("unit") or attr.get("uom"),
+                                    id=str(av_id),
+                                    name=attr_name,
+                                    value=value,
+                                    unit=uom,
                                     source="existing_data",
                                 )
                             )
@@ -165,7 +187,7 @@ async def run_cleaning_task(
                     )
                     cleaning_result = await service.clean_attributes(attributes, context)
                     updated = await save_cleaned_attributes(
-                        db, product.id, cleaning_result, product.dynamic_attributes
+                        db, product.id, cleaning_result
                     )
                     product.enrichment_status = "completed"
                     product.updated_at = now_ist()
@@ -326,50 +348,108 @@ async def get_task_status(task_id: str, db: AsyncSession = Depends(get_session))
             f"Error getting task status for {task_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Failed to fetch task status")
+        
+# async def save_cleaned_attributes(
+#     db_session: AsyncSession,
+#     product_id: str,
+#     cleaning_response: LLMCleaningResponse,
+# ) -> bool:
+#     try:
+#         product = await db_session.get(Product, product_id)
+#         if not product or not product.dynamic_attributes:
+#             return False
+#         cleaned_by_id = {
+#             str(ca.id): ca for ca in cleaning_response.cleaned_attributes
+#         }
+#         updated = False
+#         new_attrs = [dict(a) for a in product.dynamic_attributes]
+#         for idx, attr in enumerate(new_attrs):
+#             attr_id = str(idx)
+#             cleaned = cleaned_by_id.get(attr_id)
+#             if not cleaned:
+#                 continue
+#             name_changed = cleaned.name != attr.get("name")
+#             final_val = str(cleaned.cleaned_value)
+#             final_unit = cleaned.unit or ""
+#             if final_unit and final_val.endswith(f" {final_unit}"):
+#                 final_val = final_val.replace(f" {final_unit}", "").strip()
+#             val_changed = final_val != str(attr.get("value"))
+#             unit_changed = final_unit != (attr.get("unit") or attr.get("uom"))
+#             if name_changed or val_changed or unit_changed:
+#                 logger.info(
+#                     f"Updating {attr.get('name')}: {attr.get('value')} -> {cleaned.cleaned_value}"
+#                 )
+#                 attr["name"] = cleaned.name
+#                 attr["value"] = final_val
+#                 attr["unit"] = final_unit
+#                 updated = True
+#         if updated:
+#             product.dynamic_attributes = new_attrs
+#             flag_modified(product, "dynamic_attributes")
+#             product.updated_at = now_ist()
+#             db_session.add(product)
+#         return updated
+#     except Exception as e:
+#         logger.error(
+#             f"Failed saving cleaned attributes for product {product_id}: {e}", exc_info=True)
+#         raise
 async def save_cleaned_attributes(
     db_session: AsyncSession,
     product_id: str,
     cleaning_response: LLMCleaningResponse,
-    original_attributes: List[Dict]
 ) -> bool:
     try:
+        from app.models.attribute import Attribute, AttributeValue
+        
         product = await db_session.get(Product, product_id)
-        if not product or not product.dynamic_attributes:
+        if not product:
             return False
-        cleaned_by_id = {
-            str(ca.id): ca for ca in cleaning_response.cleaned_attributes
-        }
+        
         updated = False
-        new_attrs = [dict(a) for a in product.dynamic_attributes]
-        for idx, attr in enumerate(new_attrs):
-            attr_id = str(idx)
-            cleaned = cleaned_by_id.get(attr_id)
-            if not cleaned:
+        
+        for ca in cleaning_response.cleaned_attributes:
+            # Find the attribute value by ID
+            av_id = str(ca.id)
+            attr_val = await db_session.get(AttributeValue, av_id)
+            
+            if not attr_val:
                 continue
-            name_changed = cleaned.name != attr.get("name")
-            final_val = str(cleaned.cleaned_value)
-            final_unit = cleaned.unit or ""
+            
+            final_val = str(ca.cleaned_value)
+            final_unit = ca.unit or ""
+            
+            # Strip unit from value if it's duplicated
             if final_unit and final_val.endswith(f" {final_unit}"):
                 final_val = final_val.replace(f" {final_unit}", "").strip()
-            val_changed = final_val != str(attr.get("value"))
-            unit_changed = final_unit != (attr.get("unit") or attr.get("uom"))
-            if name_changed or val_changed or unit_changed:
-                logger.info(
-                    f"Updating {attr.get('name')}: {attr.get('value')} -> {cleaned.cleaned_value}"
-                )
-                attr["name"] = cleaned.name
-                attr["value"] = final_val
-                attr["unit"] = final_unit
+            
+            name_changed = ca.name != ""  # Can't easily rename here
+            val_changed = final_val != str(attr_val.value or "")
+            unit_changed = final_unit != (attr_val.uom or "")
+            
+            if val_changed or unit_changed:
+                logger.info(f"Updating attribute value: {attr_val.value} -> {final_val}")
+                attr_val.value = final_val
+                attr_val.uom = final_unit
+                db_session.add(attr_val)
                 updated = True
+            
+            # If name changed, update attribute_master
+            if name_changed:
+                attr_stmt = select(Attribute).where(Attribute.id == attr_val.attribute_id)
+                attr_result = await db_session.execute(attr_stmt)
+                attribute = attr_result.scalars().first()
+                if attribute and ca.name != attribute.attribute_name:
+                    attribute.attribute_name = ca.name
+                    db_session.add(attribute)
+                    updated = True
+        
         if updated:
-            product.dynamic_attributes = new_attrs
-            flag_modified(product, "dynamic_attributes")
             product.updated_at = now_ist()
             db_session.add(product)
+        
         return updated
     except Exception as e:
-        logger.error(
-            f"Failed saving cleaned attributes for product {product_id}: {e}", exc_info=True)
+        logger.error(f"Failed saving cleaned attributes: {e}", exc_info=True)
         raise
 @router.get("/projects/{project_id}/download")
 async def download_cleaned_project(
@@ -462,13 +542,31 @@ async def download_cleaned_project(
         if product.sources_consulted and isinstance(product.sources_consulted, list):
             for i, url in enumerate(product.sources_consulted[:5], 1):
                 row[f"source_url_{i}"] = url
-        if product.dynamic_attributes:
-            for idx, attr in enumerate(product.dynamic_attributes[:MAX_ATTRIBUTES]):
+        # if product.dynamic_attributes:
+        #     for idx, attr in enumerate(product.dynamic_attributes[:MAX_ATTRIBUTES]):
+        #         i = idx + 1
+        #         row[f"attribute_name{i}"] = attr.get("name", "")
+        #         row[f"attribute_value{i}"] = attr.get("value", "")
+        #         row[f"attribute_uom{i}"] = attr.get(
+        #             "unit") or attr.get("uom") or ""
+                # Read attributes from normalized tables
+        try:
+            val_stmt = (
+                select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom)
+                .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
+                .join(ProductAttributeValueLinkModel, 
+                      ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+                .where(ProductAttributeValueLinkModel.product_id == product.id)
+                .limit(MAX_ATTRIBUTES)
+            )
+            val_result = await db.execute(val_stmt)
+            for idx, (attr_name, value, uom) in enumerate(val_result.all()):
                 i = idx + 1
-                row[f"attribute_name{i}"] = attr.get("name", "")
-                row[f"attribute_value{i}"] = attr.get("value", "")
-                row[f"attribute_uom{i}"] = attr.get(
-                    "unit") or attr.get("uom") or ""
+                row[f"attribute_name{i}"] = attr_name or ""
+                row[f"attribute_value{i}"] = value or ""
+                row[f"attribute_uom{i}"] = uom or ""
+        except Exception as e:
+            logger.warning(f"Failed to read attributes for download: {e}")
         rows.append(row)
     df = pd.DataFrame(rows, columns=all_headers)
     excel_buffer = io.BytesIO()
@@ -498,49 +596,94 @@ async def update_product_attributes(
             db=db,
             project_id=project_id
         )
-        if product.dynamic_attributes:
-            for attr in product.dynamic_attributes:
-                attr_name = attr.get('name')
-                if attr_name in request.attributes:
-                    incoming = request.attributes[attr_name]
-                    attribute_input = AttributeInput(
-                        id="0",
-                        name=attr_name,
-                        value=incoming.value,
-                        unit=incoming.uom or attr.get("unit") or attr.get("uom"),
-                        source="manual_update"
+        # if product.dynamic_attributes:
+        #     for attr in product.dynamic_attributes:
+        #         attr_name = attr.get('name')
+        #         if attr_name in request.attributes:
+        #             incoming = request.attributes[attr_name]
+        #             attribute_input = AttributeInput(
+        #                 id="0",
+        #                 name=attr_name,
+        #                 value=incoming.value,
+        #                 unit=incoming.uom or attr.get("unit") or attr.get("uom"),
+        #                 source="manual_update"
+        #             )
+        #             context = ProductContext(
+        #                 mpn=product.product_code,
+        #                 brand=product.brand_name,
+        #                 product_name=product.product_name,
+        #                 taxonomy=product.taxonomy
+        #             )
+        #             try:
+        #                 cleaning_result = await cleaning_service.clean_attributes(
+        #                     [attribute_input], 
+        #                     context
+        #                 )
+        #                 if cleaning_result.cleaned_attributes:
+        #                     cleaned = cleaning_result.cleaned_attributes[0]
+        #                     attr["value"] = cleaned.cleaned_value
+        #                     attr["unit"] = cleaned.unit or incoming.uom or ""
+        #                     attr["uom"] = cleaned.unit or incoming.uom or ""
+        #                 else:
+        #                     attr["value"] = incoming.value
+        #                     attr["unit"] = incoming.uom or ""
+        #                     attr["uom"] = incoming.uom or ""
+        #             except Exception as e:
+        #                 logger.error(f"Cleaning failed for attribute {attr_name}: {e}")
+        #                 attr["value"] = incoming.value
+        #                 attr["unit"] = incoming.uom or ""
+        #                 attr["uom"] = incoming.uom or ""
+        #             if (
+        #                 product.validation_conflicts
+        #                 and attr_name in product.validation_conflicts
+        #             ):
+        #                 del product.validation_conflicts[attr_name]
+        # flag_modified(product, "dynamic_attributes")
+        attr_stmt = (
+            select(Attribute.attribute_name, AttributeValue)
+            .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
+            .join(ProductAttributeValueLinkModel, 
+                  ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+            .where(ProductAttributeValueLinkModel.product_id == product.id)
+        )
+        attr_result = await db.execute(attr_stmt)
+        for attr_name, attr_val in attr_result.all():
+            if attr_name in request.attributes:
+                incoming = request.attributes[attr_name]
+                attribute_input = AttributeInput(
+                    id=str(attr_val.id),
+                    name=attr_name,
+                    value=incoming.value,
+                    unit=incoming.uom or attr_val.uom or "",
+                    source="manual_update"
+                )
+                context = ProductContext(
+                    mpn=product.product_code,
+                    brand=product.brand_name,
+                    product_name=product.product_name,
+                    taxonomy=product.taxonomy
+                )
+                try:
+                    cleaning_result = await cleaning_service.clean_attributes(
+                        [attribute_input], 
+                        context
                     )
-                    context = ProductContext(
-                        mpn=product.product_code,
-                        brand=product.brand_name,
-                        product_name=product.product_name,
-                        taxonomy=product.taxonomy
-                    )
-                    try:
-                        cleaning_result = await cleaning_service.clean_attributes(
-                            [attribute_input], 
-                            context
-                        )
-                        if cleaning_result.cleaned_attributes:
-                            cleaned = cleaning_result.cleaned_attributes[0]
-                            attr["value"] = cleaned.cleaned_value
-                            attr["unit"] = cleaned.unit or incoming.uom or ""
-                            attr["uom"] = cleaned.unit or incoming.uom or ""
-                        else:
-                            attr["value"] = incoming.value
-                            attr["unit"] = incoming.uom or ""
-                            attr["uom"] = incoming.uom or ""
-                    except Exception as e:
-                        logger.error(f"Cleaning failed for attribute {attr_name}: {e}")
-                        attr["value"] = incoming.value
-                        attr["unit"] = incoming.uom or ""
-                        attr["uom"] = incoming.uom or ""
-                    if (
-                        product.validation_conflicts
-                        and attr_name in product.validation_conflicts
-                    ):
-                        del product.validation_conflicts[attr_name]
-        flag_modified(product, "dynamic_attributes")
+                    if cleaning_result.cleaned_attributes:
+                        cleaned = cleaning_result.cleaned_attributes[0]
+                        attr_val.value = cleaned.cleaned_value
+                        attr_val.uom = cleaned.unit or incoming.uom or ""
+                    else:
+                        attr_val.value = incoming.value
+                        attr_val.uom = incoming.uom or ""
+                except Exception as e:
+                    logger.error(f"Cleaning failed for attribute {attr_name}: {e}")
+                    attr_val.value = incoming.value
+                    attr_val.uom = incoming.uom or ""
+                if (
+                    product.validation_conflicts
+                    and attr_name in product.validation_conflicts
+                ):
+                    del product.validation_conflicts[attr_name]
         if product.validation_conflicts:
             flag_modified(product, "validation_conflicts")
         product.updated_at = now_ist()
@@ -576,26 +719,33 @@ async def bulk_update_product_attributes(
         )
         updated_count = 0
         for product in products:
-            if not product.dynamic_attributes:
+            attr_stmt = (
+                select(Attribute.attribute_name, AttributeValue)
+                .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
+                .join(ProductAttributeValueLinkModel, 
+                      ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+                .where(ProductAttributeValueLinkModel.product_id == product.id)
+            )
+            attr_result = await db.execute(attr_stmt)
+            attr_rows = attr_result.all()
+            if not attr_rows:
                 continue
             updated = False
-            new_attrs = [dict(attr) for attr in product.dynamic_attributes]
             context = ProductContext(
                 mpn=product.product_code,
                 brand=product.brand_name,
                 product_name=product.product_name,
                 taxonomy=product.taxonomy
             )
-            for idx, attr in enumerate(new_attrs):
-                attr_name = attr.get("name")
+            for attr_name, attr_val in attr_rows:
                 if attr_name not in request.attributes:
                     continue
                 raw_value = request.attributes[attr_name]
                 attribute_input = AttributeInput(
-                    id=str(idx),
+                    id=str(attr_val.id),
                     name=attr_name,
                     value=raw_value,
-                    unit=attr.get("unit") or attr.get("uom"),
+                    unit=attr_val.uom or "",
                     source="bulk_update"
                 )
                 try:
@@ -605,21 +755,18 @@ async def bulk_update_product_attributes(
                     )
                     if cleaning_result.cleaned_attributes:
                         cleaned = cleaning_result.cleaned_attributes[0]
-                        attr["value"] = cleaned.cleaned_value
-                        attr["unit"] = cleaned.unit or ""
-                        attr["uom"] = cleaned.unit or ""
+                        attr_val.value = cleaned.cleaned_value
+                        attr_val.uom = cleaned.unit or ""
                     else:
-                        attr["value"] = raw_value
+                        attr_val.value = raw_value
                 except Exception as e:
-                    logger.error(
-                        f"Bulk cleaning failed for product {product.id}, attribute {attr_name}: {e}",
-                        exc_info=True,
-                    )
-                    attr["value"] = raw_value
+                    logger.error(f"Bulk cleaning failed: {e}", exc_info=True)
+                    attr_val.value = raw_value
+                
+                db.add(attr_val)
                 updated = True
+            
             if updated:
-                product.dynamic_attributes = new_attrs
-                flag_modified(product, "dynamic_attributes")
                 if product.validation_conflicts:
                     for attr_name in request.attributes.keys():
                         if attr_name in product.validation_conflicts:
