@@ -520,6 +520,7 @@ async def batch_aggregate(
             if brand:
                 product.brand_id = brand.id
                 product.brand_name = brand.name
+                brand.product_count = (brand.product_count or 0) + 1 
                 if row.get('country_of_origin'):
                     brand.country_of_origin = row.get('country_of_origin')
                     db.add(brand)
