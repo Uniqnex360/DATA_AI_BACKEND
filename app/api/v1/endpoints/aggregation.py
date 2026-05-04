@@ -471,9 +471,22 @@ async def merge_dynamic_attributes(
             attribute = attr_result.scalars().first()
             
             if not attribute:
+                import uuid as _uuid
+                base_code = attr_name.lower().replace(" ", "_").replace("/", "_").replace("-", "_")
+                from sqlmodel import select as _select
+                code_check = await db.execute(
+                    _select(Attribute).where(Attribute.attribute_code == base_code)
+                )
+                if code_check.scalars().first():
+                    base_code = f"{base_code}_{_uuid.uuid4().hex[:6]}"
+                
+                display_name = attr_name.strip()
+                if display_name:
+                    display_name = display_name[0].upper() + display_name[1:] if len(display_name) > 1 else display_name.upper()
+                
                 attribute = Attribute(
-                    attribute_name=attr_name,
-                    attribute_code=attr_name.lower().replace(" ", "_").replace("/", "_"),
+                    attribute_name=display_name,
+                    attribute_code=base_code,
                     data_type="string",
                 )
                 db.add(attribute)
@@ -531,6 +544,7 @@ async def merge_dynamic_attributes(
         except Exception as e:
             logger.error(f"Failed to save attribute {attr_name} to normalized tables: {e}")
             continue
+        
 async def get_product_attributes_for_aggregation(
     db: AsyncSession,
     product: Product
@@ -1221,31 +1235,69 @@ async def check_data_quality(
                 resolved=False
             ))
 
-        
 @router.post('/export/batch', status_code=200)
 async def batch_export_products(request: BatchExportRequest, db: AsyncSession = Depends(get_session)):
     try:
         product_id_set = set(request.product_ids)
+        # Explicitly preserve the project IDs the frontend asked for
+        requested_project_ids = list(request.project_ids) if request.project_ids else []
+
         if request.project_ids:
-            stmt = select(Product.id).where(
-                Product.project_id.in_(request.project_ids))
+            stmt = select(Product.id).where(Product.project_id.in_(request.project_ids))
             result = await db.execute(stmt)
             product_ids_from_projects = result.scalars().all()
             product_id_set.update(product_ids_from_projects)
+
         if not product_id_set:
             raise HTTPException(status_code=400, detail='No products selected')
+
         stmt = select(Product).where(Product.id.in_(list(product_id_set)))
         result = await db.execute(stmt)
         products = result.scalars().all()
+
         if not products:
             raise HTTPException(status_code=404, detail='No products found')
-        return await generate_products_excel(products, db)
+
+        # All project IDs involved (from frontend or deduced)
+        all_project_ids = (
+            requested_project_ids if requested_project_ids
+            else list(set(str(p.project_id) for p in products if p.project_id))
+        )
+
+        logger.info(
+            f"Export request: frontend sent {request.project_ids}, "
+            f"deduced project_ids={all_project_ids}, products_count={len(products)}"
+        )
+
+        filename = "selected_export"
+
+        # Only use the source filename when the frontend explicitly selected ONE project
+        if len(all_project_ids) == 1 and len(requested_project_ids) <= 1:
+            source_stmt = select(Source).where(
+                Source.project_id == all_project_ids[0]
+            ).order_by(Source.uploaded_at.desc())
+            source_result = await db.execute(source_stmt)
+            source = source_result.scalars().first()
+
+            if source and source.source_url:
+                import re, os
+                raw_name = source.source_url.strip()
+                # Keep only the file name (ignore any path)
+                raw_name = os.path.basename(raw_name)
+                # Remove extension
+                clean = re.sub(r'\.[^/.]+$', '', raw_name)
+                if clean:
+                    filename = clean
+                    logger.info(f"Single project export, filename from source: {filename}")
+
+        logger.info(f"Final export filename: {filename}.xlsx")
+        return await generate_products_excel(products, db, filename=filename)
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f'Batch export failed {e}')
-        raise HTTPException(
-            status_code=500, detail='Failed to download results!')
+        raise HTTPException(status_code=500, detail='Failed to download results!')
     
 @router.get("/project/{project_id}/products-with-movement")
 async def get_products_with_movement(

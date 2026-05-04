@@ -5,7 +5,7 @@ from app.core.database import get_session
 from app.models.attribute import Attribute
 from app.models.brand import Brand
 from app.services.product_service import product_service
-from sqlmodel import select, func
+from sqlmodel import select, func,and_
 from app.schemas.product import ProductCreate, ProductResponse
 import logging
 from uuid import UUID
@@ -98,7 +98,7 @@ async def create_product(*, db: AsyncSession = Depends(get_session), product_in:
 
 
 @router.get("/filters")
-async def get_project_filters(
+async def get_products_filters(
     project_id: str | None = None,
     brand_name: Optional[str] = None,
     category_1: Optional[str] = None,
@@ -333,3 +333,25 @@ async def get_multiple_project_stats(
             status_code=500,
             detail="Failed to fetch project statistics"
         )
+@router.get("/enrichment-counts", response_model=Dict[str, int])
+async def get_enrichment_counts(
+    db: AsyncSession = Depends(get_session)
+):
+    
+    try:
+        stmt = select(
+            Product.project_id,
+            func.count(Product.id).label('count')
+        ).where(
+            and_(
+                Product.workflow_stage == 'enrichment',
+                Product.enrichment_status == 'pending'
+            )
+        ).group_by(Product.project_id)
+        
+        result = await db.execute(stmt)
+        counts = {str(row[0]): row[1] for row in result.all()}
+        return counts
+    except Exception as e:
+        logger.error(f"Error getting enrichment counts: {str(e)}")
+        return {}
