@@ -2,7 +2,7 @@ from typing import Any, List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
-from app.models.attribute import Attribute
+from app.models.attribute import Attribute, AttributeValue
 from app.models.brand import Brand
 from app.services.product_service import product_service
 from sqlmodel import select, func,and_
@@ -12,7 +12,7 @@ from uuid import UUID
 import uuid
 from app.models.project import Project
 from app.models.product import Product
-from app.models.product_attribute_link import ProductAttributeLinkModel
+from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
 logger = logging.getLogger('products')
 router = APIRouter()
 
@@ -59,17 +59,29 @@ async def read_products(
         product_list = []
         for p in products:
             p_dict = p.dict() if hasattr(p, 'dict') else p.__dict__
+            # Build attributes_dict from normalized tables
             attributes_dict = {}
-            if p.dynamic_attributes:
-                for attr in p.dynamic_attributes:
-                    if isinstance(attr, dict) and attr.get('name'):
-                        name = attr['name']
-                        attributes_dict[name] = {
-                            'value': attr.get('value', ''),
-                            'unit': attr.get('unit') or attr.get('uom', '')
-                        }
+            attribute_names = []
+            try:
+                val_stmt = (
+                    select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom)
+                    .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
+                    .join(ProductAttributeValueLinkModel, 
+                        ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+                    .where(ProductAttributeValueLinkModel.product_id == p.id)
+                )
+                val_result = await db.execute(val_stmt)
+                for attr_name, value, uom in val_result.all():
+                    attributes_dict[attr_name] = {
+                        'value': value or '',
+                        'unit': uom or ''
+                    }
+                    attribute_names.append(attr_name)
+            except Exception:
+                pass
+
             p_dict['attributes_dict'] = attributes_dict
-            p_dict['attribute_names'] = list(attributes_dict.keys())
+            p_dict['attribute_names'] = attribute_names
             existing = set()
             if p.attributes:
                 existing.update(p.attributes.keys())
