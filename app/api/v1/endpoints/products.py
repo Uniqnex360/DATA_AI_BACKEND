@@ -59,6 +59,16 @@ async def read_products(
         product_list = []
         for p in products:
             p_dict = p.dict() if hasattr(p, 'dict') else p.__dict__
+            attributes_dict = {}
+            if p.dynamic_attributes:
+                for attr in p.dynamic_attributes:
+                    if isinstance(attr, dict) and attr.get('name'):
+                        name = attr['name']
+                        attributes_dict[name] = {
+                            'value': attr.get('value', ''),
+                            'unit': attr.get('unit') or attr.get('uom', '')
+                        }
+            p_dict['attributes_dict'] = attributes_dict
             existing = set()
             if p.attributes:
                 existing.update(p.attributes.keys())
