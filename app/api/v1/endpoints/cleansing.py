@@ -696,6 +696,7 @@ async def update_product_attributes(
         await db.rollback()
         logger.error(f"Failed to update attributes: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+    
 @router.put("/products/bulk-attributes")
 async def bulk_update_product_attributes(
     request: BulkUpdateAttributesRequest,
