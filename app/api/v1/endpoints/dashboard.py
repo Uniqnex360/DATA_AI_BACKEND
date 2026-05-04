@@ -561,8 +561,7 @@ async def get_recent_activity(
     except Exception as e:
         logger.error(f"Failed to get recent activity: {e}", exc_info=True)
         return []
-    
-@router.get("/projects-overview", response_model=List[ProjectOverview])
+@router.get("/projects-overview")
 async def get_projects_overview(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -589,13 +588,18 @@ async def get_projects_overview(
             db_statuses = status_map.get(status, [status])
             id_stmt = id_stmt.where(Project.status.in_(db_statuses))
         
+        # Get total count before pagination
+        count_stmt = select(func.count()).select_from(id_stmt.subquery())
+        count_result = await db.execute(count_stmt)
+        total_count = count_result.scalar() or 0
+        
         offset = (page - 1) * page_size
         id_stmt = id_stmt.offset(offset).limit(page_size)
         id_result = await db.execute(id_stmt)
         project_ids = [row[0] for row in id_result.all()]
         
         if not project_ids:
-            return []
+            return {"projects": [], "total": total_count, "page": page, "page_size": page_size}
         
         
         stmt = select(
@@ -656,11 +660,12 @@ async def get_projects_overview(
                 useCase=proj.use_case or "",
             ))
         
-        return overview_list
+        return {"projects": overview_list, "total": total_count, "page": page, "page_size": page_size}
         
     except Exception as e:
         logger.error(f"Failed to get projects overview: {e}", exc_info=True)
-        return []
+        return {"projects": [], "total": 0, "page": page, "page_size": page_size}
+    
 def map_project_status(status: str) -> str:
     status_map = {
         "draft": "new",
