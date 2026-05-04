@@ -69,6 +69,7 @@ async def read_products(
                             'unit': attr.get('unit') or attr.get('uom', '')
                         }
             p_dict['attributes_dict'] = attributes_dict
+            p_dict['attribute_names'] = list(attributes_dict.keys())
             existing = set()
             if p.attributes:
                 existing.update(p.attributes.keys())
