@@ -4,12 +4,13 @@ from sqlmodel import select, func, and_, or_
 from typing import List, Optional
 from datetime import datetime, timedelta, timezone
 from app.core.database import get_session
-from app.models.business_rule import BusinessRule, RuleCategory, RulePrompt, RuleStatus
-from app.schemas.business_rule import (BusinessRuleCreate, BusinessRuleUpdate, BusinessRuleResponse,
-                                       BusinessRuleListResponse, RulePromptResponse, RulePromptCreate, RulePromptUpdate,)
+from app.models.business_rule import BrandPrompt, BusinessRule, CategoryPrompt, RuleCategory, RulePrompt, RuleStatus
+from app.models.category import Category
+from app.schemas.business_rule import (BrandPromptCreate, BrandPromptResponse, BusinessRuleCreate, BusinessRuleUpdate, BusinessRuleResponse,BusinessRuleListResponse, CategoryPromptCreate, CategoryPromptResponse, RulePromptResponse, RulePromptCreate, RulePromptUpdate,)
 import logging
 from sqlalchemy.orm import selectinload
 from app.utils.timezone import now_ist
+from app.models.brand import Brand
 logger = logging.getLogger("business_rules")
 router = APIRouter()
 
@@ -99,35 +100,7 @@ async def get_all_business_rules(
             status_code=500,
             detail="Failed to fetch rules."
         )
-@router.get("/{rule_id}", response_model=BusinessRuleResponse)
-async def get_business_rule(
-    rule_id: str,
-    db: AsyncSession = Depends(get_session)
-):
-    try:
-        stmt = select(BusinessRule).where(
-            or_(
-                BusinessRule.id == rule_id,
-                BusinessRule.rule_id == rule_id
-            )
-        )
-        result = await db.execute(stmt)
-        rule = result.scalars().first()
-        if not rule:
-            raise HTTPException(status_code=404, detail="Rule not found")
-        promt_stmt = select(RulePrompt).where(
-            RulePrompt.rule_id == rule.id).order_by(RulePrompt.priority.desc())
-        prompt_result = await db.execute(promt_stmt)
-        rule.prompts = prompt_result.scalars().all()
-        return rule
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to fetch rule: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch rule: {str(e)}"
-        )
+
 @router.put("/{rule_id}", response_model=BusinessRuleResponse)
 async def update_business_rule(
     rule_id: str,
@@ -444,4 +417,280 @@ async def delete_business_rule(
 #         await db.rollback()
 #         print(f"Error updating prompt status for {prompt_id}: {e}")
 #         raise HTTPException(status_code=500, detail="Internal server error")
+
+from fastapi import HTTPException
+from sqlalchemy.exc import SQLAlchemyError
+
+
+# ── Category Prompts ──
+
+@router.get("/category-prompts", response_model=List[CategoryPromptResponse])
+async def get_category_prompts(
+    category_id: Optional[str] = None,
+    stage: Optional[str] = None,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        stmt = select(CategoryPrompt, Category.name).join(
+            Category, CategoryPrompt.category_id == Category.id
+        )
+        if category_id:
+            stmt = stmt.where(CategoryPrompt.category_id == category_id)
+        if stage:
+            stmt = stmt.where(CategoryPrompt.stage == stage)
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        return [
+            CategoryPromptResponse(
+                **prompt.dict(),
+                category_name=cat_name
+            ) for prompt, cat_name in rows
+        ]
+
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail="Database error")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/category-prompts", response_model=CategoryPromptResponse, status_code=201)
+async def create_category_prompt(
+    payload: CategoryPromptCreate,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        prompt = CategoryPrompt(
+            **payload.dict(),
+            created_at=now_ist(),
+            updated_at=now_ist()
+        )
+        db.add(prompt)
+        await db.commit()
+        await db.refresh(prompt)
+
+        cat = await db.get(Category, prompt.category_id)
+
+        return CategoryPromptResponse(
+            **prompt.dict(),
+            category_name=cat.name if cat else None
+        )
+
+    except SQLAlchemyError:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Database error")
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/category-prompts/{prompt_id}", response_model=CategoryPromptResponse)
+async def update_category_prompt(
+    prompt_id: str,
+    payload: CategoryPromptCreate,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        prompt = await db.get(CategoryPrompt, prompt_id)
+        if not prompt:
+            raise HTTPException(404, "Prompt not found")
+
+        for k, v in payload.dict(exclude_unset=True).items():
+            setattr(prompt, k, v)
+
+        prompt.updated_at = now_ist()
+
+        db.add(prompt)
+        await db.commit()
+        await db.refresh(prompt)
+
+        cat = await db.get(Category, prompt.category_id)
+
+        return CategoryPromptResponse(
+            **prompt.dict(),
+            category_name=cat.name if cat else None
+        )
+
+    except HTTPException:
+        raise
+    except SQLAlchemyError:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Database error")
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/category-prompts/{prompt_id}", status_code=204)
+async def delete_category_prompt(prompt_id: str, db: AsyncSession = Depends(get_session)):
+    try:
+        prompt = await db.get(CategoryPrompt, prompt_id)
+        if not prompt:
+            raise HTTPException(404, "Prompt not found")
+
+        await db.delete(prompt)
+        await db.commit()
+
+    except HTTPException:
+        raise
+    except SQLAlchemyError:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Database error")
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ── Brand Prompts ──
+
+@router.get("/brand-prompts", response_model=List[BrandPromptResponse])
+async def get_brand_prompts(
+    brand_id: Optional[str] = None,
+    stage: Optional[str] = None,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        stmt = select(BrandPrompt, Brand.name).join(
+            Brand, BrandPrompt.brand_id == Brand.id
+        )
+
+        if brand_id:
+            stmt = stmt.where(BrandPrompt.brand_id == brand_id)
+        if stage:
+            stmt = stmt.where(BrandPrompt.stage == stage)
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        return [
+            BrandPromptResponse(**prompt.dict(), brand_name=brand_name)
+            for prompt, brand_name in rows
+        ]
+
+    except SQLAlchemyError:
+        raise HTTPException(status_code=500, detail="Database error")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/brand-prompts", response_model=BrandPromptResponse, status_code=201)
+async def create_brand_prompt(
+    payload: BrandPromptCreate,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        prompt = BrandPrompt(
+            **payload.dict(),
+            created_at=now_ist(),
+            updated_at=now_ist()
+        )
+
+        db.add(prompt)
+        await db.commit()
+        await db.refresh(prompt)
+
+        brand = await db.get(Brand, prompt.brand_id)
+
+        return BrandPromptResponse(
+            **prompt.dict(),
+            brand_name=brand.name if brand else None
+        )
+
+    except SQLAlchemyError as e:
+        await db.rollback()
+        logger.exception("Database error in create_brand_prompt")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        await db.rollback()
+        logger.exception("Unexpected error in create_brand_prompt")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/brand-prompts/{prompt_id}", response_model=BrandPromptResponse)
+async def update_brand_prompt(
+    prompt_id: str,
+    payload: BrandPromptCreate,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        prompt = await db.get(BrandPrompt, prompt_id)
+        if not prompt:
+            raise HTTPException(404, "Prompt not found")
+
+        for k, v in payload.dict(exclude_unset=True).items():
+            setattr(prompt, k, v)
+
+        prompt.updated_at = now_ist()
+
+        db.add(prompt)
+        await db.commit()
+        await db.refresh(prompt)
+
+        brand = await db.get(Brand, prompt.brand_id)
+
+        return BrandPromptResponse(
+            **prompt.dict(),
+            brand_name=brand.name if brand else None
+        )
+
+    except HTTPException:
+        raise
+    except SQLAlchemyError:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Database error")
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/brand-prompts/{prompt_id}", status_code=204)
+async def delete_brand_prompt(prompt_id: str, db: AsyncSession = Depends(get_session)):
+    try:
+        prompt = await db.get(BrandPrompt, prompt_id)
+        if not prompt:
+            raise HTTPException(404, "Prompt not found")
+
+        await db.delete(prompt)
+        await db.commit()
+
+    except HTTPException:
+        raise
+    except SQLAlchemyError:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Database error")
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))    
     
+
+        
+@router.get("/{rule_id}", response_model=BusinessRuleResponse)
+async def get_business_rule(
+    rule_id: str,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        stmt = select(BusinessRule).where(
+            or_(
+                BusinessRule.id == rule_id,
+                BusinessRule.rule_id == rule_id
+            )
+        )
+        result = await db.execute(stmt)
+        rule = result.scalars().first()
+        if not rule:
+            raise HTTPException(status_code=404, detail="Rule not found")
+        promt_stmt = select(RulePrompt).where(
+            RulePrompt.rule_id == rule.id).order_by(RulePrompt.priority.desc())
+        prompt_result = await db.execute(promt_stmt)
+        rule.prompts = prompt_result.scalars().all()
+        return rule
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to fetch rule: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch rule: {str(e)}"
+        )

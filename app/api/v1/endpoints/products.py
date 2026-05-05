@@ -13,6 +13,7 @@ import uuid
 from app.models.project import Project
 from app.models.product import Product
 from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
+from app.models.category import Category
 logger = logging.getLogger('products')
 router = APIRouter()
 
@@ -378,3 +379,29 @@ async def get_enrichment_counts(
     except Exception as e:
         logger.error(f"Error getting enrichment counts: {str(e)}")
         return {}
+    
+@router.get("/categories", response_model=List[Dict[str, Any]])
+async def get_categories(
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        stmt = select(Category.id, Category.name).where(Category.is_active == True).order_by(Category.name)
+        result = await db.execute(stmt)
+        categories = [{"id": str(row[0]), "name": row[1]} for row in result.all()]
+        return categories
+    except Exception as e:
+        logger.error(f"Failed to fetch categories: {e}")
+        return []
+
+@router.get("/brands", response_model=List[Dict[str, Any]])
+async def get_brands(
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        stmt = select(Brand.id, Brand.name).where(Brand.is_active == True).order_by(Brand.name)
+        result = await db.execute(stmt)
+        brands = [{"id": str(row[0]), "name": row[1]} for row in result.all()]
+        return brands
+    except Exception as e:
+        logger.error(f"Failed to fetch brands: {e}")
+        return []

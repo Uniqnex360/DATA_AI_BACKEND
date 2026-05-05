@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field, Column, JSON, Relationship
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 import enum
 import re
 from app.models.enums import RuleCategory, RuleStatus
@@ -48,5 +48,32 @@ class RulePrompt(SQLModel, table=True):
     rule: BusinessRule = Relationship(back_populates="prompts")
     execution_count: int = Field(default=0)
     last_executed_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CategoryPrompt(SQLModel, table=True):
+    __tablename__ = "category_prompts"
+    id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
+    category_id: UUID = Field(foreign_key="categories.id", index=True)
+    stage : Optional[str] = None
+    prompt_name: str = Field(max_length=255)
+    prompt_text: str
+    description: Optional[str] = None
+    variables: Optional[List[str]] = Field(default=None, sa_column=Column(JSON))
+    status: RuleStatus = Field(default=RuleStatus.ACTIVE)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class BrandPrompt(SQLModel, table=True):
+    __tablename__ = "brand_prompts"
+    id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
+    brand_id: UUID = Field(foreign_key="brands.id", index=True)
+    stage : Optional[str] = None
+    prompt_name: str = Field(max_length=255)
+    prompt_text: str
+    description: Optional[str] = None
+    variables: Optional[List[str]] = Field(default=None, sa_column=Column(JSON))
+    status: RuleStatus = Field(default=RuleStatus.ACTIVE)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
