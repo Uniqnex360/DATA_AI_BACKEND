@@ -19,18 +19,25 @@ router = APIRouter()
 def normalize_source_status(status: str | None, project_status: str | None = None) -> str:
     if project_status == "partially_completed":
         return "Partially Completed"
-    if project_status == "failed":
-        return "Yet to Start"
+    if project_status == "processing" or project_status == "in_progress":
+        return "In Progress"
     if project_status == "completed":
         return "Completed"
+    if project_status == "failed":
+        return "Failed"
+    if project_status == "draft":
+        return "Yet to Start"
     if not status:
         return "Yet to Start"
     status = status.lower().strip()
     if status == "completed":
         return "Completed"
-    if status in ("processing", "failed"):
+    if status in ("processing", "in_progress", "in progress"):
         return "In Progress"
+    if status == "failed":
+        return "Failed"
     return "Yet to Start"
+
 @router.get("/", response_model=List[ProjectResponse])
 async def list_projects(
     operation_mode: str | None = None,

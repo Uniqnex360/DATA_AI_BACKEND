@@ -232,6 +232,7 @@ async def trigger_project_aggregation(
         db.add(job)
         await db.commit()
         await db.refresh(job)
+        await db.execute(update(Project).where(Project.id == project_id).values(status='in_progress'))
         background_tasks.add_task(
             run_project_aggregation_task, str(job.id), request.llm_provider)
         logger.info(
@@ -605,6 +606,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                 return
             job.status = 'processing'
             db_session.add(job)
+            await db_session.execute(update(Project).where(Project.id == job.project_id).values(status='in_progress'))
             await db_session.commit()
             product_ids = job.details.get('product_ids', [])
             if not product_ids:
