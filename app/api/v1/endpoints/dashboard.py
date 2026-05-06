@@ -570,15 +570,11 @@ async def get_projects_overview(
     db: AsyncSession = Depends(get_session),
 ):
     try:
-        
-        id_stmt = select(Project.id).order_by(Project.created_at.desc())
-        
+        # Get total count
+        count_stmt = select(func.count(Project.id))
         if search:
-            id_stmt = id_stmt.where(Project.name.ilike(f"%{search}%"))
-        
-        
+            count_stmt = count_stmt.where(Project.name.ilike(f"%{search}%"))
         if status and status != "all":
-            
             status_map = {
                 "active": ["processing", "partially_completed"],
                 "completed": ["completed"],
@@ -586,12 +582,17 @@ async def get_projects_overview(
                 "new": ["draft"],
             }
             db_statuses = status_map.get(status, [status])
-            id_stmt = id_stmt.where(Project.status.in_(db_statuses))
+            count_stmt = count_stmt.where(Project.status.in_(db_statuses))
         
-        # Get total count before pagination
-        count_stmt = select(func.count()).select_from(id_stmt.subquery())
         count_result = await db.execute(count_stmt)
         total_count = count_result.scalar() or 0
+        
+        # Get paginated project IDs
+        id_stmt = select(Project.id).order_by(Project.created_at.desc())
+        if search:
+            id_stmt = id_stmt.where(Project.name.ilike(f"%{search}%"))
+        if status and status != "all":
+            id_stmt = id_stmt.where(Project.status.in_(db_statuses))
         
         offset = (page - 1) * page_size
         id_stmt = id_stmt.offset(offset).limit(page_size)
@@ -601,7 +602,7 @@ async def get_projects_overview(
         if not project_ids:
             return {"projects": [], "total": total_count, "page": page, "page_size": page_size}
         
-        
+        # Single query: get all projects with all counts
         stmt = select(
             Project.id,
             Project.name,
@@ -609,7 +610,11 @@ async def get_projects_overview(
             Project.operation_mode,
             Project.use_case,
             Project.updated_at,
-            func.count(Product.id).label("total_products")
+            func.count(Product.id).label("total_products"),
+            func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label("aggregated"),
+            func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label("failed"),
+            func.sum(case((Product.workflow_stage == "enrichment", 1), else_=0)).label("enrichment"),
+            func.sum(case((Product.workflow_stage == "cleaning", 1), else_=0)).label("cleaning"),
         ).outerjoin(
             Product, Project.id == Product.project_id
         ).where(
@@ -621,32 +626,20 @@ async def get_projects_overview(
         )
         
         result = await db.execute(stmt)
-        projects = result.all()
+        rows = result.all()
         
         overview_list = []
-        for proj in projects:
-            status_counts = await db.execute(
-                select(
-                    func.count(Product.id),
-                    func.sum(case((Product.enrichment_status == "completed", 1), else_=0)),
-                    func.sum(case((Product.enrichment_status == "failed", 1), else_=0)),
-                    func.sum(case((Product.workflow_stage == "enrichment", 1), else_=0)),
-                    func.sum(case((Product.workflow_stage == "cleaning", 1), else_=0)),
-                ).where(Product.project_id == proj.id)
-            )
-            counts = status_counts.first()
-            
-            total = counts[0] or 0
-            aggregated = counts[1] or 0
-            failed = counts[2] or 0
-            enrichment = counts[3] or 0
-            cleaning = counts[4] or 0
-            
+        for row in rows:
+            total = row.total_products or 0
+            aggregated = row.aggregated or 0
+            failed = row.failed or 0
+            enrichment = row.enrichment or 0
+            cleaning = row.cleaning or 0
             overall_pct = round((aggregated / total) * 100) if total > 0 else 0
             
             overview_list.append(ProjectOverview(
-                id=str(proj.id),
-                name=proj.name,
+                id=str(row.id),
+                name=row.name,
                 totalProducts=total,
                 aggregated=aggregated,
                 aggregationFailed=failed,
@@ -654,10 +647,10 @@ async def get_projects_overview(
                 enrichmentFailed=0,
                 cleaning=cleaning,
                 overallPct=overall_pct,
-                status=map_project_status(proj.status),
-                lastActive=proj.updated_at.strftime("%Y-%m-%d") if proj.updated_at else "Never",
-                operationMode=proj.operation_mode or "",
-                useCase=proj.use_case or "",
+                status=map_project_status(row.status),
+                lastActive=row.updated_at.strftime("%Y-%m-%d") if row.updated_at else "Never",
+                operationMode=row.operation_mode or "",
+                useCase=row.use_case or "",
             ))
         
         return {"projects": overview_list, "total": total_count, "page": page, "page_size": page_size}

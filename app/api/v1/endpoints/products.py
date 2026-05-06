@@ -449,3 +449,24 @@ async def create_brand(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create brand"
         )
+        
+@router.post("/categories", status_code=201)
+async def create_category(
+    payload: dict,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        cat = Category(
+            name=payload["name"],
+            industry_id=UUID(payload["industry_id"]) if payload.get("industry_id") else None,
+            level=payload.get("level", 1),
+            full_path=payload.get("full_path", payload["name"]),
+            is_active=True,
+        )
+        db.add(cat)
+        await db.commit()
+        await db.refresh(cat)
+        return {"id": str(cat.id), "name": cat.name}
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

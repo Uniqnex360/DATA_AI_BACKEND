@@ -17,7 +17,7 @@ class Product(UUIDModel,table=True):
     brand_id: Optional[UUID] = Field(foreign_key="brands.id", index=True)
     brand_name: Optional[str] = Field(default="") 
     brand_code: Optional[str] = Field(default="")
-    industry_id: Optional[UUID] = Field(foreign_key="industry_master.id",index=True)
+    industry_id: Optional[UUID] = Field(foreign_key="industry_master.id", default=None, index=True)
     industry_name: Optional[str] = Field(default=None) 
     industry_code: Optional[str] = Field(default=None)
     taxonomy: Optional[str] = Field(default=None, index=True) 
