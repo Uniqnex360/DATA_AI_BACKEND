@@ -162,6 +162,7 @@ async def run_cleaning_task(
                     attr_rows = attr_result.all()
                     if not attr_rows:
                         product.enrichment_status = "completed"
+                        product.last_algorithm_used = llm_provider 
                         product.updated_at = now_ist()
                         db.add(product)
                         await db.commit()
@@ -180,6 +181,7 @@ async def run_cleaning_task(
                             )
                     if not attributes:
                         product.enrichment_status = "completed"
+                        product.last_algorithm_used = llm_provider 
                         product.updated_at = now_ist()
                         db.add(product)
                         await db.commit()
@@ -200,6 +202,7 @@ async def run_cleaning_task(
                         db, product.id, cleaning_result, llm_provider
                     )
                     product.enrichment_status = "completed"
+                    product.last_algorithm_used = llm_provider 
                     product.updated_at = now_ist()
                     db.add(product)
                     await db.commit()

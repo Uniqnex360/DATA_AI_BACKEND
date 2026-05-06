@@ -80,7 +80,11 @@ async def get_edit_logs(
         if brand_name:
             stmt = stmt.where(AttributeEditLog.brand_name == brand_name)
         if algorithm:
-            stmt = stmt.where(AttributeEditLog.algorithm_used == algorithm)
+            subquery = select(AttributeEditLog.product_id).where(
+                AttributeEditLog.algorithm_used == algorithm,
+                AttributeEditLog.project_id == Product.project_id
+            ).subquery()
+            stmt = stmt.where(Product.id.in_(subquery))
         if edit_source:
             stmt = stmt.where(AttributeEditLog.edit_source == edit_source)
         
