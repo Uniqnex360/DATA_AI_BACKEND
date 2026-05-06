@@ -75,3 +75,4 @@ class AttributeUpdatePayload(BaseModel):
 
 class UpdateAttributesRequest(BaseModel):
     attributes: Dict[str, AttributeUpdatePayload]
+    llm_provider: Optional[str] = "openai" 

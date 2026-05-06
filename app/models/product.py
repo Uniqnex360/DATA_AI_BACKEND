@@ -103,3 +103,6 @@ class Product(UUIDModel,table=True):
     ready_for_export: bool = Field(default=False, index=True)
     routed_to_enrichment_at: Optional[datetime] = Field(default=None, nullable=True)
     used_llms:List[str]=Field(default=[],sa_column=Column(JSON))
+    manual_edit_count: int = Field(default=0)
+    data_quality_score: float = Field(default=100.0)
+    last_algorithm_used: Optional[str] = Field(default=None)

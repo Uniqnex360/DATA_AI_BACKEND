@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from app.models.attribute import Attribute, AttributeValue
 from app.models.brand import Brand
+from app.schemas.brand import BrandCreate
 from app.services.product_service import product_service
 from sqlmodel import select, func,and_
 from app.schemas.product import ProductCreate, ProductResponse
@@ -14,6 +15,7 @@ from app.models.project import Project
 from app.models.product import Product
 from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
 from app.models.category import Category
+from datetime import datetime
 logger = logging.getLogger('products')
 router = APIRouter()
 
@@ -405,3 +407,45 @@ async def get_brands(
     except Exception as e:
         logger.error(f"Failed to fetch brands: {e}")
         return []
+
+@router.post("/brands", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
+async def create_brand(
+    payload: BrandCreate,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        normalized = payload.name.lower().strip()
+        normalized_no_spaces = normalized.replace(" ", "")
+        existing = await db.execute(
+        select(Brand).where(
+            func.lower(func.replace(Brand.name, " ", "")).like(normalized_no_spaces)
+        )
+    )
+        if existing.scalars().first():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Brand already exists"
+            )
+        
+        brand = Brand(
+            name=payload.name,
+            normalized_name=payload.name.lower().strip(),
+            is_active=True,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        db.add(brand)
+        await db.commit()
+        await db.refresh(brand)
+        
+        return {"id": str(brand.id), "name": brand.name}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Failed to create brand: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create brand"
+        )
