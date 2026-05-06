@@ -21,6 +21,8 @@ async def get_data_quality_report(
         stmt = select(
             Product.project_id,
             Project.name,
+            Product.brand_name,
+            Product.last_algorithm_used,
             func.count(Product.id).label("total_products"),
             func.avg(Product.data_quality_score).label("avg_quality"),
             func.sum(Product.manual_edit_count).label("total_manual_edits"),
@@ -37,8 +39,12 @@ async def get_data_quality_report(
         if algorithm:
             stmt = stmt.where(Product.last_algorithm_used == algorithm)
         
-        stmt = stmt.group_by(Product.project_id, Project.name)
-        stmt = stmt.order_by(func.avg(Product.data_quality_score).asc())
+        stmt = stmt.group_by(
+            Product.project_id,
+            Project.name,
+            Product.brand_name,
+            Product.last_algorithm_used,
+        ).order_by(func.avg(Product.data_quality_score).asc())
         
         result = await db.execute(stmt)
         rows = result.all()
@@ -47,18 +53,19 @@ async def get_data_quality_report(
             {
                 "project_id": str(row[0]),
                 "project_name": row[1],
-                "total_products": row[2],
-                "avg_quality_score": round(float(row[3] or 0), 2),
-                "total_manual_edits": row[4] or 0,
-                "min_quality": round(float(row[5] or 0), 2),
-                "max_quality": round(float(row[6] or 0), 2),
+                "brand_name": row[2],
+                "algorithm_used": row[3],
+                "total_products": row[4],
+                "avg_quality_score": round(float(row[5] or 0), 2),
+                "total_manual_edits": row[6] or 0,
+                "min_quality": round(float(row[7] or 0), 2),
+                "max_quality": round(float(row[8] or 0), 2),
             }
             for row in rows
         ]
     except Exception as e:
         logger.error(f"Failed to get data quality report: {e}", exc_info=True)
         return []
-
 @router.get("/edit-logs")
 async def get_edit_logs(
     project_id: Optional[str] = None,
