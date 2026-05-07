@@ -47,7 +47,7 @@ async def list_projects(
     try:
         active_job = aliased(AggregationJob)
         active_source = aliased(Source)
-        aggregated_count_subq = select(null()).label('aggregated_count')  # Default
+        aggregated_count_subq = select(null()).label('aggregated_count')  
         
         if tab == "aggregation":
             product_count_subq = (
@@ -110,6 +110,12 @@ async def list_projects(
             .scalar_subquery()
             .label("completeness_score")
         )
+        data_quality_subq = (
+            select(func.avg(Product.data_quality_score))
+            .where(and_(Product.project_id == Project.id, Product.workflow_stage == "aggregation"))
+            .scalar_subquery()
+            .label("data_quality_subq")
+        )
         
         statement = (
             select(
@@ -120,6 +126,7 @@ async def list_projects(
                 pending_count_subq,
                 aggregated_count_subq,
                 completeness_subq,
+                data_quality_subq,
                 func.max(active_job.status).label("processing_status"),
                 func.max(cast(active_source.source_metadata["processing_status"], String)).label("source_status"),
             )
@@ -147,8 +154,9 @@ async def list_projects(
             pending_count = row[4] or 0
             aggregated_count = row[5] or 0
             completeness_score = row[6] or 0
-            processing_status = row[7]
-            source_status = row[8]
+            data_quality_score=row[7] or 0
+            processing_status = row[8]
+            source_status = row[9]
             
             clean_source_status = source_status.replace('"', "") if source_status else None
             
@@ -159,6 +167,7 @@ async def list_projects(
             project_response.pending_count = pending_count
             project_response.aggregated_count = aggregated_count
             project_response.completeness_score = round(completeness_score, 1) if completeness_score else 0
+            project_response.data_quality_score=round(data_quality_score,1) if data_quality_score else 0
             project_response.processing_status = processing_status or "pending"
             project_response.source_status = normalize_source_status(clean_source_status, project_status=project.status)
             projects.append(project_response)

@@ -29,6 +29,7 @@ class ProjectResponse(BaseModel):
     source_status: str | None = None
     created_at: Optional[datetime] = None
     completeness_score:Optional[int]=None
+    data_quality_score:Optional[int]=None
     product_count:int=0
     aggregated_count: Optional[int] = 0
     aggregation_type: str | None = None
