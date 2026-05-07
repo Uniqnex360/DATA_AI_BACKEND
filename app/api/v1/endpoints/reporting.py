@@ -15,6 +15,7 @@ async def get_data_quality_report(
     project_id: Optional[str] = None,
     brand_name: Optional[str] = None,
     algorithm: Optional[str] = None,
+    category_name: Optional[str] = None, 
     db: AsyncSession = Depends(get_session)
 ):
     try:
@@ -36,6 +37,8 @@ async def get_data_quality_report(
             stmt = stmt.where(Product.project_id == project_id)
         if brand_name:
             stmt = stmt.where(Product.brand_name == brand_name)
+        if algorithm:
+            stmt = stmt.where(Product.last_algorithm_used == algorithm)
         if algorithm:
             stmt = stmt.where(Product.last_algorithm_used == algorithm)
         
@@ -75,11 +78,13 @@ async def get_edit_logs(
     edit_source: Optional[str] = None,
     limit: int = 100,
     offset: int = 0,
+    category_name: Optional[str] = None,
     db: AsyncSession = Depends(get_session)
 ):
     try:
         stmt = select(AttributeEditLog)
-        
+        if category_name:
+            stmt = stmt.where(AttributeEditLog.category_name == category_name)
         if project_id:
             stmt = stmt.where(AttributeEditLog.project_id == project_id)
         if product_id:
@@ -105,6 +110,7 @@ async def get_edit_logs(
                 "product_id": log.product_id,
                 "product_name": log.product_name,
                 "brand_name": log.brand_name,
+                "category_name": log.category_name,  
                 "mpn": log.mpn,
                 "attribute_name": log.attribute_name,
                 "old_value": log.old_value,

@@ -9,6 +9,7 @@ class AttributeEditLog(SQLModel, table=True):
     id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
     product_id: UUID = Field(foreign_key="product_master.id", index=True)
     project_id: Optional[UUID] = Field(default=None, foreign_key="catalog_projects.id", index=True)
+    category_name: Optional[str] = Field(default=None, index=True)
     catalog_project_name: Optional[str] = Field(default=None)
     brand_name: Optional[str] = Field(default=None, index=True)
     product_name: Optional[str] = Field(default=None)

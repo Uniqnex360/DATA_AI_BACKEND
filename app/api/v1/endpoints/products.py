@@ -383,14 +383,14 @@ async def get_enrichment_counts(
         return {}
     
 @router.get("/categories", response_model=List[Dict[str, Any]])
-async def get_categories(
-    db: AsyncSession = Depends(get_session)
-):
+async def get_categories(db: AsyncSession = Depends(get_session)):
     try:
-        stmt = select(Category.id, Category.name).where(Category.is_active == True).order_by(Category.name)
+        stmt = select(Category.id, Category.name).where(
+            Category.is_active == True,
+            Category.level == 1 
+        ).order_by(Category.name)
         result = await db.execute(stmt)
-        categories = [{"id": str(row[0]), "name": row[1]} for row in result.all()]
-        return categories
+        return [{"id": str(row[0]), "name": row[1]} for row in result.all()]
     except Exception as e:
         logger.error(f"Failed to fetch categories: {e}")
         return []
