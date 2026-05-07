@@ -455,9 +455,12 @@ async def aggregate_product(
     project_id: str = None,
     llm_provider: str = 'openai',
     attribute_chunk: Optional[List[str]] = None,
-    existing_excel_attrs: Optional[Dict[str, str]] = None
+    existing_excel_attrs: Optional[Dict[str, str]] = None,
+    missing_llm_provider: str = None
 ) -> Dict:
     try:
+        if missing_llm_provider is None:
+            missing_llm_provider = llm_provider
         logger.info(f"Starting aggregation for {mpn}")
         logger.info("Stage 1: URL Discovery")
         brand_prompt_text = None
@@ -687,7 +690,7 @@ async def aggregate_product(
             validation_result = await call_llm_with_schema(
                 prompt=validation_config['prompt'],
                 response_model="ValidationResponse",
-                llm_provider=llm_provider,
+                llm_provider=missing_llm_provider, 
                 estimated_tokens=1500
             )
             if "back filling" in use_case and "validation" not in use_case:
@@ -740,7 +743,7 @@ async def aggregate_product(
         enrichment_result = await call_llm_with_schema(
             prompt=enrichment_config['prompt'],
             response_model="EnrichmentResponse",
-            llm_provider=llm_provider,
+            llm_provider=missing_llm_provider,  
             estimated_tokens=2000,
             max_tokens=4000
         )

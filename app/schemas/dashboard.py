@@ -20,6 +20,8 @@ class DashboardMetricsResponse(BaseModel):
     failedProducts:Optional[int]=0
     pendingProducts:Optional[int]=0 
     categoryDistribution: Optional[List[CategoryStat]] = []
+    totalBrands:Optional[int]=0
+    totalCategories:Optional[int]=0
 
 class CategoryStat(BaseModel):
     category_name: str

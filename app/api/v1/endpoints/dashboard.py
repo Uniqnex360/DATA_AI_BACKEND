@@ -35,123 +35,184 @@ async def calculate_metrics(
     end_date: datetime | None = None,
     date_field: DateField = "created_at",
 ) -> dict:
-    filters = build_product_filters(project_id, start_date, end_date, date_field=date_field)
+    try:
+        filters = build_product_filters(
+            project_id,
+            start_date,
+            end_date,
+            date_field=date_field
+        )
 
-    stmt = select(
-        func.count(Product.id).label("total"),
-        func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label("aggregated"),
-        func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label("failed"),
-        func.sum(case((Product.enrichment_status == "pending", 1), else_=0)).label("pending"),
-        func.avg(Product.completeness_score).label("health"),
-    ).where(*filters)
+        stmt = select(
+            func.count(Product.id).label("total"),
+            func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label("aggregated"),
+            func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label("failed"),
+            func.sum(case((Product.enrichment_status == "pending", 1), else_=0)).label("pending"),
+            func.avg(Product.completeness_score).label("health"),
+        ).where(*filters)
+        brand_count_stmt = select(func.count(func.distinct(Product.brand_name))).where(
+            Product.brand_name.isnot(None), Product.brand_name != "", *filters
+        )
+        total_brands = (await db.execute(brand_count_stmt)).scalar() or 0
 
-    stats = (await db.execute(stmt)).first()
+        cat_count_stmt = select(func.count(func.distinct(Product.taxonomy))).where(
+            Product.taxonomy.isnot(None), Product.taxonomy != "", *filters
+        )
+        total_categories = (await db.execute(cat_count_stmt)).scalar() or 0
+        stats = (await db.execute(stmt)).first()
 
-    
-    completed_count = stats.aggregated or 0
-    failed_count = stats.failed or 0
-    pending_count = stats.pending or 0
-    total_products = stats.total or 0
+        completed_count = stats.aggregated or 0
+        failed_count = stats.failed or 0
+        pending_count = stats.pending or 0
+        total_products = stats.total or 0
 
-    
-    cat_expression = Product.taxonomy
-    cat_stmt = (
-        select(cat_expression, func.count(Product.id))
-        .where(*filters)
-        .group_by(cat_expression)
-        .order_by(func.count(Product.id).desc())
-        .limit(5)
-    )
-    cat_result = await db.execute(cat_stmt)
-    categories = [{"category_name": row[0] or "Uncategorized", "count": row[1]} for row in cat_result.all()]
+        cat_expression = Product.taxonomy
 
-    
-    total_projects = 0
-    active_projects = 0
-    project_name = "Global Overview"
-    proj = None
+        cat_stmt = (
+            select(cat_expression, func.count(Product.id))
+            .where(*filters)
+            .group_by(cat_expression)
+            .order_by(func.count(Product.id).desc())
+            .limit(5)
+        )
 
-    if project_id:
-        proj = await db.get(Project, project_id)
-        if proj:
-            project_name = proj.name
-            total_projects = 1
-            active_projects = 1 if proj.status in ("processing", "partially_completed") else 0
-    else:
-        
-        proj_stats = await db.execute(
-            select(
-                func.count(Project.id),
-                func.sum(case((Project.status.in_(["processing", "partially_completed"]), 1), else_=0))
+        cat_result = await db.execute(cat_stmt)
+
+        categories = [
+            {
+                "category_name": row[0] or "Uncategorized",
+                "count": row[1]
+            }
+            for row in cat_result.all()
+        ]
+
+        total_projects = 0
+        active_projects = 0
+        project_name = "Global Overview"
+        proj = None
+
+        if project_id:
+            proj = await db.get(Project, project_id)
+
+            if proj:
+                project_name = proj.name
+                total_projects = 1
+                active_projects = (
+                    1 if proj.status in ("processing", "partially_completed") else 0
+                )
+
+        else:
+            proj_stats = await db.execute(
+                select(
+                    func.count(Project.id),
+                    func.sum(
+                        case(
+                            (
+                                Project.status.in_(
+                                    ["processing", "partially_completed"]
+                                ),
+                                1
+                            ),
+                            else_=0
+                        )
+                    )
+                )
             )
-        )
-        p_row = proj_stats.first()
-        total_projects = p_row[0] or 0
-        active_projects = p_row[1] or 0
 
-    
-    aggregated_products = 0
-    cleaned_products = 0
-    enriched_products = 0
-    published_products = 0
+            p_row = proj_stats.first()
 
-    if project_id and proj:
-        operation_mode = (proj.operation_mode or "").lower()
-        use_case = (proj.use_case or "").lower()
+            total_projects = p_row[0] or 0
+            active_projects = p_row[1] or 0
 
-        if operation_mode == "aggregation":
+        aggregated_products = 0
+        cleaned_products = 0
+        enriched_products = 0
+        published_products = 0
+
+        if project_id and proj:
+            operation_mode = (proj.operation_mode or "").lower()
+            use_case = (proj.use_case or "").lower()
+
+            if operation_mode == "aggregation":
+                aggregated_products = completed_count
+
+            elif operation_mode == "cleaning":
+                cleaned_products = completed_count
+
+            elif operation_mode == "enrichment":
+                enriched_products = completed_count
+
+            enrichment_stmt = select(func.count(Product.id)).where(
+                *filters,
+                (
+                    (Product.workflow_stage == "enrichment")
+                    | (Product.needs_enrichment == True)
+                )
+            )
+
+            enrichment_workflow_count = (
+                (await db.execute(enrichment_stmt)).scalar() or 0
+            )
+
+            if operation_mode == "aggregation":
+                enriched_products = enrichment_workflow_count
+
+            elif operation_mode == "enrichment":
+                enriched_products = max(
+                    enriched_products,
+                    enrichment_workflow_count
+                )
+
+        else:
             aggregated_products = completed_count
-        elif operation_mode == "cleaning":
-            cleaned_products = completed_count
-        elif operation_mode == "enrichment":
-            enriched_products = completed_count
 
-        enrichment_stmt = select(func.count(Product.id)).where(
-            *filters,
-            ((Product.workflow_stage == "enrichment") | (Product.needs_enrichment == True))
-        )
-        enrichment_workflow_count = (await db.execute(enrichment_stmt)).scalar() or 0
+            enrichment_workflow_stmt = select(func.count(Product.id)).where(
+                *filters,
+                (
+                    (Product.workflow_stage == "enrichment")
+                    | (Product.needs_enrichment == True)
+                )
+            )
 
-        if operation_mode == "aggregation":
-            enriched_products = enrichment_workflow_count
-        elif operation_mode == "enrichment":
-            enriched_products = max(enriched_products, enrichment_workflow_count)
+            enriched_products = (
+                (await db.execute(enrichment_workflow_stmt)).scalar() or 0
+            )
 
-    else:
-        
-        aggregated_products = completed_count
-        
-        
-        enrichment_workflow_stmt = select(func.count(Product.id)).where(
-            *filters,
-            ((Product.workflow_stage == "enrichment") | (Product.needs_enrichment == True))
-        )
-        enriched_products = (await db.execute(enrichment_workflow_stmt)).scalar() or 0
-        
-        
-        cleaning_stmt = select(func.count(Product.id)).join(
-            Project, Product.project_id == Project.id
-        ).where(
-            *filters,
-            Product.enrichment_status == "completed",
-            Project.operation_mode == "cleaning"
-        )
-        cleaned_products = (await db.execute(cleaning_stmt)).scalar() or 0
+            cleaning_stmt = (
+                select(func.count(Product.id))
+                .join(Project, Product.project_id == Project.id)
+                .where(
+                    *filters,
+                    Product.enrichment_status == "completed",
+                    Project.operation_mode == "cleaning"
+                )
+            )
 
-    return {
-        "name": project_name,
-        "totalProjects": total_projects,
-        "activeProjects": active_projects,
-        "totalProducts": total_products,
-        "aggregatedProducts": aggregated_products,
-        "cleanedProducts": cleaned_products,
-        "enrichedProducts": enriched_products,
-        "publishedProducts": published_products,
-        "failedProducts": failed_count,
-        "pendingProducts": pending_count,
-        "catalogHealth": int(stats.health or 0),
-        "categoryDistribution": categories,
-    }
+            cleaned_products = (
+                (await db.execute(cleaning_stmt)).scalar() or 0
+            )
+
+        return {
+            "name": project_name,
+            "totalProjects": total_projects,
+            "activeProjects": active_projects,
+            "totalProducts": total_products,
+            "aggregatedProducts": aggregated_products,
+            "cleanedProducts": cleaned_products,
+            "enrichedProducts": enriched_products,
+            "publishedProducts": published_products,
+            "failedProducts": failed_count,
+            "pendingProducts": pending_count,
+            "catalogHealth": int(stats.health or 0),
+            "categoryDistribution": categories,
+            "totalBrands": total_brands,
+            "totalCategories": total_categories,
+        }
+
+    except Exception as e:
+        print(f"Error calculating metrics: {str(e)}")
+        raise
+    
     
 @router.get("/metrics", response_model=DashboardMetricsResponse)
 async def get_dashboard_metrics(
@@ -668,3 +729,47 @@ def map_project_status(status: str) -> str:
         "failed": "stalled"
     }
     return status_map.get(status, "new")
+
+@router.get("/attribute-summary")
+async def get_attribute_summary(
+    project_id: Optional[str] = Query(None),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    date_field: DateField = Query("created_at"),
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        from app.models.attribute import Attribute, AttributeValue
+        from app.models.product_attribute_link import ProductAttributeValueLinkModel
+        
+        start_dt = parse_date(start_date, end=False)
+        end_dt = parse_date(end_date, end=True)
+        filters = build_product_filters(project_id, start_dt, end_dt, date_field=date_field)
+        
+        stmt = select(
+            Attribute.attribute_name,
+            func.count(func.distinct(AttributeValue.value)).label("unique_values"),
+            func.array_agg(func.distinct(AttributeValue.uom)).label("uoms")
+        ).join(
+            AttributeValue, AttributeValue.attribute_id == Attribute.id
+        ).join(
+            ProductAttributeValueLinkModel, 
+            ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id
+        ).join(
+            Product, Product.id == ProductAttributeValueLinkModel.product_id
+        ).where(*filters).group_by(Attribute.attribute_name).order_by(
+            func.count(func.distinct(AttributeValue.value)).desc()
+        ).limit(20)
+        
+        result = await db.execute(stmt)
+        return [
+            {
+                "attribute_name": row.attribute_name,
+                "unique_values": row.unique_values,
+                "uoms": [u for u in row.uoms if u]
+            }
+            for row in result.all()
+        ]
+    except Exception as e:
+        logger.error(f"Failed to get attribute summary: {e}", exc_info=True)
+        return []

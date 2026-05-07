@@ -1172,6 +1172,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
             except Exception:
                 pass
 worker_pool = get_worker_pool(process_function=run_single_product_aggregation)
+
 async def aggregate_with_retry(
     db_session,
     mpn: str,
