@@ -136,10 +136,7 @@ async def list_projects(
         if q:
             search_term = f"%{q}%"
             statement = statement.where(
-                or_(
-                    Project.name.ilike(search_term),
-                    Project.description.ilike(search_term)
-                )
+                Project.name.ilike(search_term)
             )
         
         if operation_mode:
