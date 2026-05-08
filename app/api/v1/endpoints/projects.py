@@ -1,4 +1,4 @@
-from sqlalchemy import cast, String,case, null
+from sqlalchemy import cast, String,case, null, or_
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, outerjoin, and_
@@ -41,7 +41,8 @@ def normalize_source_status(status: str | None, project_status: str | None = Non
 @router.get("/", response_model=List[ProjectResponse])
 async def list_projects(
     operation_mode: str | None = None,
-    tab: str | None = None,  
+    tab: str | None = None,
+    q: str | None = None,  
     db: AsyncSession = Depends(get_session),
 ):
     try:
@@ -88,7 +89,6 @@ async def list_projects(
                 .scalar_subquery()
                 .label("product_count")
             )
-        
         cleaned_count_subq = (
             select(func.count(Product.id))
             .where(and_(Product.project_id == Project.id, Product.enrichment_status == 'completed'))
@@ -133,6 +133,14 @@ async def list_projects(
             .outerjoin(active_job, and_(active_job.project_id == cast(Project.id, String), active_job.status.in_(["pending", "processing", "completed", "failed"])))
             .outerjoin(active_source, active_source.project_id == Project.id)
         )
+        if q:
+            search_term = f"%{q}%"
+            statement = statement.where(
+                or_(
+                    Project.name.ilike(search_term),
+                    Project.description.ilike(search_term)
+                )
+            )
         
         if operation_mode:
             if ',' in operation_mode:
