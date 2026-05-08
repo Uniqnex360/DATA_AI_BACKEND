@@ -217,10 +217,25 @@ async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_
 @router.get("/filters")
 async def get_project_filters(
     project_id: str | None = None,
+    brand: str | None = None,
+    category: str | None = None,
+    workflow_stage: str | None = None,
     db: AsyncSession = Depends(get_session),
 ):
+    
     try:
-        category_stmt = select(Product.category_1)
+        category_stmt = select(
+            func.coalesce(
+                Product.category_8,
+                Product.category_7,
+                Product.category_6,
+                Product.category_5,
+                Product.category_4,
+                Product.category_3,
+                Product.category_2,
+                Product.category_1
+            )
+        )
         brand_stmt = select(Brand.name).join(Product, Product.brand_id == Brand.id)
         if project_id:
             category_stmt = category_stmt.where(Product.project_id == project_id)
@@ -256,3 +271,4 @@ async def get_project_filters(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch project filters",
         )
+        

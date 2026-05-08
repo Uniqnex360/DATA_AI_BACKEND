@@ -289,6 +289,10 @@ IMPORTANT: Include EVERY attribute name from the input list in the mapping.
 - Master UOM Expansion: For Length, Width, Size → expand symbols (1", 50m.m., 3 YD → 1 in., 50 mm, 3 yd.)
 - Technical UOM Expansion: For Capacity, Output, Input, Speed, Resistance, Density → expand technical units (500rpm → 500 RPM, 12v → 12 V, 1000mah → 1000 mAh)
 - Value/Unit Spacing: For all measurement attributes → enforce space between value and unit (4000K → 4000 K, 50W → 50 W)
+- Unit Case Standardization: 
+  * STANDARD MEASUREMENT UNITS (keep as-is): in, cm, mm, ft, yd, m, km, lb, lbs, kg, g, oz, deg C, deg F, V, W, A, Hz, RPM, Mbps, Gbps, mAh, kWh, PSI
+  * ALL OTHER UNITS: Force to lowercase (e.g., "LBS" → "lbs", "VDC" → "vdc", "WATT" → "watt")
+  * Exception: Compound units with slashes keep proper formatting (e.g., "ft/s", "m/s")
 Delimiter Standardization: For lists, use pipe | without repeating the unit in the value if the UOM field covers it.
 - Boolean Standardization: For Feature, Variant → map 1/Y/TRUE to "Yes", others to "No"
 - Base Mapping (Color/Material): For Finish, Material, Surface → map complex marketing names to base (Oil Rubbed Bronze → Bronze)
