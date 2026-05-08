@@ -8,6 +8,7 @@ from app.models.cleaning import CleaningTask
 from app.models.product import Product
 from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
 from app.models.project import Project
+from app.api.v1.endpoints.aggregation import update_project_status
 
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,6 +70,9 @@ async def run_cleaning_task(
         try:
             await update_cleaning_task_status(db, task_id, "running")
             await append_cleaning_task_log(db, task_id, f"Starting cleaning for project {project_id}")
+            await update_project_status(db, project_id)
+            await append_cleaning_task_log(db, task_id, "Project status updated to processing")
+            await db.commit()
             service = LLMCleaningService(
                 llm_provider=llm_provider,
                 db=db,
@@ -162,6 +166,7 @@ async def run_cleaning_task(
                     attr_rows = attr_result.all()
                     if not attr_rows:
                         product.enrichment_status = "completed"
+                        product.data_quality_score = 100.0
                         product.last_algorithm_used = llm_provider 
                         product.updated_at = now_ist()
                         db.add(product)
@@ -181,6 +186,7 @@ async def run_cleaning_task(
                             )
                     if not attributes:
                         product.enrichment_status = "completed"
+                        product.data_quality_score = 100.0
                         product.last_algorithm_used = llm_provider 
                         product.updated_at = now_ist()
                         db.add(product)
@@ -202,12 +208,14 @@ async def run_cleaning_task(
                         db, product.id, cleaning_result, llm_provider
                     )
                     product.enrichment_status = "completed"
+                    product.data_quality_score = 100.0
                     product.last_algorithm_used = llm_provider 
                     product.updated_at = now_ist()
                     db.add(product)
                     await db.commit()
                     if updated:
                         updated_count += 1
+                    
                 except Exception as product_error:
                     failed_count += 1
                     logger.error(
@@ -241,57 +249,27 @@ async def run_cleaning_task(
                 task_id,
                 f"Cleaning completed. Updated {updated_count}/{total}, failed {failed_count}",
             )
+            
             try:
                 stmt = select(Source).where(Source.project_id == project_id)
                 result = await db.execute(stmt)
                 sources = result.scalars().all()
-                for source in sources:
-                    metadata = dict(source.source_metadata or {})
-                    metadata["processing_status"] = "completed"
-                    source.source_metadata = metadata
-                    db.add(source)
                 project = await db.get(Project, project_id)
-                if project:
-                    status_stmt = select(
-                        func.count(Product.id),
-                        func.sum(
-                            case((Product.enrichment_status == "completed", 1), else_=0)),
-                        func.sum(
-                            case((Product.enrichment_status == "failed", 1), else_=0)),
-                        func.sum(
-                            case((Product.enrichment_status == "processing", 1), else_=0)),
-                        func.sum(
-                            case((Product.enrichment_status == "pending", 1), else_=0)),
-                    ).where(Product.project_id == project_id)
-                    status_result = await db.execute(status_stmt)
-                    row = status_result.one()
-                    total = row[0] or 0
-                    completed = row[1] or 0
-                    failed = row[2] or 0
-                    processing = row[3] or 0
-                    pending = row[4] or 0
-                    if total == 0:
-                        project.status = "draft"
-                    elif processing > 0:
-                        project.status = "processing"
-                    elif completed == total:
-                        project.status = "completed"
-                    elif failed == total:
-                        project.status = "failed"
-                    elif completed > 0:
-                        project.status = "partially_completed"
-                    else:
-                        project.status = "draft"
-                    db.add(project)
+                processing_status = project.status if project else 'completed'
+                for source in sources:
+                    new_metadata = dict(source.source_metadata) if source.source_metadata else {}
+                    new_metadata['processing_status'] = processing_status
+                    source.source_metadata = new_metadata
+                    flag_modified(source, "source_metadata")
+                    db.add(source)
+                
+                # Only ONE call to update_project_status
+                await update_project_status(db, project_id)
                 await db.commit()
+                
             except Exception as status_error:
-                await db.rollback()
-                logger.error(
-                    f"Failed to update source/project failure status for project {project_id}: {status_error}",
-                    exc_info=True,
-                )
-            except Exception as e:
-                raise e
+                logger.error(f"Failed to update source/project status: {status_error}")
+            
             await update_cleaning_task_status(db, task_id, "completed")
         except Exception as e:
             logger.error(f"Cleaning task {task_id} failed: {e}", exc_info=True)
@@ -326,7 +304,6 @@ async def add_log(db: AsyncSession, task_id: str, message: str):
     db.add(task)
     await db.commit()
 
-
 @router.post("/run")
 async def run_cleaning(
     request: RunCleaningRequest,
@@ -337,8 +314,11 @@ async def run_cleaning(
         project = await db.get(Project, request.project_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
+        await update_project_status(db, request.project_id)
+        await db.commit()  
         task_id = str(uuid.uuid4())
         await create_cleaning_task(db, task_id)
+        await db.commit() 
         background_tasks.add_task(
             run_cleaning_task,
             request.project_id,
@@ -350,10 +330,10 @@ async def run_cleaning(
     except HTTPException:
         raise
     except Exception as e:
+        await db.rollback()
         logger.error(f"Failed to start cleaning task: {e}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Failed to start cleaning task")
-
 
 @router.get("/tasks/{task_id}")
 async def get_task_status(task_id: str, db: AsyncSession = Depends(get_session)):

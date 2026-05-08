@@ -1387,11 +1387,19 @@ async def get_products_with_movement(
                     "workflow_stage": product.workflow_stage,
                     "moved_to": 'aggregation' if product.completeness_score >= 90 else 'enrichment'
                 })
+        latest_product_time = None
+        all_products = list(aggregation_products) + list(enrichment_products)
+        if all_products:
+            latest_product_time = max(
+                (p.updated_at for p in all_products if p.updated_at),
+                default=None
+            )
+
         return {
             "aggregation_products": [p.dict() for p in aggregation_products],
             "enrichment_products": [p.dict() for p in enrichment_products],
             "completed_products": completed_products,
-            "last_updated": now_ist().isoformat()
+            "last_updated": latest_product_time.isoformat() if latest_product_time else now_ist().isoformat()
         }
     except Exception as e:
         logger.error(f"Failed to get products with movement: {e}")
