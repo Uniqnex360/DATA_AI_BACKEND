@@ -32,13 +32,12 @@ async def get_data_quality_report(
         ).join(Project, Product.project_id == Project.id)
         
         stmt = stmt.where(Project.operation_mode == "cleaning")
-        
+        if category_name:
+            stmt = stmt.where(Product.category_1 == category_name)
         if project_id:
             stmt = stmt.where(Product.project_id == project_id)
         if brand_name:
             stmt = stmt.where(Product.brand_name == brand_name)
-        if algorithm:
-            stmt = stmt.where(Product.last_algorithm_used == algorithm)
         if algorithm:
             stmt = stmt.where(Product.last_algorithm_used == algorithm)
         
@@ -92,11 +91,7 @@ async def get_edit_logs(
         if brand_name:
             stmt = stmt.where(AttributeEditLog.brand_name == brand_name)
         if algorithm:
-            subquery = select(AttributeEditLog.product_id).where(
-                AttributeEditLog.algorithm_used == algorithm,
-                AttributeEditLog.project_id == Product.project_id
-            ).subquery()
-            stmt = stmt.where(Product.id.in_(subquery))
+            stmt = stmt.where(AttributeEditLog.algorithm_used == algorithm)
         if edit_source:
             stmt = stmt.where(AttributeEditLog.edit_source == edit_source)
         

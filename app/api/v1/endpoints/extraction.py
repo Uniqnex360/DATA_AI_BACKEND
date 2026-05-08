@@ -1002,6 +1002,8 @@ async def run_aggregation_task(source_id: str):
                         golden = aggregation_result.get('golden_record', {})
                         ai_attributes = golden.get('attributes', {})
                         product.enrichment_status = 'completed'
+                        product.data_quality_score = 100.0
+
                         product.short_description = sanitize_ai_data(
                             golden.get('short_description')) or product.short_description
                         product.long_description = sanitize_ai_data(

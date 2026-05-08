@@ -1,4 +1,4 @@
-
+from app.utils.timezone import now_ist
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, and_, case
@@ -29,16 +29,20 @@ from app.utils.image_validator import validate_image_url
 from app.utils.sanitize import sanitize_ai_data
 from app.aggregation.worker_pool import get_worker_pool
 logger = logging.getLogger("aggregation_router")
-from app.utils.timezone import now_ist
-
 router = APIRouter()
+
+
 async def update_project_status(db_session: AsyncSession, project_id: str) -> None:
     stmt = select(
         func.count(Product.id).label("total"),
-        func.sum(case((Product.enrichment_status == 'completed', 1), else_=0)).label("completed"),
-        func.sum(case((Product.enrichment_status == 'failed', 1), else_=0)).label("failed"),
-        func.sum(case((Product.enrichment_status == 'pending', 1), else_=0)).label("pending"),
-        func.sum(case((Product.enrichment_status == 'processing', 1), else_=0)).label("processing"),
+        func.sum(case((Product.enrichment_status == 'completed', 1), else_=0)).label(
+            "completed"),
+        func.sum(case((Product.enrichment_status == 'failed', 1), else_=0)).label(
+            "failed"),
+        func.sum(case((Product.enrichment_status == 'pending', 1), else_=0)).label(
+            "pending"),
+        func.sum(case((Product.enrichment_status == 'processing', 1), else_=0)).label(
+            "processing"),
     ).where(Product.project_id == project_id)
     result = await db_session.execute(stmt)
     stats = result.first()
@@ -75,8 +79,11 @@ async def update_project_status(db_session: AsyncSession, project_id: str) -> No
         f"pending={pending}, processing={processing}, status={status_value}"
     )
     await db_session.execute(
-        update(Project).where(Project.id == project_id).values(status=status_value)
+        update(Project).where(Project.id ==
+                              project_id).values(status=status_value)
     )
+
+
 async def refresh_project_status(project_id: str) -> None:
     async with async_session_factory() as session:
         await update_project_status(session, project_id)
@@ -86,6 +93,8 @@ async def refresh_project_status(project_id: str) -> None:
             logger.info(
                 f"Refreshed project {project_id} final status: {project.status}"
             )
+
+
 def merge_attributes_preserving_order(
     primary_attributes: List[str],
     existing_attrs: Dict[str, Any],
@@ -103,6 +112,8 @@ def merge_attributes_preserving_order(
         if attr_name not in merged:
             merged[attr_name] = ai_val
     return merged
+
+
 async def get_active_job_for_project(db: AsyncSession, project_id: str) -> Optional[AggregationJob]:
     stmt = select(AggregationJob).where(
         and_(
@@ -112,6 +123,7 @@ async def get_active_job_for_project(db: AsyncSession, project_id: str) -> Optio
     )
     result = await db.execute(stmt)
     return result.scalars().first()
+
 
 @router.get("/projects/stats", response_model=List[ProjectStats])
 async def get_projects_with_aggregation_stats(
@@ -171,7 +183,8 @@ async def get_projects_with_aggregation_stats(
     except Exception as e:
         logger.error(f"Stats Error: {e}", exc_info=True)
         return []
-    
+
+
 @router.post("/project/{project_id}", response_model=AggregationTriggerResponse, status_code=status.HTTP_202_ACCEPTED)
 async def trigger_project_aggregation(
     project_id: str,
@@ -254,6 +267,7 @@ async def trigger_project_aggregation(
             detail="Failed to start aggregation"
         )
 
+
 @router.post("/project/{project_id}/cancel")
 async def cancel_project_aggregation(
     project_id: str,
@@ -286,6 +300,8 @@ async def cancel_project_aggregation(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to cancel aggregation"
         )
+
+
 @router.post("/run/{product_id}", response_model=ProductAggregationResponse)
 async def aggregate_single_product(
     product_id: str,
@@ -300,10 +316,12 @@ async def aggregate_single_product(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Product not found"
             )
-        used_llms=product.used_llms or []
+        used_llms = product.used_llms or []
         if request.llm_provider in used_llms:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail=f'Product has been already enriched with LLM,Please try another one!')
-        logger.info(f"Starting single product aggregation:{product.product_code}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail=f'Product has been already enriched with LLM,Please try another one!')
+        logger.info(
+            f"Starting single product aggregation:{product.product_code}")
         if product.enrichment_status == 'processing':
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -331,6 +349,8 @@ async def aggregate_single_product(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to start aggregation"
         )
+
+
 @router.get("/attributes/{product_id}", response_model=List[AggregatedAttribute])
 async def get_aggregated_attributes(
     product_id: str,
@@ -390,6 +410,8 @@ async def get_aggregated_attributes(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch attributes"
         )
+
+
 def extract_ai_value_text(ai_val: Any) -> str:
     if isinstance(ai_val, dict):
         val = ai_val.get("web_value") or ai_val.get(
@@ -399,7 +421,6 @@ def extract_ai_value_text(ai_val: Any) -> str:
         if val is not None:
             return f"{val} {unit}".strip()
     return str(ai_val)
-
 # def merge_dynamic_attributes(
 #     product: Product,
 #     ai_data: Dict[str, Any],
@@ -446,6 +467,7 @@ def extract_ai_value_text(ai_val: Any) -> str:
 #             })
 #     flag_modified(product, "dynamic_attributes")
 
+
 async def merge_dynamic_attributes(
     db: AsyncSession,
     product: Product,
@@ -454,7 +476,6 @@ async def merge_dynamic_attributes(
 ) -> None:
     from app.models.attribute import Attribute, AttributeValue
     from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
-    
     for attr_name, ai_val in ai_data.items():
         try:
             if isinstance(ai_val, dict):
@@ -463,28 +484,27 @@ async def merge_dynamic_attributes(
             else:
                 value = str(ai_val) if ai_val else ''
                 uom = ''
-            
             if not value:
                 continue
-            
-            attr_stmt = select(Attribute).where(Attribute.attribute_name == attr_name)
+            attr_stmt = select(Attribute).where(
+                Attribute.attribute_name == attr_name)
             attr_result = await db.execute(attr_stmt)
             attribute = attr_result.scalars().first()
-            
             if not attribute:
                 import uuid as _uuid
-                base_code = attr_name.lower().replace(" ", "_").replace("/", "_").replace("-", "_")
+                base_code = attr_name.lower().replace(
+                    " ", "_").replace("/", "_").replace("-", "_")
                 from sqlmodel import select as _select
                 code_check = await db.execute(
-                    _select(Attribute).where(Attribute.attribute_code == base_code)
+                    _select(Attribute).where(
+                        Attribute.attribute_code == base_code)
                 )
                 if code_check.scalars().first():
                     base_code = f"{base_code}_{_uuid.uuid4().hex[:6]}"
-                
                 display_name = attr_name.strip()
                 if display_name:
-                    display_name = display_name[0].upper() + display_name[1:] if len(display_name) > 1 else display_name.upper()
-                
+                    display_name = display_name[0].upper(
+                    ) + display_name[1:] if len(display_name) > 1 else display_name.upper()
                 attribute = Attribute(
                     attribute_name=display_name,
                     attribute_code=base_code,
@@ -492,28 +512,28 @@ async def merge_dynamic_attributes(
                 )
                 db.add(attribute)
                 await db.flush()
-            
             link_stmt = select(ProductAttributeLinkModel).where(
                 ProductAttributeLinkModel.product_id == product.id,
                 ProductAttributeLinkModel.attribute_id == attribute.id,
             )
             if not (await db.execute(link_stmt)).scalars().first():
-                db.add(ProductAttributeLinkModel(product_id=product.id, attribute_id=attribute.id))
-            
+                db.add(ProductAttributeLinkModel(
+                    product_id=product.id, attribute_id=attribute.id))
             val_stmt = select(AttributeValue).where(
                 AttributeValue.attribute_id == attribute.id,
                 AttributeValue.value == str(value),
             )
             val_result = await db.execute(val_stmt)
             attr_val = val_result.scalars().first()
-            
             if not attr_val:
                 attr_val = AttributeValue(
                     attribute_id=attribute.id,
                     value=str(value),
                     uom=str(uom) if uom else None,
-                    validation_value=str(value) if is_validation_mode else None,
-                    validation_uom=str(uom) if is_validation_mode and uom else None,
+                    validation_value=str(
+                        value) if is_validation_mode else None,
+                    validation_uom=str(
+                        uom) if is_validation_mode and uom else None,
                 )
                 db.add(attr_val)
                 await db.flush()
@@ -521,7 +541,6 @@ async def merge_dynamic_attributes(
                 attr_val.validation_value = str(value)
                 attr_val.validation_uom = str(uom) if uom else None
                 db.add(attr_val)
-            
             pv_stmt = select(ProductAttributeValueLinkModel).where(
                 ProductAttributeValueLinkModel.product_id == product.id,
                 ProductAttributeValueLinkModel.attribute_value_id == attr_val.id,
@@ -531,7 +550,6 @@ async def merge_dynamic_attributes(
                     product_id=product.id,
                     attribute_value_id=attr_val.id,
                 ))
-                        
             if product.category_id:
                 ca_stmt = select(CategoryAttribute).where(
                     CategoryAttribute.category_id == product.category_id,
@@ -543,9 +561,11 @@ async def merge_dynamic_attributes(
                         attribute_id=attribute.id,
                     ))
         except Exception as e:
-            logger.error(f"Failed to save attribute {attr_name} to normalized tables: {e}")
+            logger.error(
+                f"Failed to save attribute {attr_name} to normalized tables: {e}")
             continue
-        
+
+
 async def get_product_attributes_for_aggregation(
     db: AsyncSession,
     product: Product
@@ -558,7 +578,6 @@ async def get_product_attributes_for_aggregation(
     """
     primary_attr_names = []
     existing_data = {}
-    
     # 1. Get category expected attributes
     if product.category_id:
         try:
@@ -573,14 +592,15 @@ async def get_product_attributes_for_aggregation(
                 if row[0] not in primary_attr_names:
                     primary_attr_names.append(row[0])
         except Exception as e:
-            logger.warning(f"Failed to get category attrs for {product.product_code}: {e}")
-    
+            logger.warning(
+                f"Failed to get category attrs for {product.product_code}: {e}")
     # 2. Get product's existing attributes
     try:
         val_stmt = (
-            select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom)
+            select(Attribute.attribute_name,
+                   AttributeValue.value, AttributeValue.uom)
             .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
-            .join(ProductAttributeValueLinkModel, 
+            .join(ProductAttributeValueLinkModel,
                   ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
             .where(ProductAttributeValueLinkModel.product_id == product.id)
         )
@@ -590,9 +610,11 @@ async def get_product_attributes_for_aggregation(
             if attr_name not in primary_attr_names:
                 primary_attr_names.append(attr_name)
     except Exception as e:
-        logger.warning(f"Failed to read existing attrs for {product.product_code}: {e}")
-    
+        logger.warning(
+            f"Failed to read existing attrs for {product.product_code}: {e}")
     return primary_attr_names, existing_data
+
+
 async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai') -> None:
     async with async_session_factory() as db_session:
         job: Optional[AggregationJob] = None
@@ -645,8 +667,6 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                     primary_attrs, _ = await get_product_attributes_for_aggregation(
                         db_session, product
                     )
-                    
-                    
                     logger.info(f"   └─ Taxonomy: {product.taxonomy}")
                     logger.info(f"   └─ Primary attrs: {primary_attrs}")
                     job.current_product = product.product_code
@@ -725,6 +745,8 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             product.validation_conflicts = conflicts
                             flag_modified(product, "validation_conflicts")
                             product.enrichment_status = 'completed'
+                            product.data_quality_score = 100.0
+
                             await db_session.flush()
                             db_session.add(product)
                             found_image = aggregation_result.get('image_url')
@@ -744,9 +766,11 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             else:
                                 logger.warning(
                                     f"⚠ No image found during aggregation of {product.product_code}")
-                            product.completeness_score = min(len(ai_attributes) * 5, 100)
-                            is_enrichment_attempt=product.workflow_stage=='enrichment'
-                            product.sources_consulted = golden.get('sources_consulted', [])
+                            product.completeness_score = min(
+                                len(ai_attributes) * 5, 100)
+                            is_enrichment_attempt = product.workflow_stage == 'enrichment'
+                            product.sources_consulted = golden.get(
+                                'sources_consulted', [])
                             # if product.completeness_score<enrichment_threshold:
                             #     product.workflow_stage='enrichment'
                             #     product.needs_enrichment=True
@@ -755,13 +779,16 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             #     product.enrichment_status='pending'
                             #     routed_to_enrichment+=1
                             # else:
-                            product.workflow_stage='aggregation'
-                            product.needs_enrichment=False
-                            product.ready_for_export=True
-                            product.enrichment_status='completed'  
+                            product.workflow_stage = 'aggregation'
+                            product.needs_enrichment = False
+                            product.ready_for_export = True
+                            product.enrichment_status = 'completed'
+                            product.data_quality_score = 100.0
+
                             product.routed_to_enrichment_at = None
-                            ready_for_export+=1
-                            track_llm_usage(product,llm_provider,is_enrichment_attempt,logger)
+                            ready_for_export += 1
+                            track_llm_usage(product, llm_provider,
+                                            is_enrichment_attempt, logger)
                             await db_session.flush()
                             await check_data_quality(db_session, product.product_code, ai_attributes)
                             successful += 1
@@ -791,6 +818,8 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                 logger.warning(
                                     f"⚠ No image found for {product.product_code}")
                             product.enrichment_status = 'completed'
+                            product.data_quality_score = 100.0
+
                             product.completeness_score = min(
                                 len(ai_attributes) * 5, 100)
                             product.sources_consulted = golden.get(
@@ -808,9 +837,12 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             product.needs_enrichment = False
                             product.ready_for_export = True
                             product.enrichment_status = 'completed'
-                            product.routed_to_enrichment_at = None 
-                            ready_for_export+=1
-                            track_llm_usage(product,llm_provider,is_enrichment_attempt,logger)
+                            product.data_quality_score = 100.0
+
+                            product.routed_to_enrichment_at = None
+                            ready_for_export += 1
+                            track_llm_usage(product, llm_provider,
+                                            is_enrichment_attempt, logger)
                             db_session.add(product)
                             await db_session.flush()
                             await check_data_quality(db_session, product.product_code, ai_attributes)
@@ -904,6 +936,8 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                 except Exception as commit_error:
                     logger.error(
                         f"Failed to update job status: {commit_error}")
+
+
 async def run_single_product_aggregation(product_id: str, llm_provider: str = 'openai') -> None:
     async with async_session_factory() as db_session:
         try:
@@ -913,8 +947,9 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                 return
             logger.info(
                 f"Starting single product aggregation: {product.product_code}")
-            is_enrichment_attempt=product.workflow_stage=='enrichment'
-            logger.info(f"Product {product.product_code} - workflow_stage: {product.workflow_stage}, is_enrichment_attempt: {is_enrichment_attempt}")
+            is_enrichment_attempt = product.workflow_stage == 'enrichment'
+            logger.info(
+                f"Product {product.product_code} - workflow_stage: {product.workflow_stage}, is_enrichment_attempt: {is_enrichment_attempt}")
             primary_attrs, _ = await get_product_attributes_for_aggregation(
                 db_session, product
             )
@@ -1023,8 +1058,10 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     product.validation_conflicts = conflicts
                     flag_modified(product, "validation_conflicts")
                     await merge_dynamic_attributes(
-                        db_session,product, ai_data_for_merge, is_validation_mode=('validation' in use_case))
+                        db_session, product, ai_data_for_merge, is_validation_mode=('validation' in use_case))
                     product.enrichment_status = 'completed'
+                    product.data_quality_score = 100.0
+
                     await db_session.flush()
                     db_session.add(product)
                     existing_image = product.image_url_1
@@ -1051,7 +1088,8 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                         logger.warning(
                             f"⚠ No image found during single product aggregation of {product.product_code}")
                     product.completeness_score = min(len(ai_data) * 5, 100)
-                    product.sources_consulted = golden.get('sources_consulted', [])
+                    product.sources_consulted = golden.get(
+                        'sources_consulted', [])
                     # if product.completeness_score < enrichment_threshold:
                     #     product.workflow_stage = 'enrichment'
                     #     product.needs_enrichment = True
@@ -1063,8 +1101,11 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     product.needs_enrichment = False
                     product.ready_for_export = True
                     product.enrichment_status = 'completed'
+                    product.data_quality_score = 100.0
+
                     product.routed_to_enrichment_at = None
-                    track_llm_usage(product,llm_provider,is_enrichment_attempt,logger)
+                    track_llm_usage(product, llm_provider,
+                                    is_enrichment_attempt, logger)
                     await check_data_quality(db_session, product.product_code, ai_data)
                     logger.info(
                         f"Single product aggregation complete: {product.product_code}")
@@ -1074,7 +1115,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                             product.attributes[key] = val
                     flag_modified(product, "attributes")
                     await merge_dynamic_attributes(db_session,
-                        product, ai_data, is_validation_mode=False)
+                                                   product, ai_data, is_validation_mode=False)
                     found_image = result.get('image_url')
                     if found_image and isinstance(found_image, str) and found_image.strip():
                         if await validate_image_url(found_image.strip()):
@@ -1088,24 +1129,30 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                         logger.warning(
                             f"⚠ No image found for {product.product_code}")
                     product.enrichment_status = 'completed'
+                    product.data_quality_score = 100.0
+
                     product.completeness_score = min(len(ai_data) * 5, 100)
-                    product.sources_consulted = golden.get('sources_consulted', [])
+                    product.sources_consulted = golden.get(
+                        'sources_consulted', [])
                     # if product.completeness_score < enrichment_threshold:
                     #     product.workflow_stage = 'enrichment'
                     #     product.needs_enrichment = True
                     #     product.ready_for_export = False
                     #     product.routed_to_enrichment_at = now_ist()
-                    #     product.enrichment_status = 'pending'  
+                    #     product.enrichment_status = 'pending'
                     # else:
                     product.workflow_stage = 'aggregation'
                     product.needs_enrichment = False
                     product.ready_for_export = True
                     product.enrichment_status = 'completed'
+                    product.data_quality_score = 100.0
                     product.routed_to_enrichment_at = None
-                    track_llm_usage(product,llm_provider,is_enrichment_attempt,logger)
+                    track_llm_usage(product, llm_provider,
+                                    is_enrichment_attempt, logger)
                 await update_project_status(db_session, product.project_id)
                 project = await db_session.get(Project, product.project_id)
                 if project:
+                    await db_session.refresh(project)
                     logger.info(
                         f"Project {product.project_id} status updated to {project.status}"
                     )
@@ -1116,10 +1163,12 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                         source_result = await db_session.execute(source_stmt)
                         sources = source_result.scalars().all()
                         for source in sources:
-                            new_metadata = dict(source.source_metadata) if source.source_metadata else {}
+                            new_metadata = dict(
+                                source.source_metadata) if source.source_metadata else {}
                             processing_status = project.status if project else 'completed'
                             new_metadata['processing_status'] = processing_status
-                            new_metadata['completed_at'] = now_ist().isoformat()
+                            new_metadata['completed_at'] = now_ist(
+                            ).isoformat()
                             source.source_metadata = new_metadata
                             flag_modified(source, "source_metadata")
                             db_session.add(source)
@@ -1173,6 +1222,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                 pass
 worker_pool = get_worker_pool(process_function=run_single_product_aggregation)
 
+
 async def aggregate_with_retry(
     db_session,
     mpn: str,
@@ -1222,6 +1272,8 @@ async def aggregate_with_retry(
         'status': 'failed',
         'reason': str(last_error) if last_error else 'Unknown error'
     }
+
+
 async def check_data_quality(
     db_session: AsyncSession,
     product_code: str,
@@ -1238,42 +1290,37 @@ async def check_data_quality(
                 resolved=False
             ))
 
+
 @router.post('/export/batch', status_code=200)
 async def batch_export_products(request: BatchExportRequest, db: AsyncSession = Depends(get_session)):
     try:
         product_id_set = set(request.product_ids)
         # Explicitly preserve the project IDs the frontend asked for
-        requested_project_ids = list(request.project_ids) if request.project_ids else []
-
+        requested_project_ids = list(
+            request.project_ids) if request.project_ids else []
         if request.project_ids:
-            stmt = select(Product.id).where(Product.project_id.in_(request.project_ids))
+            stmt = select(Product.id).where(
+                Product.project_id.in_(request.project_ids))
             result = await db.execute(stmt)
             product_ids_from_projects = result.scalars().all()
             product_id_set.update(product_ids_from_projects)
-
         if not product_id_set:
             raise HTTPException(status_code=400, detail='No products selected')
-
         stmt = select(Product).where(Product.id.in_(list(product_id_set)))
         result = await db.execute(stmt)
         products = result.scalars().all()
-
         if not products:
             raise HTTPException(status_code=404, detail='No products found')
-
         # All project IDs involved (from frontend or deduced)
         all_project_ids = (
             requested_project_ids if requested_project_ids
             else list(set(str(p.project_id) for p in products if p.project_id))
         )
-
         logger.info(
             f"Export request: frontend sent {request.project_ids}, "
             f"deduced project_ids={all_project_ids}, products_count={len(products)}"
         )
-
         filename = "selected_export"
-
         # Only use the source filename when the frontend explicitly selected ONE project
         if len(all_project_ids) == 1 and len(requested_project_ids) <= 1:
             source_stmt = select(Source).where(
@@ -1281,9 +1328,9 @@ async def batch_export_products(request: BatchExportRequest, db: AsyncSession = 
             ).order_by(Source.uploaded_at.desc())
             source_result = await db.execute(source_stmt)
             source = source_result.scalars().first()
-
             if source and source.source_url:
-                import re, os
+                import re
+                import os
                 raw_name = source.source_url.strip()
                 # Keep only the file name (ignore any path)
                 raw_name = os.path.basename(raw_name)
@@ -1291,17 +1338,18 @@ async def batch_export_products(request: BatchExportRequest, db: AsyncSession = 
                 clean = re.sub(r'\.[^/.]+$', '', raw_name)
                 if clean:
                     filename = clean
-                    logger.info(f"Single project export, filename from source: {filename}")
-
+                    logger.info(
+                        f"Single project export, filename from source: {filename}")
         logger.info(f"Final export filename: {filename}.xlsx")
         return await generate_products_excel(products, db, filename=filename)
-
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f'Batch export failed {e}')
-        raise HTTPException(status_code=500, detail='Failed to download results!')
-    
+        raise HTTPException(
+            status_code=500, detail='Failed to download results!')
+
+
 @router.get("/project/{project_id}/products-with-movement")
 async def get_products_with_movement(
     project_id: str,
@@ -1312,14 +1360,16 @@ async def get_products_with_movement(
             and_(
                 Product.project_id == project_id,
                 Product.workflow_stage == 'aggregation',
-                Product.enrichment_status.in_(['pending', 'processing', 'failed', 'completed']) 
+                Product.enrichment_status.in_(
+                    ['pending', 'processing', 'failed', 'completed'])
             )
         )
         enrichment_stmt = select(Product).where(
             and_(
                 Product.project_id == project_id,
                 Product.workflow_stage == 'enrichment',
-                Product.enrichment_status.in_(['pending', 'processing', 'failed'])
+                Product.enrichment_status.in_(
+                    ['pending', 'processing', 'failed'])
             )
         )
         aggregation_result = await db.execute(aggregation_stmt)
@@ -1346,3 +1396,22 @@ async def get_products_with_movement(
     except Exception as e:
         logger.error(f"Failed to get products with movement: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/project/{project_id}/status")
+async def get_project_aggregation_status(
+    project_id: str,
+    db: AsyncSession = Depends(get_session)
+):
+    from app.models.pipeline import AggregationJob
+    
+    stmt = select(AggregationJob).where(
+        AggregationJob.project_id == project_id
+    ).order_by(AggregationJob.created_at.desc()).limit(1)
+    
+    result = await db.execute(stmt)
+    job = result.scalars().first()
+    
+    if not job:
+        return {"status": "not_found", "error": "No aggregation job found"}
+    
+    return {"status": job.status, "error": job.error_message}

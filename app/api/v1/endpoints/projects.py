@@ -56,7 +56,7 @@ async def list_projects(
                     and_(
                         Product.project_id == Project.id,
                         Product.workflow_stage == "aggregation",
-                        Product.enrichment_status.in_(["pending", "failed", "completed"])
+                        Product.enrichment_status.in_(["pending", "failed", "completed", "processing"])
                     )
                 )
                 .scalar_subquery()
@@ -111,11 +111,11 @@ async def list_projects(
             .label("completeness_score")
         )
         data_quality_subq = (
-            select(func.avg(Product.data_quality_score))
-            .where(and_(Product.project_id == Project.id, Product.workflow_stage == "aggregation"))
-            .scalar_subquery()
-            .label("data_quality_subq")
-        )
+    select(func.avg(Product.data_quality_score))
+    .where(Product.project_id == Project.id)
+    .scalar_subquery()
+    .label("data_quality_score")
+)
         
         statement = (
             select(
