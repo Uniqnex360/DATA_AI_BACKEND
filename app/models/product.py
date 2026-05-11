@@ -1,6 +1,6 @@
 from app.models.base import UUIDModel
 from typing import Optional,Dict,List,Any
-from sqlmodel import Field,Column,JSON
+from sqlmodel import Field,Column,JSON,Index
 from datetime import datetime
 from typing import List
 from uuid import UUID, uuid4
@@ -10,6 +10,10 @@ from app.models.product_attribute_link import ProductAttributeLinkModel, Product
 from app.utils.timezone import now_ist
 class Product(UUIDModel,table=True):
     __tablename__='product_master'
+    __table_args__ = (
+        Index("ix_product_created_at_project", "created_at", "project_id"),
+        Index("ix_product_updated_at_project", "updated_at", "project_id"),
+    )
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     product_code:str=Field(index=True)
     product_name:str

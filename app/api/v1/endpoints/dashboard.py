@@ -316,6 +316,7 @@ async def get_dashboard_timeline(
     except Exception as e:
         logger.error(f"Failed to load dashboard timeline: {e}", exc_info=True)
         return []
+    
 @router.get("/brand-flow", response_model=List[BrandFlowStat])
 async def get_brand_flow(
     project_id: Optional[str] = Query(None),
@@ -648,31 +649,60 @@ async def get_projects_overview(
 ):
     try:
         # Get total count
-        count_stmt = select(func.count(Project.id))
-        if search:
-            count_stmt = count_stmt.where(Project.name.ilike(f"%{search}%"))
+        # count_stmt = select(func.count(Project.id))
+        # if search:
+        #     count_stmt = count_stmt.where(Project.name.ilike(f"%{search}%"))
+        # db_statuses = get_db_status_filters(status)
+        # if db_statuses:
+        #     count_stmt = count_stmt.where(Project.status.in_(db_statuses))
+        
+        # count_result = await db.execute(count_stmt)
+        # total_count = count_result.scalar() or 0
+        
+        # # Get paginated project IDs
+        # id_stmt = select(Project.id).order_by(Project.created_at.desc())
+        # if search:
+        #     id_stmt = id_stmt.where(Project.name.ilike(f"%{search}%"))
+        # if db_statuses:
+        #     id_stmt = id_stmt.where(Project.status.in_(db_statuses))
+        
+        # offset = (page - 1) * page_size
+        # id_stmt = id_stmt.offset(offset).limit(page_size)
+        # id_result = await db.execute(id_stmt)
+        # project_ids = [row[0] for row in id_result.all()]
+        
+        # if not project_ids:
+        #     return {"projects": [], "total": total_count, "page": page, "page_size": page_size}
         db_statuses = get_db_status_filters(status)
-        if db_statuses:
-            count_stmt = count_stmt.where(Project.status.in_(db_statuses))
         
-        count_result = await db.execute(count_stmt)
-        total_count = count_result.scalar() or 0
-        
-        # Get paginated project IDs
-        id_stmt = select(Project.id).order_by(Project.created_at.desc())
+        base_filters = []
         if search:
-            id_stmt = id_stmt.where(Project.name.ilike(f"%{search}%"))
+            base_filters.append(Project.name.ilike(f"%{search}%"))
         if db_statuses:
-            id_stmt = id_stmt.where(Project.status.in_(db_statuses))
+            base_filters.append(Project.status.in_(db_statuses))
         
         offset = (page - 1) * page_size
-        id_stmt = id_stmt.offset(offset).limit(page_size)
-        id_result = await db.execute(id_stmt)
-        project_ids = [row[0] for row in id_result.all()]
+
+        # Single query: window function gives total count + paginated rows
+        paged_stmt = (
+            select(
+                Project.id,
+                func.count().over().label("total_count"),
+            )
+            .where(*base_filters)
+            .order_by(Project.created_at.desc())
+            .offset(offset)
+            .limit(page_size)
+        )
+
+        combined_result = await db.execute(paged_stmt)
+        combined_rows = combined_result.all()
+
+        total_count = combined_rows[0].total_count if combined_rows else 0
+        project_ids = [row.id for row in combined_rows]
         
         if not project_ids:
             return {"projects": [], "total": total_count, "page": page, "page_size": page_size}
-        
         # Single query: get all projects with all counts
         stmt = select(
             Project.id,
