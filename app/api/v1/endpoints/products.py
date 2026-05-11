@@ -122,7 +122,17 @@ async def read_products(
 async def create_product(*, db: AsyncSession = Depends(get_session), product_in: ProductCreate):
     return await product_service.create(db=db, obj_in=product_in)
 
-
+def get_last_category_expr():
+    return func.coalesce(
+        func.nullif(Product.category_8, ''),
+        func.nullif(Product.category_7, ''),
+        func.nullif(Product.category_6, ''),
+        func.nullif(Product.category_5, ''),
+        func.nullif(Product.category_4, ''),
+        func.nullif(Product.category_3, ''),
+        func.nullif(Product.category_2, ''),
+        func.nullif(Product.category_1, '')
+    )
 @router.get("/filters")
 async def get_products_filters(
     project_id: str | None = None,
@@ -132,7 +142,10 @@ async def get_products_filters(
     db: AsyncSession = Depends(get_session),
 ):
     try:
-        category_stmt = select(Product.category_1).where(Product.category_1.isnot(None))
+        # 1. Define it FIRST
+        last_cat_expr = get_last_category_expr()
+        
+        category_stmt = select(last_cat_expr).where(last_cat_expr.isnot(None))
         brand_stmt = select(Brand.name).join(Product, Product.brand_id == Brand.id).where(Brand.name.isnot(None))
         
         if project_id:
@@ -143,8 +156,9 @@ async def get_products_filters(
             brand_stmt = brand_stmt.where(Product.workflow_stage == workflow_stage)
         if brand_name:
             category_stmt = category_stmt.where(Product.brand_name == brand_name)
+        
         if category_1:
-            brand_stmt = brand_stmt.where(Product.category_1 == category_1)
+            brand_stmt = brand_stmt.where(last_cat_expr == category_1)
         
         category_result = await db.execute(category_stmt.distinct())
         category_rows = category_result.all()
@@ -158,7 +172,6 @@ async def get_products_filters(
     except Exception as e:
         logger.error(f"Failed to fetch filters for project {project_id}: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch project filters")
-
 
 @router.get("/attributes")
 async def get_project_attributes(
