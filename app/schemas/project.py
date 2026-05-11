@@ -28,6 +28,8 @@ class ProjectResponse(BaseModel):
     operation_mode:Optional[str]=None
     source_status: str | None = None
     created_at: Optional[datetime] = None
+    import_file_name: Optional[str] = None
+    source_processing_status: Optional[str] = None
     completeness_score:Optional[int]=None
     data_quality_score:Optional[int]=None
     product_count:int=0

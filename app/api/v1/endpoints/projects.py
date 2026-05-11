@@ -129,6 +129,27 @@ async def list_projects(
             .scalar_subquery()
             .label('enrichment_pending_count')
         )
+        source_subq = (
+            select(func.coalesce(
+                func.max(case(
+                    (Source.source_type == "excel", Source.source_url),
+                    else_=None
+                )),
+                func.max(Source.source_url)
+            ))
+            .where(Source.project_id == Project.id)
+            .scalar_subquery()
+            .label("import_file_name")
+        )
+
+        source_status_subq = (
+            select(func.max(
+                cast(Source.source_metadata["processing_status"], String)
+            ))
+            .where(Source.project_id == Project.id)
+            .scalar_subquery()
+            .label("source_processing_status")
+        )
 
         statement = (
             select(
@@ -141,6 +162,8 @@ async def list_projects(
                 completeness_subq,
                 data_quality_subq,
                 enrichment_pending_count_subq,
+                source_subq,
+                source_status_subq,
                 func.max(active_job.status).label("processing_status"),
                 func.max(cast(active_source.source_metadata["processing_status"], String)).label(
                     "source_status"),
@@ -178,8 +201,10 @@ async def list_projects(
             completeness_score = row[6] or 0
             data_quality_score=row[7] or 0
             enrichment_pending_count = row[8] or 0
-            processing_status = row[9]
-            source_status = row[10]
+            import_file_name = row[9]
+            source_processing_status = row[10]
+            processing_status = row[11]
+            source_status = row[12]
 
             clean_source_status = source_status.replace(
                 '"', "") if source_status else None
@@ -195,6 +220,8 @@ async def list_projects(
             project_response.data_quality_score = round(
                 data_quality_score, 1) if data_quality_score else 0
             project_response.enrichment_pending_count = enrichment_pending_count
+            project_response.import_file_name = import_file_name
+            project_response.source_processing_status = source_processing_status.replace('"', '') if source_processing_status else None
             project_response.processing_status = processing_status or "pending"
             project_response.source_status = normalize_source_status(
                 clean_source_status, project_status=project.status)
