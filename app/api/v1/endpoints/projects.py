@@ -1,4 +1,4 @@
-from sqlalchemy import cast, String,case, null, or_
+from sqlalchemy import cast, String, case, null, or_
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, outerjoin, and_
@@ -16,6 +16,8 @@ from app.utils.timezone import now_ist
 logger = logging.getLogger("projects_router")
 
 router = APIRouter()
+
+
 def normalize_source_status(status: str | None, project_status: str | None = None) -> str:
     if project_status == "partially_completed":
         return "Partially Completed"
@@ -38,18 +40,19 @@ def normalize_source_status(status: str | None, project_status: str | None = Non
         return "Failed"
     return "Yet to Start"
 
+
 @router.get("/", response_model=List[ProjectResponse])
 async def list_projects(
     operation_mode: str | None = None,
     tab: str | None = None,
-    q: str | None = None,  
+    q: str | None = None,
     db: AsyncSession = Depends(get_session),
 ):
     try:
         active_job = aliased(AggregationJob)
         active_source = aliased(Source)
-        aggregated_count_subq = select(null()).label('aggregated_count')  
-        
+        aggregated_count_subq = select(null()).label('aggregated_count')
+
         if tab == "aggregation":
             product_count_subq = (
                 select(func.count(Product.id))
@@ -57,7 +60,8 @@ async def list_projects(
                     and_(
                         Product.project_id == Project.id,
                         Product.workflow_stage == "aggregation",
-                        Product.enrichment_status.in_(["pending", "failed", "completed", "processing"])
+                        Product.enrichment_status.in_(
+                            ["pending", "failed", "completed", "processing"])
                     )
                 )
                 .scalar_subquery()
@@ -111,12 +115,21 @@ async def list_projects(
             .label("completeness_score")
         )
         data_quality_subq = (
-    select(func.avg(Product.data_quality_score))
-    .where(Product.project_id == Project.id)
-    .scalar_subquery()
-    .label("data_quality_score")
-)
-        
+            select(func.avg(Product.data_quality_score))
+            .where(Product.project_id == Project.id)
+            .scalar_subquery()
+            .label("data_quality_score")
+        )
+        enrichment_pending_count_subq=(
+            select(func.count(Product.id)).where(and_(
+                Product.project_id==Project.id,
+                Product.workflow_stage=='enrichment',
+                Product.enrichment_status=='pending'
+            ))
+            .scalar_subquery()
+            .label('enrichment_pending_count')
+        )
+
         statement = (
             select(
                 Project,
@@ -127,8 +140,10 @@ async def list_projects(
                 aggregated_count_subq,
                 completeness_subq,
                 data_quality_subq,
+                enrichment_pending_count_subq,
                 func.max(active_job.status).label("processing_status"),
-                func.max(cast(active_source.source_metadata["processing_status"], String)).label("source_status"),
+                func.max(cast(active_source.source_metadata["processing_status"], String)).label(
+                    "source_status"),
             )
             .outerjoin(active_job, and_(active_job.project_id == cast(Project.id, String), active_job.status.in_(["pending", "processing", "completed", "failed"])))
             .outerjoin(active_source, active_source.project_id == Project.id)
@@ -138,19 +153,21 @@ async def list_projects(
             statement = statement.where(
                 Project.name.ilike(search_term)
             )
-        
+
         if operation_mode:
             if ',' in operation_mode:
                 modes = operation_mode.split(',')
                 statement = statement.where(Project.operation_mode.in_(modes))
             else:
-                statement = statement.where(Project.operation_mode == operation_mode)
-        
-        statement = statement.group_by(Project.id).order_by(Project.created_at.desc())
+                statement = statement.where(
+                    Project.operation_mode == operation_mode)
+
+        statement = statement.group_by(
+            Project.id).order_by(Project.created_at.desc())
         result = await db.execute(statement)
         rows = result.all()
         projects = []
-        
+
         for row in rows:
             project = row[0]
             product_count = row[1] or 0
@@ -160,23 +177,29 @@ async def list_projects(
             aggregated_count = row[5] or 0
             completeness_score = row[6] or 0
             data_quality_score=row[7] or 0
-            processing_status = row[8]
-            source_status = row[9]
-            
-            clean_source_status = source_status.replace('"', "") if source_status else None
-            
+            enrichment_pending_count = row[8] or 0
+            processing_status = row[9]
+            source_status = row[10]
+
+            clean_source_status = source_status.replace(
+                '"', "") if source_status else None
+
             project_response = ProjectResponse.model_validate(project)
             project_response.product_count = product_count
             project_response.cleaned_count = cleaned_count
             project_response.failed_count = failed_count
             project_response.pending_count = pending_count
             project_response.aggregated_count = aggregated_count
-            project_response.completeness_score = round(completeness_score, 1) if completeness_score else 0
-            project_response.data_quality_score=round(data_quality_score,1) if data_quality_score else 0
+            project_response.completeness_score = round(
+                completeness_score, 1) if completeness_score else 0
+            project_response.data_quality_score = round(
+                data_quality_score, 1) if data_quality_score else 0
+            project_response.enrichment_pending_count = enrichment_pending_count
             project_response.processing_status = processing_status or "pending"
-            project_response.source_status = normalize_source_status(clean_source_status, project_status=project.status)
+            project_response.source_status = normalize_source_status(
+                clean_source_status, project_status=project.status)
             projects.append(project_response)
-        
+
         return projects
     except Exception as e:
         logger.error(f"Failed to fetch projects: {e}", exc_info=True)
@@ -184,6 +207,8 @@ async def list_projects(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch projects",
         )
+
+
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_session)):
     print(f"Received payload: {payload}")
@@ -213,7 +238,8 @@ async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Could not create project"
         )
-        
+
+
 @router.get("/filters")
 async def get_project_filters(
     project_id: str | None = None,
@@ -222,7 +248,7 @@ async def get_project_filters(
     workflow_stage: str | None = None,
     db: AsyncSession = Depends(get_session),
 ):
-    
+
     try:
         category_stmt = select(
             func.coalesce(
@@ -236,9 +262,11 @@ async def get_project_filters(
                 Product.category_1
             )
         )
-        brand_stmt = select(Brand.name).join(Product, Product.brand_id == Brand.id)
+        brand_stmt = select(Brand.name).join(
+            Product, Product.brand_id == Brand.id)
         if project_id:
-            category_stmt = category_stmt.where(Product.project_id == project_id)
+            category_stmt = category_stmt.where(
+                Product.project_id == project_id)
             brand_stmt = brand_stmt.where(Product.project_id == project_id)
         category_result = await db.execute(category_stmt)
         category_rows = category_result.all()
@@ -271,4 +299,3 @@ async def get_project_filters(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch project filters",
         )
-        
