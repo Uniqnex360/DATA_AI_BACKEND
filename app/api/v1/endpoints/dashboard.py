@@ -622,6 +622,22 @@ async def get_recent_activity(
     except Exception as e:
         logger.error(f"Failed to get recent activity: {e}", exc_info=True)
         return []
+def normalize_project_status(status: Optional[str]) -> str:
+    if status in (None, "", "draft"):
+        return "yet_to_start"
+    if status == "processing":
+        return "in_progress"
+    return status
+
+def get_db_status_filters(status: Optional[str]) -> list[str]:
+    if not status or status == "all":
+        return []
+    if status == "yet_to_start":
+        return ["yet_to_start", "draft"]
+    if status == "in_progress":
+        return ["in_progress", "processing"]
+    return [status]        
+
 @router.get("/projects-overview")
 async def get_projects_overview(
     page: int = Query(1, ge=1),
@@ -635,14 +651,8 @@ async def get_projects_overview(
         count_stmt = select(func.count(Project.id))
         if search:
             count_stmt = count_stmt.where(Project.name.ilike(f"%{search}%"))
-        if status and status != "all":
-            status_map = {
-                "active": ["processing", "partially_completed"],
-                "completed": ["completed"],
-                "stalled": ["failed"],
-                "new": ["draft"],
-            }
-            db_statuses = status_map.get(status, [status])
+        db_statuses = get_db_status_filters(status)
+        if db_statuses:
             count_stmt = count_stmt.where(Project.status.in_(db_statuses))
         
         count_result = await db.execute(count_stmt)
@@ -652,7 +662,7 @@ async def get_projects_overview(
         id_stmt = select(Project.id).order_by(Project.created_at.desc())
         if search:
             id_stmt = id_stmt.where(Project.name.ilike(f"%{search}%"))
-        if status and status != "all":
+        if db_statuses:
             id_stmt = id_stmt.where(Project.status.in_(db_statuses))
         
         offset = (page - 1) * page_size
@@ -708,7 +718,7 @@ async def get_projects_overview(
                 enrichmentFailed=0,
                 cleaning=cleaning,
                 overallPct=overall_pct,
-                status=map_project_status(row.status),
+                status=normalize_project_status(row.status),
                 lastActive=row.updated_at.strftime("%Y-%m-%d") if row.updated_at else "Never",
                 operationMode=row.operation_mode or "",
                 useCase=row.use_case or "",
@@ -720,15 +730,6 @@ async def get_projects_overview(
         logger.error(f"Failed to get projects overview: {e}", exc_info=True)
         return {"projects": [], "total": 0, "page": page, "page_size": page_size}
     
-def map_project_status(status: str) -> str:
-    status_map = {
-        "draft": "new",
-        "processing": "active",
-        "partially_completed": "active",
-        "completed": "completed",
-        "failed": "stalled"
-    }
-    return status_map.get(status, "new")
 
 @router.get("/attribute-summary")
 async def get_attribute_summary(

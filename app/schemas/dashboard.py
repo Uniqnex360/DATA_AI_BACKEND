@@ -63,7 +63,7 @@ class CategoryAttributeStat(BaseModel):
     aggregationAttributes: int
     enrichmentAttributes: int
     completedAttributes: int
-ProjectStatus = Literal["active", "completed", "stalled", "new"]
+ProjectStatus = Literal["in_progress", "partially_completed", "completed", "failed", "yet_to_start",'draft']
 
 class ProjectOverview(BaseModel):
     id:str
