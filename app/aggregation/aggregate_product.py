@@ -443,6 +443,349 @@ def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
 #         }
 
 
+# async def aggregate_product(
+#     mpn: str,
+#     title: str,
+#     sku: Optional[str] = None,
+#     upc: Optional[str] = None,
+#     brand: Optional[str] = None,
+#     taxonomy: Optional[str] = None,
+#     primary_attributes: Optional[List[str]] = None,
+#     db: Optional[AsyncSession] = None,
+#     project_id: str = None,
+#     llm_provider: str = 'openai',
+#     attribute_chunk: Optional[List[str]] = None,
+#     existing_excel_attrs: Optional[Dict[str, str]] = None,
+#     missing_llm_provider: str = None
+# ) -> Dict:
+#     try:
+#         if missing_llm_provider is None:
+#             missing_llm_provider = llm_provider
+#         logger.info(f"Starting aggregation for {mpn}")
+#         logger.info("Stage 1: URL Discovery")
+#         brand_prompt_text = None
+#         if brand and db:
+#             brand_stmt = select(BrandPrompt.prompt_text).join(
+#                 Brand, BrandPrompt.brand_id == Brand.id
+#             ).where(
+#                 func.lower(Brand.name) == func.lower(brand),
+#                 BrandPrompt.status == RuleStatus.ACTIVE
+#             )
+#             brand_result = await db.execute(brand_stmt)
+#             brand_row = brand_result.first()
+#             if brand_row:
+#                 brand_prompt_text = brand_row[0]
+
+#         # Fetch category prompt
+#         category_prompt_text = None
+#         if taxonomy and db:
+#             taxonomy_parts = [t.strip().lower() for t in taxonomy.split(">")]
+#             cat_stmt = select(CategoryPrompt.prompt_text).join(
+#                 Category, CategoryPrompt.category_id == Category.id
+#             ).where(
+#                 func.lower(Category.name).in_(taxonomy_parts),
+#                 CategoryPrompt.status == RuleStatus.ACTIVE
+#             ).order_by(Category.level.desc())  # Prefer deepest match
+#             cat_result = await db.execute(cat_stmt)
+#             cat_row = cat_result.first()
+#             if cat_row:
+#                 category_prompt_text = cat_row[0]
+#         search_service = SmartSearchService(llm_provider, db=db, max_results=5)
+#         query = title if (
+#             mpn in title and brand in title) else f"{brand} {mpn} {title}"
+#         query = query.strip()
+#         urls, candidate_images = await search_service.get_urls(query, mpn=mpn, brand=brand, title=title, sku=sku, brand_prompt_text=brand_prompt_text, category_prompt_text=category_prompt_text, taxonomy=taxonomy)
+#         if not urls:
+#             return {
+#                 'status': 'failed',
+#                 'reason': 'No sources found',
+#                 'golden_record': {'attributes': {}}
+#             }
+#         logger.info(f"Stage 2: Download & Extraction from {len(urls)} sources")
+#         download_service = HttpDownloadService(
+#             timeout=30,
+#         )
+#         all_extractions = []
+#         _url_semaphore = asyncio.Semaphore(2)
+
+#         async def process_url(url):
+#             async with _url_semaphore:
+#                 try:
+#                     content = await download_service.download(url)
+#                     if content is None:
+#                         return None
+#                     if content['type'] == 'html':
+#                         html_text = content['raw_bytes'].decode(
+#                             'utf-8', errors='ignore')
+#                         logger.info(
+#                             f"Downloaded HTML from {url} - size: {len(html_text)} bytes")
+#                         attrs_to_use = primary_attributes or []
+#                         if attribute_chunk:
+#                             other_attrs = [
+#                                 a for a in attrs_to_use if a not in attribute_chunk]
+#                             attrs_to_use = attribute_chunk + other_attrs
+#                         prompt_config = build_extraction_prompt(
+#                             product_name=title,
+#                             mpn=mpn,
+#                             brand=brand or "",
+#                             taxonomy=taxonomy or "",
+#                             primary_attributes=attrs_to_use,
+#                             html_content=html_text,
+#                             candidate_images=candidate_images
+#                         )
+#                         extraction_result = await call_llm_with_schema(
+#                             prompt=prompt_config['prompt'],
+#                             response_model="ExtractionResponse",
+#                             llm_provider=llm_provider,
+#                             estimated_tokens=3000
+#                         )
+#                         attr_dicts = []
+#                         image_url = None
+#                         if extraction_result and extraction_result.product_detected:
+#                             if hasattr(extraction_result, 'image_url'):
+#                                 image_url = extraction_result.image_url
+#                             for attr in extraction_result.attributes:
+#                                 attr_dicts.append({
+#                                     'name': attr.name,
+#                                     'value': attr.value,
+#                                     'unit': attr.unit if hasattr(attr, 'unit') else None,
+#                                     'confidence': attr.confidence if hasattr(attr, 'confidence') else 0.9
+#                                 })
+#                         if not image_url:
+#                             image_url = await extract_best_image(html_text, url, mpn)
+#                             if image_url:
+#                                 logger.info(
+#                                     f"Fallback extracted image: {image_url}")
+#                         domain = urlparse(url).netloc
+#                         return {
+#                             'url': url,
+#                             'domain': domain,
+#                             'attributes': attr_dicts,
+#                             'image_url': image_url,
+#                             'source_type': 'html'
+#                         }
+#                     elif content['type'] == 'pdf':
+#                         from app.aggregation.services.pdf_service import PDFExtractionService
+#                         pdf_service = PDFExtractionService(max_pages=10)
+#                         pdf_text = await pdf_service.extract_text(content['raw_bytes'])
+#                         if pdf_text and len(pdf_text.strip()) > 100:
+#                             logger.info(
+#                                 f"Extracted {len(pdf_text)} chars from PDF")
+#                             attrs_to_use = primary_attributes or []
+#                             if attribute_chunk:
+#                                 other_attrs = [
+#                                     a for a in attrs_to_use if a not in attribute_chunk]
+#                                 attrs_to_use = attribute_chunk + other_attrs
+#                             prompt_config = build_pdf_extraction_prompt(
+#                                 product_name=title,
+#                                 mpn=mpn,
+#                                 brand=brand or "",
+#                                 taxonomy=taxonomy or "",
+#                                 primary_attributes=attrs_to_use,
+#                                 pdf_text=pdf_text
+#                             )
+#                             extraction_result = await call_llm_with_schema(
+#                                 prompt=prompt_config['prompt'],
+#                                 response_model="ExtractionResponse",
+#                                 llm_provider=llm_provider,
+#                                 estimated_tokens=4000
+#                             )
+#                             if extraction_result and extraction_result.product_detected:
+#                                 attr_dicts = []
+#                                 image_url = None
+#                                 if hasattr(extraction_result, 'image_url'):
+#                                     image_url = extraction_result.image_url
+#                                 for attr in extraction_result.attributes:
+#                                     attr_dicts.append({
+#                                         'name': attr.name,
+#                                         'value': attr.value,
+#                                         'unit': getattr(attr, 'unit', None),
+#                                         'confidence': getattr(attr, 'confidence', 0.95)
+#                                     })
+#                                 domain = urlparse(url).netloc
+#                                 return {
+#                                     'url': url,
+#                                     'domain': domain,
+#                                     'attributes': attr_dicts,
+#                                     'image_url': image_url,
+#                                     'source_type': 'pdf'
+#                                 }
+#                     return None
+#                 except Exception as e:
+#                     logger.warning(f"Extraction failed for {url}: {e}")
+#                     return None
+#         tasks = [process_url(url) for url in urls[:5]]
+#         results = await asyncio.gather(*tasks)
+#         all_extractions = [r for r in results if r is not None]
+#         if not all_extractions:
+#             return {
+#                 'status': 'failed',
+#                 'reason': 'No valid extractions',
+#                 'golden_record': {'attributes': {}}
+#             }
+#         logger.info(
+#             f"Stage 2 extracted {sum(len(s['attributes']) for s in all_extractions)} total attributes")
+#         logger.info("Stage 3: Combined Cleaning, Unification & Standardization")
+#         raw_attrs_for_combine = []
+#         for src_idx, source in enumerate(all_extractions):
+#             for attr in source['attributes']:
+#                 raw_attrs_for_combine.append({
+#                     'temp_id': f"{src_idx}_{len(raw_attrs_for_combine)}",
+#                     'name': attr['name'],
+#                     'value': attr['value'],
+#                     'unit': attr.get('unit'),
+#                     'source_url': source['url'],
+#                     'confidence': attr.get('confidence', 0.9)
+#                 })
+#         project = await db.get(Project, project_id) if db and project_id else None
+#         use_case = project.use_case.lower() if project and project.use_case else ""
+#         combine_prompt = _build_combined_prompt(
+#             raw_attrs_for_combine, brand, mpn, title, taxonomy, existing_excel_attrs=existing_excel_attrs, use_case=use_case)
+#         async for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)):
+#             with attempt:
+#                 combined_result = await call_llm_with_schema(
+#                     prompt=combine_prompt,
+#                     response_model="UnifiedStandardizedResponse",
+#                     llm_provider=llm_provider,
+#                     estimated_tokens=3000 + len(raw_attrs_for_combine) * 200,
+#                     max_tokens=4000
+#                 )
+#         golden_attributes = combined_result.attributes
+#         valid_source_urls = {source['url'] for source in all_extractions}
+#         for attr in golden_attributes:
+#             if hasattr(attr, 'sources') and attr.sources:
+#                 attr.sources = [
+#                     src for src in attr.sources if src in valid_source_urls]
+#         logger.info(
+#             f"Stage 3 produced {len(golden_attributes)} unified attributes")
+#         validation_conflicts = {}
+#         excel_overrides = {}
+#         if "back filling" in use_case or "validation" in use_case:
+#             logger.info("Stage 4: Excel Validation")
+#             stmt = select(Product).where(Product.product_code == mpn)
+#             result = await db.execute(stmt)
+#             product = result.scalars().first()
+#             excel_attrs = {}
+#             if product:
+#                 try:
+#                     val_stmt = (select(Attribute.attribute_name, AttributeValue.value).join(AttributeValue, AttributeValue.attribute_id == Attribute.id).join(
+#                         ProductAttributeValueLinkModel, ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id).where(ProductAttributeValueLinkModel.product_id == product.id))
+#                     val_result = await db.execute(val_stmt)
+#                     for attr_name, attr_value in val_result.all():
+#                         excel_attrs[attr_name] = attr_value
+#                 except Exception as e:
+#                     logger.warning(
+#                         f"Failed to read Excel attributes from normalized tables: {e}")
+
+#                 # for attr in product.dynamic_attributes:
+#                 #     if isinstance(attr, dict) and attr.get('name'):
+#                 #         excel_attrs[attr['name']] = attr.get('value', '')
+#             web_attrs = {attr.name: attr.value for attr in golden_attributes}
+#             validation_config = build_validation_prompt(
+#                 excel_attributes=excel_attrs,
+#                 web_attributes=web_attrs,
+#                 mpn=mpn,
+#                 taxonomy=taxonomy or ""
+#             )
+#             validation_result = await call_llm_with_schema(
+#                 prompt=validation_config['prompt'],
+#                 response_model="ValidationResponse",
+#                 llm_provider=missing_llm_provider, 
+#                 estimated_tokens=1500
+#             )
+#             if "back filling" in use_case and "validation" not in use_case:
+#                 for val in validation_result.validations:
+#                     if not val.matches and val.recommendation == "use_web":
+#                         excel_overrides[val.attribute_name] = val.web_value
+#                         validation_conflicts[val.attribute_name] = val.web_value
+#                         for attr in golden_attributes:
+#                             if attr.name == val.attribute_name:
+#                                 attr.value = val.web_value
+#             elif "validation" in use_case and "back filling" not in use_case:
+#                 for val in validation_result.validations:
+#                     if not val.matches and val.recommendation == "use_web":
+#                         validation_conflicts[val.attribute_name] = val.web_value
+#             elif "back filling" in use_case and "validation" in use_case:
+#                 for val in validation_result.validations:
+#                     if not val.matches and val.recommendation == "use_web":
+#                         excel_overrides[val.attribute_name] = val.web_value
+#                         validation_conflicts[val.attribute_name] = val.web_value
+#                         for attr in golden_attributes:
+#                             if attr.name == val.attribute_name:
+#                                 attr.value = val.web_value
+#             else:
+#                 for val in validation_result.validations:
+#                     if not val.matches and val.recommendation == "use_web":
+#                         validation_conflicts[val.attribute_name] = val.web_value
+#         logger.info("Stage 5: Multi-source Aggregation")
+#         if golden_attributes:
+#             avg_conf = sum(a.confidence for a in golden_attributes) / \
+#                 len(golden_attributes)
+#         else:
+#             avg_conf = 0.0
+#         golden_attr_dicts = [
+#             {
+#                 'name': a.name,
+#                 'value': a.value,
+#                 'unit': a.unit,
+#                 'confidence': a.confidence,
+#                 'sources': a.sources
+#             }
+#             for a in golden_attributes
+#         ]
+#         logger.info("Stage 6: Marketing Enrichment")
+#         enrichment_config = build_enrichment_prompt(
+#             golden_attributes=golden_attr_dicts,
+#             product_name=title,
+#             brand=brand or "",
+#             taxonomy=taxonomy or ""
+#         )
+#         enrichment_result = await call_llm_with_schema(
+#             prompt=enrichment_config['prompt'],
+#             response_model="EnrichmentResponse",
+#             llm_provider=missing_llm_provider,  
+#             estimated_tokens=2000,
+#             max_tokens=4000
+#         )
+#         best_image = extract_best_image_fallback(all_extractions)
+#         if not best_image and candidate_images:
+#             for candidate in candidate_images:
+#                 is_valid = await validate_image_url(candidate)
+#                 if is_valid:
+#                     logger.info(f"Fallback to SearXNG image: {candidate}")
+#                     best_image = candidate
+#                     break
+#         return {
+#             'status': 'success',
+#             'golden_record': {
+#                 'attributes': {attr['name']: attr for attr in golden_attr_dicts},
+#                 'short_description': enrichment_result.short_description or "",
+#                 'long_description': enrichment_result.long_description,
+#                 'features': enrichment_result.features,
+#                 'sources_consulted': list({s['url'] for s in all_extractions}),
+#                 'confidence': avg_conf
+#             },
+#             'validation_conflicts': validation_conflicts,
+#             'excel_overrides': excel_overrides,
+#             'image_url': best_image,
+#             'mode': 'backfill' if 'back filling' in use_case else 'standard'
+#         }
+#     except Exception as e:
+#         logger.error(f"Pipeline failed for {mpn}: {e}", exc_info=True)
+#         return {
+#             'status': 'failed',
+#             'reason': str(e),
+#             'golden_record': {'attributes': {}}
+#         }
+
+import re
+def extract_urls_from_prompt(prompt_text: str) -> List[str]:
+    """Extract URLs from prompt text."""
+    if not prompt_text:
+        return []
+    url_pattern = r'https?://[^\s\)\"]+'
+    return re.findall(url_pattern, prompt_text)
+
 async def aggregate_product(
     mpn: str,
     title: str,
@@ -494,7 +837,17 @@ async def aggregate_product(
         query = title if (
             mpn in title and brand in title) else f"{brand} {mpn} {title}"
         query = query.strip()
-        urls, candidate_images = await search_service.get_urls(query, mpn=mpn, brand=brand, title=title, sku=sku, brand_prompt_text=brand_prompt_text, category_prompt_text=category_prompt_text, taxonomy=taxonomy)
+        # direct_urls = []
+        # if brand_prompt_text:
+        #     direct_urls = extract_urls_from_prompt(brand_prompt_text)
+        # elif category_prompt_text:
+        #     direct_urls = extract_urls_from_prompt(category_prompt_text)
+        urls, candidate_images = await search_service.get_urls(
+    query, mpn=mpn, brand=brand, title=title, sku=sku, 
+    brand_prompt_text=brand_prompt_text, 
+    category_prompt_text=category_prompt_text, 
+    taxonomy=taxonomy
+)
         if not urls:
             return {
                 'status': 'failed',
@@ -1298,6 +1651,15 @@ PRODUCT CONTEXT:
   Brand: {brand}
   Title: {title}
   Taxonomy: {taxonomy or 'General'}
+  ═══════════════════════════════════════════════════════
+CRITICAL RULE — DO NOT HALLUCINATE
+═══════════════════════════════════════════════════════
+- ONLY return attributes that have actual values found in the input data.
+- If an attribute has an empty value or was not found in any source, DO NOT include it in the output.
+- Do NOT include attributes just because they appear in examples or rules.
+- The examples below show HOW to format values WHEN the attribute is present — 
+  they are NOT a checklist of attributes you must return.
+═══════════════════════════════════════════════════════
 ═══════════════════════════════════════════════════════
 RULES  (read every rule; examples show the exact output required)
 ═══════════════════════════════════════════════════════
@@ -1338,6 +1700,8 @@ RULE 4 — TITLE CASE
     "TEMPORARY"          → "Temporary"
     "polyvinyl chloride" → "Polyvinyl Chloride"
 RULE 5 — STATUS / BOOLEAN
+★ IMPORTANT ★ Only process this rule if a Temporary/Permanent value was 
+  actually found in the input data. If no such value exists, skip this attribute entirely.
   For Temporary/Permanent: output ONE status word in Title Case.
   For boolean fields: 1/Y/TRUE → "Yes";  0/N/FALSE → "No".
   Examples:

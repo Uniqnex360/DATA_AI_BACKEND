@@ -1,4 +1,5 @@
 
+from sqlite3 import IntegrityError
 from typing import Optional
 from uuid import UUID
 import logging
@@ -11,23 +12,50 @@ from app.models.vendor import Vendor
 from app.models.industry import Industry
 from app.models.category import Category
 logger = logging.getLogger("batch_import")
+from sqlalchemy.exc import IntegrityError
 
 async def get_or_create_brand(db: AsyncSession, name: Optional[str]) -> Optional[Brand]:
     if not name:
         return None
-    normalized = name.lower().replace(" ", "")
+    
+    name_clean = name.strip()
+    normalized = name_clean.lower().replace(" ", "")
+    
     stmt = select(Brand).where(Brand.normalized_name == normalized)
     result = await db.execute(stmt)
     brand = result.scalars().first()
     if brand:
         return brand
-
-    brand = Brand(name=name.strip(), normalized_name=normalized)
-    db.add(brand)
-    await db.commit()
-    await db.refresh(brand)
-    logger.info(f"Created new brand: {brand.name}")
-    return brand
+    
+    stmt = select(Brand).where(Brand.name == name_clean)
+    result = await db.execute(stmt)
+    brand = result.scalars().first()
+    if brand:
+        return brand
+    
+    try:
+        brand = Brand(name=name_clean, normalized_name=normalized)
+        db.add(brand)
+        await db.flush()
+        await db.refresh(brand)
+        logger.info(f"Created new brand: {brand.name}")
+        return brand
+    except IntegrityError:
+        await db.rollback()
+        stmt = select(Brand).where(
+            (Brand.normalized_name == normalized) | (Brand.name == name_clean)
+        )
+        result = await db.execute(stmt)
+        brand = result.scalars().first()
+        if brand:
+            logger.info(f"Brand '{name_clean}' created by concurrent request, using existing")
+            return brand
+        raise
+        
+        
+        
+        
+    
 
 
 async def get_or_create_vendor(db: AsyncSession, name: Optional[str]) -> Optional[Vendor]:

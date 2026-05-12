@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Literal
 
 class ExtractedAttribute(BaseModel):
     name: str = Field(description="Attribute name in Title Case")
-    value: str = Field(description="Extracted value")
+    value: Optional[str] = Field(default=None, description="Extracted value")  
     unit: Optional[str] = Field(default=None, description="Unit of measurement")
     confidence: float = Field(ge=0.0, le=1.0, description="Extraction confidence")
     source_section: Optional[str] = Field(default=None, description="Which part of document")

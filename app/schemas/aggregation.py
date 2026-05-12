@@ -67,6 +67,7 @@ class UnifiedStandardizedResponse(BaseModel):
 
 class AggregateLLMRequest(BaseModel):
     llm_provider: Optional[str] = "openai"
+    missing_llm_provider: Optional[str] = None 
     
 
 class AttributeUpdatePayload(BaseModel):

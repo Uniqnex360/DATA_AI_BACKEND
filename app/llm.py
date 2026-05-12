@@ -1,7 +1,7 @@
 import logging
 import asyncio
 from anthropic import AsyncAnthropic
-from app.aggregation.services.smart_search import SmartSearchResponse, TargetedQueryResponse, UrlFilterResponse
+from app.aggregation.services.smart_search import ManufacturerWebsiteResponse, SmartSearchResponse, TargetedQueryResponse, UrlFilterResponse
 from app.core.rate_limiter import openai_limiter
 from openai import OpenAI
 import google.generativeai as genai
@@ -85,7 +85,8 @@ SCHEMA_MAP = {
     "PDFExtractionResponse":PDFExtractionResponse,
     "SingleProductExtraction":SingleProductExtraction,
     "ProductIdentificationResponse":ProductIdentificationResponse,
-    "AttributeMappingResponse":AttributeMappingResponse
+    "AttributeMappingResponse":AttributeMappingResponse,
+    "ManufacturerWebsiteResponse": ManufacturerWebsiteResponse,
 
 }
 
@@ -99,6 +100,14 @@ async def call_llm_with_schema(
     max_tokens: Optional[int] = None
 ) -> Any:
     logger.info(f"CALL_LLM_WITH_SCHEMA - Using LLM provider: {llm_provider}")  
+    if llm_provider and llm_provider not in ('openai','gemini','claude'):
+        error_msg = (
+            f"Invalid LLM provider: '{llm_provider}'. "
+            f"Combined values like 'openai_gemini' must be split into primary and missing "
+            f"BEFORE calling this function. Check the frontend and router code."
+        )
+        logger.error(error_msg)
+        raise ValueError(error_msg)
     schema_class = SCHEMA_MAP.get(response_model)
     if not schema_class:
         raise ValueError(f"Unknown response model: {response_model}")

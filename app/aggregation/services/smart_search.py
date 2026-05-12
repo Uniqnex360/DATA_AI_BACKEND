@@ -256,6 +256,10 @@ logger = logging.getLogger("smart_search")
 
 class UrlFilterResponse(BaseModel):
     selected_urls: List[str]
+    
+class ManufacturerWebsiteResponse(BaseModel):
+        manufacturer_url: str
+        confidence: float
 
 class SmartSearchResponse(BaseModel):
     selected_urls: List[str]
@@ -359,10 +363,19 @@ Return JSON: {{"search_query": "your query here"}}
         use_case: str = "",
         brand_prompt_text: Optional[str] = None,
         category_prompt_text: Optional[str] = None,
-         taxonomy: Optional[str] = None
+        taxonomy: Optional[str] = None,
+        direct_urls: Optional[List[str]] = None, 
     ) -> tuple[List[str], List[str]]:
         from app.aggregation.aggregate_product import call_llm_with_schema
-
+        # if direct_urls:
+        #     logger.info(f"Using {len(direct_urls)} direct URLs for {mpn}: {direct_urls}")
+        #     image_urls = []
+        #     # Still search for images
+        #     image_task = self.searxng.search_images(f"{brand} {mpn} {title}")
+        #     image_results = await image_task
+        #     if not isinstance(image_results, Exception):
+        #         image_urls = list({img.get("img_src") for img in image_results if img.get("img_src")})
+        #     return direct_urls, image_urls[:3]
         BLOCKED_DOMAINS = [
             "zhihu.com", "baidu.com", "weibo.com",
             "superuser.com", "tenforums.com", "stackoverflow.com",
@@ -496,7 +509,8 @@ Return a JSON object with:
 - "selected_urls": list of chosen web URLs (empty list if none are relevant)
 - "candidate_image_urls": list of image URLs matching this product (max 3)
 """
-
+        final_urls = []
+        candidate_imgs = image_urls[:3]
         try:
             result = await call_llm_with_schema(
                 prompt=prompt,
@@ -513,8 +527,61 @@ Return a JSON object with:
 
                 candidate_imgs = result.candidate_image_urls if result.candidate_image_urls else []
                 logger.info(f"Smart search for {mpn}: {filtered}")
-                return filtered, candidate_imgs
+                final_urls = filtered
         except Exception as e:
             logger.exception(f"LLM filtering failed: {e}")
+            final_urls = [r["url"] for r in web_results[:self.max_results]]
+        manufacturer_url = await self._discover_manufacturer_website(brand)
+        if manufacturer_url:
+            logger.info(f"Prepending manufacturer URL for {brand}: {manufacturer_url}")
+            final_urls = [manufacturer_url] + final_urls
 
-        return [r["url"] for r in web_results[:self.max_results]], image_urls[:3]
+        return final_urls, candidate_imgs
+
+    
+    
+    
+    async def _discover_manufacturer_website(
+        self, 
+        brand: str
+    ) -> Optional[str]:
+        """Use LLM to find the brand's official manufacturer website."""
+        from app.aggregation.aggregate_product import call_llm_with_schema
+        
+        prompt = f"""
+    Find the OFFICIAL manufacturer website for this brand.
+
+    Brand: {brand}
+
+    Rules:
+    - Return the official manufacturer/corporate website, NOT a retailer
+    - This is the company that MAKES the products under this brand
+    - Examples:
+    - "Craftsman" → "https://www.craftsman.com"
+    - "Dewalt" → "https://www.dewalt.com"
+    - "Ace" → "https://www.acehardware.com"
+    - "Milwaukee" → "https://www.milwaukeetool.com"
+    - "Steel Grip" → "" (if it's a private label with no official site)
+    - If the brand is a store brand, private label, or has no dedicated website, return empty string
+    - Do NOT return retailer sites like amazon.com, homedepot.com, etc.
+    - Only return a URL if you are confident it's the manufacturer's official site
+
+    Return JSON: {{"manufacturer_url": "url or empty", "confidence": 0.0-1.0}}
+    """
+        
+        try:
+            result = await call_llm_with_schema(
+                prompt=prompt,
+                response_model="ManufacturerWebsiteResponse",
+                llm_provider=self.llm_provider,
+                estimated_tokens=200
+            )
+            if result and result.manufacturer_url and result.confidence > 0.7:
+                logger.info(f"LLM discovered manufacturer URL for {brand}: {result.manufacturer_url} (confidence: {result.confidence})")
+                return result.manufacturer_url
+            elif result:
+                logger.info(f"LLM found URL for {brand} but confidence too low: {result.confidence}")
+        except Exception as e:
+            logger.warning(f"Failed to discover manufacturer URL for {brand}: {e}")
+        
+        return None
