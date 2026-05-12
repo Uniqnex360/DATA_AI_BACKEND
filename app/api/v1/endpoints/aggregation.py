@@ -206,28 +206,20 @@ async def trigger_project_aggregation(
                 detail=f"Aggregation already in progress. Job ID: {active_job.id}"
             )
         pending_stmt = select(func.count(Product.id)).where(
-            and_(
-                Product.project_id == project_id,
-                Product.enrichment_status.in_(['pending', 'failed'])
-            )
-        )
+    Product.project_id == project_id
+)
         pending_result = await db.execute(pending_stmt)
         pending_count = pending_result.scalar() or 0
-        if pending_count == 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No pending products to aggregate"
-            )
+        # if pending_count == 0:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail="No pending products to aggregate"
+        #     )
         update_stmt = (
-            update(Product)
-            .where(
-                and_(
-                    Product.project_id == project_id,
-                    Product.enrichment_status.in_(['pending', 'failed'])
-                )
-            )
-            .values(enrichment_status='processing')
-        )
+    update(Product)
+    .where(Product.project_id == project_id)
+    .values(enrichment_status='processing')
+)
         await db.execute(update_stmt)
         job = AggregationJob(
             project_id=project_id,
