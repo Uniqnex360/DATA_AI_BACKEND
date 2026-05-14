@@ -777,7 +777,22 @@ def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
 #             'reason': str(e),
 #             'golden_record': {'attributes': {}}
 #         }
-
+def extract_domains_and_generate_urls(prompt_text: str) -> List[str]:
+    """Extract site: domains from prompt and generate search URLs."""
+    if not prompt_text:
+        return []
+    
+    # Extract domains from site: operators
+    import re
+    domains = re.findall(r'site:([a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,})', prompt_text)
+    
+    # Generate search URLs for each domain
+    urls = []
+    for domain in domains:
+        # Generic search URL pattern for the domain
+        urls.append(f"https://{domain}/")
+    
+    return urls
 import re
 def extract_urls_from_prompt(prompt_text: str) -> List[str]:
     """Extract URLs from prompt text."""
@@ -785,7 +800,81 @@ def extract_urls_from_prompt(prompt_text: str) -> List[str]:
         return []
     url_pattern = r'https?://[^\s\)\"]+'
     return re.findall(url_pattern, prompt_text)
+async def find_product_page_with_llm(
+    domain_url: str,
+    mpn: str,
+    brand: str,
+    title: str,
+    llm_provider: str
+) -> Optional[str]:
+    """
+    Use LLM to navigate a domain and find the product page.
+    """
+    from app.llm import call_llm_with_schema
+    from pydantic import BaseModel
+    from app.aggregation.services.download_service import HttpDownloadService
+    
+    class NavigationStep(BaseModel):
+        action: str  # "click", "search", "navigate"
+        target: str  # URL or search term
+        reasoning: str
+    
+    
+    try:
+        download_service = HttpDownloadService(timeout=30)
+        
+        # Step 1: Download homepage
+        content = await download_service.download(domain_url)
+        if not content or content['type'] != 'html':
+            return None
+        
+        html_text = content['raw_bytes'].decode('utf-8', errors='ignore')[:100000]
+        
+        # Step 2: Let LLM analyze and find navigation path
+        prompt = f"""
+You are a web navigation expert. Find the product page for this product on {domain_url}.
 
+Product:
+- MPN: {mpn}
+- Brand: {brand}
+- Name: {title}
+
+Homepage HTML (first 100k chars):
+{html_text}
+
+Task:
+1. Look for search forms, navigation menus, category links
+2. Find the most likely path to reach the product page
+3. If there's a search function, determine the search URL pattern
+4. Return the most promising product page URL or search URL
+
+Rules:
+- If you find an exact URL containing the MPN, return it immediately
+- If you find a category page (e.g., /hex-nuts), return that
+- If you find a search form, construct the search URL with MPN
+- Be specific - return full URLs
+
+Return JSON with:
+- product_url: the URL to try (full URL)
+- confidence: 0.0-1.0
+- reasoning: why you chose this URL
+"""
+        
+        result = await call_llm_with_schema(
+            prompt=prompt,
+            response_model="ProductPageResponse",
+            llm_provider=llm_provider,
+            estimated_tokens=4000
+        )
+        
+        if result and result.product_url and result.confidence > 0.5:
+            logger.info(f"LLM found URL on {domain_url}: {result.product_url}")
+            return result.product_url
+            
+    except Exception as e:
+        logger.warning(f"LLM navigation failed for {domain_url}: {e}")
+    
+    return None
 async def aggregate_product(
     mpn: str,
     title: str,
@@ -837,16 +926,36 @@ async def aggregate_product(
         query = title if (
             mpn in title and brand in title) else f"{brand} {mpn} {title}"
         query = query.strip()
-        # direct_urls = []
-        # if brand_prompt_text:
-        #     direct_urls = extract_urls_from_prompt(brand_prompt_text)
-        # elif category_prompt_text:
-        #     direct_urls = extract_urls_from_prompt(category_prompt_text)
+        direct_urls = []
+        if brand_prompt_text:
+            direct_urls = extract_urls_from_prompt(brand_prompt_text)
+            if not direct_urls:
+                # If no https:// URLs, try to generate from site: domains
+                direct_urls = extract_domains_and_generate_urls(brand_prompt_text)
+        elif category_prompt_text:
+            direct_urls = extract_urls_from_prompt(category_prompt_text)
+            if not direct_urls:
+                # If no https:// URLs, try to generate from site: domains
+                direct_urls = extract_domains_and_generate_urls(category_prompt_text)
+
+        if direct_urls:
+            logger.info(f"Generated {len(direct_urls)} URLs from domains for {mpn}: {direct_urls}") 
+            # ↓↓↓ ADD THIS ↓↓↓
+            # Convert homepage URLs to actual product URLs using LLM
+            product_urls = []
+            for domain_url in direct_urls:
+                product_url = await find_product_page_with_llm(domain_url, mpn, brand, title, llm_provider)
+                if product_url:
+                    product_urls.append(product_url)
+            
+            if product_urls:
+                direct_urls = product_urls
+                logger.info(f"LLM found {len(direct_urls)} product URLs: {direct_urls}")
         urls, candidate_images = await search_service.get_urls(
     query, mpn=mpn, brand=brand, title=title, sku=sku, 
     brand_prompt_text=brand_prompt_text, 
     category_prompt_text=category_prompt_text, 
-    taxonomy=taxonomy
+    taxonomy=taxonomy,direct_urls=direct_urls
 )
         if not urls:
             return {

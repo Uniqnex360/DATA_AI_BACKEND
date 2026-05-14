@@ -265,6 +265,12 @@ class SmartSearchResponse(BaseModel):
     selected_urls: List[str]
     candidate_image_urls: List[str] = []
 
+class ProductPageResponse(BaseModel):
+        product_url: Optional[str] = None
+        confidence: float = 0.0
+        reasoning: str =""
+    
+
 class TargetedQueryResponse(BaseModel):
     search_query: str
 
@@ -367,15 +373,15 @@ Return JSON: {{"search_query": "your query here"}}
         direct_urls: Optional[List[str]] = None, 
     ) -> tuple[List[str], List[str]]:
         from app.aggregation.aggregate_product import call_llm_with_schema
-        # if direct_urls:
-        #     logger.info(f"Using {len(direct_urls)} direct URLs for {mpn}: {direct_urls}")
-        #     image_urls = []
-        #     # Still search for images
-        #     image_task = self.searxng.search_images(f"{brand} {mpn} {title}")
-        #     image_results = await image_task
-        #     if not isinstance(image_results, Exception):
-        #         image_urls = list({img.get("img_src") for img in image_results if img.get("img_src")})
-        #     return direct_urls, image_urls[:3]
+        if direct_urls:
+            logger.info(f"Using {len(direct_urls)} direct URLs for {mpn}: {direct_urls}")
+            image_urls = []
+            # Still search for images
+            image_task = self.searxng.search_images(f"{brand} {mpn} {title}")
+            image_results = await image_task
+            if not isinstance(image_results, Exception):
+                image_urls = list({img.get("img_src") for img in image_results if img.get("img_src")})
+            return direct_urls, image_urls[:3]
         BLOCKED_DOMAINS = [
             "zhihu.com", "baidu.com", "weibo.com",
             "superuser.com", "tenforums.com", "stackoverflow.com",

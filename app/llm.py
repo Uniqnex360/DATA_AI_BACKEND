@@ -1,7 +1,7 @@
 import logging
 import asyncio
 from anthropic import AsyncAnthropic
-from app.aggregation.services.smart_search import ManufacturerWebsiteResponse, SmartSearchResponse, TargetedQueryResponse, UrlFilterResponse
+from app.aggregation.services.smart_search import ManufacturerWebsiteResponse, SmartSearchResponse, TargetedQueryResponse, UrlFilterResponse,ProductPageResponse
 from app.core.rate_limiter import openai_limiter
 from openai import OpenAI
 import google.generativeai as genai
@@ -87,6 +87,7 @@ SCHEMA_MAP = {
     "ProductIdentificationResponse":ProductIdentificationResponse,
     "AttributeMappingResponse":AttributeMappingResponse,
     "ManufacturerWebsiteResponse": ManufacturerWebsiteResponse,
+    "ProductPageResponse":ProductPageResponse
 
 }
 
