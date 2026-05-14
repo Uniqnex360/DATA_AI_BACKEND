@@ -705,26 +705,27 @@ async def get_projects_overview(
             return {"projects": [], "total": total_count, "page": page, "page_size": page_size}
         # Single query: get all projects with all counts
         stmt = select(
-            Project.id,
-            Project.name,
-            Project.status,
-            Project.operation_mode,
-            Project.use_case,
-            Project.updated_at,
-            func.count(Product.id).label("total_products"),
-            func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label("aggregated"),
-            func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label("failed"),
-            func.sum(case((Product.workflow_stage == "enrichment", 1), else_=0)).label("enrichment"),
-            func.sum(case((Product.workflow_stage == "cleaning", 1), else_=0)).label("cleaning"),
-        ).outerjoin(
-            Product, Project.id == Product.project_id
-        ).where(
-            Project.id.in_(project_ids)
-        ).group_by(
-            Project.id
-        ).order_by(
-            Project.created_at.desc()
-        )
+    Project.id,
+    Project.name,
+    Project.status,
+    Project.operation_mode,
+    Project.use_case,
+    Project.updated_at,
+    func.count(Product.id).label("total_products"),
+    func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label("aggregated"),
+    func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label("failed"),
+    func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label("enrichment"),  # ← FIXED
+    func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label("enrichment_failed"),  # ← ADD THIS
+    func.sum(case((Product.workflow_stage == "cleaning", 1), else_=0)).label("cleaning"),
+).outerjoin(
+    Product, Project.id == Product.project_id
+).where(
+    Project.id.in_(project_ids)
+).group_by(
+    Project.id
+).order_by(
+    Project.created_at.desc()
+)
         
         result = await db.execute(stmt)
         rows = result.all()
@@ -739,20 +740,20 @@ async def get_projects_overview(
             overall_pct = round((aggregated / total) * 100) if total > 0 else 0
             
             overview_list.append(ProjectOverview(
-                id=str(row.id),
-                name=row.name,
-                totalProducts=total,
-                aggregated=aggregated,
-                aggregationFailed=failed,
-                enrichment=enrichment,
-                enrichmentFailed=0,
-                cleaning=cleaning,
-                overallPct=overall_pct,
-                status=normalize_project_status(row.status),
-                lastActive=row.updated_at.strftime("%Y-%m-%d") if row.updated_at else "Never",
-                operationMode=row.operation_mode or "",
-                useCase=row.use_case or "",
-            ))
+    id=str(row.id),
+    name=row.name,
+    totalProducts=total,
+    aggregated=aggregated,
+    aggregationFailed=failed,
+    enrichment=enrichment,  
+    enrichmentFailed=row.enrichment_failed or 0,
+    cleaning=cleaning,
+    overallPct=overall_pct,
+    status=normalize_project_status(row.status),
+    lastActive=row.updated_at.strftime("%Y-%m-%d") if row.updated_at else "Never",
+    operationMode=row.operation_mode or "",
+    useCase=row.use_case or "",
+))
         
         return {"projects": overview_list, "total": total_count, "page": page, "page_size": page_size}
         
