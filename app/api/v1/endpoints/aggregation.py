@@ -386,24 +386,48 @@ async def get_aggregated_attributes(
                     source_id=str(ext.source_id)[:8]
                 ))
         attributes: List[AggregatedAttribute] = []
-        current_attrs = product.attributes or {}
-        for attr_name, master_value in current_attrs.items():
-            values_from_sources = evidence_map.get(attr_name, [])
-            unique_values = set(v.value for v in values_from_sources)
-            has_conflict = len(unique_values) > 1
-            if not values_from_sources:
-                values_from_sources = [AggregatedAttributeValue(
-                    value=str(master_value),
-                    confidence=1.0,
-                    source_id="master"
-                )]
+        # current_attrs = product.attributes or {}
+        # for attr_name, master_value in current_attrs.items():
+        #     values_from_sources = evidence_map.get(attr_name, [])
+        #     unique_values = set(v.value for v in values_from_sources)
+        #     has_conflict = len(unique_values) > 1
+        #     if not values_from_sources:
+        #         values_from_sources = [AggregatedAttributeValue(
+        #             value=str(master_value),
+        #             confidence=1.0,
+        #             source_id="master"
+        #         )]
+        #     attributes.append(AggregatedAttribute(
+        #         id=f"{product_id}_{attr_name}",
+        #         product_id=product_id,
+        #         attribute_name=attr_name,
+        #         has_conflict=has_conflict,
+        #         values=values_from_sources
+        #     ))
+        # return attributes
+        attr_stmt = (
+            select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom)
+            .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
+            .join(ProductAttributeValueLinkModel,
+                  ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+            .where(ProductAttributeValueLinkModel.product_id == product.id)
+        )
+        attr_result = await db.execute(attr_stmt)
+        
+        attributes: List[AggregatedAttribute] = []
+        for attr_name, value, uom in attr_result.all():
             attributes.append(AggregatedAttribute(
                 id=f"{product_id}_{attr_name}",
                 product_id=product_id,
                 attribute_name=attr_name,
-                has_conflict=has_conflict,
-                values=values_from_sources
+                has_conflict=False,
+                values=[AggregatedAttributeValue(
+                    value=value,
+                    confidence=1.0,
+                    source_id="master"
+                )]
             ))
+        
         return attributes
     except HTTPException:
         raise
@@ -1490,6 +1514,21 @@ async def batch_export_products(request: BatchExportRequest, db: AsyncSession = 
         raise HTTPException(
             status_code=500, detail='Failed to download results!')
 
+async def serialize_products_with_attributes(db:AsyncSession,product:Product)->dict:
+    product_dict=product.dict()
+    attr_stmt=(select(Attribute.attribute_name,AttributeValue.value,AttributeValue.uom,AttributeValue.confidence).join(AttributeValue,AttributeValue.attribute_id==Attribute.id).join(ProductAttributeValueLinkModel,ProductAttributeValueLinkModel.attribute_value_id==AttributeValue.id).where(ProductAttributeValueLinkModel.product_id==product.id))
+    attr_result=await db.execute(attr_stmt)
+    attributes={}
+    for attr_name,value,uom,confidence in attr_result.all():
+        attributes[attr_name]={
+            'name':attr_name,
+            'value':value,
+            'unit':uom,
+            'confidence':confidence or 0.95,
+            'sources':[]
+        }
+    product_dict['attributes']=attributes
+    return product_dict
 
 @router.get("/project/{project_id}/products-with-movement")
 async def get_products_with_movement(
@@ -1535,10 +1574,11 @@ async def get_products_with_movement(
                 (p.updated_at for p in all_products if p.updated_at),
                 default=None
             )
-
+        agg_serialized=[await serialize_products_with_attributes(db,p)for p in aggregation_products]
+        enr_serialized=[await serialize_products_with_attributes(db,p)for p in enrichment_products]
         return {
-            "aggregation_products": [p.dict() for p in aggregation_products],
-            "enrichment_products": [p.dict() for p in enrichment_products],
+            "aggregation_products": agg_serialized,
+            "enrichment_products": enr_serialized,
             "completed_products": completed_products,
             "last_updated": latest_product_time.isoformat() if latest_product_time else now_ist().isoformat()
         }

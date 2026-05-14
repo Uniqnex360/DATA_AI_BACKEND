@@ -531,10 +531,10 @@ Return a JSON object with:
         except Exception as e:
             logger.exception(f"LLM filtering failed: {e}")
             final_urls = [r["url"] for r in web_results[:self.max_results]]
-        manufacturer_url = await self._discover_manufacturer_website(brand)
-        if manufacturer_url:
-            logger.info(f"Prepending manufacturer URL for {brand}: {manufacturer_url}")
-            final_urls = [manufacturer_url] + final_urls
+        # manufacturer_url = await self._discover_manufacturer_website(brand)
+        # if manufacturer_url:
+        #     logger.info(f"Prepending manufacturer URL for {brand}: {manufacturer_url}")
+        #     final_urls = [manufacturer_url] + final_urls
 
         return final_urls, candidate_imgs
 

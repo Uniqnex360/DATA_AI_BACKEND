@@ -208,6 +208,9 @@ async def generate_products_excel(
         def add_if_unique(name):
             norm = normalize_attr_name(name)
             if norm not in added_normalized:
+                for map_key in DEDICATED_COLUMN_MAPPING.keys():
+                    if norm == normalize_attr_name(map_key):
+                        return False
                 added_normalized.add(norm)
                 final_template.append(name)
                 return True
@@ -431,7 +434,21 @@ async def generate_products_excel(
                     if ai_val_str.lower().strip() != orig_val_str.lower().strip():
                         row[f"validation_value{i}"] = orig_val_str
                         row[f"validation_uom{i}"] = orig_uom_str
-        remaining_attrs = [k for k in ai_data.keys() if k not in used_ai_keys and k.lower() not in IGNORED_KEYS]
+        remaining_attrs = []
+        for k in ai_data.keys():
+            if k in used_ai_keys or k.lower() in IGNORED_KEYS:
+                continue
+            # NEW CHECK: Skip if matches dedicated column
+            k_norm = normalize_attr_name(k)
+            is_dedicated = False
+            for map_key in DEDICATED_COLUMN_MAPPING.keys():
+                if k_norm == normalize_attr_name(map_key):
+                    is_dedicated = True
+                    break
+            if not is_dedicated:
+                remaining_attrs.append(k)
+        
+        # NOW process remaining_attrs (separate loop)
         current_slot = len(attribute_template) + 1
         for ai_key in remaining_attrs:
             if current_slot > MAX_ATTRIBUTES:
