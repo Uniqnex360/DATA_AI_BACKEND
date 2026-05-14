@@ -1516,15 +1516,14 @@ async def batch_export_products(request: BatchExportRequest, db: AsyncSession = 
 
 async def serialize_products_with_attributes(db:AsyncSession,product:Product)->dict:
     product_dict=product.dict()
-    attr_stmt=(select(Attribute.attribute_name,AttributeValue.value,AttributeValue.uom,AttributeValue.confidence).join(AttributeValue,AttributeValue.attribute_id==Attribute.id).join(ProductAttributeValueLinkModel,ProductAttributeValueLinkModel.attribute_value_id==AttributeValue.id).where(ProductAttributeValueLinkModel.product_id==product.id))
+    attr_stmt=(select(Attribute.attribute_name,AttributeValue.value,AttributeValue.uom).join(AttributeValue,AttributeValue.attribute_id==Attribute.id).join(ProductAttributeValueLinkModel,ProductAttributeValueLinkModel.attribute_value_id==AttributeValue.id).where(ProductAttributeValueLinkModel.product_id==product.id))
     attr_result=await db.execute(attr_stmt)
     attributes={}
-    for attr_name,value,uom,confidence in attr_result.all():
+    for attr_name,value,uom in attr_result.all():
         attributes[attr_name]={
             'name':attr_name,
             'value':value,
             'unit':uom,
-            'confidence':confidence or 0.95,
             'sources':[]
         }
     product_dict['attributes']=attributes
