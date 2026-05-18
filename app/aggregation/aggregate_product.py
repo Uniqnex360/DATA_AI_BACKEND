@@ -935,13 +935,10 @@ async def aggregate_product(
         elif category_prompt_text:
             direct_urls = extract_urls_from_prompt(category_prompt_text)
             if not direct_urls:
-                # If no https:// URLs, try to generate from site: domains
                 direct_urls = extract_domains_and_generate_urls(category_prompt_text)
 
         if direct_urls:
             logger.info(f"Generated {len(direct_urls)} URLs from domains for {mpn}: {direct_urls}") 
-            # ↓↓↓ ADD THIS ↓↓↓
-            # Convert homepage URLs to actual product URLs using LLM
             product_urls = []
             for domain_url in direct_urls:
                 product_url = await find_product_page_with_llm(domain_url, mpn, brand, title, llm_provider)

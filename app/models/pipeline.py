@@ -139,6 +139,7 @@ class AggregationJob(UUIDModel, table=True):
     total_products: int = Field(default=0)
     successful: int = Field(default=0)
     failed: int = Field(default=0)
+    progress_percentage: float = Field(default=0.0)
     
     current_product: Optional[str] = Field(default=None)
     error_message: Optional[str] = Field(default=None)

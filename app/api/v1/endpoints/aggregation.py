@@ -227,6 +227,7 @@ async def trigger_project_aggregation(
             total_products=pending_count,
             successful=0,
             failed=0,
+            progress_percentage=0.0,
             started_at=now_ist(),
             details={
                 'project_name': project.name,
@@ -700,7 +701,11 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                     job.current_product = product.product_code
                     job.successful = successful
                     job.failed = failed
+                    progress_percentage = ((successful + failed) / total) * 100
+                    job.progress_percentage = progress_percentage  
+                    job.current_product = product.product_code
                     db_session.add(job)
+                    
                     await db_session.commit()
                     aggregation_result = await aggregate_with_retry(
                         db_session=db_session,
@@ -1602,4 +1607,31 @@ async def get_project_aggregation_status(
     if not job:
         return {"status": "not_found", "error": "No aggregation job found"}
     
-    return {"status": job.status, "error": job.error_message}
+    return {"status": job.status,"job_id": str(job.id),  "error": job.error_message}
+
+
+@router.get("/job/{job_id}/progress")
+async def get_job_progress(
+    job_id: str,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        job = await db.get(AggregationJob, job_id)
+
+        if not job:
+            return {"status": "not_found"}
+
+        return {
+            "status": job.status,
+            "progress_percentage": job.progress_percentage,
+            "total_products": job.total_products,
+            "successful": job.successful,
+            "failed": job.failed,
+            "current_product": job.current_product
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
