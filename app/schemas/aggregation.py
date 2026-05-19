@@ -12,6 +12,7 @@ class ProjectStats(BaseModel):
     pendingProducts: int
     failedProducts: int
     aggregationStatus: str  
+    algorithm_used: Optional[str] = None 
 
     class Config:
         from_attributes = True

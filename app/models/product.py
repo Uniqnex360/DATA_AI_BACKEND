@@ -89,8 +89,8 @@ class Product(UUIDModel,table=True):
     category_id: Optional[UUID] = Field(
         default=None, 
         foreign_key="categories.id", 
-        index=True
-    )
+            index=True
+        )
     updated_at: datetime = Field(default_factory=now_ist, sa_column_kwargs={"onupdate": now_ist})
     short_description:Optional[str]=None
     long_description:Optional[str]=None

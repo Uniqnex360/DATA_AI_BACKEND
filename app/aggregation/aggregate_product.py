@@ -875,6 +875,7 @@ Return JSON with:
         logger.warning(f"LLM navigation failed for {domain_url}: {e}")
     
     return None
+
 async def aggregate_product(
     mpn: str,
     title: str,
@@ -949,7 +950,7 @@ async def aggregate_product(
                 direct_urls = product_urls
                 logger.info(f"LLM found {len(direct_urls)} product URLs: {direct_urls}")
         urls, candidate_images = await search_service.get_urls(
-    query, mpn=mpn, brand=brand, title=title, sku=sku, 
+    query, mpn=mpn, brand=brand, sku=sku, 
     brand_prompt_text=brand_prompt_text, 
     category_prompt_text=category_prompt_text, 
     taxonomy=taxonomy,direct_urls=direct_urls
@@ -998,6 +999,17 @@ async def aggregate_product(
                             llm_provider=llm_provider,
                             estimated_tokens=3000
                         )
+                        logger.info(f"=== EXTRACTION RESULTS FROM {url} ===")
+                        if extraction_result and extraction_result.product_detected:
+                            logger.info(f"Product detected: YES")
+                            logger.info(f"Image URL: {extraction_result.image_url if hasattr(extraction_result, 'image_url') else 'None'}")
+                            logger.info(f"Number of attributes extracted: {len(extraction_result.attributes)}")
+                            for attr in extraction_result.attributes:
+                                logger.info(f"  - {attr.name}: {attr.value} {getattr(attr, 'unit', '')} (confidence: {getattr(attr, 'confidence', 0.9)})")
+                        else:
+                            logger.info(f"Product detected: NO")
+                            logger.info(f"Extraction result: {extraction_result}")
+                        logger.info(f"=====================================")
                         attr_dicts = []
                         image_url = None
                         if extraction_result and extraction_result.product_detected:

@@ -32,6 +32,7 @@ class ProjectResponse(BaseModel):
     source_processing_status: Optional[str] = None
     completeness_score:Optional[int]=None
     data_quality_score:Optional[int]=None
+    algorithm_used: Optional[str] = None 
     product_count:int=0
     aggregated_count: Optional[int] = 0
     aggregation_type: str | None = None

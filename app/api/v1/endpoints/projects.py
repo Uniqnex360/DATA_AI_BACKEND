@@ -129,6 +129,37 @@ async def list_projects(
             .scalar_subquery()
             .label('enrichment_pending_count')
         )
+        
+
+        
+       
+        algorithm_used_subq = (
+            select(
+                case(
+                    (and_(
+                        func.json_extract_path_text(AggregationJob.details, 'llm_provider') == 'openai',
+                        func.json_extract_path_text(AggregationJob.details, 'missing_llm_provider') == 'gemini'
+                    ), 'Algo 1 & 2'),
+                    (and_(
+                        func.json_extract_path_text(AggregationJob.details, 'llm_provider') == 'gemini',
+                        func.json_extract_path_text(AggregationJob.details, 'missing_llm_provider') == 'openai'
+                    ), 'Algo 2 & 1'),
+                    (func.json_extract_path_text(AggregationJob.details, 'llm_provider') == 'openai', 'Datavio Algo-1'),
+                    (func.json_extract_path_text(AggregationJob.details, 'llm_provider') == 'gemini', 'Datavio Algo-2'),
+                    (func.json_extract_path_text(AggregationJob.details, 'llm_provider') == 'claude', 'Datavio Algo-3'),
+                    else_=None
+                )
+            )
+            .where(
+                AggregationJob.project_id == cast(Project.id, String),
+                AggregationJob.status.in_(['completed', 'processing'])
+            )
+            .order_by(AggregationJob.created_at.desc())  # ← Make sure this is the latest
+            .limit(1)
+            .correlate(Project)
+            .scalar_subquery()
+            .label("algorithm_used")
+        )
         source_subq = (
             select(func.coalesce(
                 func.max(case(
@@ -163,6 +194,7 @@ async def list_projects(
                 data_quality_subq,
                 enrichment_pending_count_subq,
                 source_subq,
+                algorithm_used_subq,
                 source_status_subq,
                 func.max(active_job.status).label("processing_status"),
                 func.max(cast(active_source.source_metadata["processing_status"], String)).label(
@@ -202,9 +234,10 @@ async def list_projects(
             data_quality_score=row[7] or 0
             enrichment_pending_count = row[8] or 0
             import_file_name = row[9]
-            source_processing_status = row[10]
-            processing_status = row[11]
-            source_status = row[12]
+            algorithm_used = row[10]
+            source_processing_status = row[11]  
+            processing_status = row[12]
+            source_status = row[13]
 
             clean_source_status = source_status.replace(
                 '"', "") if source_status else None
@@ -221,6 +254,7 @@ async def list_projects(
                 data_quality_score, 1) if data_quality_score else 0
             project_response.enrichment_pending_count = enrichment_pending_count
             project_response.import_file_name = import_file_name
+            project_response.algorithm_used=algorithm_used
             project_response.source_processing_status = source_processing_status.replace('"', '') if source_processing_status else None
             project_response.processing_status = processing_status or "pending"
             project_response.source_status = normalize_source_status(

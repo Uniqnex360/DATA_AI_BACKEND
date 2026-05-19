@@ -136,6 +136,29 @@ async def get_projects_with_aggregation_stats(
         result: List[ProjectStats] = []
         for project in projects:
             pid = str(project.id)
+            job_stmt = select(AggregationJob).where(
+                AggregationJob.project_id == pid
+            ).order_by(AggregationJob.created_at.desc()).limit(1)
+            job_result = await db.execute(job_stmt)
+            latest_job = job_result.scalars().first()
+            
+            algorithm_used = None
+            if latest_job and latest_job.details:
+                llm_provider = latest_job.details.get('llm_provider')
+                missing_provider = latest_job.details.get('missing_llm_provider')
+                
+                if llm_provider == "openai" and missing_provider == "gemini":
+                    algorithm_used = "Algo 1 & 2"
+                elif llm_provider == "gemini" and missing_provider == "openai":
+                    algorithm_used = "Algo 2 & 1"
+                elif llm_provider == "openai":
+                    algorithm_used = "Datavio Algo-1"
+                elif llm_provider == "gemini":
+                    algorithm_used = "Datavio Algo-2"
+                elif llm_provider == "claude":
+                    algorithm_used = "Datavio Algo-3"
+                else:
+                    algorithm_used = llm_provider
             stats_stmt = select(
                 func.count(Product.id).label('total'),
                 func.sum(case((Product.enrichment_status == 'completed', 1), else_=0)).label(
@@ -177,7 +200,8 @@ async def get_projects_with_aggregation_stats(
                 aggregatedProducts=completed,
                 pendingProducts=pending,
                 failedProducts=failed,
-                aggregationStatus=agg_status
+                aggregationStatus=agg_status,
+                algorithm_used=algorithm_used
             ))
         return result
     except Exception as e:
@@ -232,7 +256,8 @@ async def trigger_project_aggregation(
             details={
                 'project_name': project.name,
                 'triggered_at': now_ist().isoformat(),
-                'llm_provider': request.llm_provider
+                'llm_provider': request.llm_provider,
+                'missing_llm_provider': request.missing_llm_provider 
             }
         )
         db.add(job)

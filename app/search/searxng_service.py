@@ -30,9 +30,9 @@ class SearXNGSearchService(ISearchService):
             
             return data.get("results", [])
     async def get_urls(
-        self, query: str, mpn: str, brand: str, title: str
+        self, query: str, mpn: str, brand: str
     ) -> List[str]:
-        search_query = self._build_query(mpn, brand, title)
+        search_query = self._build_query(mpn, brand)
         try:
             results = await self._search(search_query)
             urls = [r["url"] for r in results[:self.max_results]]
@@ -41,7 +41,7 @@ class SearXNGSearchService(ISearchService):
         except Exception as e:
             logger.exception(f"SearXNG search failed for '{search_query}': {e}")
             return []
-    def _build_query(self, mpn: str, brand: str, title: str, sku: str = None) -> str:
+    def _build_query(self, mpn: str, brand: str, sku: str = None) -> str:
         parts = []
         if brand:
             parts.append(brand) 
@@ -50,30 +50,30 @@ class SearXNGSearchService(ISearchService):
         
         if sku and sku != mpn and len(sku) > 3:
             parts.append(sku)
-        if title:
-            title_lower = title.lower()
-            mpn_lower = (mpn or "").lower()
-            brand_lower = (brand or "").lower()
-            sku_lower = (sku or "").lower()
-            remainder = title_lower
-            remainder = remainder.replace(mpn_lower, "")
-            remainder = remainder.replace(brand_lower, "")
-            remainder = remainder.replace(sku_lower, "").strip()
-            STOP_WORDS = {
-                'with', 'from', 'that', 'this', 'tool', 'unit', 'bare', 'only',
-                'and', 'for', 'the', 'kit', 'pack', 'set', 'free', 'running',
-                'wire', 'feed', 'strip', 'white', '1k', '2k', 'bulk'
-            }
-            words = [
-                w for w in remainder.split()
-                if len(w) > 2
-                and w not in STOP_WORDS
-                and not w.isdigit()
-            ]
+        # if title:
+        #     title_lower = title.lower()
+        #     mpn_lower = (mpn or "").lower()
+        #     brand_lower = (brand or "").lower()
+        #     sku_lower = (sku or "").lower()
+        #     # remainder = title_lower
+        #     remainder = remainder.replace(mpn_lower, "")
+        #     remainder = remainder.replace(brand_lower, "")
+        #     remainder = remainder.replace(sku_lower, "").strip()
+        #     STOP_WORDS = {
+        #         'with', 'from', 'that', 'this', 'tool', 'unit', 'bare', 'only',
+        #         'and', 'for', 'the', 'kit', 'pack', 'set', 'free', 'running',
+        #         'wire', 'feed', 'strip', 'white', '1k', '2k', 'bulk'
+        #     }
+        #     words = [
+        #         w for w in remainder.split()
+        #         if len(w) > 2
+        #         and w not in STOP_WORDS
+        #         and not w.isdigit()
+        #     ]
             
-            max_words = 5 if len(mpn) < 6 else 3
-            if words:
-                parts.append(" ".join(words[:max_words]))
+        #     max_words = 5 if len(mpn) < 6 else 3
+        #     if words:
+        #         parts.append(" ".join(words[:max_words]))
         parts.append("specifications")
         return " ".join(parts)
     async def _search(self, query: str) -> List[dict]:
