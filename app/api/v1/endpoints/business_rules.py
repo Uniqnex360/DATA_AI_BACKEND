@@ -462,8 +462,64 @@ async def create_category_prompt(
     db: AsyncSession = Depends(get_session)
 ):
     try:
+        import uuid as _uuid
+        category_id = payload.category_id
+
+        if not category_id and payload.selected_taxonomy:
+            cat_result = await db.execute(
+                select(Category).where(Category.full_path == payload.selected_taxonomy)
+            )
+            category = cat_result.scalars().first()
+
+            if not category:
+                last_segment = payload.selected_taxonomy.split(" > ")[-1].strip()
+                cat_result = await db.execute(
+                    select(Category).where(Category.name == last_segment)
+                )
+                category = cat_result.scalars().first()
+
+            if not category:
+                segments = payload.selected_taxonomy.split(" > ")
+                parent_id = None
+                for i, segment in enumerate(segments):
+                    full_path = " > ".join(segments[:i + 1])
+                    existing = await db.execute(
+                        select(Category).where(Category.full_path == full_path)
+                    )
+                    existing_cat = existing.scalars().first()
+                    if existing_cat:
+                        parent_id = existing_cat.id
+                        category = existing_cat
+                    else:
+                        new_cat = Category(
+                            id=_uuid.uuid4(),
+                            name=segment.strip(),
+                            full_path=full_path,
+                            level=i + 1,
+                            parent_category_id=parent_id,
+                            is_active=True,
+                            is_leaf=(i == len(segments) - 1),
+                            display_order=0,
+                            keywords=[],
+                            default_attributes=[],
+                        )
+                        db.add(new_cat)
+                        await db.flush()
+                        parent_id = new_cat.id
+                        category = new_cat
+
+            category_id = category.id
+
+        if not category_id:
+            raise HTTPException(
+                status_code=400,
+                detail="category_id could not be resolved. Provide a valid selected_taxonomy."
+            )
+
+        prompt_data = payload.dict(exclude={"category_id"})
         prompt = CategoryPrompt(
-            **payload.dict(),
+            **prompt_data,
+            category_id=category_id,
             created_at=now_ist(),
             updated_at=now_ist()
         )
@@ -472,12 +528,13 @@ async def create_category_prompt(
         await db.refresh(prompt)
 
         cat = await db.get(Category, prompt.category_id)
-
         return CategoryPromptResponse(
             **prompt.dict(),
             category_name=cat.name if cat else None
         )
 
+    except HTTPException:
+        raise
     except SQLAlchemyError as e:
         await db.rollback()
         logger.error(f"SQLAlchemy error: {e}", exc_info=True)
