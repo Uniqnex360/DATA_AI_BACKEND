@@ -1571,19 +1571,69 @@ async def batch_export_products(request: BatchExportRequest, db: AsyncSession = 
         raise HTTPException(
             status_code=500, detail='Failed to download results!')
 
-async def serialize_products_with_attributes(db:AsyncSession,product:Product)->dict:
-    product_dict=product.dict()
-    attr_stmt=(select(Attribute.attribute_name,AttributeValue.value,AttributeValue.uom).join(AttributeValue,AttributeValue.attribute_id==Attribute.id).join(ProductAttributeValueLinkModel,ProductAttributeValueLinkModel.attribute_value_id==AttributeValue.id).where(ProductAttributeValueLinkModel.product_id==product.id))
-    attr_result=await db.execute(attr_stmt)
-    attributes={}
-    for attr_name,value,uom in attr_result.all():
-        attributes[attr_name]={
-            'name':attr_name,
-            'value':value,
-            'unit':uom,
-            'sources':[]
+# async def serialize_products_with_attributes(db:AsyncSession,product:Product)->dict:
+#     product_dict=product.dict()
+#     attr_stmt=(select(Attribute.attribute_name,AttributeValue.value,AttributeValue.uom).join(AttributeValue,AttributeValue.attribute_id==Attribute.id).join(ProductAttributeValueLinkModel,ProductAttributeValueLinkModel.attribute_value_id==AttributeValue.id).where(ProductAttributeValueLinkModel.product_id==product.id))
+#     attr_result=await db.execute(attr_stmt)
+#     attributes={}
+#     for attr_name,value,uom in attr_result.all():
+#         attributes[attr_name]={
+#             'name':attr_name,
+#             'value':value,
+#             'unit':uom,
+#             'sources':[]
+#         }
+#     product_dict['attributes']=attributes
+#     return product_dict
+async def serialize_products_with_attributes(db: AsyncSession, product: Product) -> dict:
+    product_dict = product.dict()
+    
+    # Step 1: Read from normalized AttributeValue tables
+    attr_stmt = (
+        select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom)
+        .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
+        .join(ProductAttributeValueLinkModel,
+              ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+        .where(ProductAttributeValueLinkModel.product_id == product.id)
+    )
+    attr_result = await db.execute(attr_stmt)
+    
+    attributes = {}
+    for attr_name, value, uom in attr_result.all():
+        attributes[attr_name] = {
+            'name': attr_name,
+            'value': value,
+            'unit': uom,
+            'sources': []
         }
-    product_dict['attributes']=attributes
+    
+    # Step 2: Merge product.attributes JSON — fills gaps not in normalized tables
+    if product.attributes and isinstance(product.attributes, dict):
+        for attr_name, attr_value in product.attributes.items():
+            if attr_name in attributes:
+                continue  # Already covered by normalized table — skip
+            
+            if isinstance(attr_value, dict):
+                value = attr_value.get('value') or '—'
+                unit = attr_value.get('unit') or attr_value.get('uom') or None
+                confidence = attr_value.get('confidence', 1.0)
+                sources = attr_value.get('sources', [])
+            else:
+                value = str(attr_value) if attr_value else '—'
+                unit = None
+                confidence = 1.0
+                sources = []
+            
+            if value and value != '—':
+                attributes[attr_name] = {
+                    'name': attr_name,
+                    'value': value,
+                    'unit': unit,
+                    'confidence': confidence,
+                    'sources': sources
+                }
+    
+    product_dict['attributes'] = attributes
     return product_dict
 
 @router.get("/project/{project_id}/products-with-movement")
