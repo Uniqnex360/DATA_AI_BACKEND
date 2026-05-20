@@ -7,6 +7,20 @@ from app.search.searxng_service import SearXNGSearchService
 from sqlalchemy.ext.asyncio import AsyncSession
 import asyncio
 logger = logging.getLogger("smart_search")
+class ScoredUrl(BaseModel):
+    url: str
+    score: int 
+    reasoning: str
+class PageMatchScore(BaseModel):
+        brand_found: bool
+        mpn_found: bool
+        upc_found: bool
+        score: int
+        reasoning: str
+        
+class ManufacturerScoringResponse(BaseModel):
+    scored_urls: List[ScoredUrl]
+    best_url: Optional[str] = None
 class UrlFilterResponse(BaseModel):
     selected_urls: List[str]
 class ManufacturerWebsiteResponse(BaseModel):
@@ -19,6 +33,7 @@ class ProductPageResponse(BaseModel):
         product_url: Optional[str] = None
         confidence: float = 0.0
         reasoning: str =""
+        
 class TargetedQueryResponse(BaseModel):
     search_query: str
 class SmartSearchService(ISearchService):
@@ -115,7 +130,18 @@ class SmartSearchService(ISearchService):
             image_results = await image_task
             if not isinstance(image_results, Exception):
                 image_urls = list({img.get("img_src") for img in image_results if img.get("img_src")})
-            return direct_urls, image_urls[:3]
+            if direct_urls and brand:
+                logger.info(f"BEFORE MANUFACTURER SCORING (direct): {direct_urls}, brand={brand}")
+                scored_direct = await self.llm_score_manufacturer_urls(
+                    urls=direct_urls,
+                    brand=brand,
+                    mpn=mpn,
+                    upc=sku
+                )
+                logger.info(f"AFTER MANUFACTURER SCORING (direct): {scored_direct}")
+                return scored_direct, image_urls
+            else:
+                return direct_urls, image_urls
         BLOCKED_DOMAINS = [
             "zhihu.com", "baidu.com", "weibo.com",
             "superuser.com", "tenforums.com", "stackoverflow.com",
@@ -246,42 +272,65 @@ class SmartSearchService(ISearchService):
         except Exception as e:
             logger.exception(f"LLM filtering failed: {e}")
             final_urls = [r["url"] for r in web_results[:self.max_results]]
+        logger.info(f"BEFORE MANUFACTURER SCORING: final_urls={final_urls}, brand={brand}")
+        if final_urls and brand:
+            final_urls = await self.llm_score_manufacturer_urls(
+                urls=final_urls,
+                brand=brand,
+                mpn=mpn,
+                upc=sku 
+            )
+            logger.info(f"AFTER MANUFACTURER SCORING: {final_urls}")
         return final_urls, candidate_imgs
-    async def _discover_manufacturer_website(
-        self, 
-        brand: str
-    ) -> Optional[str]:
-        """Use LLM to find the brand's official manufacturer website."""
-        from app.aggregation.aggregate_product import call_llm_with_schema
+    async def llm_score_manufacturer_urls(
+    self,
+    urls: List[str],
+    brand: str,
+    mpn: str,
+    upc: Optional[str] = None,
+) -> List[str]:
+        logger.info(f"llm_score_manufacturer_urls called with {len(urls)} URLs, brand={brand}, mpn={mpn}")
+        from app.llm import call_llm_with_schema
+        if not urls:
+            return urls
+
+        urls_list = "\n".join(f"- {url}" for url in urls)
         prompt = f"""
-    Find the OFFICIAL manufacturer website for this brand.
-    Brand: {brand}
-    Rules:
-    - Return the official manufacturer/corporate website, NOT a retailer
-    - This is the company that MAKES the products under this brand
-    - Examples:
-    - "Craftsman" → "https://www.craftsman.com"
-    - "Dewalt" → "https://www.dewalt.com"
-    - "Ace" → "https://www.acehardware.com"
-    - "Milwaukee" → "https://www.milwaukeetool.com"
-    - "Steel Grip" → "" (if it's a private label with no official site)
-    - If the brand is a store brand, private label, or has no dedicated website, return empty string
-    - Do NOT return retailer sites like amazon.com, homedepot.com, etc.
-    - Only return a URL if you are confident it's the manufacturer's official site
-    Return JSON: {{"manufacturer_url": "url or empty", "confidence": 0.0-1.0}}
+    You are scoring candidate URLs to find the official manufacturer product page.
+
+    Product:
+    - Brand: {brand}
+    - MPN: {mpn}
+    - UPC: {upc if upc else 'Not provided'}
+
+    Candidate URLs:
+    {urls_list}
+
+    Instructions:
+    For each URL, assign a confidence score (0-100) based on:
+    - +50 if the URL contains the exact brand name (case-insensitive)
+    - +40 if the URL contains the exact MPN
+    - +10 if the URL contains the UPC
+    - Additional +10 if the domain is the official manufacturer domain (e.g., brand.com)
+    - Subtract -20 if the domain is a known retailer (amazon, walmart, homedepot, grainger, zoro, etc.)
+
+    Return JSON with:
+    - "scored_urls": array of objects, each with "url", "score", "reasoning"
+    - "best_url": the URL with the highest score (or null if none above 60)
+
+    Return only valid JSON.
     """
         try:
             result = await call_llm_with_schema(
                 prompt=prompt,
-                response_model="ManufacturerWebsiteResponse",
+                response_model="ManufacturerScoringResponse",
                 llm_provider=self.llm_provider,
-                estimated_tokens=200
+                estimated_tokens=800
             )
-            if result and result.manufacturer_url and result.confidence > 0.7:
-                logger.info(f"LLM discovered manufacturer URL for {brand}: {result.manufacturer_url} (confidence: {result.confidence})")
-                return result.manufacturer_url
-            elif result:
-                logger.info(f"LLM found URL for {brand} but confidence too low: {result.confidence}")
+            # Sort by score descending
+            sorted_urls = [su.url for su in sorted(result.scored_urls, key=lambda x: x.score, reverse=True)]
+            logger.info(f"Priority order: {sorted_urls}")
+            return sorted_urls
         except Exception as e:
-            logger.warning(f"Failed to discover manufacturer URL for {brand}: {e}")
-        return None
+            logger.warning(f"LLM scoring failed: {e}, returning original order")
+            return urls

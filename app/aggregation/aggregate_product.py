@@ -5,7 +5,7 @@ from app.llm import call_llm_with_schema
 from typing import Dict, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.aggregation.pipeline import AggregationPipeline
-from sqlmodel import select
+from sqlmodel import or_, select
 from app.aggregation.prompts.enrichment_prompts import build_enrichment_prompt
 from app.aggregation.prompts.extraction_prompts import build_extraction_prompt, build_pdf_extraction_prompt
 from app.aggregation.prompts.validation_prompts import build_validation_prompt
@@ -800,24 +800,98 @@ def extract_urls_from_prompt(prompt_text: str) -> List[str]:
         return []
     url_pattern = r'https?://[^\s\)\"]+'
     return re.findall(url_pattern, prompt_text)
+
+# async def find_product_page_with_llm(
+#     domain_url: str,
+#     mpn: str,
+#     brand: str,
+#     title: str,
+#     llm_provider: str
+# ) -> Optional[str]:
+#     """
+#     Use LLM to navigate a domain and find the product page.
+#     """
+#     from app.llm import call_llm_with_schema
+#     from pydantic import BaseModel
+#     from app.aggregation.services.download_service import HttpDownloadService
+    
+
+    
+    
+#     try:
+#         download_service = HttpDownloadService(timeout=30)
+        
+#         # Step 1: Download homepage
+#         content = await download_service.download(domain_url)
+#         if not content or content['type'] != 'html':
+#             return None
+        
+#         html_text = content['raw_bytes'].decode('utf-8', errors='ignore')[:100000]
+        
+#         # Step 2: Let LLM analyze and find navigation path
+#         prompt = f"""
+# You are a web navigation expert. Find the product page for this product on {domain_url}.
+
+# Product:
+# - MPN: {mpn}
+# - Brand: {brand}
+# - Name: {title}
+
+# Homepage HTML (first 100k chars):
+# {html_text}
+
+# Task:
+# 1. Look for search forms, navigation menus, category links
+# 2. Find the most likely path to reach the product page
+# 3. If there's a search function, determine the search URL pattern
+# 4. Return the most promising product page URL or search URL
+
+# Rules:
+# - If you find an exact URL containing the MPN, return it immediately
+# - If you find a category page (e.g., /hex-nuts), return that
+# - If you find a search form, construct the search URL with MPN
+# - Be specific - return full URLs
+
+# Return JSON with:
+# - product_url: the URL to try (full URL)
+# - confidence: 0.0-1.0
+# - reasoning: why you chose this URL
+# """
+        
+#         result = await call_llm_with_schema(
+#             prompt=prompt,
+#             response_model="ProductPageResponse",
+#             llm_provider=llm_provider,
+#             estimated_tokens=4000
+#         )
+        
+#         if result and result.product_url and result.confidence > 0.5:
+#             logger.info(f"LLM found URL on {domain_url}: {result.product_url}")
+#             return result.product_url
+            
+#     except Exception as e:
+#         logger.warning(f"LLM navigation failed for {domain_url}: {e}")
+    
+#     return None
 async def find_product_page_with_llm(
     domain_url: str,
     mpn: str,
     brand: str,
     title: str,
-    llm_provider: str
+    llm_provider: str,
+    upc: Optional[str] = None   # <-- new optional parameter
 ) -> Optional[str]:
     """
     Use LLM to navigate a domain and find the product page.
+    Returns a single product URL (if found with confidence > 0.5)
+    and logs a content‑based score (0‑100) based on brand/MPN/UPC.
     """
     from app.llm import call_llm_with_schema
     from pydantic import BaseModel
     from app.aggregation.services.download_service import HttpDownloadService
     
-    class NavigationStep(BaseModel):
-        action: str  # "click", "search", "navigate"
-        target: str  # URL or search term
-        reasoning: str
+    
+
     
     
     try:
@@ -830,7 +904,7 @@ async def find_product_page_with_llm(
         
         html_text = content['raw_bytes'].decode('utf-8', errors='ignore')[:100000]
         
-        # Step 2: Let LLM analyze and find navigation path
+        # Step 2: LLM finds the most promising product page URL
         prompt = f"""
 You are a web navigation expert. Find the product page for this product on {domain_url}.
 
@@ -867,15 +941,70 @@ Return JSON with:
             estimated_tokens=4000
         )
         
-        if result and result.product_url and result.confidence > 0.5:
-            logger.info(f"LLM found URL on {domain_url}: {result.product_url}")
-            return result.product_url
+        if not result or not result.product_url or result.confidence <= 0.5:
+            return None
+        
+        candidate_url = result.product_url
+        logger.info(f"LLM found URL on {domain_url}: {candidate_url} (nav confidence={result.confidence:.2f})")
+        
+        # ----- NEW: Score the candidate page (brand + MPN + optional UPC) -----
+        page_content = await download_service.download(candidate_url)
+        if page_content and page_content['type'] == 'html':
+            page_html = page_content['raw_bytes'].decode('utf-8', errors='ignore')[:200000]
+            
+            upc_text = f"- UPC: {upc}" if upc else "- UPC: Not provided"
+            score_prompt = f"""
+You are evaluating a product page to see if it matches the given product.
+
+Product:
+- Brand: {brand}
+- MPN: {mpn}
+{upc_text}
+
+Page URL: {candidate_url}
+Page HTML (first 200k chars):
+{page_html}
+
+Task:
+1. Determine if the brand name appears clearly on the page (text, meta, structured data).
+2. Determine if the MPN or Brand appears clearly on the page OR in the URL.
+3. Determine if the UPC appears (if provided).
+
+Then assign a score **exactly** following these rules:
+- If brand is found AND MPN is found → score = 90
+- If UPC is also found → add 10 → total 100
+- If only brand found OR only MPN found → score = 50
+- If neither found → score = 0
+
+Return JSON:
+{{
+    "brand_found": bool,
+    "mpn_found": bool,
+    "upc_found": bool,
+    "score": int,
+    "reasoning": "short explanation"
+}}
+"""
+            score_result = await call_llm_with_schema(
+                prompt=score_prompt,
+                response_model="PageMatchScore",
+                llm_provider=llm_provider,
+                estimated_tokens=800
+            )
+            if score_result:
+                logger.info(f"Content score for {candidate_url}: {score_result.score} – {score_result.reasoning}")
+            else:
+                logger.warning(f"Scoring failed for {candidate_url}")
+        else:
+            logger.warning(f"Could not fetch candidate page for scoring: {candidate_url}")
+        
+        # Return the URL regardless of score (no filtering)
+        return candidate_url
             
     except Exception as e:
         logger.warning(f"LLM navigation failed for {domain_url}: {e}")
+        return None
     
-    return None
-
 async def aggregate_product(
     mpn: str,
     title: str,
@@ -935,34 +1064,74 @@ async def aggregate_product(
         # else:
         #     logger.info(f"Taxonomy is None or db is None: taxonomy={taxonomy}, db={db is not None}") 
         # Fetch category prompt by matching selected_taxonomy as prefix of product taxonomy
+# ── Fetch category prompt by matching taxonomy OR category ──
         category_prompt_text = None
         selected_taxonomy = None
+        matched_category_id = None
 
         if taxonomy and db:
             clean_taxonomy = taxonomy.strip()
             
-            # ✅ CORRECT: Use SQLAlchemy's startswith on the column
+            # ── 1. Try taxonomy-mode (longest prefix wins) ──
             stmt = select(
                 CategoryPrompt.prompt_text,
                 CategoryPrompt.selected_taxonomy
             ).where(
                 CategoryPrompt.status == RuleStatus.ACTIVE,
                 CategoryPrompt.selected_taxonomy.isnot(None),
-                # Column.startswith(string) - NOT string.startswith(column)
-                CategoryPrompt.selected_taxonomy.startswith(clean_taxonomy)
-            ).order_by(
-                func.length(CategoryPrompt.selected_taxonomy).desc()
-            ).limit(1)
-            
+            )
             result = await db.execute(stmt)
-            row = result.first()
             
-            if row:
-                category_prompt_text = row[0]
-                selected_taxonomy = row[1]
-                logger.info(f"Found category prompt: selected_taxonomy='{selected_taxonomy}' matches product taxonomy='{clean_taxonomy}'")
-            else:
-                logger.info(f"No category prompt found for taxonomy: {clean_taxonomy}")
+            matching = [
+                (len(sel_tax), prompt_text, sel_tax)
+                for prompt_text, sel_tax in result.all()
+                if clean_taxonomy.startswith(sel_tax)
+            ]
+            
+            if matching:
+                matching.sort(key=lambda x: x[0], reverse=True)
+                category_prompt_text = matching[0][1]
+                selected_taxonomy = matching[0][2]
+                logger.info(f"✓ Taxonomy prompt matched: '{selected_taxonomy}'")
+            
+            # ── 2. Fallback to category-mode ──
+            if not category_prompt_text:
+                tax_parts = clean_taxonomy.split(" > ")
+                candidate_paths = [
+                    " > ".join(tax_parts[:i]) for i in range(len(tax_parts), 0, -1)
+                ]
+                last_segments = [p.strip() for p in tax_parts]
+                
+                cat_stmt = select(Category).where(
+                    or_(
+                        Category.full_path.in_(candidate_paths),
+                        Category.name.in_(last_segments)
+                    )
+                )
+                cat_result = await db.execute(cat_stmt)
+                categories = sorted(
+                    cat_result.scalars().all(),
+                    key=lambda c: len(c.full_path or ""),
+                    reverse=True
+                )
+                
+                for category in categories:
+                    prompt_stmt = select(CategoryPrompt).where(
+                        CategoryPrompt.category_id == category.id,
+                        CategoryPrompt.status == RuleStatus.ACTIVE,
+                        CategoryPrompt.selected_taxonomy.is_(None)
+                    ).limit(1)
+                    prompt_result = await db.execute(prompt_stmt)
+                    cat_prompt = prompt_result.scalars().first()
+                    
+                    if cat_prompt:
+                        category_prompt_text = cat_prompt.prompt_text
+                        matched_category_id = category.id
+                        logger.info(f"✓ Category prompt matched: '{category.name}'")
+                        break
+            
+            if not category_prompt_text:
+                logger.info(f"✗ No prompt found for taxonomy: '{clean_taxonomy}'")
         search_service = SmartSearchService(llm_provider, db=db, max_results=5)
         query = title if (
             mpn in title and brand in title) else f"{brand} {mpn} {title}"
