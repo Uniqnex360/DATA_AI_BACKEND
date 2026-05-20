@@ -412,6 +412,7 @@ async def get_aggregated_attributes(
                     source_id=str(ext.source_id)[:8]
                 ))
         attributes: List[AggregatedAttribute] = []
+        processed_attrs = set()
         # current_attrs = product.attributes or {}
         # for attr_name, master_value in current_attrs.items():
         #     values_from_sources = evidence_map.get(attr_name, [])
@@ -453,6 +454,31 @@ async def get_aggregated_attributes(
                     source_id="master"
                 )]
             ))
+            processed_attrs.add(attr_name)
+        if product.attributes and isinstance(product.attributes, dict):
+            for attr_name, attr_value in product.attributes.items():
+                if attr_name in processed_attrs:
+                    continue  # Skip if already added from normalized tables
+                
+                # Parse the attribute value
+                if isinstance(attr_value, dict):
+                    value = attr_value.get('value', '—')
+                    unit = attr_value.get('unit') or attr_value.get('uom')
+                else:
+                    value = str(attr_value) if attr_value else "—"
+                    unit = None
+                
+                attributes.append(AggregatedAttribute(
+                    id=f"{product_id}_{attr_name}",
+                    product_id=product_id,
+                    attribute_name=attr_name,
+                    has_conflict=False,
+                    values=[AggregatedAttributeValue(
+                        value=str(value) if value != "—" else "—",
+                        confidence=1.0,
+                        source_id="json"
+                    )]
+                ))
         
         return attributes
     except HTTPException:
