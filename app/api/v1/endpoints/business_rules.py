@@ -455,71 +455,37 @@ async def get_category_prompts(
         logger.error(f"Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/category-prompts", response_model=CategoryPromptResponse, status_code=201)
 async def create_category_prompt(
     payload: CategoryPromptCreate,
     db: AsyncSession = Depends(get_session)
 ):
     try:
-        import uuid as _uuid
         category_id = payload.category_id
+        selected_taxonomy = payload.selected_taxonomy
 
-        if not category_id and payload.selected_taxonomy:
-            cat_result = await db.execute(
-                select(Category).where(Category.full_path == payload.selected_taxonomy)
-            )
-            category = cat_result.scalars().first()
+        # ── Taxonomy mode: category_id must be NULL ──
+        if selected_taxonomy and not category_id:
+            # Don't resolve category_id — save taxonomy only
+            category_id = None
 
-            if not category:
-                last_segment = payload.selected_taxonomy.split(" > ")[-1].strip()
-                cat_result = await db.execute(
-                    select(Category).where(Category.name == last_segment)
-                )
-                category = cat_result.scalars().first()
+        # ── Category mode: category_id must be present ──
+        elif category_id and not selected_taxonomy:
+            # category_id already set — nothing to resolve
+            pass
 
-            if not category:
-                segments = payload.selected_taxonomy.split(" > ")
-                parent_id = None
-                for i, segment in enumerate(segments):
-                    full_path = " > ".join(segments[:i + 1])
-                    existing = await db.execute(
-                        select(Category).where(Category.full_path == full_path)
-                    )
-                    existing_cat = existing.scalars().first()
-                    if existing_cat:
-                        parent_id = existing_cat.id
-                        category = existing_cat
-                    else:
-                        new_cat = Category(
-                            id=_uuid.uuid4(),
-                            name=segment.strip(),
-                            full_path=full_path,
-                            level=i + 1,
-                            parent_category_id=parent_id,
-                            is_active=True,
-                            is_leaf=(i == len(segments) - 1),
-                            display_order=0,
-                            keywords=[],
-                            default_attributes=[],
-                        )
-                        db.add(new_cat)
-                        await db.flush()
-                        parent_id = new_cat.id
-                        category = new_cat
-
-            category_id = category.id
-
-        if not category_id:
+        # ── Both missing — error ──
+        elif not category_id and not selected_taxonomy:
             raise HTTPException(
                 status_code=400,
-                detail="category_id could not be resolved. Provide a valid selected_taxonomy."
+                detail="Either category_id or selected_taxonomy must be provided."
             )
 
-        prompt_data = payload.dict(exclude={"category_id"})
+        prompt_data = payload.dict(exclude={"category_id", "selected_taxonomy"})
         prompt = CategoryPrompt(
             **prompt_data,
-            category_id=category_id,
+            category_id=category_id,        # None if taxonomy mode
+            selected_taxonomy=selected_taxonomy,  # None if category mode
             created_at=now_ist(),
             updated_at=now_ist()
         )
@@ -527,7 +493,7 @@ async def create_category_prompt(
         await db.commit()
         await db.refresh(prompt)
 
-        cat = await db.get(Category, prompt.category_id)
+        cat = await db.get(Category, prompt.category_id) if prompt.category_id else None
         return CategoryPromptResponse(
             **prompt.dict(),
             category_name=cat.name if cat else None

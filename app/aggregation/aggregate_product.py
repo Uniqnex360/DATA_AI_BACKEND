@@ -939,31 +939,31 @@ async def aggregate_product(
         selected_taxonomy = None
 
         if taxonomy and db:
+            # Clean the taxonomy
             clean_taxonomy = taxonomy.strip()
             
-            # Fetch all active prompts with selected_taxonomy
+            # Find active prompt where selected_taxonomy is a prefix of the product's taxonomy
+            # Example: selected_taxonomy = "Automotive Supplies > Pneumatics" 
+            #          matches product taxonomy = "Automotive Supplies > Pneumatics > Pneumatic Tools"
             stmt = select(
                 CategoryPrompt.prompt_text,
                 CategoryPrompt.selected_taxonomy
             ).where(
                 CategoryPrompt.status == RuleStatus.ACTIVE,
-                CategoryPrompt.selected_taxonomy.isnot(None)
-            )
+                CategoryPrompt.selected_taxonomy.isnot(None),
+                # Match if product taxonomy starts with selected_taxonomy
+                clean_taxonomy.like(f"{CategoryPrompt.selected_taxonomy}%")
+            ).order_by(
+                # Prefer the longest match (most specific)
+                func.length(CategoryPrompt.selected_taxonomy).desc()
+            ).limit(1)
             
             result = await db.execute(stmt)
-            rows = result.all()
+            row = result.first()
             
-            # Find matching prompts (where selected_taxonomy is a prefix of product taxonomy)
-            matching_prompts = []
-            for prompt_text, sel_tax in rows:
-                if clean_taxonomy.startswith(sel_tax):
-                    matching_prompts.append((len(sel_tax), prompt_text, sel_tax))
-            
-            if matching_prompts:
-                # Sort by length (longest match = most specific)
-                matching_prompts.sort(key=lambda x: x[0], reverse=True)
-                category_prompt_text = matching_prompts[0][1]
-                selected_taxonomy = matching_prompts[0][2]
+            if row:
+                category_prompt_text = row[0]
+                selected_taxonomy = row[1]
                 logger.info(f"Found category prompt: selected_taxonomy='{selected_taxonomy}' matches product taxonomy='{clean_taxonomy}'")
             else:
                 logger.info(f"No category prompt found for taxonomy: {clean_taxonomy}")
