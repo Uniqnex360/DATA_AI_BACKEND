@@ -1737,3 +1737,85 @@ async def get_job_progress(
             "status": "error",
             "message": str(e)
         }
+        
+        
+@router.get("/product/{product_id}/extraction-logs")
+async def get_product_extraction_logs(
+    product_id: str,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        product = await db.get(Product, product_id)
+        if not product:
+            raise HTTPException(404, "Product not found")
+
+        # Get source URLs for this project
+        source_stmt = select(Source).where(Source.project_id == product.project_id)
+        source_result = await db.execute(source_stmt)
+        all_sources = {str(s.id): s.source_url for s in source_result.scalars().all()}
+
+        # Build extraction logs from raw_extractions
+        raw_stmt = select(RawExtraction).where(
+            RawExtraction.source_id.in_(
+                select(Source.id).where(Source.project_id == product.project_id)
+            )
+        ).order_by(RawExtraction.extracted_at)
+        raw_result = await db.execute(raw_stmt)
+        raw_extractions = raw_result.scalars().all()
+
+        # Group by source
+        source_logs = {}
+        for ext in raw_extractions:
+            src_url = all_sources.get(str(ext.source_id), "Unknown")
+            if src_url not in source_logs:
+                source_logs[src_url] = {
+                    "url": src_url,
+                    "attributes": [],
+                    "extracted_at": ext.extracted_at.isoformat() if ext.extracted_at else None,
+                }
+            # Parse raw_attributes
+            raw_attrs = ext.raw_attributes or {}
+            for attr_name, attr_value in raw_attrs.items():
+                if isinstance(attr_value, dict):
+                    source_logs[src_url]["attributes"].append({
+                        "name": attr_name,
+                        "value": str(attr_value.get("value", attr_value)),
+                        "unit": attr_value.get("unit"),
+                        "raw_text": str(attr_value.get("raw", attr_value)),
+                        "confidence": ext.confidence,
+                    })
+                else:
+                    source_logs[src_url]["attributes"].append({
+                        "name": attr_name,
+                        "value": str(attr_value),
+                        "unit": None,
+                        "raw_text": str(attr_value),
+                        "confidence": ext.confidence,
+                    })
+
+        # Also include final merged attributes with source mapping
+        final_attrs = product.attributes or {}
+        attr_source_map = {}
+        for attr_name, attr_data in final_attrs.items():
+            if isinstance(attr_data, dict):
+                attr_source_map[attr_name] = {
+                    "value": attr_data.get("value", ""),
+                    "unit": attr_data.get("unit"),
+                    "confidence": attr_data.get("confidence", 0),
+                    "sources": attr_data.get("sources", []),
+                }
+
+        return {
+            "product_name": product.product_name,
+            "product_code": product.product_code,
+            "image_url": product.image_url_1,
+            "sources_consulted": product.sources_consulted or [],
+            "source_logs": list(source_logs.values()),
+            "final_attributes": attr_source_map,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get extraction logs: {e}", exc_info=True)
+        raise HTTPException(500, detail=str(e))

@@ -90,6 +90,7 @@ class StandardizedAttribute(UUIDModel, table=True):
     derived_from: str = Field(default="[]") 
     confidence: float = Field(default=0.0)
     reason: str = Field(default="")
+    
 class RawExtraction(UUIDModel, table=True):
     __tablename__ = 'raw_extractions'
 

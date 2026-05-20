@@ -939,22 +939,18 @@ async def aggregate_product(
         selected_taxonomy = None
 
         if taxonomy and db:
-            # Clean the taxonomy
             clean_taxonomy = taxonomy.strip()
             
-            # Find active prompt where selected_taxonomy is a prefix of the product's taxonomy
-            # Example: selected_taxonomy = "Automotive Supplies > Pneumatics" 
-            #          matches product taxonomy = "Automotive Supplies > Pneumatics > Pneumatic Tools"
+            # ✅ CORRECT: Use SQLAlchemy's startswith on the column
             stmt = select(
                 CategoryPrompt.prompt_text,
                 CategoryPrompt.selected_taxonomy
             ).where(
                 CategoryPrompt.status == RuleStatus.ACTIVE,
                 CategoryPrompt.selected_taxonomy.isnot(None),
-                # Match if product taxonomy starts with selected_taxonomy
-                clean_taxonomy.like(f"{CategoryPrompt.selected_taxonomy}%")
+                # Column.startswith(string) - NOT string.startswith(column)
+                CategoryPrompt.selected_taxonomy.startswith(clean_taxonomy)
             ).order_by(
-                # Prefer the longest match (most specific)
                 func.length(CategoryPrompt.selected_taxonomy).desc()
             ).limit(1)
             
