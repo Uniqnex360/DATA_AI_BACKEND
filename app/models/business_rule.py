@@ -53,8 +53,9 @@ class RulePrompt(SQLModel, table=True):
 
 class CategoryPrompt(SQLModel, table=True):
     __tablename__ = "category_prompts"
-    id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
-    category_id: UUID = Field(foreign_key="categories.id", index=True)
+    selected_taxonomy: Optional[str] = Field(default=None)  
+    id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True) 
+    category_id: Optional[UUID]  = Field(foreign_key="categories.id", index=True)
     stage : Optional[str] = None
     prompt_name: str = Field(max_length=255)
     prompt_text: str

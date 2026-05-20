@@ -24,7 +24,7 @@ class SearXNGSearchService(ISearchService):
             "pageno": 1,
         }
         async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{self.base_url}/search", params=params, timeout=10)
+            resp = await client.get(f"{self.base_url}/search", params=params, timeout=30)
             resp.raise_for_status()
             data = resp.json()
             

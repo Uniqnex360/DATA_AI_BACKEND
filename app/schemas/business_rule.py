@@ -75,10 +75,11 @@ class RuleExecuteResponse(BaseModel):
     execution_time_ms: int
     executed_at: datetime
 class CategoryPromptCreate(BaseModel):
-    category_id: UUID
+    category_id: Optional[UUID] = None 
     stage:Optional[str] = None
     prompt_name: str
     prompt_text: str
+    selected_taxonomy: Optional[str] = None 
     description: Optional[str] = None
     variables: Optional[List[str]] = None
     class Config:
@@ -87,8 +88,9 @@ class CategoryPromptCreate(BaseModel):
         }
 class CategoryPromptResponse(BaseModel):
     id: str
-    category_id: UUID
+    category_id: Optional[UUID] = None 
     category_name: Optional[str] = None 
+    selected_taxonomy: Optional[str] = None 
     stage: Optional[str] = None
     prompt_name: str
     prompt_text: str

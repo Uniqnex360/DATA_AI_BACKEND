@@ -910,19 +910,63 @@ async def aggregate_product(
                 brand_prompt_text = brand_row[0]
 
         # Fetch category prompt
+        # category_prompt_text = None
+        # selected_taxonomy = None  # ← ADD THIS
+        # if taxonomy and db:
+        #     taxonomy_parts = [t.strip().lower() for t in taxonomy.split(">")]
+        #     logger.info(f"Looking for category prompt with taxonomy parts: {taxonomy_parts}") 
+        #     cat_stmt = select(
+        #         CategoryPrompt.prompt_text, 
+        #         CategoryPrompt.selected_taxonomy  # ← ADD THIS
+        #     ).join(
+        #         Category, CategoryPrompt.category_id == Category.id
+        #     ).where(
+        #         func.lower(Category.name).in_(taxonomy_parts),
+        #         CategoryPrompt.status == RuleStatus.ACTIVE
+        #     ).order_by(Category.level.desc())
+        #     cat_result = await db.execute(cat_stmt)
+        #     cat_row = cat_result.first()
+        #     if cat_row:
+        #         category_prompt_text = cat_row[0]
+        #         selected_taxonomy = cat_row[1]
+        #         logger.info(f"Found category prompt! selected_taxonomy: {selected_taxonomy}")
+        #     else:
+        #         logger.info(f"No category prompt found for taxonomy parts: {taxonomy_parts}") 
+        # else:
+        #     logger.info(f"Taxonomy is None or db is None: taxonomy={taxonomy}, db={db is not None}") 
+        # Fetch category prompt by matching selected_taxonomy as prefix of product taxonomy
         category_prompt_text = None
+        selected_taxonomy = None
+
         if taxonomy and db:
-            taxonomy_parts = [t.strip().lower() for t in taxonomy.split(">")]
-            cat_stmt = select(CategoryPrompt.prompt_text).join(
-                Category, CategoryPrompt.category_id == Category.id
+            clean_taxonomy = taxonomy.strip()
+            
+            # Fetch all active prompts with selected_taxonomy
+            stmt = select(
+                CategoryPrompt.prompt_text,
+                CategoryPrompt.selected_taxonomy
             ).where(
-                func.lower(Category.name).in_(taxonomy_parts),
-                CategoryPrompt.status == RuleStatus.ACTIVE
-            ).order_by(Category.level.desc())  # Prefer deepest match
-            cat_result = await db.execute(cat_stmt)
-            cat_row = cat_result.first()
-            if cat_row:
-                category_prompt_text = cat_row[0]
+                CategoryPrompt.status == RuleStatus.ACTIVE,
+                CategoryPrompt.selected_taxonomy.isnot(None)
+            )
+            
+            result = await db.execute(stmt)
+            rows = result.all()
+            
+            # Find matching prompts (where selected_taxonomy is a prefix of product taxonomy)
+            matching_prompts = []
+            for prompt_text, sel_tax in rows:
+                if clean_taxonomy.startswith(sel_tax):
+                    matching_prompts.append((len(sel_tax), prompt_text, sel_tax))
+            
+            if matching_prompts:
+                # Sort by length (longest match = most specific)
+                matching_prompts.sort(key=lambda x: x[0], reverse=True)
+                category_prompt_text = matching_prompts[0][1]
+                selected_taxonomy = matching_prompts[0][2]
+                logger.info(f"Found category prompt: selected_taxonomy='{selected_taxonomy}' matches product taxonomy='{clean_taxonomy}'")
+            else:
+                logger.info(f"No category prompt found for taxonomy: {clean_taxonomy}")
         search_service = SmartSearchService(llm_provider, db=db, max_results=5)
         query = title if (
             mpn in title and brand in title) else f"{brand} {mpn} {title}"
@@ -953,7 +997,7 @@ async def aggregate_product(
     query, mpn=mpn, brand=brand, sku=sku, 
     brand_prompt_text=brand_prompt_text, 
     category_prompt_text=category_prompt_text, 
-    taxonomy=taxonomy,direct_urls=direct_urls
+    taxonomy=taxonomy,direct_urls=direct_urls,selected_taxonomy=selected_taxonomy
 )
         if not urls:
             return {

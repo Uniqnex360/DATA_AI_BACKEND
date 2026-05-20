@@ -421,9 +421,6 @@ async def delete_business_rule(
 from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 
-
-# ── Category Prompts ──
-
 @router.get("/category-prompts", response_model=List[CategoryPromptResponse])
 async def get_category_prompts(
     category_id: Optional[str] = None,
@@ -431,9 +428,10 @@ async def get_category_prompts(
     db: AsyncSession = Depends(get_session)
 ):
     try:
-        stmt = select(CategoryPrompt, Category.name).join(
+        stmt = select(CategoryPrompt, Category.name).outerjoin(
             Category, CategoryPrompt.category_id == Category.id
         )
+        
         if category_id:
             stmt = stmt.where(CategoryPrompt.category_id == category_id)
         if stage:
@@ -442,16 +440,19 @@ async def get_category_prompts(
         result = await db.execute(stmt)
         rows = result.all()
 
-        return [
-            CategoryPromptResponse(
-                **prompt.dict(),
-                category_name=cat_name
-            ) for prompt, cat_name in rows
-        ]
+        response = []
+        for prompt, cat_name in rows:
+            prompt_dict = prompt.dict()
+            prompt_dict['category_name'] = cat_name  
+            response.append(CategoryPromptResponse(**prompt_dict))
+
+        return response
 
     except SQLAlchemyError as e:
+        logger.error(f"Database error: {e}")
         raise HTTPException(status_code=500, detail="Database error")
     except Exception as e:
+        logger.error(f"Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -477,11 +478,13 @@ async def create_category_prompt(
             category_name=cat.name if cat else None
         )
 
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         await db.rollback()
-        raise HTTPException(status_code=500, detail="Database error")
+        logger.error(f"SQLAlchemy error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
         await db.rollback()
+        logger.error(f"Unexpected error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 

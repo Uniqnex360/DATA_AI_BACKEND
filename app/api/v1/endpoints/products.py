@@ -483,3 +483,25 @@ async def create_category(
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.get("/taxonomies")
+async def get_all_taxonomies(db: AsyncSession = Depends(get_session)):
+    try:
+        stmt = select(Product.taxonomy).where(
+            Product.taxonomy.isnot(None),
+            Product.taxonomy != ""
+        ).distinct()
+
+        result = await db.execute(stmt)
+        taxonomies = sorted([row[0] for row in result.all()])
+
+        return taxonomies
+
+    except Exception as e:
+        print(f"Error fetching taxonomies: {e}")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch taxonomies"
+        )

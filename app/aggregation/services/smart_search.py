@@ -46,8 +46,10 @@ class SmartSearchService(ISearchService):
         brand_prompt_text: Optional[str] = None,
         category_prompt_text: Optional[str] = None,
         taxonomy: Optional[str] = None,
+        selected_taxonomy: Optional[str] = None, 
     ) -> str:
         from app.aggregation.aggregate_product import call_llm_with_schema
+        effective_taxonomy = selected_taxonomy if selected_taxonomy else taxonomy   
         if brand_prompt_text:
             prompt = brand_prompt_text
             prompt = prompt.replace("{brand}", brand or "")
@@ -55,29 +57,29 @@ class SmartSearchService(ISearchService):
             logger.info(f"Using brand prompt for {brand}")
         elif category_prompt_text:
             prompt = category_prompt_text
-            prompt = prompt.replace("{category}", taxonomy or "")
+            prompt = prompt.replace("{category}", effective_taxonomy or "")  
             prompt = prompt.replace("{brand}", brand or "")
             prompt = prompt.replace("{mpn}", mpn or "")
-            logger.info(f"Using category prompt for {taxonomy}")
+            logger.info(f"Using category prompt for {effective_taxonomy}")
         else:
             prompt = f"""
-You are a product data researcher. Given a product, generate the single best 
-Google search query to find its official specifications or datasheet page.
-Product:
-- Brand: {brand}
-- MPN: {mpn}
-Rules:
-- The query should target the manufacturer's official site or the most authoritative 
-  distributor/retailer for this type of product
-- If the MPN contains hyphens or looks like a specific kit (e.g. DCF403-1PS-NA), DO NOT 
-  restrict it to a single site using the 'site:' operator. Just use the brand and MPN.
-- Keep it short and precise — brand + MPN + best site or keyword
-- Examples:
-  - Dewalt power tool → "Dewalt DCF414-B-NA site:dewalt.com specifications"
-  - Heli-Coil insert → "Heli-Coil 1084-10CNPF250 site:grainger.com OR site:mscdirect.com"
-  - Electronics → "Sony WH-1000XM5 site:sony.com specifications"
-Return JSON: {{"search_query": "your query here"}}
-"""
+        You are a product data researcher. Given a product, generate the single best 
+        Google search query to find its official specifications or datasheet page.
+        Product:
+        - Brand: {brand}
+        - MPN: {mpn}
+        Rules:
+        - The query should target the manufacturer's official site or the most authoritative 
+        distributor/retailer for this type of product
+        - If the MPN contains hyphens or looks like a specific kit (e.g. DCF403-1PS-NA), DO NOT 
+        restrict it to a single site using the 'site:' operator. Just use the brand and MPN.
+        - Keep it short and precise — brand + MPN + best site or keyword
+        - Examples:
+        - Dewalt power tool → "Dewalt DCF414-B-NA site:dewalt.com specifications"
+        - Heli-Coil insert → "Heli-Coil 1084-10CNPF250 site:grainger.com OR site:mscdirect.com"
+        - Electronics → "Sony WH-1000XM5 site:sony.com specifications"
+        Return JSON: {{"search_query": "your query here"}}
+        """
         try:
             result = await call_llm_with_schema(
                 prompt=prompt,
@@ -103,6 +105,7 @@ Return JSON: {{"search_query": "your query here"}}
         category_prompt_text: Optional[str] = None,
         taxonomy: Optional[str] = None,
         direct_urls: Optional[List[str]] = None, 
+        selected_taxonomy: Optional[str] = None, 
     ) -> tuple[List[str], List[str]]:
         from app.aggregation.aggregate_product import call_llm_with_schema
         if direct_urls:
@@ -136,7 +139,7 @@ Return JSON: {{"search_query": "your query here"}}
             use_case=use_case,
             brand_prompt_text=brand_prompt_text,
             category_prompt_text=category_prompt_text,
-            taxonomy=query, 
+            taxonomy=taxonomy,  selected_taxonomy=selected_taxonomy,
         )
         web_task = self.searxng._search(base_query)
         targeted_task = self.searxng._search(targeted_query_str)

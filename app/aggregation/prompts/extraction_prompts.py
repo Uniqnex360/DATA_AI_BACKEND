@@ -235,8 +235,7 @@ BEFORE RETURNING, VERIFY:
 If you are unsure about any extracted value, DO NOT include it.
 Empty values are better than wrong values.
 
-═══════════════════════════════════════════════════════════════════
-OUTPUT
+
         ═══════════════════════════════════════════════════════════════════
         OUTPUT
         ═══════════════════════════════════════════════════════════════════
