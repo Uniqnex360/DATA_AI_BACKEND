@@ -202,29 +202,29 @@ class SmartSearchService(ISearchService):
         )
         image_text = "\n".join(f"- {url}" for url in image_urls[:10])
         prompt = f"""
-PRODUCT:
-- Brand: {brand}
-- MPN: {mpn}
-WEB SEARCH RESULTS:
-{web_text}
-POSSIBLE PRODUCT IMAGES (from image search):
-{image_text or "None found"}
-TASK:
-Select up to {self.max_results} URLs most likely to contain technical specs, datasheets, or product data for THIS SPECIFIC PRODUCT.
-STRICT RULES:
-- ONLY select URLs from the list above — never invent URLs
-- ONLY select pages specifically about {brand} {mpn}
-- REJECT URLs from: social media, messaging apps, support sites, news sites, forums, Chinese platforms, tutorial sites, car dealerships, sports sites
-- REJECT generic homepages (e.g., dewalt.com/ with no product path)
-- ACCEPT specific product pages even if they are on manufacturer sites
-- A URL like dewalt.com/product/dcf403 IS acceptable
-- A URL like dewalt.com/ or dewalt.com/products IS NOT acceptable
-- PREFER: specific product pages with the MPN in the URL, manufacturer official product pages, industrial distributors, PDF datasheets
-- If fewer than {self.max_results} good URLs exist, return only the valid ones — do not pad with irrelevant URLs
-Return a JSON object with:
-- "selected_urls": list of chosen web URLs (empty list if none are relevant)
-- "candidate_image_urls": list of image URLs matching this product (max 3)
-"""
+        PRODUCT:
+        - Brand: {brand}
+        - MPN: {mpn}
+        WEB SEARCH RESULTS:
+        {web_text}
+        POSSIBLE PRODUCT IMAGES (from image search):
+        {image_text or "None found"}
+        TASK:
+        Select up to {self.max_results} URLs most likely to contain technical specs, datasheets, or product data for THIS SPECIFIC PRODUCT.
+        STRICT RULES:
+        - ONLY select URLs from the list above — never invent URLs
+        - ONLY select pages specifically about {brand} {mpn}
+        - REJECT URLs from: social media, messaging apps, support sites, news sites, forums, Chinese platforms, tutorial sites, car dealerships, sports sites
+        - REJECT generic homepages (e.g., dewalt.com/ with no product path)
+        - ACCEPT specific product pages even if they are on manufacturer sites
+        - A URL like dewalt.com/product/dcf403 IS acceptable
+        - A URL like dewalt.com/ or dewalt.com/products IS NOT acceptable
+        - PREFER: specific product pages with the MPN in the URL, manufacturer official product pages, industrial distributors, PDF datasheets
+        - If fewer than {self.max_results} good URLs exist, return only the valid ones — do not pad with irrelevant URLs
+        Return a JSON object with:
+        - "selected_urls": list of chosen web URLs (empty list if none are relevant)
+        - "candidate_image_urls": list of image URLs matching this product (max 3)
+        """
         final_urls = []
         candidate_imgs = image_urls[:3]
         try:

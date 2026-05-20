@@ -455,17 +455,32 @@ async def get_category_prompts(
         logger.error(f"Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/category-prompts", response_model=CategoryPromptResponse, status_code=201)
 async def create_category_prompt(
     payload: CategoryPromptCreate,
     db: AsyncSession = Depends(get_session)
 ):
     try:
+        if not payload.category_id and payload.selected_taxonomy:
+            parts = [p.strip().lower() for p in payload.selected_taxonomy.split(">")]
+            stmt = select(Category.id).where(
+                func.lower(Category.name).in_(parts)
+            ).order_by(Category.level.desc())
+            result = await db.execute(stmt)
+            cat_id = result.scalar_one_or_none()
+            
+            if cat_id:
+                payload.category_id = cat_id
+            else:
+                raise HTTPException(400, f"Category not found: {payload.selected_taxonomy}")
+        
+        if not payload.category_id:
+            raise HTTPException(400, "category_id or selected_taxonomy required")
+        
         prompt = CategoryPrompt(
             **payload.dict(),
-            created_at=now_ist(),
-            updated_at=now_ist()
+            created_at=now_ist()(), 
+            updated_at=now_ist()()   
         )
         db.add(prompt)
         await db.commit()
@@ -478,6 +493,8 @@ async def create_category_prompt(
             category_name=cat.name if cat else None
         )
 
+    except HTTPException:
+        raise
     except SQLAlchemyError as e:
         await db.rollback()
         logger.error(f"SQLAlchemy error: {e}", exc_info=True)
