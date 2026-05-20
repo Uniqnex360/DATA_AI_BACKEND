@@ -821,6 +821,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                     logger.info(
                                         f"Correction found for {target_pk}: '{user_val}' -> '{ai_text_val}'")
                                 ai_data_for_merge[target_pk] = ai_val
+                            await merge_dynamic_attributes(db_session, product, ai_attributes, is_validation_mode=('validation' in use_case))
                             product.attributes = merge_attributes_preserving_order(
                                 primary_attributes=primary_attrs,
                                 existing_attrs=existing_attrs,
