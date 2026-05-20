@@ -469,6 +469,27 @@ async def create_category(
     db: AsyncSession = Depends(get_session)
 ):
     try:
+        name = payload.get("name", "").strip()
+        industry_id = payload.get("industry_id")
+        
+        if not name:
+            raise HTTPException(status_code=400, detail="Category name is required")
+        
+        existing_stmt = select(Category).where(
+            func.lower(Category.name) == func.lower(name)
+        )
+        
+        if industry_id:
+            existing_stmt = existing_stmt.where(Category.industry_id == UUID(industry_id))
+        
+        existing_result = await db.execute(existing_stmt)
+        existing_category = existing_result.scalar_one_or_none()
+        
+        if existing_category:
+            raise HTTPException(
+                status_code=409, 
+                detail=f"Category '{name}' already exists"
+            )
         cat = Category(
             name=payload["name"],
             industry_id=UUID(payload["industry_id"]) if payload.get("industry_id") else None,
