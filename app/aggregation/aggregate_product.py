@@ -1200,7 +1200,7 @@ async def aggregate_product(
                             taxonomy=taxonomy or "",
                             primary_attributes=attrs_to_use,
                             html_content=html_text,
-                            candidate_images=candidate_images
+                            candidate_images=candidate_images,source_url=url 
                         )
                         extraction_result = await call_llm_with_schema(
                             prompt=prompt_config['prompt'],
@@ -1214,7 +1214,7 @@ async def aggregate_product(
                             logger.info(f"Image URL: {extraction_result.image_url if hasattr(extraction_result, 'image_url') else 'None'}")
                             logger.info(f"Number of attributes extracted: {len(extraction_result.attributes)}")
                             for attr in extraction_result.attributes:
-                                logger.info(f"  - {attr.name}: {attr.value} {getattr(attr, 'unit', '')} (confidence: {getattr(attr, 'confidence', 0.9)})")
+                                logger.info(f"  - {attr.name}: {attr.value} {getattr(attr, 'unit', '')}")
                         else:
                             logger.info(f"Product detected: NO")
                             logger.info(f"Extraction result: {extraction_result}")
@@ -1936,6 +1936,7 @@ def _build_combined_prompt(
         line = f"ID: {a['temp_id']}\n  Name: {a['name']}\n  Value: {a['value']}"
         if a.get('unit'):
             line += f"\n  Unit: {a['unit']}"
+        line += f"\n  Confidence: {a.get('confidence', 0.9)}"  
         if a.get('source_url'):
             line += f"\n  Source: {a['source_url']}"
         attr_lines.append(line)
@@ -1979,6 +1980,14 @@ PRODUCT CONTEXT:
   Title: {title}
   Taxonomy: {taxonomy or 'General'}
   ═══════════════════════════════════════════════════════
+CONFLICT RESOLUTION RULES
+═══════════════════════════════════════════════════════
+When same attribute appears multiple times with different values:
+1. Pick value with highest confidence (1.0 > 0.95 > 0.9)
+2. If tied, pick most common value (consensus)
+3. List all sources in output
+
+═══════════════════════════════════════════════════════
 CRITICAL RULE — DO NOT HALLUCINATE
 ═══════════════════════════════════════════════════════
 - ONLY return attributes that have actual values found in the input data.
@@ -1987,6 +1996,7 @@ CRITICAL RULE — DO NOT HALLUCINATE
 - The examples below show HOW to format values WHEN the attribute is present — 
   they are NOT a checklist of attributes you must return.
 ═══════════════════════════════════════════════════════
+
 ═══════════════════════════════════════════════════════
 RULES  (read every rule; examples show the exact output required)
 ═══════════════════════════════════════════════════════

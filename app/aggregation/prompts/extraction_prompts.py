@@ -3,8 +3,37 @@ from typing import Optional,List
 logger=logging.getLogger('extraction_prompts')
 def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: str, 
                            primary_attributes: list, html_content: str, 
-                           candidate_images: Optional[List[str]] = None) -> dict:
+                           candidate_images: Optional[List[str]] = None, source_url: str = "") -> dict:
     try:
+        domain = ""
+        if source_url:
+            from urllib.parse import urlparse
+            domain = urlparse(source_url).netloc.lower()
+        
+        # Check if official brand site
+        is_brand_site = False
+        if brand and domain:
+            brand_clean = brand.lower().replace(" ", "").replace("-", "")
+            domain_clean = domain.replace("www.", "").replace(".com", "").replace("-", "")
+            is_brand_site = brand_clean in domain_clean
+        
+        # Set confidence guidance
+        if is_brand_site:
+            confidence_instruction = """
+CONFIDENCE SCORING (OFFICIAL BRAND WEBSITE):
+- You are extracting from the manufacturer's official website
+- Set confidence = 1.0 for all attributes (maximum trust)
+- This is the primary source of truth
+"""
+        else:
+            confidence_instruction = """
+CONFIDENCE SCORING (THIRD-PARTY RETAILER):
+- You are extracting from a reseller/retailer website
+- Set confidence = 0.85-0.95 based on clarity
+- Use 0.95 if specification is clearly stated in table
+- Use 0.90 if found in product description
+- Use 0.85 if partially visible or inferred from context
+"""
         primary_list = primary_attributes if primary_attributes else []
         candidate_section = ""
         if candidate_images:
@@ -159,12 +188,15 @@ EXTRACTION SCOPE - READ CAREFULLY
         **IMPORTANT: Extract 20-30+ attributes if page has them. Do not limit yourself.**
 
         ✗ DO NOT EXTRACT:
-          - Marketing claims ("best in class", "premium quality")
-          - Website metadata (dates, IDs, page numbers)
-          - Product category (already in context)
-          - Pricing, availability, shipping info
-          - Internal SKUs/codes (unless in PRIMARY ATTRIBUTES)
-          - Customer reviews or ratings
+        - Marketing claims ("best in class", "premium quality")
+        - Website metadata (dates, IDs, page numbers)
+        - Product category (already in context)
+        - Pricing, availability, shipping info
+        - Internal SKUs/codes (unless in PRIMARY ATTRIBUTES)
+        - Customer reviews or ratings
+        - UPC/EAN/Barcode numbers  # ← ADD
+        - Division/Department codes  # ← ADD
+        - Shipping dimensions unless labeled as "Product Dimensions"  # ← ADD
         VALUE RULES:
           - Only extract values you SEE in the content
           - Do NOT calculate, estimate, or infer
@@ -175,8 +207,10 @@ EXTRACTION SCOPE - READ CAREFULLY
           - Use the exact names from HTML for these
           - Prioritize technical/measurable attributes
         PRODUCT VERIFICATION:
-          - Verify content is about "{mpn}"
-          - If dominated by OTHER product codes → set "product_detected": false
+        - Verify content is about "{mpn}"
+        - If dominated by OTHER product codes → set "product_detected": false
+        - DO NOT extract: Brand, MPN, Category, UPC, Division, Shipping info
+        - ONLY extract technical product specifications
         ═══════════════════════════════════════════════════════════════════
         CONTENT TO ANALYZE (BEGINNING - product overview and features):
         ═══════════════════════════════════════════════════════════════════
@@ -235,7 +269,9 @@ BEFORE RETURNING, VERIFY:
 If you are unsure about any extracted value, DO NOT include it.
 Empty values are better than wrong values.
 
-
+       ═══════════════════════════════════════════════════════════════════
+        {confidence_instruction}
+        ═══════════════════════════════════════════════════════════════════
         ═══════════════════════════════════════════════════════════════════
         OUTPUT
         ═══════════════════════════════════════════════════════════════════
@@ -253,6 +289,7 @@ Empty values are better than wrong values.
     except Exception as e:
         logger.error(f"Build_extraction_prompt failed: {e}")
         return None
+      
 def build_pdf_extraction_prompt(product_name:str,mpn:str,brand:str,taxonomy: str,pdf_text:str,primary_attributes:list)->dict:
     try:
         primary_list = primary_attributes if primary_attributes else []  
