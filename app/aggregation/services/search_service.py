@@ -1,6 +1,8 @@
 import logging
 import httpx
 from typing import List
+
+from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 from app.core.config import settings
 from app.aggregation.interfaces import ISearchService
 from typing import Optional
@@ -29,46 +31,89 @@ BLOCKED_PATH_PATTERNS = [
     "/search", "/cart", "/checkout", "/account", "/login", "/register"
 ]
 
-
 class SerpApiSearchService(ISearchService):
+
     def __init__(self, max_results: int = 5):
         self.max_results = max_results
 
-    async def get_urls(self, query: str, mpn: str, brand: str, title: str) -> List[str]:
+    async def get_urls(
+        self,
+        query: str,
+        mpn: str,
+        brand: str,
+        title: Optional[str] = None
+    ) -> List[str]:
+
         if not settings.serpapi_key:
             logger.error("SerpAPI key missing")
             return []
+
+        search_query = (
+            f"{brand} {mpn} {title}".strip()[:120]
+            if title and len(title.strip()) > 5
+            else query
+        )
+
         try:
-            if title and len(title.strip()) > 5:
-                search_query = f"{brand} {mpn} {title}".strip()[:120]
-            else:
-                search_query = query
-            async with httpx.AsyncClient(verify=False) as client:
-                response = await client.get(
-                    "https://serpapi.com/search",
-                    params={
-                        "engine": "google",
-                        "q": search_query,
-                        "api_key": settings.serpapi_key,
-                        "num": 15,
-                    },
-                    timeout=20,
-                )
+            async with httpx.AsyncClient(
+                timeout=httpx.Timeout(20.0)
+            ) as client:
+
+                async for attempt in AsyncRetrying(
+                    stop=stop_after_attempt(3),
+                    wait=wait_exponential(multiplier=1, min=1, max=8),
+                ):
+                    with attempt:
+                        response = await client.get(
+                            "https://serpapi.com/search",
+                            params={
+                                "engine": "google",
+                                "q": search_query,
+                                "api_key": settings.serpapi_key,
+                                "num": 15,
+                            },
+                        )
+
+                if response.status_code != 200:
+                    logger.error(
+                        f"SerpApi HTTP {response.status_code}: "
+                        f"{response.text[:300]}"
+                    )
+                    return []
+
                 data = response.json()
-                raw_urls = [r["link"] for r in data.get(
-                    "organic_results", []) if r.get("link")]
+
+                if "error" in data:
+                    logger.error(f"SerpApi error: {data['error']}")
+                    return []
+
+                raw_urls = [
+                    r["link"]
+                    for r in data.get("organic_results", [])
+                    if r.get("link")
+                ]
+
+                raw_urls = list(set(self._normalize_url(u) for u in raw_urls))
+
                 filtered = [
-                    url for url in raw_urls if self._is_valid_product_url(url)]
+                    url for url in raw_urls
+                    if self._is_valid_product_url(url)
+                ]
+
                 ranked = self._rank_urls(filtered, mpn=mpn, brand=brand)
-                if mpn:
-                    mpn_l = mpn.lower()
-                    exact_matches = [
-                        u for u in ranked if f"/{mpn_l}" in u.lower() or f"-{mpn_l}" in u.lower()]
-                    final = exact_matches if exact_matches else ranked
-                    return final[:self.max_results]
+
+                logger.info(
+                    f"[SerpApi] Query='{search_query}' "
+                    f"Raw={len(raw_urls)} "
+                    f"Filtered={len(filtered)} "
+                    f"Ranked={len(ranked)}"
+                )
+
                 return ranked[:self.max_results]
-        except Exception as e:
-            logger.error('umbi')
+
+        except Exception:
+            logger.exception(f"SerpApi search failed: {search_query}")
+            return []
 
     def _is_valid_product_url(self, url: str) -> bool:
         lower = url.lower()
@@ -184,3 +229,39 @@ class SerpApiSearchService(ISearchService):
         filtered = [(url, s) for url, s in scored if s > -200]
         filtered.sort(key=lambda x: x[1], reverse=True)
         return [url for url, s in filtered]
+    async def search(self, query: str, num: int = 5) -> List[dict]:
+        """
+        Lightweight raw search for discovery purposes.
+        Returns raw organic results.
+        """
+        if not settings.serpapi_key:
+            logger.error("SerpAPI key missing")
+            return []
+
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(20.0)) as client:
+                response = await client.get(
+                    "https://serpapi.com/search",
+                    params={
+                        "engine": "google",
+                        "q": query,
+                        "api_key": settings.serpapi_key,
+                        "num": num,
+                    },
+                )
+
+            if response.status_code != 200:
+                logger.error(f"SerpApi error {response.status_code}")
+                return []
+
+            data = response.json()
+
+            if "error" in data:
+                logger.error(f"SerpApi error: {data['error']}")
+                return []
+
+            return data.get("organic_results", [])
+
+        except Exception:
+            logger.exception(f"SerpApi raw search failed for query: {query}")
+            return []

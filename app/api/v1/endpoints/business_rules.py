@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from app.core.database import get_session
 from app.models.business_rule import BrandPrompt, BusinessRule, CategoryPrompt, RuleCategory, RulePrompt, RuleStatus
 from app.models.category import Category
-from app.schemas.business_rule import (BrandPromptCreate, BrandPromptResponse, BusinessRuleCreate, BusinessRuleUpdate, BusinessRuleResponse,BusinessRuleListResponse, CategoryPromptCreate, CategoryPromptResponse, RulePromptResponse, RulePromptCreate, RulePromptUpdate,)
+from app.schemas.business_rule import (BrandPromptCreate,BrandPromptUpdate, BrandPromptResponse, BusinessRuleCreate, BusinessRuleUpdate, BusinessRuleResponse,BusinessRuleListResponse, CategoryPromptCreate, CategoryPromptResponse, RulePromptResponse, RulePromptCreate, RulePromptUpdate,CategoryPromptUpdate)
 import logging
 from sqlalchemy.orm import selectinload
 from app.utils.timezone import now_ist
@@ -514,7 +514,7 @@ async def create_category_prompt(
 @router.put("/category-prompts/{prompt_id}", response_model=CategoryPromptResponse)
 async def update_category_prompt(
     prompt_id: str,
-    payload: CategoryPromptCreate,
+    payload: CategoryPromptUpdate,
     db: AsyncSession = Depends(get_session)
 ):
     try:
@@ -636,7 +636,7 @@ async def create_brand_prompt(
 @router.put("/brand-prompts/{prompt_id}", response_model=BrandPromptResponse)
 async def update_brand_prompt(
     prompt_id: str,
-    payload: BrandPromptCreate,
+    payload: BrandPromptUpdate,
     db: AsyncSession = Depends(get_session)
 ):
     try:

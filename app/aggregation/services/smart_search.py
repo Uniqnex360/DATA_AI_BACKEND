@@ -1,6 +1,6 @@
 import logging
-from typing import List, Optional
-from pydantic import BaseModel
+from typing import Any, List, Optional,Dict
+from pydantic import BaseModel, Field
 from app.aggregation.interfaces import ISearchService
 from app.rules.rule_engine import RuleEngine
 from app.search.searxng_service import SearXNGSearchService
@@ -17,7 +17,8 @@ class PageMatchScore(BaseModel):
         upc_found: bool
         score: int
         reasoning: str
-        
+class SimpleText(BaseModel):
+    text: str
 class ManufacturerScoringResponse(BaseModel):
     scored_urls: List[ScoredUrl]
     best_url: Optional[str] = None
@@ -33,7 +34,71 @@ class ProductPageResponse(BaseModel):
         product_url: Optional[str] = None
         confidence: float = 0.0
         reasoning: str =""
-        
+class LinkJudgeResponse(BaseModel):
+    """
+    Schema for the LLM to identify the best Product Detail Page (PDP) 
+    from a list of search results.
+    """
+    best_id: str = Field(
+        ..., 
+        description="The ID number of the best matching result (e.g., '0', '1'). Return 'None' if no product page is found."
+    )
+    reasoning: str = Field(
+        ..., 
+        description="Brief explanation of why this link was chosen (e.g., 'Matches MPN in URL' or 'Title indicates a datasheet')."
+    )
+    confidence: float = Field(
+        ..., 
+        ge=0.0, le=1.0, 
+        description="Confidence score between 0.0 and 1.0."
+    )
+    is_pdp: bool = Field(
+        ..., 
+        description="True if the link is a specific Product Detail Page, False if it is a category or search result."
+    )
+class ManufacturerUrl(BaseModel):
+    """A single verified manufacturer URL with metadata."""
+    url: str = Field(default="", description="Full manufacturer URL")
+    is_official: bool = Field(
+        default=False,
+        description="Whether this is an official manufacturer site"
+    )
+    relevance_score: int = Field(
+        default=0,
+        ge=0,
+        le=100,
+        description="Relevance score 0-100"
+    )
+    reasoning: str = Field(
+        default="",
+        description="Why this URL was selected"
+    )
+
+    model_config = {
+        "extra": "forbid",           # ← required for OpenAI structured output
+        "json_schema_extra": {
+            "additionalProperties": False  # ← explicit for clarity
+        }
+    }
+
+
+class ManufacturerUrlResponse(BaseModel):
+    """Response containing ranked manufacturer URLs."""
+    verified_urls: List[ManufacturerUrl] = Field(
+        default_factory=list,
+        description="List of verified manufacturer URLs"
+    )
+
+    model_config = {
+        "extra": "forbid"            # ← required for OpenAI structured output
+    }
+class NavigationResponse(BaseModel):
+    """LLM response for navigation step"""
+    url: str
+    exact_match: bool = False
+    page_type: str  # "product" | "category" | "brand" | "not_found"
+    confidence: float = 0.5
+    reasoning: Optional[str] = None
 class TargetedQueryResponse(BaseModel):
     search_query: str
 class SmartSearchService(ISearchService):

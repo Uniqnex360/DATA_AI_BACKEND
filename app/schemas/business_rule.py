@@ -74,6 +74,21 @@ class RuleExecuteResponse(BaseModel):
     output: Dict[str, Any]
     execution_time_ms: int
     executed_at: datetime
+
+class CategoryPromptUpdate(BaseModel):
+    category_id: Optional[UUID] = None 
+    stage: Optional[str] = None
+    prompt_name: Optional[str] = None
+    prompt_text: Optional[str] = None
+    selected_taxonomy: Optional[str] = None 
+    description: Optional[str] = None
+    variables: Optional[List[str]] = None
+    status: Optional[RuleStatus] = None 
+
+    class Config:
+        json_encoders = {
+            UUID: str
+        }
 class CategoryPromptCreate(BaseModel):
     category_id: Optional[UUID] = None 
     stage:Optional[str] = None
@@ -104,6 +119,17 @@ class CategoryPromptResponse(BaseModel):
             UUID: str
         }
 class BrandPromptCreate(BaseModel):
+    brand_id:UUID
+    stage: Optional[str] = None
+    prompt_name: str
+    prompt_text: str
+    description: Optional[str] = None
+    variables: Optional[List[str]] = None
+    class Config:
+        json_encoders = {
+            UUID: str
+        }
+class BrandPromptUpdate(BaseModel):
     brand_id:UUID
     stage: Optional[str] = None
     prompt_name: str
