@@ -959,8 +959,30 @@ async def aggregate_product(
                 direct_urls.append(product_url)
 
         # Deduplicate final URLs
-        seen = set()
-        direct_urls = [u for u in direct_urls if not (u in seen or seen.add(u))]
+        # Flatten and deduplicate safely
+            flat_urls = []
+            for item in direct_urls:
+                if isinstance(item, str):
+                    flat_urls.append(item)
+                elif isinstance(item, dict) and 'url' in item:
+                    flat_urls.append(item['url'])
+                elif isinstance(item, list):
+                    for sub in item:
+                        if isinstance(sub, str):
+                            flat_urls.append(sub)
+                        elif isinstance(sub, dict) and 'url' in sub:
+                            flat_urls.append(sub['url'])
+
+            # Remove duplicates while preserving order
+            seen = set()
+            direct_urls = []
+            for url in flat_urls:
+                if url and url not in seen:
+                    seen.add(url)
+                    direct_urls.append(url)
+
+            if direct_urls:
+                logger.info(f"Final direct product URLs for {mpn}: {direct_urls}")
 
         if direct_urls:
             logger.info(f"Final direct product URLs for {mpn}: {direct_urls}")
