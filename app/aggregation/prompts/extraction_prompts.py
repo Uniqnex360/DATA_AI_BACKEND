@@ -1,23 +1,110 @@
 import logging
-from typing import Optional,List
-logger=logging.getLogger('extraction_prompts')
-def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: str, 
-                           primary_attributes: list, html_content: str, 
-                           candidate_images: Optional[List[str]] = None, source_url: str = "") -> dict:
+from typing import Optional, List
+logger = logging.getLogger('extraction_prompts')
+from bs4 import BeautifulSoup
+def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
+    soup = BeautifulSoup(html_content, "html.parser")
+
+    # Remove noise
+    for tag in soup(["script", "style", "noscript", "svg"]):
+        tag.decompose()
+
+    sections = []
+
+    # 1. Tables
+    for table in soup.find_all("table"):
+        rows = table.find_all("tr")
+        if len(rows) >= 3:
+            sections.append(str(table))
+
+    # 2. Definition lists
+    for dl in soup.find_all("dl"):
+        if len(dl.find_all("dt")) >= 2:
+            sections.append(str(dl))
+
+    # 3. Structured div grids (label-value patterns)
+    for div in soup.find_all("div"):
+        children = div.find_all(["div", "span", "p"], recursive=False)
+        if len(children) >= 4:
+            texts = [c.get_text(strip=True) for c in children if c.get_text(strip=True)]
+            if len(texts) >= 4 and len(" ".join(texts)) < 6000:
+                sections.append(str(div))
+
+    # 4. Section headers indicating spec areas
+    for section in soup.find_all("section"):
+        header = section.find(["h1", "h2", "h3", "h4"])
+        if header:
+            header_text = header.get_text().lower()
+            if any(k in header_text for k in [
+                "spec", "technical", "dimension",
+                "performance", "details", "data"
+            ]):
+                if len(section.get_text()) < 15000:
+                    sections.append(str(section))
+
+    # Deduplicate
+    unique_sections = list(dict.fromkeys(sections))
+
+    content = "\n\n".join(unique_sections[:max_sections])
+
+    # Hard safety cap
+    MAX_CHARS = 120000
+    return content[:MAX_CHARS]
+
+def extract_product_descriptions(html_content: str) -> str:
+    """Extract all product-related text from HTML with fallbacks."""
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html_content, "html.parser")
+    
+    desc_text = ""
+    
+    # 1. PRIORITY: Look for common description containers
+    description_selectors = [
+        {'class': lambda x: x and any(k in x.lower() for k in ['description', 'overview', 'details', 'about', 'product-info', 'specs', 'specification'])},
+        {'id': lambda x: x and any(k in x.lower() for k in ['description', 'overview', 'details', 'specs'])},
+    ]
+    
+    for selector in description_selectors:
+        for tag in soup.find_all(['div', 'section', 'article'], attrs=selector):
+            desc_text += tag.get_text(strip=True) + ""
+    
+    # 2. FALLBACK: If minimal text found, extract from main content areas
+    if len(desc_text.strip()) < 200:
+        # Remove script/style tags
+        for tag in soup(['script', 'style', 'nav', 'footer']):
+            tag.decompose()
+        
+        # Get main article/main content
+        main_content = soup.find('main') or soup.find('article') or soup.find('body')
+        if main_content:
+            # Extract paragraphs and list items
+            for tag in main_content.find_all(['p', 'li', 'dl']):
+                text = tag.get_text(strip=True)
+                # Filter out nav/menu text
+                if text and len(text) > 20 and not any(skip in text.lower() for skip in ['cookie', 'subscribe', 'newsletter', 'contact us']):
+                    desc_text += text + ""
+    
+    # 3. Add meta description if we still have little text
+    meta_tag = soup.find('meta', attrs={'name': 'description'})
+    if meta_tag:
+        meta_desc = meta_tag.get('content', '')
+        desc_text = f"{meta_desc}{desc_text}"
+    
+    return desc_text[:3000]  # Limit to reasonable length
+def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: str,
+                            primary_attributes: list, html_content: str,
+                            candidate_images: Optional[List[str]] = None, source_url: str = "") -> dict:
     try:
         domain = ""
         if source_url:
             from urllib.parse import urlparse
             domain = urlparse(source_url).netloc.lower()
-        
-        # Check if official brand site
         is_brand_site = False
         if brand and domain:
             brand_clean = brand.lower().replace(" ", "").replace("-", "")
-            domain_clean = domain.replace("www.", "").replace(".com", "").replace("-", "")
+            domain_clean = domain.replace("www.", "").replace(
+                ".com", "").replace("-", "")
             is_brand_site = brand_clean in domain_clean
-        
-        # Set confidence guidance
         if is_brand_site:
             confidence_instruction = """
 CONFIDENCE SCORING (OFFICIAL BRAND WEBSITE):
@@ -40,60 +127,53 @@ CONFIDENCE SCORING (THIRD-PARTY RETAILER):
             candidate_section = "\nCANDIDATE IMAGES FROM IMAGE SEARCH:\n"
             for img_url in candidate_images[:5]:
                 candidate_section += f"  - {img_url}\n"
-        
-        # NEW: Make distinction clear
-        primary_attrs_display = "\n".join([f"  {i+1}. {attr}" for i, attr in enumerate(primary_list)])
-        html_begin = html_content[:60000]  # First 60k chars (product info)
-        html_end = html_content[-50000:] if len(html_content) > 110000 else ""  
+        primary_attrs_display = "\n".join(
+            [f"  {i+1}. {attr}" for i, attr in enumerate(primary_list)])
+        spec_content = extract_high_signal_specs(html_content)
+        desc_text = extract_product_descriptions(html_content) 
+
+
         prompt = f"""
         You are extracting technical specifications from product content.
-
         PRODUCT CONTEXT:
         - Name: {product_name}
         - MPN: {mpn}
         - Brand: {brand}
         - Category: {taxonomy}
-
+           DESCRIPTION CONTENT:
+        {desc_text}
+        
         ═══════════════════════════════════════════════════════════════════
 CRITICAL RULE: NO HALLUCINATION - STRICT EXTRACTION ONLY
 ═══════════════════════════════════════════════════════════════════
-
 - ONLY extract values that are EXPLICITLY VISIBLE in the provided HTML content
 - Do NOT infer, guess, assume, or add any information from your training data
 - If a specification is not present in the content, DO NOT create it
 - Do NOT add "typical" values, default values, or common specifications
 - Do NOT complete partial information
 - Extract ONLY what you SEE, exactly as you SEE it
-
 EXAMPLES OF HALLUCINATION (DO NOT DO):
  HTML shows "Maximum Working Pressure: 10000" → Extracting "Hose Length: 30 inches"
  HTML shows "Includes: Coupler" → Extracting "Hose Length: 24 inches"
  HTML shows no weight → Extracting "Weight: 5 lbs" (from training data)
-
 CORRECT BEHAVIOR:
  HTML shows "Maximum Working Pressure: 10000" → Extract ONLY that
  HTML shows no weight → Do NOT extract any weight attribute
  If a specification table row is empty or blank → Do NOT extract it
-
 REMEMBER: If you cannot see it in the HTML, it does not exist for this product.
 Better to miss a specification than to invent a wrong one.
-
 ═══════════════════════════════════════════════════════════════════
 EXTRACTION SCOPE - READ CAREFULLY
 ═══════════════════════════════════════════════════════════════════
         YOU MUST EXTRACT **ALL TECHNICAL SPECIFICATIONS** FROM THE CONTENT.
-
         PRIORITY ATTRIBUTES (must extract if present):
         {primary_attrs_display}
-
         ADDITIONAL ATTRIBUTES (extract ALL you find):
         - Extract EVERY other technical specification on the page
         - Maximum Working Pressure, Output Per Stroke, Pump Material, etc.
         - Material types, dimensions, performance specs, compatibility info
         - NO LIMIT on how many attributes to extract
-
         **DO NOT stop after finding priority attributes. Keep extracting ALL specs.**
-
         ═══════════════════════════════════════════════════════════════════
         CRITICAL INSTRUCTION: SEMANTIC ATTRIBUTE MAPPING
         ═══════════════════════════════════════════════════════════════════
@@ -184,9 +264,7 @@ EXTRACTION SCOPE - READ CAREFULLY
           - Performance ratings
           - Compatibility information
           - Certifications and standards
-          
         **IMPORTANT: Extract 20-30+ attributes if page has them. Do not limit yourself.**
-
         ✗ DO NOT EXTRACT:
         - Marketing claims ("best in class", "premium quality")
         - Website metadata (dates, IDs, page numbers)
@@ -194,9 +272,9 @@ EXTRACTION SCOPE - READ CAREFULLY
         - Pricing, availability, shipping info
         - Internal SKUs/codes (unless in PRIMARY ATTRIBUTES)
         - Customer reviews or ratings
-        - UPC/EAN/Barcode numbers  # ← ADD
-        - Division/Department codes  # ← ADD
-        - Shipping dimensions unless labeled as "Product Dimensions"  # ← ADD
+        - UPC/EAN/Barcode numbers  
+        - Division/Department codes  
+        - Shipping dimensions unless labeled as "Product Dimensions"  
         VALUE RULES:
           - Only extract values you SEE in the content
           - Do NOT calculate, estimate, or infer
@@ -212,15 +290,32 @@ EXTRACTION SCOPE - READ CAREFULLY
         - DO NOT extract: Brand, MPN, Category, UPC, Division, Shipping info
         - ONLY extract technical product specifications
         ═══════════════════════════════════════════════════════════════════
-        CONTENT TO ANALYZE (BEGINNING - product overview and features):
-        ═══════════════════════════════════════════════════════════════════
-        {html_begin}
-
-        ═══════════════════════════════════════════════════════════════════
-        CONTENT TO ANALYZE (END - often contains specification tables):
-        ═══════════════════════════════════════════════════════════════════
-        {html_end if html_end else ""}
+       CONTENT FOR EXTRACTION:
+        {spec_content}
         {candidate_section}
+        ═══════════════════════════════════════════════════════════════════
+        DESCRIPTION EXTRACTION
+        ═══════════════════════════════════════════════════════════════════
+        Extract product descriptions from the page:
+
+        SHORT DESCRIPTION (short_description):
+        - Look for: <meta name="description"> tag content
+        - Product overview/summary paragraphs (usually at top of page)
+        - "About this item" section (first 1-2 sentences)
+        - Keep it concise: 1-2 sentences max
+
+        LONG DESCRIPTION (long_description):
+        - Look for: "Product details", "Description", "Overview" sections
+        - Feature lists, bullet points
+        - Detailed product information paragraphs
+        - Can be longer (3-5 sentences or bullet points)
+
+        RULES:
+        - ONLY extract descriptions that exist on the page
+        - Do NOT generate or create descriptions from attributes
+        - If no description found, set both to null
+        - Preserve the original wording as much as possible
+        - Remove any HTML tags from extracted text
         ═══════════════════════════════════════════════════════════════════
         IMAGE EXTRACTION - CRITICAL RULES
         ═══════════════════════════════════════════════════════════════════
@@ -265,10 +360,8 @@ BEFORE RETURNING, VERIFY:
 - Did I assume or guess any specification? → If yes, REMOVE it
 - Did I add units that weren't specified? → If yes, correct or remove
 - Did I complete a partial value? → If yes, use only what was actually written
-
 If you are unsure about any extracted value, DO NOT include it.
 Empty values are better than wrong values.
-
        ═══════════════════════════════════════════════════════════════════
         {confidence_instruction}
         ═══════════════════════════════════════════════════════════════════
@@ -280,6 +373,8 @@ Empty values are better than wrong values.
         - product_detected: true/false
         - product_type: category if detected
         - image_url: product image URL or null
+        "short_description": "Short product description (1-2 sentences) or null",
+          "long_description": "Detailed product description (3-5 sentences or bullet points) or null"
         """
         return {
             'prompt': prompt,
@@ -289,11 +384,12 @@ Empty values are better than wrong values.
     except Exception as e:
         logger.error(f"Build_extraction_prompt failed: {e}")
         return None
-      
-def build_pdf_extraction_prompt(product_name:str,mpn:str,brand:str,taxonomy: str,pdf_text:str,primary_attributes:list)->dict:
+
+
+def build_pdf_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: str, pdf_text: str, primary_attributes: list) -> dict:
     try:
-        primary_list = primary_attributes if primary_attributes else []  
-        prompt=f"""
+        primary_list = primary_attributes if primary_attributes else []
+        prompt = f"""
         You are extracting specifications from an official product datasheet.
         PRODUCT:
         -MPN :{mpn}
@@ -321,11 +417,11 @@ def build_pdf_extraction_prompt(product_name:str,mpn:str,brand:str,taxonomy: str
 - Otherwise, set `image_url` to `null`.
         Confidence  should be 0.95+ for PDF sources
         """
-        return{
-            'prompt':prompt,
-            'response_schema':'ExtractionResponse',
-            'max_tokens':8000,
-            'source_type':'pdf'
+        return {
+            'prompt': prompt,
+            'response_schema': 'ExtractionResponse',
+            'max_tokens': 16000,
+            'source_type': 'pdf'
         }
     except Exception as e:
         logger.error(f"pdf extraction prompt  failed str{e}")

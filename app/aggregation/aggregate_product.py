@@ -958,31 +958,9 @@ async def aggregate_product(
                 logger.info(f"✓ Found product page on {domain}: {product_url}")
                 direct_urls.append(product_url)
 
-        # Deduplicate final URLs
-        # Flatten and deduplicate safely
-            flat_urls = []
-            for item in direct_urls:
-                if isinstance(item, str):
-                    flat_urls.append(item)
-                elif isinstance(item, dict) and 'url' in item:
-                    flat_urls.append(item['url'])
-                elif isinstance(item, list):
-                    for sub in item:
-                        if isinstance(sub, str):
-                            flat_urls.append(sub)
-                        elif isinstance(sub, dict) and 'url' in sub:
-                            flat_urls.append(sub['url'])
-
-            # Remove duplicates while preserving order
-            seen = set()
-            direct_urls = []
-            for url in flat_urls:
-                if url and url not in seen:
-                    seen.add(url)
-                    direct_urls.append(url)
-
-            if direct_urls:
-                logger.info(f"Final direct product URLs for {mpn}: {direct_urls}")
+        seen = set()
+        direct_urls = [u for u in direct_urls if not (u in seen or seen.add(u))]
+        
 
         if direct_urls:
             logger.info(f"Final direct product URLs for {mpn}: {direct_urls}")
@@ -1006,6 +984,8 @@ async def aggregate_product(
         _url_semaphore = asyncio.Semaphore(2)
 
         async def process_url(url):
+            short_description = None
+            long_description = None 
             async with _url_semaphore:
                 try:
                     content = await download_service.download(url)
@@ -1056,6 +1036,10 @@ async def aggregate_product(
                         if extraction_result and extraction_result.product_detected:
                             if hasattr(extraction_result, 'image_url'):
                                 image_url = extraction_result.image_url
+                            if hasattr(extraction_result,'short_description'):
+                                    short_description=extraction_result.short_description
+                            if hasattr(extraction_result,'long_description'):
+                                long_description=extraction_result.long_description
                             for attr in extraction_result.attributes:
                                 attr_dicts.append({
                                     'name': attr.name,
@@ -1063,6 +1047,7 @@ async def aggregate_product(
                                     'unit': attr.unit if hasattr(attr, 'unit') else None,
                                     'confidence': attr.confidence if hasattr(attr, 'confidence') else 0.9
                                 })
+                            
                         if not image_url:
                             image_url = await extract_best_image(html_text, url, mpn)
                             if image_url:
@@ -1074,7 +1059,9 @@ async def aggregate_product(
                             'domain': domain,
                             'attributes': attr_dicts,
                             'image_url': image_url,
-                            'source_type': 'html'
+                            'source_type': 'html',
+                            'short_description': short_description,  
+                            'long_description': long_description  
                         }
                     elif content['type'] == 'pdf':
                         from app.aggregation.services.pdf_service import PDFExtractionService
@@ -1107,6 +1094,7 @@ async def aggregate_product(
                                 image_url = None
                                 if hasattr(extraction_result, 'image_url'):
                                     image_url = extraction_result.image_url
+                                
                                 for attr in extraction_result.attributes:
                                     attr_dicts.append({
                                         'name': attr.name,
@@ -1241,12 +1229,23 @@ async def aggregate_product(
             }
             for a in golden_attributes
         ]
+        best_short_description=None
+        best_long_description=None
+        for source in all_extractions:
+            if source.get('short_description') and not best_short_description:
+                best_short_description=source['short_description']
+            if source.get('long_description') and not best_long_description:
+                best_long_description=source['long_description']
+            if best_short_description and best_long_description:
+                break
         logger.info("Stage 6: Marketing Enrichment")
         enrichment_config = build_enrichment_prompt(
             golden_attributes=golden_attr_dicts,
             product_name=title,
             brand=brand or "",
-            taxonomy=taxonomy or ""
+            taxonomy=taxonomy or "",
+            existing_short_description=best_short_description,
+            existing_long_description=best_long_description
         )
         enrichment_result = await call_llm_with_schema(
             prompt=enrichment_config['prompt'],

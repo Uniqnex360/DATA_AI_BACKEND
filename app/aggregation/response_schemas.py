@@ -1,8 +1,5 @@
 from typing import Dict, List, Optional, Literal
 from pydantic import BaseModel, Field
-"""
-Structured output schemas for reliable LLM responses
-"""
 from typing import Dict, List, Optional, Literal
 
 
@@ -19,6 +16,8 @@ class ExtractionResponse(BaseModel):
     product_detected: bool = Field(description="Is this actually the right product?")
     product_type: Optional[str] = Field(default=None, description="Detected product category")
     image_url: Optional[str] = None 
+    description: Optional[str] = None 
+    long_description: Optional[str] = None
 
 
 class CleanedAttribute(BaseModel):
@@ -31,7 +30,6 @@ class CleanedAttribute(BaseModel):
 
 
 class CleaningResponse(BaseModel):
-    """Stage 3: Cleaning output"""
     cleaned_attributes: List[CleanedAttribute]
     removed_count: int = Field(description="How many invalid values removed")
     issues_found: List[str] = Field(default_factory=list)
