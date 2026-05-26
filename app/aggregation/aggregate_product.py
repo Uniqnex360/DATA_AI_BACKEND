@@ -982,7 +982,7 @@ async def aggregate_product(
             timeout=30,proxy=settings.PROXY_URL
         )
         all_extractions = []
-        _url_semaphore = asyncio.Semaphore(2)
+        _url_semaphore = asyncio.Semaphore(1)
 
         async def process_url(url):
             short_description = None
