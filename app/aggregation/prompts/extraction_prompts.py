@@ -50,47 +50,56 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
     # Hard safety cap
     MAX_CHARS = 120000
     return content[:MAX_CHARS]
-
 def extract_product_descriptions(html_content: str) -> str:
     """Extract all product-related text from HTML with fallbacks."""
     from bs4 import BeautifulSoup
+    
     soup = BeautifulSoup(html_content, "html.parser")
+    text_parts = []
     
-    desc_text = ""
+    # Remove noise early
+    for tag in soup.find_all(['script', 'style', 'nav', 'footer']):
+        tag.decompose()
     
-    # 1. PRIORITY: Look for common description containers
+    # 1. Meta description
+    meta_tag = soup.find('meta', attrs={'name': 'description'})
+    if meta_tag:
+        meta_desc = meta_tag.get('content', '').strip()
+        if meta_desc:
+            text_parts.append(meta_desc)
+    
+    # 2. Semantic containers
     description_selectors = [
         {'class': lambda x: x and any(k in x.lower() for k in ['description', 'overview', 'details', 'about', 'product-info', 'specs', 'specification'])},
         {'id': lambda x: x and any(k in x.lower() for k in ['description', 'overview', 'details', 'specs'])},
     ]
     
+    seen_texts = set()
     for selector in description_selectors:
         for tag in soup.find_all(['div', 'section', 'article'], attrs=selector):
-            desc_text += tag.get_text(strip=True) + ""
+            text = tag.get_text(strip=True)
+            if text and len(text) > 50:
+                text_hash = text[:150]
+                if text_hash not in seen_texts:
+                    text_parts.append(text)
+                    seen_texts.add(text_hash)
     
-    # 2. FALLBACK: If minimal text found, extract from main content areas
-    if len(desc_text.strip()) < 200:
-        # Remove script/style tags
-        for tag in soup(['script', 'style', 'nav', 'footer']):
-            tag.decompose()
-        
-        # Get main article/main content
+    # 3. Fallback content
+    if len(' '.join(text_parts)) < 300:
         main_content = soup.find('main') or soup.find('article') or soup.find('body')
         if main_content:
-            # Extract paragraphs and list items
-            for tag in main_content.find_all(['p', 'li', 'dl']):
+            for tag in main_content.find_all(['p', 'li', 'dd']):
                 text = tag.get_text(strip=True)
-                # Filter out nav/menu text
-                if text and len(text) > 20 and not any(skip in text.lower() for skip in ['cookie', 'subscribe', 'newsletter', 'contact us']):
-                    desc_text += text + ""
+                if (text and len(text) > 20 
+                    and not any(skip in text.lower() for skip in ['cookie', 'subscribe', 'newsletter', 'contact us', 'privacy', 'terms'])
+                    and text[:150] not in seen_texts):
+                    text_parts.append(text)
+                    seen_texts.add(text[:150])
     
-    # 3. Add meta description if we still have little text
-    meta_tag = soup.find('meta', attrs={'name': 'description'})
-    if meta_tag:
-        meta_desc = meta_tag.get('content', '')
-        desc_text = f"{meta_desc}{desc_text}"
-    
-    return desc_text[:3000]  # Limit to reasonable length
+    # Join all text with newlines
+    desc_text = ''.join(text_parts)
+    return desc_text[:3000]
+  
 def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: str,
                             primary_attributes: list, html_content: str,
                             candidate_images: Optional[List[str]] = None, source_url: str = "") -> dict:

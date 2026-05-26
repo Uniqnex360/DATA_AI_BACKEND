@@ -1,6 +1,7 @@
 import re
 from typing import Dict, List, Optional
 from sqlalchemy import func
+from app.core.config import settings
 from app.llm import call_llm_with_schema
 from typing import Dict, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -299,7 +300,7 @@ async def discover_manufacturer_urls(
 
     try:
         from app.aggregation.services.download_service import HttpDownloadService
-        download_service = HttpDownloadService(timeout=20)
+        download_service = HttpDownloadService(timeout=20,proxy=settings.PROXY_URL)
 
         # Step 1: Search for manufacturer website with taxonomy context
         taxonomy_parts = taxonomy.split(" > ")
@@ -522,7 +523,7 @@ async def find_product_page_with_llm(
         logger.info(f"Searching {domain} for {mpn}")
 
         from app.aggregation.services.download_service import HttpDownloadService
-        download_service = HttpDownloadService(timeout=20)
+        download_service = HttpDownloadService(timeout=20,proxy=settings.PROXY_URL)
 
         for query in search_queries:
             try:
@@ -978,7 +979,7 @@ async def aggregate_product(
             }
         logger.info(f"Stage 2: Download & Extraction from {len(urls)} sources")
         download_service = HttpDownloadService(
-            timeout=30,
+            timeout=30,proxy=settings.PROXY_URL
         )
         all_extractions = []
         _url_semaphore = asyncio.Semaphore(2)
@@ -1471,6 +1472,58 @@ RULE 12 — UNIT SYMBOL EXPANSION
   ft. → "ft"
 RULE 13 — ROUNDING
   Round decimals to 2 places.  1.998 → 2.00
+RULE 13.5 — NORMALIZATION & DEDUPLICATION ★ CRITICAL ★
+  Same attribute appearing multiple times with only formatting differences → merge into ONE.
+  
+  STEP 1: CHARACTER NORMALIZATION (apply first)
+    "º" (ordinal U+00BA)     becomes "°" (degree U+00B0)
+    smart quotes             becomes straight quotes
+    en-dash/em-dash          becomes hyphen
+  
+  STEP 2: ATTRIBUTE NAME NORMALIZATION
+    Word expansion (in attribute names only, not values):
+      "Max"  becomes "Maximum"
+      "Min"  becomes "Minimum"
+      "Temp" becomes "Temperature"
+      "Dia"  becomes "Diameter"
+      "Qty"  becomes "Quantity"
+    
+    Degree format standardization (in attribute names):
+      "at 90º"   becomes "at 90 Degrees"
+      "at 90 Deg" becomes "at 90 Degrees"
+      "at 45º"   becomes "at 45 Degrees"
+      "at 45 Deg" becomes "at 45 Degrees"
+  
+  STEP 3: UNIT NORMALIZATION
+    deg | degrees | ° becomes deg
+    Deg | Degrees (in name) becomes Degrees
+    rpm | RPM becomes RPM
+    in. | inches becomes in
+    lbs | lb | pounds becomes lb
+    V | Volts | volts becomes V
+  
+  STEP 4: MISSING UNIT INFERENCE
+    If attribute has NO unit but other instances of same attribute DO have unit,
+    infer the most common unit from other instances.
+    
+    Example:
+      No Load RPM: 5500 (no unit)
+      No Load RPM: 3650 RPM
+      No Load RPM: 3800 (no unit)
+    Result: All get unit=RPM
+  
+  STEP 5: DEDUPLICATION
+    After all normalization, if same attribute name + same value, MERGE:
+      Keep highest confidence source
+      Combine all source URLs
+      List all original formats in original_values
+  
+  Examples:
+    Input: Bevel Angle Range with -2 to 47 in deg, degrees, and °
+    Output: Single attribute with unit=deg, all sources listed
+    
+    Input: Max/Maximum Depth at 90 Deg/Degrees/º all with value 3.125 in
+    Output: Single Maximum Depth of Cut at 90 Degrees with all sources
 RULE 14 — UNIFICATION
   After cleaning, group attributes that represent the same concept
   (e.g., "CCT" and "Color Temperature", "Colour" and "Color").

@@ -7,12 +7,13 @@ from sqlmodel import select
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 from app.aggregation.services.search_service import SerpApiSearchService
 from app.aggregation.services.download_service import HttpDownloadService
+from app.core.config import settings
 from app.models.brand import Brand
 logger = logging.getLogger("product_discovery")
 class ProductDiscoveryService:
     def __init__(self, max_results: int = 5):
         self.search_service = SerpApiSearchService(max_results=max_results)
-        self.download_service = HttpDownloadService(timeout=20)
+        self.download_service = HttpDownloadService(timeout=20,proxy=settings.PROXY_URL)
     async def discover_manufacturer_domain(
         self,
         brand: str,
@@ -94,6 +95,7 @@ class ProductDiscoveryService:
         
         for result in results:
             url = result.get("link")
+            logger.info(f"🔍 SERP result URL: {url}")
             if not url or clean_domain not in url:
                 continue
             
@@ -178,29 +180,38 @@ class ProductDiscoveryService:
             ):
                 with attempt:
                     content = await self.download_service.download(url)
+                    
             
             if not content or content.get("type") != "html":
                 return {"is_valid": False, "score": 0}
             
             html = content["raw_bytes"].decode("utf-8", errors="ignore").lower()
+            logger.info(f"🔍 URL: {url}")
             brand_lower = brand.lower() if brand else ""
             mpn_lower = mpn.lower() if mpn else ""
             upc_lower = upc.lower() if upc else ""
-            
+            logger.info(f"🔍 Content type: {content.get('type')}")
+            logger.info(f"🔍 Content size: {len(content.get('raw_bytes', b''))} bytes")
+            logger.info(f"🔍 First 500 chars of HTML: {html[:500]}")
             mpn_normalized = mpn_lower.replace("‑", "-").replace("–", "-").replace("—", "-").strip()
             
             has_brand = brand_lower in html if brand_lower else False
+            logger.info(f"🔍 Brand '{brand_lower}' in HTML: {has_brand}")
             
             has_mpn = False
             if mpn_lower:
-                has_mpn = mpn_lower in html
+                has_mpn_exact = mpn_lower in html
+                has_mpn_normalized = mpn_normalized in html if mpn_normalized != mpn_lower else False
+                mpn_no_dashes = mpn_normalized.replace("-", "")
+                has_mpn_no_dashes = mpn_no_dashes in html
                 
-                if not has_mpn and mpn_normalized != mpn_lower:
-                    has_mpn = mpn_normalized in html
+                has_mpn = has_mpn_exact or has_mpn_normalized or has_mpn_no_dashes
                 
-                if not has_mpn:
-                    mpn_url_safe = mpn_normalized.replace(" ", "-")
-                    has_mpn = mpn_url_safe in url.lower()
+                # ← ADD THESE LOGS
+                logger.info(f"🔍 MPN exact '{mpn_lower}' in HTML: {has_mpn_exact}")
+                logger.info(f"🔍 MPN normalized '{mpn_normalized}' in HTML: {has_mpn_normalized}")
+                logger.info(f"🔍 MPN no dashes '{mpn_no_dashes}' in HTML: {has_mpn_no_dashes}")
+                logger.info(f"🔍 MPN found (any method): {has_mpn}")
             
             has_upc = upc_lower in html if upc_lower else False
             

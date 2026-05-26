@@ -38,3 +38,4 @@ anthropic
 tenacity
 curl_cffi
 email-validator
+playwright-stealth
