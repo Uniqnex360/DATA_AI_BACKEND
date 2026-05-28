@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 from urllib.parse import urlparse
-from curl_cffi import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func
 from sqlmodel import select
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
@@ -13,7 +13,26 @@ logger = logging.getLogger("product_discovery")
 class ProductDiscoveryService:
     def __init__(self, max_results: int = 5):
         self.search_service = SerpApiSearchService(max_results=max_results)
-        self.download_service = HttpDownloadService(timeout=20,proxy=settings.PROXY_URL)
+        self.download_service = HttpDownloadService(timeout=20)
+    @staticmethod
+    def _clean_url(url: str) -> str:
+        from urllib.parse import urlsplit, urlunsplit
+        parts = urlsplit(url)
+        return urlunsplit((parts.scheme, parts.netloc, parts.path.rstrip("/"), "", ""))
+
+    @staticmethod
+    def _exact_mpn_match(text: str, mpn: str) -> bool:
+        import re
+        text = (text or "").lower()
+        mpn = (mpn or "").lower().replace("‑", "-").replace("–", "-").replace("—", "-").strip()
+        if not text or not mpn:
+            return False
+        tokens = re.findall(r"[a-z0-9]+", mpn)
+        if not tokens:
+            return False
+        if len(tokens) == 1:
+            return re.search(rf"(?<![a-z0-9]){re.escape(tokens[0])}(?![a-z0-9])", text) is not None
+        return any(re.search(rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])", text) for t in tokens)
     async def discover_manufacturer_domain(
         self,
         brand: str,
@@ -101,7 +120,8 @@ class ProductDiscoveryService:
             
             url_lower = url.lower()
             
-            if mpn_url_safe in url_lower or mpn_normalized in url_lower:
+            path = urlparse(url).path.lower()
+            if self._exact_mpn_match(path, mpn):
                 mpm_matching_urls.append(url)
                 logger.info(f"✓ Found MPN in URL: {url}")
             elif any(x in url_lower for x in ["/product/", "/products/", "/item/"]):
@@ -173,6 +193,10 @@ class ProductDiscoveryService:
         mpn: str,
         upc: str = None
     ) -> dict:
+        path = urlparse(url).path.lower()
+        if "/collections/" in path and "/products/" not in path:
+            logger.info(f"Rejecting collection page: {url}")
+            return {"is_valid": False, "score": 0}
         try:
             async for attempt in AsyncRetrying(
                 stop=stop_after_attempt(2),
@@ -180,6 +204,7 @@ class ProductDiscoveryService:
             ):
                 with attempt:
                     content = await self.download_service.download(url)
+                    
                     
             
             if not content or content.get("type") != "html":
@@ -191,8 +216,6 @@ class ProductDiscoveryService:
             mpn_lower = mpn.lower() if mpn else ""
             upc_lower = upc.lower() if upc else ""
             logger.info(f"🔍 Content type: {content.get('type')}")
-            logger.info(f"🔍 Content size: {len(content.get('raw_bytes', b''))} bytes")
-            logger.info(f"🔍 First 500 chars of HTML: {html[:500]}")
             mpn_normalized = mpn_lower.replace("‑", "-").replace("–", "-").replace("—", "-").strip()
             
             has_brand = brand_lower in html if brand_lower else False
@@ -200,17 +223,16 @@ class ProductDiscoveryService:
             
             has_mpn = False
             if mpn_lower:
-                has_mpn_exact = mpn_lower in html
-                has_mpn_normalized = mpn_normalized in html if mpn_normalized != mpn_lower else False
-                mpn_no_dashes = mpn_normalized.replace("-", "")
-                has_mpn_no_dashes = mpn_no_dashes in html
+                # has_mpn_exact = mpn_lower in html
+                # has_mpn_normalized = mpn_normalized in html if mpn_normalized != mpn_lower else False
+                # mpn_no_dashes = mpn_normalized.replace("-", "")
+                # has_mpn_no_dashes = mpn_no_dashes in html
                 
-                has_mpn = has_mpn_exact or has_mpn_normalized or has_mpn_no_dashes
-                
-                # ← ADD THESE LOGS
-                logger.info(f"🔍 MPN exact '{mpn_lower}' in HTML: {has_mpn_exact}")
-                logger.info(f"🔍 MPN normalized '{mpn_normalized}' in HTML: {has_mpn_normalized}")
-                logger.info(f"🔍 MPN no dashes '{mpn_no_dashes}' in HTML: {has_mpn_no_dashes}")
+                # has_mpn = has_mpn_exact or has_mpn_normalized or has_mpn_no_dashes
+                has_mpn = self._exact_mpn_match(html, mpn) or self._exact_mpn_match(path, mpn)
+
+                logger.info(f"🔍 MPN found in HTML (exact match): {self._exact_mpn_match(html, mpn)}")
+                logger.info(f"🔍 MPN found in URL path (exact match): {self._exact_mpn_match(path, mpn)}")
                 logger.info(f"🔍 MPN found (any method): {has_mpn}")
             
             has_upc = upc_lower in html if upc_lower else False

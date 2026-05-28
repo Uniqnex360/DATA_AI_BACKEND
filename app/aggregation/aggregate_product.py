@@ -300,7 +300,7 @@ async def discover_manufacturer_urls(
 
     try:
         from app.aggregation.services.download_service import HttpDownloadService
-        download_service = HttpDownloadService(timeout=20,proxy=settings.PROXY_URL)
+        download_service = HttpDownloadService(timeout=20)
 
         # Step 1: Search for manufacturer website with taxonomy context
         taxonomy_parts = taxonomy.split(" > ")
@@ -523,7 +523,7 @@ async def find_product_page_with_llm(
         logger.info(f"Searching {domain} for {mpn}")
 
         from app.aggregation.services.download_service import HttpDownloadService
-        download_service = HttpDownloadService(timeout=20,proxy=settings.PROXY_URL)
+        download_service = HttpDownloadService(timeout=20)
 
         for query in search_queries:
             try:
@@ -826,306 +826,449 @@ async def aggregate_product(
     llm_provider: str = 'openai',
     attribute_chunk: Optional[List[str]] = None,
     existing_excel_attrs: Optional[Dict[str, str]] = None,
-    missing_llm_provider: str = None
+    missing_llm_provider: str = None,
+    is_algo2_run: bool = False,
+    cached_html: Optional[Dict[str, str]] = None,
+    cached_urls: Optional[List[str]] = None, 
 ) -> Dict:
     try:
         if missing_llm_provider is None:
             missing_llm_provider = llm_provider
-        logger.info(f"Starting aggregation for {mpn}")
-        logger.info("Stage 1: URL Discovery")
-
-        brand_prompt_text = None
-        if brand and db:
-            brand_stmt = select(BrandPrompt.prompt_text).join(
-                Brand, BrandPrompt.brand_id == Brand.id
-            ).where(
-                func.lower(Brand.name) == func.lower(brand),
-                BrandPrompt.status == RuleStatus.ACTIVE
-            )
-            brand_result = await db.execute(brand_stmt)
-            brand_row = brand_result.first()
-            if brand_row:
-                brand_prompt_text = brand_row[0]
-        category_prompt_text = None
-        selected_taxonomy = None
-        matched_category_id = None
-        if taxonomy and db:
-            clean_taxonomy = taxonomy.strip()
-            stmt = select(
-                CategoryPrompt.prompt_text,
-                CategoryPrompt.selected_taxonomy
-            ).where(
-                CategoryPrompt.status == RuleStatus.ACTIVE,
-                CategoryPrompt.selected_taxonomy.isnot(None),
-            )
-            result = await db.execute(stmt)
-            matching = [
-                (len(sel_tax), prompt_text, sel_tax)
-                for prompt_text, sel_tax in result.all()
-                if clean_taxonomy.startswith(sel_tax)
-            ]
-            if matching:
-                matching.sort(key=lambda x: x[0], reverse=True)
-                category_prompt_text = matching[0][1]
-                selected_taxonomy = matching[0][2]
-                logger.info(
-                    f"✓ Taxonomy prompt matched: '{selected_taxonomy}'")
-            if not category_prompt_text:
-                tax_parts = clean_taxonomy.split(" > ")
-                candidate_paths = [
-                    " > ".join(tax_parts[:i]) for i in range(len(tax_parts), 0, -1)
-                ]
-                last_segments = [p.strip() for p in tax_parts]
-                cat_stmt = select(Category).where(
-                    or_(
-                        Category.full_path.in_(candidate_paths),
-                        Category.name.in_(last_segments)
-                    )
-                )
-                cat_result = await db.execute(cat_stmt)
-                categories = sorted(
-                    cat_result.scalars().all(),
-                    key=lambda c: len(c.full_path or ""),
-                    reverse=True
-                )
-                for category in categories:
-                    prompt_stmt = select(CategoryPrompt).where(
-                        CategoryPrompt.category_id == category.id,
-                        CategoryPrompt.status == RuleStatus.ACTIVE,
-                        CategoryPrompt.selected_taxonomy.is_(None)
-                    ).limit(1)
-                    prompt_result = await db.execute(prompt_stmt)
-                    cat_prompt = prompt_result.scalars().first()
-                    if cat_prompt:
-                        category_prompt_text = cat_prompt.prompt_text
-                        matched_category_id = category.id
-                        logger.info(
-                            f"✓ Category prompt matched: '{category.name}'")
-                        break
-            if not category_prompt_text:
-                logger.info(
-                    f"✗ No prompt found for taxonomy: '{clean_taxonomy}'")
-        search_service = SmartSearchService(llm_provider, db=db, max_results=5)
-        query = title if (
-            mpn in title and brand in title) else f"{brand} {mpn} {title}"
-        query = query.strip()
-
-# =====================================================
-# STAGE 1: URL DISCOVERY (Production Version)
-# =====================================================
-        direct_domains = set()
-        direct_urls = []
-
-        discovery_service = ProductDiscoveryService(max_results=5)
-
-        # 1. Manufacturer domain
-        if brand:
-            manufacturer_domain = await discovery_service.discover_manufacturer_domain(
-                brand=brand,
-                category=taxonomy,
-                db=db 
-            )
-            if manufacturer_domain:
-                logger.info(f"✓ Manufacturer domain found: {manufacturer_domain}")
-                direct_domains.add(urlparse(manufacturer_domain).netloc)
-
-        # 2. Prompt-based domains (from BrandPrompt / CategoryPrompt)
-        if brand_prompt_text:
-            brand_urls = extract_urls_from_prompt(brand_prompt_text)
-            if not brand_urls:
-                brand_urls = extract_domains_and_generate_urls(brand_prompt_text)
-            for url in brand_urls:
-                direct_domains.add(urlparse(url).netloc)
-
-        elif category_prompt_text:
-            category_urls = extract_urls_from_prompt(category_prompt_text)
-            if not category_urls:
-                category_urls = extract_domains_and_generate_urls(category_prompt_text)
-            for url in category_urls:
-                direct_domains.add(urlparse(url).netloc)
-
-        # 3. Convert domains → Product Pages using SerpApi
-        for domain in direct_domains:
-            logger.info(f"Searching product page on domain: {domain}")
-
-            product_url = await discovery_service.find_product_page(
-                domain=f"https://{domain}",
-                brand=brand,
-                mpn=mpn,
-                title=title
-            )
-
-            if product_url:
-                logger.info(f"✓ Found product page on {domain}: {product_url}")
-                direct_urls.append(product_url)
-
-        seen = set()
-        direct_urls = [u for u in direct_urls if not (u in seen or seen.add(u))]
-        
-
-        if direct_urls:
-            logger.info(f"Final direct product URLs for {mpn}: {direct_urls}")
-        urls, candidate_images = await search_service.get_urls(
-            query, mpn=mpn, brand=brand, sku=sku,
-            brand_prompt_text=brand_prompt_text,
-            category_prompt_text=category_prompt_text,
-            taxonomy=taxonomy, direct_urls=direct_urls, selected_taxonomy=selected_taxonomy
-        )
-        if not urls:
-            return {
-                'status': 'failed',
-                'reason': 'No sources found',
-                'golden_record': {'attributes': {}}
-            }
-        logger.info(f"Stage 2: Download & Extraction from {len(urls)} sources")
-        download_service = HttpDownloadService(
-            timeout=30,proxy=settings.PROXY_URL
-        )
+        candidate_images = []
+        found_image_global = None
         all_extractions = []
-        _url_semaphore = asyncio.Semaphore(1)
+        if is_algo2_run and cached_urls and cached_html:
+            logger.info(
+                f"Algo 2: Skipping Stage 1-2, reusing {len(cached_urls)} cached URLs"
+            )
 
-        async def process_url(url):
-            short_description = None
-            long_description = None 
-            async with _url_semaphore:
-                try:
-                    content = await download_service.download(url)
-                    if content is None:
-                        return None
-                    if content['type'] == 'html':
-                        html_text = content['raw_bytes'].decode(
-                            'utf-8', errors='ignore')
-                        logger.info(
-                            f"Downloaded HTML from {url} - size: {len(html_text)} bytes")
-                        attrs_to_use = primary_attributes or []
-                        if attribute_chunk:
-                            other_attrs = [
-                                a for a in attrs_to_use if a not in attribute_chunk]
-                            attrs_to_use = attribute_chunk + other_attrs
-                        prompt_config = build_extraction_prompt(
-                            product_name=title,
-                            mpn=mpn,
-                            brand=brand or "",
-                            taxonomy=taxonomy or "",
-                            primary_attributes=attrs_to_use,
-                            html_content=html_text,
-                            candidate_images=candidate_images, source_url=url
+            urls = cached_urls
+            all_extractions = []
+
+            for url in urls:
+                if url not in cached_html:
+                    logger.warning(f"Algo 2: Cached HTML missing for {url}, skipping")
+                    continue
+
+                html_text = cached_html[url]
+                logger.info(
+                    f"Algo 2: Using cached HTML for {url} - size: {len(html_text)} bytes"
+                )
+
+                attrs_to_use = primary_attributes or []
+
+                prompt_config = build_extraction_prompt(
+                    product_name=title,
+                    mpn=mpn,
+                    brand=brand or "",
+                    taxonomy=taxonomy or "",
+                    primary_attributes=attrs_to_use,
+                    html_content=html_text,
+                    candidate_images=[],
+                    source_url=url
+                )
+
+                extraction_result = await call_llm_with_schema(
+                    prompt=prompt_config['prompt'],
+                    response_model="ExtractionResponse",
+                    llm_provider=llm_provider,
+                    estimated_tokens=3000
+                )
+
+                attr_dicts = []
+
+                if extraction_result and extraction_result.product_detected:
+                    if hasattr(extraction_result, "image_url") and extraction_result.image_url:
+                        found_image_global = extraction_result.image_url
+
+                    for attr in extraction_result.attributes:
+                        attr_dicts.append({
+                            'name': attr.name,
+                            'value': attr.value,
+                            'unit': attr.unit if hasattr(attr, 'unit') else None,
+                            'confidence': attr.confidence if hasattr(attr, 'confidence') else 0.9
+                        })
+
+                all_extractions.append({
+                    'url': url,
+                    'domain': urlparse(url).netloc,
+                    'attributes': attr_dicts,
+                    'source_type': 'html'
+                })
+
+            logger.info(
+                f"Algo 2: Extracted {len(all_extractions)} sources from cached HTML"
+            )
+
+            if not all_extractions:
+                return {
+                    'status': 'failed',
+                    'reason': 'No valid cached extractions',
+                    'golden_record': {'attributes': {}}
+                }
+
+        else:
+            logger.info("Stage 1: URL Discovery")
+            logger.info(f"Starting aggregation for {mpn}")
+            
+            brand_prompt_text = None
+            if brand and db:
+                brand_stmt = select(BrandPrompt.prompt_text).join(
+                    Brand, BrandPrompt.brand_id == Brand.id
+                ).where(
+                    func.lower(Brand.name) == func.lower(brand),
+                    BrandPrompt.status == RuleStatus.ACTIVE
+                )
+                brand_result = await db.execute(brand_stmt)
+                brand_row = brand_result.first()
+                if brand_row:
+                    brand_prompt_text = brand_row[0]
+            category_prompt_text = None
+            selected_taxonomy = None
+            matched_category_id = None
+            if taxonomy and db:
+                clean_taxonomy = taxonomy.strip()
+                stmt = select(
+                    CategoryPrompt.prompt_text,
+                    CategoryPrompt.selected_taxonomy
+                ).where(
+                    CategoryPrompt.status == RuleStatus.ACTIVE,
+                    CategoryPrompt.selected_taxonomy.isnot(None),
+                )
+                result = await db.execute(stmt)
+                matching = [
+                    (len(sel_tax), prompt_text, sel_tax)
+                    for prompt_text, sel_tax in result.all()
+                    if clean_taxonomy.startswith(sel_tax)
+                ]
+                if matching:
+                    matching.sort(key=lambda x: x[0], reverse=True)
+                    category_prompt_text = matching[0][1]
+                    selected_taxonomy = matching[0][2]
+                    logger.info(
+                        f"✓ Taxonomy prompt matched: '{selected_taxonomy}'")
+                if not category_prompt_text:
+                    tax_parts = clean_taxonomy.split(" > ")
+                    candidate_paths = [
+                        " > ".join(tax_parts[:i]) for i in range(len(tax_parts), 0, -1)
+                    ]
+                    last_segments = [p.strip() for p in tax_parts]
+                    cat_stmt = select(Category).where(
+                        or_(
+                            Category.full_path.in_(candidate_paths),
+                            Category.name.in_(last_segments)
                         )
-                        extraction_result = await call_llm_with_schema(
-                            prompt=prompt_config['prompt'],
-                            response_model="ExtractionResponse",
-                            llm_provider=llm_provider,
-                            estimated_tokens=3000
-                        )
-                        logger.info(f"=== EXTRACTION RESULTS FROM {url} ===")
-                        if extraction_result and extraction_result.product_detected:
-                            logger.info(f"Product detected: YES")
+                    )
+                    cat_result = await db.execute(cat_stmt)
+                    categories = sorted(
+                        cat_result.scalars().all(),
+                        key=lambda c: len(c.full_path or ""),
+                        reverse=True
+                    )
+                    for category in categories:
+                        prompt_stmt = select(CategoryPrompt).where(
+                            CategoryPrompt.category_id == category.id,
+                            CategoryPrompt.status == RuleStatus.ACTIVE,
+                            CategoryPrompt.selected_taxonomy.is_(None)
+                        ).limit(1)
+                        prompt_result = await db.execute(prompt_stmt)
+                        cat_prompt = prompt_result.scalars().first()
+                        if cat_prompt:
+                            category_prompt_text = cat_prompt.prompt_text
+                            matched_category_id = category.id
                             logger.info(
-                                f"Image URL: {extraction_result.image_url if hasattr(extraction_result, 'image_url') else 'None'}")
+                                f"✓ Category prompt matched: '{category.name}'")
+                            break
+                if not category_prompt_text:
+                    logger.info(
+                        f"✗ No prompt found for taxonomy: '{clean_taxonomy}'")
+            search_service = SmartSearchService(llm_provider, db=db, max_results=5)
+            query = title if (
+                mpn in title and brand in title) else f"{brand} {mpn} {title}"
+            query = query.strip()
+
+    # =====================================================
+    # STAGE 1: URL DISCOVERY (Production Version)
+    # =====================================================
+            direct_domains = set()
+            direct_urls = []
+
+            discovery_service = ProductDiscoveryService(max_results=5)
+
+            # 1. Manufacturer domain
+            if brand:
+                manufacturer_domain = await discovery_service.discover_manufacturer_domain(
+                    brand=brand,
+                    category=taxonomy,
+                    db=db 
+                )
+                if manufacturer_domain:
+                    logger.info(f"✓ Manufacturer domain found: {manufacturer_domain}")
+                    direct_domains.add(urlparse(manufacturer_domain).netloc)
+
+            # 2. Prompt-based domains (from BrandPrompt / CategoryPrompt)
+            if brand_prompt_text:
+                brand_urls = extract_urls_from_prompt(brand_prompt_text)
+                if not brand_urls:
+                    brand_urls = extract_domains_and_generate_urls(brand_prompt_text)
+                for url in brand_urls:
+                    direct_domains.add(urlparse(url).netloc)
+
+            elif category_prompt_text:
+                category_urls = extract_urls_from_prompt(category_prompt_text)
+                if not category_urls:
+                    category_urls = extract_domains_and_generate_urls(category_prompt_text)
+                for url in category_urls:
+                    direct_domains.add(urlparse(url).netloc)
+
+            # 3. Convert domains → Product Pages using SerpApi
+            for domain in direct_domains:
+                logger.info(f"Searching product page on domain: {domain}")
+
+                product_url = await discovery_service.find_product_page(
+                    domain=f"https://{domain}",
+                    brand=brand,
+                    mpn=mpn,
+                    title=title
+                )
+
+                if product_url:
+                    logger.info(f"✓ Found product page on {domain}: {product_url}")
+                    direct_urls.append(product_url)
+
+            seen = set()
+            direct_urls = [u for u in direct_urls if not (u in seen or seen.add(u))]
+            
+
+            if direct_urls:
+                logger.info(f"Final direct product URLs for {mpn}: {direct_urls}")
+            urls, candidate_images = await search_service.get_urls(
+                query, mpn=mpn, brand=brand, sku=sku,
+                brand_prompt_text=brand_prompt_text,
+                category_prompt_text=category_prompt_text,
+                taxonomy=taxonomy, direct_urls=direct_urls, selected_taxonomy=selected_taxonomy
+            )
+            if cached_urls is not None and not is_algo2_run:
+                cached_urls.clear()
+                cached_urls.extend(urls)
+                logger.info(f"Cached {len(cached_urls)} URLs for Algo 2")
+            if not urls:
+                return {
+                    'status': 'failed',
+                    'reason': 'No sources found',
+                    'golden_record': {'attributes': {}}
+                }
+            logger.info(f"Stage 2: Download & Extraction from {len(urls)} sources")
+            download_service = HttpDownloadService(
+                timeout=30
+            )
+            all_extractions = []
+            _url_semaphore = asyncio.Semaphore(1)
+            found_image_global = None
+            async def process_url(url):
+                nonlocal found_image_global  #
+                if found_image_global:
+                    logger.info(f"Image already found,skipping{url}")
+                    return None
+                short_description = None
+                long_description = None
+
+                async with _url_semaphore:
+                    try:
+                        if is_algo2_run and cached_html and url in cached_html:
+                            html_text = cached_html[url]
                             logger.info(
-                                f"Number of attributes extracted: {len(extraction_result.attributes)}")
-                            for attr in extraction_result.attributes:
-                                logger.info(
-                                    f"  - {attr.name}: {attr.value} {getattr(attr, 'unit', '')}")
+                                f"Algo 2: Using cached HTML for {url} - size: {len(html_text)} bytes"
+                            )
                         else:
-                            logger.info(f"Product detected: NO")
-                            logger.info(
-                                f"Extraction result: {extraction_result}")
-                        logger.info(f"=====================================")
-                        attr_dicts = []
-                        image_url = None
-                        if extraction_result and extraction_result.product_detected:
-                            if hasattr(extraction_result, 'image_url'):
-                                image_url = extraction_result.image_url
-                            if hasattr(extraction_result,'short_description'):
-                                    short_description=extraction_result.short_description
-                            if hasattr(extraction_result,'long_description'):
-                                long_description=extraction_result.long_description
-                            for attr in extraction_result.attributes:
-                                attr_dicts.append({
-                                    'name': attr.name,
-                                    'value': attr.value,
-                                    'unit': attr.unit if hasattr(attr, 'unit') else None,
-                                    'confidence': attr.confidence if hasattr(attr, 'confidence') else 0.9
-                                })
-                            
-                        if not image_url:
-                            image_url = await extract_best_image(html_text, url, mpn)
-                            if image_url:
+                            content = await download_service.download(url)
+                            if content is None:
+                                return None
+
+                            if content['type'] == 'html':
+                                html_text = content['raw_bytes'].decode(
+                                    'utf-8', errors='ignore'
+                                )
                                 logger.info(
-                                    f"Fallback extracted image: {image_url}")
-                        domain = urlparse(url).netloc
-                        return {
-                            'url': url,
-                            'domain': domain,
-                            'attributes': attr_dicts,
-                            'image_url': image_url,
-                            'source_type': 'html',
-                            'short_description': short_description,  
-                            'long_description': long_description  
-                        }
-                    elif content['type'] == 'pdf':
-                        from app.aggregation.services.pdf_service import PDFExtractionService
-                        pdf_service = PDFExtractionService(max_pages=10)
-                        pdf_text = await pdf_service.extract_text(content['raw_bytes'])
-                        if pdf_text and len(pdf_text.strip()) > 100:
-                            logger.info(
-                                f"Extracted {len(pdf_text)} chars from PDF")
-                            attrs_to_use = primary_attributes or []
+                                    f"Downloaded HTML from {url} - size: {len(html_text)} bytes"
+                                )
+
+                                if cached_html is not None and not is_algo2_run:
+                                    cached_html[url] = html_text
+                                    logger.info(f"Cached HTML for Algo 2: {url}")
+                                
+
+                            has_missing_llm = missing_llm_provider and missing_llm_provider != llm_provider
+
+                            if has_missing_llm:
+                                # Algo 1 & 2: extract ALL (no primary filter)
+                                attrs_to_use = []
+                                logger.info(f"Algo 1 & 2 detected - extracting all attributes for {mpn}")
+                            else:
+                                # Standard: extract only primary
+                                attrs_to_use = primary_attributes or []
+                                logger.info(f"Standard mode - extracting primary attributes for {mpn}")
+
                             if attribute_chunk:
-                                other_attrs = [
-                                    a for a in attrs_to_use if a not in attribute_chunk]
+                                other_attrs = [a for a in attrs_to_use if a not in attribute_chunk]
                                 attrs_to_use = attribute_chunk + other_attrs
-                            prompt_config = build_pdf_extraction_prompt(
+
+                            prompt_config = build_extraction_prompt(
                                 product_name=title,
                                 mpn=mpn,
                                 brand=brand or "",
                                 taxonomy=taxonomy or "",
                                 primary_attributes=attrs_to_use,
-                                pdf_text=pdf_text
+                                html_content=html_text,
+                                candidate_images=candidate_images,
+                                source_url=url
                             )
+
                             extraction_result = await call_llm_with_schema(
                                 prompt=prompt_config['prompt'],
                                 response_model="ExtractionResponse",
                                 llm_provider=llm_provider,
-                                estimated_tokens=4000
+                                estimated_tokens=3000
                             )
+
+                            logger.info(f"=== EXTRACTION RESULTS FROM {url} ===")
+
                             if extraction_result and extraction_result.product_detected:
-                                attr_dicts = []
-                                image_url = None
+                                logger.info("Product detected: YES")
+                                logger.info(
+                                    f"Image URL: {extraction_result.image_url if hasattr(extraction_result, 'image_url') else 'None'}"
+                                )
+                                logger.info(
+                                    f"Number of attributes extracted: {len(extraction_result.attributes)}"
+                                )
+                                for attr in extraction_result.attributes:
+                                    logger.info(
+                                        f"  - {attr.name}: {attr.value} {getattr(attr, 'unit', '')}"
+                                    )
+                            else:
+                                logger.info("Product detected: NO")
+                                logger.info(f"Extraction result: {extraction_result}")
+
+                            logger.info("=====================================")
+
+                            attr_dicts = []
+                            image_url = None
+
+                            if extraction_result and extraction_result.product_detected:
                                 if hasattr(extraction_result, 'image_url'):
                                     image_url = extraction_result.image_url
-                                
+                                if image_url:
+                                    logger.info(f"✓ Image found from {url}: {image_url}")
+                                    found_image_global = image_url
+                                if not image_url:
+                                    image_url = await extract_best_image(html_text, url, mpn)
+                                    if image_url:
+                                        logger.info(f"Fallback extracted image: {image_url}")
+                                        found_image_global = image_url
+                                if hasattr(extraction_result, 'short_description'):
+                                    short_description = extraction_result.short_description
+
+                                if hasattr(extraction_result, 'long_description'):
+                                    long_description = extraction_result.long_description
+
                                 for attr in extraction_result.attributes:
                                     attr_dicts.append({
                                         'name': attr.name,
                                         'value': attr.value,
-                                        'unit': getattr(attr, 'unit', None),
-                                        'confidence': getattr(attr, 'confidence', 0.95)
+                                        'unit': attr.unit if hasattr(attr, 'unit') else None,
+                                        'confidence': attr.confidence if hasattr(attr, 'confidence') else 0.9
                                     })
-                                domain = urlparse(url).netloc
-                                return {
-                                    'url': url,
-                                    'domain': domain,
-                                    'attributes': attr_dicts,
-                                    'image_url': image_url,
-                                    'source_type': 'pdf'
-                                }
-                    return None
-                except Exception as e:
-                    logger.warning(f"Extraction failed for {url}: {e}")
-                    return None
-        tasks = [process_url(url) for url in urls[:5]]
-        results = await asyncio.gather(*tasks)
-        all_extractions = [r for r in results if r is not None]
-        if not all_extractions:
-            return {
-                'status': 'failed',
-                'reason': 'No valid extractions',
-                'golden_record': {'attributes': {}}
-            }
-        logger.info(
-            f"Stage 2 extracted {sum(len(s['attributes']) for s in all_extractions)} total attributes")
+
+                            
+
+                            domain = urlparse(url).netloc
+
+                            return {
+                                'url': url,
+                                'domain': domain,
+                                'attributes': attr_dicts,
+                                'image_url': image_url,
+                                'source_type': 'html',
+                                'short_description': short_description,
+                                'long_description': long_description
+                            }
+
+                        if content['type'] == 'pdf':
+                            from app.aggregation.services.pdf_service import PDFExtractionService
+
+                            pdf_service = PDFExtractionService(max_pages=10)
+                            pdf_text = await pdf_service.extract_text(content['raw_bytes'])
+
+                            if pdf_text and len(pdf_text.strip()) > 100:
+                                logger.info(f"Extracted {len(pdf_text)} chars from PDF")
+
+                                attrs_to_use = primary_attributes or []
+
+                                if attribute_chunk:
+                                    other_attrs = [
+                                        a for a in attrs_to_use if a not in attribute_chunk
+                                    ]
+                                    attrs_to_use = attribute_chunk + other_attrs
+
+                                prompt_config = build_pdf_extraction_prompt(
+                                    product_name=title,
+                                    mpn=mpn,
+                                    brand=brand or "",
+                                    taxonomy=taxonomy or "",
+                                    primary_attributes=attrs_to_use,
+                                    pdf_text=pdf_text
+                                )
+
+                                extraction_result = await call_llm_with_schema(
+                                    prompt=prompt_config['prompt'],
+                                    response_model="ExtractionResponse",
+                                    llm_provider=llm_provider,
+                                    estimated_tokens=4000
+                                )
+
+                                if extraction_result and extraction_result.product_detected:
+                                    attr_dicts = []
+                                    image_url = None
+
+                                    if hasattr(extraction_result, 'image_url'):
+                                        image_url = extraction_result.image_url
+
+                                    for attr in extraction_result.attributes:
+                                        attr_dicts.append({
+                                            'name': attr.name,
+                                            'value': attr.value,
+                                            'unit': getattr(attr, 'unit', None),
+                                            'confidence': getattr(attr, 'confidence', 0.95)
+                                        })
+
+                                    domain = urlparse(url).netloc
+
+                                    return {
+                                        'url': url,
+                                        'domain': domain,
+                                        'attributes': attr_dicts,
+                                        'image_url': image_url,
+                                        'source_type': 'pdf'
+                                    }
+
+                        return None
+
+                    except Exception as e:
+                        logger.warning(f"Extraction failed for {url}: {e}")
+                        return None
+
+
+            tasks = [process_url(url) for url in urls[:5]]
+            results = await asyncio.gather(*tasks)
+            all_extractions = [r for r in results if r is not None]
+            if not all_extractions:
+                return {
+                    'status': 'failed',
+                    'reason': 'No valid extractions',
+                    'golden_record': {'attributes': {}}
+                }
+            logger.info(
+                f"Stage 2 extracted {sum(len(s['attributes']) for s in all_extractions)} total attributes")
         logger.info("Stage 3: Combined Cleaning, Unification & Standardization")
         raw_attrs_for_combine = []
         for src_idx, source in enumerate(all_extractions):
@@ -1255,7 +1398,8 @@ async def aggregate_product(
             estimated_tokens=2000,
             max_tokens=4000
         )
-        best_image = extract_best_image_fallback(all_extractions)
+        best_image = found_image_global or extract_best_image_fallback(all_extractions)
+
         if not best_image and candidate_images:
             for candidate in candidate_images:
                 is_valid = await validate_image_url(candidate)

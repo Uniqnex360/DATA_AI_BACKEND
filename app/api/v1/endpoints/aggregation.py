@@ -734,6 +734,13 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
             enrichment_threshold = settings.enrichment_threshold
             logger.info(
                 f"Starting aggregation job {job_id} for {total} products")
+            logger.info(f"Starting aggregation job {job_id} for {total} products")
+
+# NEW - create cache once, reuse for all products
+            has_missing_llm = missing_llm_provider and missing_llm_provider != llm_provider
+            cached_html = {} if has_missing_llm else None
+
+            logger.info(f"Algo 1&2 mode: caching enabled={bool(cached_html)}")
             for idx, product in enumerate(products):
                 await db_session.refresh(job)
                 if job.status == 'cancelled':
@@ -758,6 +765,9 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                     db_session.add(job)
                     
                     await db_session.commit()
+                    cached_urls = [] if has_missing_llm else None
+                    cached_html = {} if has_missing_llm else None
+
                     aggregation_result = await aggregate_with_retry(
                         db_session=db_session,
                         mpn=product.product_code,
@@ -768,7 +778,10 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                         primary_attributes=primary_attrs,
                         project_id=job.project_id,
                         llm_provider=llm_provider,
-                        max_retries=2
+                        max_retries=2,
+                        cached_urls=cached_urls,
+                        cached_html=cached_html,
+                        is_algo2_run=False
                     )
                     if aggregation_result.get('status') == 'success':
                         golden = aggregation_result.get('golden_record', {})
@@ -882,7 +895,10 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                     primary_attributes=algo2_primary,
                                     project_id=job.project_id,
                                     llm_provider=missing_llm_provider,
-                                    max_retries=1
+                                    max_retries=1,
+                                    cached_urls=cached_urls, 
+    cached_html=cached_html,
+    is_algo2_run=True  
                                 )
                                 
                                 if algo2_result.get('status') == 'success':
@@ -969,7 +985,10 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                     primary_attributes=algo2_primary,
                                     project_id=job.project_id,
                                     llm_provider=missing_llm_provider,
-                                    max_retries=1
+                                    max_retries=1,
+                                    cached_urls=cached_urls,  # NEW - reuse URLs
+    cached_html=cached_html,
+    is_algo2_run=True  
                                 )
                                 
                                 if algo2_result.get('status') == 'success':
@@ -1166,6 +1185,10 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                 logger.info(
                     f" Multi-pass complete: {len(merged_ai_data)} total attributes from {len(attr_chunks)} passes")
             else:
+                has_missing_llm = missing_llm_provider and missing_llm_provider != llm_provider
+                cached_html = {} if has_missing_llm else None
+                cached_urls = [] if has_missing_llm else None
+                logger.info(f"Caching mode: {bool(cached_html)}")
                 result = await aggregate_with_retry(
                     db_session=db_session,
                     mpn=product.product_code,
@@ -1177,7 +1200,8 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     taxonomy=product.taxonomy,
                     primary_attributes=primary_attrs,
                     project_id=product.project_id,
-                    llm_provider=llm_provider
+                    llm_provider=llm_provider,
+                    cached_html=cached_html  
                 )
             if result.get('status') == 'success':
                 golden = sanitize_ai_data(result.get('golden_record', {}))
@@ -1267,7 +1291,10 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                             primary_attributes=algo2_primary,
                             project_id=product.project_id,
                             llm_provider=missing_llm_provider,
-                            max_retries=1
+                            max_retries=1,
+                            cached_urls=cached_urls,  # NEW - reuse URLs
+    cached_html=cached_html,
+    is_algo2_run=True  
                         )
                         
                         if algo2_result.get('status') == 'success':
@@ -1338,17 +1365,23 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                         logger.info(f"Algo 2 triggered for {product.product_code}: missing={missing_attrs}, new={new_attrs}")
                         algo2_primary = list(set(missing_attrs + new_attrs))
                         
+                        # Cache HTML from Algo 1 (stored during first aggregation)
+                        # Must add to aggregate_with_retry call below
                         algo2_result = await aggregate_with_retry(
                             db_session=db_session,
                             mpn=product.product_code,
                             title=product.product_name,
                             sku=product.sku,
+                            upc=product.upc,
                             brand=product.brand_name,
                             taxonomy=product.taxonomy,
                             primary_attributes=algo2_primary,
                             project_id=product.project_id,
                             llm_provider=missing_llm_provider,
-                            max_retries=1
+                            max_retries=1,
+                            cached_urls=cached_urls,  # NEW - reuse URLs
+    cached_html=cached_html,
+    is_algo2_run=True  
                         )
                         
                         if algo2_result.get('status') == 'success':
@@ -1459,6 +1492,9 @@ async def aggregate_with_retry(
     llm_provider: str = "openai",
     max_retries: int = 2,
     retry_delay: float = 2.0,
+    cached_html: Optional[Dict[str, str]] = None,
+    cached_urls: Optional[List[str]] = None,
+    is_algo2_run: bool = False,  
 ) -> Dict[str, Any]:
     last_error: Optional[Exception] = None
     for attempt in range(max_retries + 1):
@@ -1474,7 +1510,10 @@ async def aggregate_with_retry(
                 primary_attributes=primary_attributes,
                 attribute_chunk=attribute_chunk,
                 project_id=project_id,
-                llm_provider=llm_provider
+                llm_provider=llm_provider,
+                cached_html=cached_html,  # NEW - pass cache
+                 cached_urls=cached_urls,  # NEW - pass through
+                is_algo2_run=is_algo2_run
             )
             logger.info(f"Aggregation result for {mpn}: {result}")
             image_url = result.get('golden_record', {}).get('image_url')
