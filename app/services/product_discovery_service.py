@@ -194,8 +194,29 @@ class ProductDiscoveryService:
         upc: str = None
     ) -> dict:
         path = urlparse(url).path.lower()
-        if "/collections/" in path and "/products/" not in path:
-            logger.info(f"Rejecting collection page: {url}")
+        category_patterns = [
+        "/collections/",
+        "/lightings/",
+        "/lighting/",
+        "/category/",
+        "/shop/",
+        "/browse/",
+        "/products/",  
+        "/items/",
+    ]
+        is_category_page = any(pattern in path for pattern in category_patterns)
+        product_patterns = [
+        "/product/",
+        "/products/[a-z0-9-]+/?$",  
+        "/sku/",
+        "/item/",
+        "/p/",
+        "/-p-", 
+    ]
+        is_product_page = any(pattern in path for pattern in product_patterns)
+
+        if is_category_page and not is_product_page:
+            logger.info(f"Rejecting category/listing page: {url}")
             return {"is_valid": False, "score": 0}
         try:
             async for attempt in AsyncRetrying(

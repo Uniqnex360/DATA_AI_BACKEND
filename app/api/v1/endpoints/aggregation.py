@@ -392,7 +392,7 @@ async def get_aggregated_attributes(
             .where(ProductAttributeValueLinkModel.product_id == product.id)
         )
         attr_result = await db.execute(attr_stmt)
-        attributes: List[AggregatedAttribute] = []
+        # attributes: List[AggregatedAttribute] = []
         for attr_name, value, uom in attr_result.all():
             attributes.append(AggregatedAttribute(
                 id=f"{product_id}_{attr_name}",

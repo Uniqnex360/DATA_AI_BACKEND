@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.aggregation.pipeline import AggregationPipeline
 from sqlmodel import or_, select
 from app.aggregation.prompts.enrichment_prompts import build_enrichment_prompt
+from app.aggregation.services.pdf_service import PDFExtractionService
 from app.aggregation.prompts.extraction_prompts import build_extraction_prompt, build_pdf_extraction_prompt
 from app.aggregation.prompts.validation_prompts import build_validation_prompt
 from app.aggregation.services.search_service import SerpApiSearchService
@@ -1066,209 +1067,564 @@ async def aggregate_product(
             _url_semaphore = asyncio.Semaphore(1)
             found_image_global = None
             async def process_url(url):
-                nonlocal found_image_global  #
+                extractions = []
+                nonlocal found_image_global
+
                 if found_image_global:
-                    logger.info(f"Image already found,skipping{url}")
-                    return None
+                    logger.info(f"Image already found; skipping image extraction for {url}")
+
                 short_description = None
                 long_description = None
 
                 async with _url_semaphore:
                     try:
+                        # --- IMPORTANT: always initialize these to avoid UnboundLocalError ---
+                        content = None
+                        html_text = None
+                        content_type = None
+
+                        # If cached HTML is used, treat it as HTML content
                         if is_algo2_run and cached_html and url in cached_html:
                             html_text = cached_html[url]
-                            logger.info(
-                                f"Algo 2: Using cached HTML for {url} - size: {len(html_text)} bytes"
-                            )
+                            content_type = "html"
+                            logger.info(f"Algo 2: Using cached HTML for {url} - size: {len(html_text)} bytes")
                         else:
                             content = await download_service.download(url)
                             if content is None:
-                                return None
+                                return []
 
-                            if content['type'] == 'html':
-                                html_text = content['raw_bytes'].decode(
-                                    'utf-8', errors='ignore'
-                                )
-                                logger.info(
-                                    f"Downloaded HTML from {url} - size: {len(html_text)} bytes"
-                                )
+                            content_type = content.get("type")
+
+                            # -----------------------
+                            # Direct PDF URL branch
+                            # -----------------------
+                            if content_type == "pdf":
+                                pdf_service = PDFExtractionService(max_pages=10)
+                                pdf_text = await pdf_service.extract_text(content["raw_bytes"])
+
+                                if pdf_text and len(pdf_text.strip()) > 100:
+                                    logger.info(f"Extracted {len(pdf_text)} chars from PDF")
+
+                                    attrs_to_use = primary_attributes or []
+                                    if attribute_chunk:
+                                        other_attrs = [a for a in attrs_to_use if a not in attribute_chunk]
+                                        attrs_to_use = attribute_chunk + other_attrs
+
+                                    prompt_config = build_pdf_extraction_prompt(
+                                        product_name=title,
+                                        mpn=mpn,
+                                        brand=brand or "",
+                                        taxonomy=taxonomy or "",
+                                        primary_attributes=attrs_to_use,
+                                        pdf_text=pdf_text
+                                    )
+
+                                    extraction_result = await call_llm_with_schema(
+                                        prompt=prompt_config["prompt"],
+                                        response_model="ExtractionResponse",
+                                        llm_provider=llm_provider,
+                                        estimated_tokens=4000
+                                    )
+
+                                    if extraction_result and extraction_result.product_detected:
+                                        attr_dicts = []
+                                        image_url = None
+
+                                        if hasattr(extraction_result, "image_url"):
+                                            image_url = extraction_result.image_url
+
+                                        for attr in extraction_result.attributes:
+                                            attr_dicts.append({
+                                                "name": attr.name,
+                                                "value": attr.value,
+                                                "unit": getattr(attr, "unit", None),
+                                                "confidence": getattr(attr, "confidence", 0.95),
+                                            })
+
+                                        extractions.append({
+                                            "url": url,
+                                            "domain": urlparse(url).netloc,
+                                            "attributes": attr_dicts,
+                                            "image_url": image_url,
+                                            "source_type": "pdf",
+                                        })
+
+                                return extractions
+
+                            # -----------------------
+                            # HTML branch (normal)
+                            # -----------------------
+                            if content_type == "html":
+                                html_text = content["raw_bytes"].decode("utf-8", errors="ignore")
+                                logger.info(f"Downloaded HTML from {url} - size: {len(html_text)} bytes")
 
                                 if cached_html is not None and not is_algo2_run:
                                     cached_html[url] = html_text
                                     logger.info(f"Cached HTML for Algo 2: {url}")
-                                
-
-                            has_missing_llm = missing_llm_provider and missing_llm_provider != llm_provider
-
-                            if has_missing_llm:
-                                # Algo 1 & 2: extract ALL (no primary filter)
-                                attrs_to_use = []
-                                logger.info(f"Algo 1 & 2 detected - extracting all attributes for {mpn}")
                             else:
-                                # Standard: extract only primary
-                                attrs_to_use = primary_attributes or []
-                                logger.info(f"Standard mode - extracting primary attributes for {mpn}")
+                                # Unknown / unsupported type
+                                return []
 
-                            if attribute_chunk:
-                                other_attrs = [a for a in attrs_to_use if a not in attribute_chunk]
-                                attrs_to_use = attribute_chunk + other_attrs
+                        # If we reached here, we must have HTML content
+                        if not html_text:
+                            return []
 
-                            prompt_config = build_extraction_prompt(
-                                product_name=title,
-                                mpn=mpn,
-                                brand=brand or "",
-                                taxonomy=taxonomy or "",
-                                primary_attributes=attrs_to_use,
-                                html_content=html_text,
-                                candidate_images=candidate_images,
-                                source_url=url
+                        has_missing_llm = missing_llm_provider and missing_llm_provider != llm_provider
+
+                        if has_missing_llm:
+                            attrs_to_use = []
+                            logger.info(f"Algo 1 & 2 detected - extracting all attributes for {mpn}")
+                        else:
+                            attrs_to_use = primary_attributes or []
+                            logger.info(f"Standard mode - extracting primary attributes for {mpn}")
+
+                        if attribute_chunk:
+                            other_attrs = [a for a in attrs_to_use if a not in attribute_chunk]
+                            attrs_to_use = attribute_chunk + other_attrs
+
+                        prompt_config = build_extraction_prompt(
+                            product_name=title,
+                            mpn=mpn,
+                            brand=brand or "",
+                            taxonomy=taxonomy or "",
+                            primary_attributes=attrs_to_use,
+                            html_content=html_text,
+                            candidate_images=[] if found_image_global else candidate_images,
+                            source_url=url
+                        )
+
+                        extraction_result = await call_llm_with_schema(
+                            prompt=prompt_config["prompt"],
+                            response_model="ExtractionResponse",
+                            llm_provider=llm_provider,
+                            estimated_tokens=3000
+                        )
+
+                        logger.info(f"=== EXTRACTION RESULTS FROM {url} ===")
+                        if extraction_result and extraction_result.product_detected:
+                            logger.info("Product detected: YES")
+                            logger.info(
+                                f"Image URL: {extraction_result.image_url if hasattr(extraction_result, 'image_url') else 'None'}"
                             )
+                            logger.info(f"Number of attributes extracted: {len(extraction_result.attributes)}")
+                            for attr in extraction_result.attributes:
+                                logger.info(f"  - {attr.name}: {attr.value} {getattr(attr, 'unit', '')}")
+                        else:
+                            logger.info("Product detected: NO")
+                            logger.info(f"Extraction result: {extraction_result}")
+                        logger.info("=====================================")
 
-                            extraction_result = await call_llm_with_schema(
-                                prompt=prompt_config['prompt'],
-                                response_model="ExtractionResponse",
-                                llm_provider=llm_provider,
-                                estimated_tokens=3000
-                            )
+                        attr_dicts = []
+                        image_url = None
 
-                            logger.info(f"=== EXTRACTION RESULTS FROM {url} ===")
-
-                            if extraction_result and extraction_result.product_detected:
-                                logger.info("Product detected: YES")
-                                logger.info(
-                                    f"Image URL: {extraction_result.image_url if hasattr(extraction_result, 'image_url') else 'None'}"
-                                )
-                                logger.info(
-                                    f"Number of attributes extracted: {len(extraction_result.attributes)}"
-                                )
-                                for attr in extraction_result.attributes:
-                                    logger.info(
-                                        f"  - {attr.name}: {attr.value} {getattr(attr, 'unit', '')}"
-                                    )
-                            else:
-                                logger.info("Product detected: NO")
-                                logger.info(f"Extraction result: {extraction_result}")
-
-                            logger.info("=====================================")
-
-                            attr_dicts = []
-                            image_url = None
-
-                            if extraction_result and extraction_result.product_detected:
-                                if hasattr(extraction_result, 'image_url'):
+                        if extraction_result and extraction_result.product_detected:
+                            # ---- image lock: only fetch/lock if not already found ----
+                            if not found_image_global:
+                                if hasattr(extraction_result, "image_url") and extraction_result.image_url:
                                     image_url = extraction_result.image_url
-                                if image_url:
-                                    logger.info(f"✓ Image found from {url}: {image_url}")
-                                    found_image_global = image_url
                                 if not image_url:
                                     image_url = await extract_best_image(html_text, url, mpn)
-                                    if image_url:
-                                        logger.info(f"Fallback extracted image: {image_url}")
-                                        found_image_global = image_url
-                                if hasattr(extraction_result, 'short_description'):
-                                    short_description = extraction_result.short_description
+                                if image_url:
+                                    logger.info(f"✓ Image locked from {url}: {image_url}")
+                                    found_image_global = image_url
+                            else:
+                                image_url = None
 
-                                if hasattr(extraction_result, 'long_description'):
-                                    long_description = extraction_result.long_description
+                            if hasattr(extraction_result, "short_description"):
+                                short_description = extraction_result.short_description
+                            if hasattr(extraction_result, "long_description"):
+                                long_description = extraction_result.long_description
 
-                                for attr in extraction_result.attributes:
-                                    attr_dicts.append({
-                                        'name': attr.name,
-                                        'value': attr.value,
-                                        'unit': attr.unit if hasattr(attr, 'unit') else None,
-                                        'confidence': attr.confidence if hasattr(attr, 'confidence') else 0.9
-                                    })
+                            for attr in extraction_result.attributes:
+                                attr_dicts.append({
+                                    "name": attr.name,
+                                    "value": attr.value,
+                                    "unit": attr.unit if hasattr(attr, "unit") else None,
+                                    "confidence": attr.confidence if hasattr(attr, "confidence") else 0.9
+                                })
 
-                            
+                        # ---- linked PDF extraction from HTML page ----
+                        pdf_links = PDFExtractionService.find_pdf_links(html_text, url)
+                        if pdf_links:
+                            logger.info(f"🔍 Found {len(pdf_links)} PDF link(s) on {url}")
 
-                            domain = urlparse(url).netloc
+                        for pdf_url in pdf_links or []:
+                            try:
+                                logger.info(f"📄 Downloading PDF: {pdf_url}")
+                                pdf_content = await download_service.download(pdf_url)
 
-                            return {
-                                'url': url,
-                                'domain': domain,
-                                'attributes': attr_dicts,
-                                'image_url': image_url,
-                                'source_type': 'html',
-                                'short_description': short_description,
-                                'long_description': long_description
-                            }
+                                if pdf_content and pdf_content["type"] == "pdf":
+                                    pdf_service = PDFExtractionService(max_pages=10)
+                                    pdf_text = await pdf_service.extract_text(pdf_content["raw_bytes"])
 
-                        if content['type'] == 'pdf':
-                            from app.aggregation.services.pdf_service import PDFExtractionService
+                                    if pdf_text and len(pdf_text.strip()) > 100:
+                                        logger.info(f"✓ Extracted {len(pdf_text)} chars from PDF")
 
-                            pdf_service = PDFExtractionService(max_pages=10)
-                            pdf_text = await pdf_service.extract_text(content['raw_bytes'])
+                                        attrs_to_use = primary_attributes or []
+                                        if attribute_chunk:
+                                            other_attrs = [a for a in attrs_to_use if a not in attribute_chunk]
+                                            attrs_to_use = attribute_chunk + other_attrs
 
-                            if pdf_text and len(pdf_text.strip()) > 100:
-                                logger.info(f"Extracted {len(pdf_text)} chars from PDF")
+                                        pdf_prompt = build_pdf_extraction_prompt(
+                                            product_name=title,
+                                            mpn=mpn,
+                                            brand=brand or "",
+                                            taxonomy=taxonomy or "",
+                                            primary_attributes=attrs_to_use,
+                                            pdf_text=pdf_text
+                                        )
 
-                                attrs_to_use = primary_attributes or []
+                                        pdf_result = await call_llm_with_schema(
+                                            prompt=pdf_prompt["prompt"],
+                                            response_model="ExtractionResponse",
+                                            llm_provider=llm_provider,
+                                            estimated_tokens=4000
+                                        )
 
-                                if attribute_chunk:
-                                    other_attrs = [
-                                        a for a in attrs_to_use if a not in attribute_chunk
-                                    ]
-                                    attrs_to_use = attribute_chunk + other_attrs
+                                        if pdf_result and pdf_result.product_detected:
+                                            pdf_attrs = []
+                                            for attr in pdf_result.attributes:
+                                                pdf_attrs.append({
+                                                    "name": attr.name,
+                                                    "value": attr.value,
+                                                    "unit": getattr(attr, "unit", None),
+                                                    "confidence": getattr(attr, "confidence", 0.95)
+                                                })
 
-                                prompt_config = build_pdf_extraction_prompt(
-                                    product_name=title,
-                                    mpn=mpn,
-                                    brand=brand or "",
-                                    taxonomy=taxonomy or "",
-                                    primary_attributes=attrs_to_use,
-                                    pdf_text=pdf_text
-                                )
+                                            extractions.append({
+                                                "url": pdf_url,
+                                                "domain": urlparse(pdf_url).netloc,
+                                                "attributes": pdf_attrs,
+                                                "image_url": None,
+                                                "source_type": "pdf",
+                                                "short_description": None,
+                                                "long_description": None
+                                            })
 
-                                extraction_result = await call_llm_with_schema(
-                                    prompt=prompt_config['prompt'],
-                                    response_model="ExtractionResponse",
-                                    llm_provider=llm_provider,
-                                    estimated_tokens=4000
-                                )
+                                            logger.info(f"✓ PDF extraction: {len(pdf_attrs)} attributes from {pdf_url}")
 
-                                if extraction_result and extraction_result.product_detected:
-                                    attr_dicts = []
-                                    image_url = None
+                            except Exception as pdf_err:
+                                logger.warning(f"Failed to process PDF {pdf_url}: {pdf_err}")
+                                continue
 
-                                    if hasattr(extraction_result, 'image_url'):
-                                        image_url = extraction_result.image_url
+                        # Always add the HTML extraction as a source
+                        extractions.append({
+                            "url": url,
+                            "domain": urlparse(url).netloc,
+                            "attributes": attr_dicts,
+                            "image_url": image_url,
+                            "source_type": "html",
+                            "short_description": short_description,
+                            "long_description": long_description
+                        })
 
-                                    for attr in extraction_result.attributes:
-                                        attr_dicts.append({
-                                            'name': attr.name,
-                                            'value': attr.value,
-                                            'unit': getattr(attr, 'unit', None),
-                                            'confidence': getattr(attr, 'confidence', 0.95)
-                                        })
-
-                                    domain = urlparse(url).netloc
-
-                                    return {
-                                        'url': url,
-                                        'domain': domain,
-                                        'attributes': attr_dicts,
-                                        'image_url': image_url,
-                                        'source_type': 'pdf'
-                                    }
-
-                        return None
+                        return extractions
 
                     except Exception as e:
                         logger.warning(f"Extraction failed for {url}: {e}")
-                        return None
+                        return []
+            # async def process_url(url):
+            #     extractions = []
+            #     nonlocal found_image_global  #
+            #     if found_image_global:
+            #         logger.info(f"Image already found,skipping{url}")
+            #     short_description = None
+            #     long_description = None
+
+            #     async with _url_semaphore:
+            #         try:
+            #             if is_algo2_run and cached_html and url in cached_html:
+            #                 html_text = cached_html[url]
+            #                 logger.info(
+            #                     f"Algo 2: Using cached HTML for {url} - size: {len(html_text)} bytes"
+            #                 )
+            #             else:
+            #                 content = await download_service.download(url)
+            #                 if content is None:
+            #                     return []
+
+            #                 if content['type'] == 'html':
+            #                     html_text = content['raw_bytes'].decode(
+            #                         'utf-8', errors='ignore'
+            #                     )
+            #                     logger.info(
+            #                         f"Downloaded HTML from {url} - size: {len(html_text)} bytes"
+            #                     )
+
+            #                     if cached_html is not None and not is_algo2_run:
+            #                         cached_html[url] = html_text
+            #                         logger.info(f"Cached HTML for Algo 2: {url}")
+                                
+
+            #                 has_missing_llm = missing_llm_provider and missing_llm_provider != llm_provider
+
+            #                 if has_missing_llm:
+            #                     # Algo 1 & 2: extract ALL (no primary filter)
+            #                     attrs_to_use = []
+            #                     logger.info(f"Algo 1 & 2 detected - extracting all attributes for {mpn}")
+            #                 else:
+            #                     # Standard: extract only primary
+            #                     attrs_to_use = primary_attributes or []
+            #                     logger.info(f"Standard mode - extracting primary attributes for {mpn}")
+
+            #                 if attribute_chunk:
+            #                     other_attrs = [a for a in attrs_to_use if a not in attribute_chunk]
+            #                     attrs_to_use = attribute_chunk + other_attrs
+
+            #                 prompt_config = build_extraction_prompt(
+            #                     product_name=title,
+            #                     mpn=mpn,
+            #                     brand=brand or "",
+            #                     taxonomy=taxonomy or "",
+            #                     primary_attributes=attrs_to_use,
+            #                     html_content=html_text,
+            #                     candidate_images=[] if found_image_global else candidate_images,
+            #                     source_url=url
+            #                 )
+
+            #                 extraction_result = await call_llm_with_schema(
+            #                     prompt=prompt_config['prompt'],
+            #                     response_model="ExtractionResponse",
+            #                     llm_provider=llm_provider,
+            #                     estimated_tokens=3000
+            #                 )
+
+            #                 logger.info(f"=== EXTRACTION RESULTS FROM {url} ===")
+
+            #                 if extraction_result and extraction_result.product_detected:
+            #                     logger.info("Product detected: YES")
+            #                     logger.info(
+            #                         f"Image URL: {extraction_result.image_url if hasattr(extraction_result, 'image_url') else 'None'}"
+            #                     )
+            #                     logger.info(
+            #                         f"Number of attributes extracted: {len(extraction_result.attributes)}"
+            #                     )
+            #                     for attr in extraction_result.attributes:
+            #                         logger.info(
+            #                             f"  - {attr.name}: {attr.value} {getattr(attr, 'unit', '')}"
+            #                         )
+            #                 else:
+            #                     logger.info("Product detected: NO")
+            #                     logger.info(f"Extraction result: {extraction_result}")
+
+            #                 logger.info("=====================================")
+
+            #                 attr_dicts = []
+            #                 image_url = None
+
+            #                 if extraction_result and extraction_result.product_detected:
+            #                     # Only attempt to find/set an image if we don't already have one
+            #                     if not found_image_global:
+            #                         if hasattr(extraction_result, "image_url") and extraction_result.image_url:
+            #                             image_url = extraction_result.image_url
+
+            #                         if not image_url:
+            #                             image_url = await extract_best_image(html_text, url, mpn)
+
+            #                         if image_url:
+            #                             logger.info(f"✓ Image locked from {url}: {image_url}")
+            #                             found_image_global = image_url
+            #                     else:
+            #                         # We already have an image; don't fetch/override
+            #                         image_url = None
+            #                     if hasattr(extraction_result, 'short_description'):
+            #                         short_description = extraction_result.short_description
+
+            #                     if hasattr(extraction_result, 'long_description'):
+            #                         long_description = extraction_result.long_description
+
+            #                     for attr in extraction_result.attributes:
+            #                         attr_dicts.append({
+            #                             'name': attr.name,
+            #                             'value': attr.value,
+            #                             'unit': attr.unit if hasattr(attr, 'unit') else None,
+            #                             'confidence': attr.confidence if hasattr(attr, 'confidence') else 0.9
+            #                         })
+
+            #                 pdf_links = PDFExtractionService.find_pdf_links(html_text, url)
+
+    
+            #                 if pdf_links:
+            #                     logger.info(f"🔍 Found {len(pdf_links)} PDF link(s) on {url}")
+                                
+            #                     for pdf_url in pdf_links:
+            #                         try:
+            #                             logger.info(f"📄 Downloading PDF: {pdf_url}")
+            #                             pdf_content = await download_service.download(pdf_url)
+                                        
+            #                             if pdf_content and pdf_content['type'] == 'pdf':
+            #                                 # Use your existing PDF service
+                                            
+            #                                 pdf_service = PDFExtractionService(max_pages=10)
+            #                                 pdf_text = await pdf_service.extract_text(pdf_content['raw_bytes'])
+                                            
+            #                                 if pdf_text and len(pdf_text.strip()) > 100:
+            #                                     logger.info(f"✓ Extracted {len(pdf_text)} chars from PDF")
+                                                
+            #                                     # Build extraction prompt for PDF
+            #                                     attrs_to_use = primary_attributes or []
+            #                                     if attribute_chunk:
+            #                                         other_attrs = [a for a in attrs_to_use if a not in attribute_chunk]
+            #                                         attrs_to_use = attribute_chunk + other_attrs
+                                                
+            #                                     pdf_prompt = build_pdf_extraction_prompt(
+            #                                         product_name=title,
+            #                                         mpn=mpn,
+            #                                         brand=brand or "",
+            #                                         taxonomy=taxonomy or "",
+            #                                         primary_attributes=attrs_to_use,
+            #                                         pdf_text=pdf_text
+            #                                     )
+                                                
+            #                                     pdf_result = await call_llm_with_schema(
+            #                                         prompt=pdf_prompt['prompt'],
+            #                                         response_model="ExtractionResponse",
+            #                                         llm_provider=llm_provider,
+            #                                         estimated_tokens=4000
+            #                                     )
+                                                
+            #                                     if pdf_result and pdf_result.product_detected:
+            #                                         pdf_attrs = []
+            #                                         for attr in pdf_result.attributes:
+            #                                             pdf_attrs.append({
+            #                                                 'name': attr.name,
+            #                                                 'value': attr.value,
+            #                                                 'unit': getattr(attr, 'unit', None),
+            #                                                 'confidence': getattr(attr, 'confidence', 0.95)
+            #                                             })
+                                                    
+            #                                         # Add as separate source (will be merged in Stage 3)
+            #                                         extractions.append({
+            #                                             'url': pdf_url,
+            #                                             'domain': urlparse(pdf_url).netloc,
+            #                                             'attributes': pdf_attrs,
+            #                                             'image_url': None,
+            #                                             'source_type': 'pdf',
+            #                                             'short_description': None,
+            #                                             'long_description': None
+            #                                         })
+                                                    
+            #                                         logger.info(f"✓ PDF extraction: {len(pdf_attrs)} attributes from {pdf_url}")
+            #                                     else:
+            #                                         logger.debug(f"PDF product not detected in {pdf_url}")
+            #                                 else:
+            #                                     logger.debug(f"PDF text too short or empty: {pdf_url}")
+            #                             else:
+            #                                 logger.debug(f"Download did not return PDF type: {pdf_url}")
+                                            
+            #                         except Exception as pdf_err:
+            #                             logger.warning(f"Failed to process PDF {pdf_url}: {pdf_err}")
+            #                             continue
+
+            #                 domain = urlparse(url).netloc
+
+            #                 # return {
+            #                 #     'url': url,
+            #                 #     'domain': domain,
+            #                 #     'attributes': attr_dicts,
+            #                 #     'image_url': image_url,
+            #                 #     'source_type': 'html',
+            #                 #     'short_description': short_description,
+            #                 #     'long_description': long_description
+            #                 # }
+            #                 extractions.append({
+            #                         'url': url,
+            #                         'domain': domain,
+            #                         'attributes': attr_dicts,
+            #                         'image_url': image_url,
+            #                         'source_type': 'html',
+            #                         'short_description': short_description,
+            #                         'long_description': long_description
+            #                     })
+            #                 return extractions
+
+
+            #             if content['type'] == 'pdf':
+            #                 from app.aggregation.services.pdf_service import PDFExtractionService
+
+            #                 pdf_service = PDFExtractionService(max_pages=10)
+            #                 pdf_text = await pdf_service.extract_text(content['raw_bytes'])
+
+            #                 if pdf_text and len(pdf_text.strip()) > 100:
+            #                     logger.info(f"Extracted {len(pdf_text)} chars from PDF")
+
+            #                     attrs_to_use = primary_attributes or []
+
+            #                     if attribute_chunk:
+            #                         other_attrs = [
+            #                             a for a in attrs_to_use if a not in attribute_chunk
+            #                         ]
+            #                         attrs_to_use = attribute_chunk + other_attrs
+
+            #                     prompt_config = build_pdf_extraction_prompt(
+            #                         product_name=title,
+            #                         mpn=mpn,
+            #                         brand=brand or "",
+            #                         taxonomy=taxonomy or "",
+            #                         primary_attributes=attrs_to_use,
+            #                         pdf_text=pdf_text
+            #                     )
+
+            #                     extraction_result = await call_llm_with_schema(
+            #                         prompt=prompt_config['prompt'],
+            #                         response_model="ExtractionResponse",
+            #                         llm_provider=llm_provider,
+            #                         estimated_tokens=4000
+            #                     )
+
+            #                     if extraction_result and extraction_result.product_detected:
+            #                         attr_dicts = []
+            #                         image_url = None
+
+            #                         if hasattr(extraction_result, 'image_url'):
+            #                             image_url = extraction_result.image_url
+
+            #                         for attr in extraction_result.attributes:
+            #                             attr_dicts.append({
+            #                                 'name': attr.name,
+            #                                 'value': attr.value,
+            #                                 'unit': getattr(attr, 'unit', None),
+            #                                 'confidence': getattr(attr, 'confidence', 0.95)
+            #                             })
+
+            #                         domain = urlparse(url).netloc
+
+            #                         extractions.append({
+            #                             'url': url,
+            #                             'domain': domain,
+            #                             'attributes': attr_dicts,
+            #                             'image_url': image_url,
+            #                             'source_type': 'pdf'
+            #                         })
+            #                         return extractions
+
+            #             return []
+
+
+            #         except Exception as e:
+            #             logger.warning(f"Extraction failed for {url}: {e}")
+            #             return []
+
 
 
             tasks = [process_url(url) for url in urls[:5]]
             results = await asyncio.gather(*tasks)
-            all_extractions = [r for r in results if r is not None]
+            all_extractions = [e for sub in results if sub for e in sub]
+
             if not all_extractions:
                 return {
                     'status': 'failed',
                     'reason': 'No valid extractions',
                     'golden_record': {'attributes': {}}
                 }
+            html_attrs = sum(len(s['attributes']) for s in all_extractions if s.get('source_type') == 'html')
+            pdf_attrs = sum(len(s['attributes']) for s in all_extractions if s.get('source_type') == 'pdf')
+            total_attrs = html_attrs + pdf_attrs
+
             logger.info(
-                f"Stage 2 extracted {sum(len(s['attributes']) for s in all_extractions)} total attributes")
+                f"Stage 2 extracted {total_attrs} total attributes "
+                f"({html_attrs} from HTML, {pdf_attrs} from {sum(1 for s in all_extractions if s.get('source_type') == 'pdf')} PDF(s))"
+            )
         logger.info("Stage 3: Combined Cleaning, Unification & Standardization")
         raw_attrs_for_combine = []
         for src_idx, source in enumerate(all_extractions):
