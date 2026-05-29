@@ -1391,13 +1391,21 @@ async def aggregate_product(
             existing_short_description=best_short_description,
             existing_long_description=best_long_description
         )
-        enrichment_result = await call_llm_with_schema(
-            prompt=enrichment_config['prompt'],
-            response_model="EnrichmentResponse",
-            llm_provider=missing_llm_provider,
-            estimated_tokens=2000,
-            max_tokens=4000
-        )
+        if is_algo2_run:
+            logger.info(f"Algo2 :Skipping enrichment (router will do it )")
+            enrichment_result = type('obj', (object,), {
+                'short_description': '',
+                'long_description': '',
+                'features': []
+            })()
+        else:
+            enrichment_result = await call_llm_with_schema(
+                prompt=enrichment_config['prompt'],
+                response_model="EnrichmentResponse",
+                llm_provider=missing_llm_provider,
+                estimated_tokens=2000,
+                max_tokens=4000
+            )
         best_image = found_image_global or extract_best_image_fallback(all_extractions)
 
         if not best_image and candidate_images:

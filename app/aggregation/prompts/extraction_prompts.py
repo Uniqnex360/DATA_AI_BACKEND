@@ -116,20 +116,20 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
             is_brand_site = brand_clean in domain_clean
         if is_brand_site:
             confidence_instruction = """
-CONFIDENCE SCORING (OFFICIAL BRAND WEBSITE):
-- You are extracting from the manufacturer's official website
-- Set confidence = 1.0 for all attributes (maximum trust)
-- This is the primary source of truth
-"""
+            CONFIDENCE SCORING (OFFICIAL BRAND WEBSITE):
+            - You are extracting from the manufacturer's official website
+            - Set confidence = 1.0 for all attributes (maximum trust)
+            - This is the primary source of truth
+            """
         else:
             confidence_instruction = """
-CONFIDENCE SCORING (THIRD-PARTY RETAILER):
-- You are extracting from a reseller/retailer website
-- Set confidence = 0.85-0.95 based on clarity
-- Use 0.95 if specification is clearly stated in table
-- Use 0.90 if found in product description
-- Use 0.85 if partially visible or inferred from context
-"""
+            CONFIDENCE SCORING (THIRD-PARTY RETAILER):
+            - You are extracting from a reseller/retailer website
+            - Set confidence = 0.85-0.95 based on clarity
+            - Use 0.95 if specification is clearly stated in table
+            - Use 0.90 if found in product description
+            - Use 0.85 if partially visible or inferred from context
+            """
         primary_list = primary_attributes if primary_attributes else []
         candidate_section = ""
         if candidate_images:
@@ -153,27 +153,27 @@ CONFIDENCE SCORING (THIRD-PARTY RETAILER):
         {desc_text}
         
         ═══════════════════════════════════════════════════════════════════
-CRITICAL RULE: NO HALLUCINATION - STRICT EXTRACTION ONLY
-═══════════════════════════════════════════════════════════════════
-- ONLY extract values that are EXPLICITLY VISIBLE in the provided HTML content
-- Do NOT infer, guess, assume, or add any information from your training data
-- If a specification is not present in the content, DO NOT create it
-- Do NOT add "typical" values, default values, or common specifications
-- Do NOT complete partial information
-- Extract ONLY what you SEE, exactly as you SEE it
-EXAMPLES OF HALLUCINATION (DO NOT DO):
- HTML shows "Maximum Working Pressure: 10000" → Extracting "Hose Length: 30 inches"
- HTML shows "Includes: Coupler" → Extracting "Hose Length: 24 inches"
- HTML shows no weight → Extracting "Weight: 5 lbs" (from training data)
-CORRECT BEHAVIOR:
- HTML shows "Maximum Working Pressure: 10000" → Extract ONLY that
- HTML shows no weight → Do NOT extract any weight attribute
- If a specification table row is empty or blank → Do NOT extract it
-REMEMBER: If you cannot see it in the HTML, it does not exist for this product.
-Better to miss a specification than to invent a wrong one.
-═══════════════════════════════════════════════════════════════════
-EXTRACTION SCOPE - READ CAREFULLY
-═══════════════════════════════════════════════════════════════════
+        CRITICAL RULE: NO HALLUCINATION - STRICT EXTRACTION ONLY
+        ═══════════════════════════════════════════════════════════════════
+        - ONLY extract values that are EXPLICITLY VISIBLE in the provided HTML content
+        - Do NOT infer, guess, assume, or add any information from your training data
+        - If a specification is not present in the content, DO NOT create it
+        - Do NOT add "typical" values, default values, or common specifications
+        - Do NOT complete partial information
+        - Extract ONLY what you SEE, exactly as you SEE it
+        EXAMPLES OF HALLUCINATION (DO NOT DO):
+        HTML shows "Maximum Working Pressure: 10000" → Extracting "Hose Length: 30 inches"
+        HTML shows "Includes: Coupler" → Extracting "Hose Length: 24 inches"
+        HTML shows no weight → Extracting "Weight: 5 lbs" (from training data)
+        CORRECT BEHAVIOR:
+        HTML shows "Maximum Working Pressure: 10000" → Extract ONLY that
+        HTML shows no weight → Do NOT extract any weight attribute
+        If a specification table row is empty or blank → Do NOT extract it
+        REMEMBER: If you cannot see it in the HTML, it does not exist for this product.
+        Better to miss a specification than to invent a wrong one.
+        ═══════════════════════════════════════════════════════════════════
+        EXTRACTION SCOPE - READ CAREFULLY
+        ═══════════════════════════════════════════════════════════════════
         YOU MUST EXTRACT **ALL TECHNICAL SPECIFICATIONS** FROM THE CONTENT.
         PRIORITY ATTRIBUTES (must extract if present):
         {primary_attrs_display}
@@ -261,6 +261,26 @@ EXTRACTION SCOPE - READ CAREFULLY
           Primary List: ["Memory", "Storage"]
           → Extract as: name="Memory", value="8GB"
           (Reason: "RAM" is abbreviation for "Memory")
+          ═══════════════════════════════════════════════════════════════════
+        DYNAMIC ATTRIBUTE DEDUPLICATION
+        ═══════════════════════════════════════════════════════════════════
+        NORMALIZATION ALGORITHM (for ANY attribute, ANY category):
+
+        1. EXTRACT: Find attribute name from HTML
+        2. NORMALIZE: 
+           - Convert to lowercase
+           - Replace spaces/underscores/hyphens with single hyphen
+           - Remove qualifiers: "Type", "Rating", "Spec", "Material", "Overall", "Total", "Nominal"
+        3. MATCH against PRIMARY ATTRIBUTES:
+           - Normalize each primary attribute same way
+           - If normalized forms identical → use PRIMARY ATTRIBUTE name (exact spelling)
+           - If no match → use HTML name
+        4. OUTPUT: Return normalized name to prevent duplicates
+
+        This algorithm works for ANY product category, ANY attribute variation.
+        No hardcoded rules. Pure semantic matching via normalization.
+
+        ══════════════════════════════════════════════════════════════════
           ═══════════════════════════════════════════════════════════════════
         EXTRACTION RULES
         ═══════════════════════════════════════════════════════════════════
@@ -363,14 +383,14 @@ EXTRACTION SCOPE - READ CAREFULLY
         "https://example.com/products/dcf414b-main-1200x1200.jpg"
         ═══════════════════════════════════════════════════════════════════
         ═══════════════════════════════════════════════════════════════════
-BEFORE RETURNING, VERIFY:
-═══════════════════════════════════════════════════════════════════
-- Did I extract any value that was NOT visible in the HTML? → If yes, REMOVE it
-- Did I assume or guess any specification? → If yes, REMOVE it
-- Did I add units that weren't specified? → If yes, correct or remove
-- Did I complete a partial value? → If yes, use only what was actually written
-If you are unsure about any extracted value, DO NOT include it.
-Empty values are better than wrong values.
+        BEFORE RETURNING, VERIFY:
+        ═══════════════════════════════════════════════════════════════════
+        - Did I extract any value that was NOT visible in the HTML? → If yes, REMOVE it
+        - Did I assume or guess any specification? → If yes, REMOVE it
+        - Did I add units that weren't specified? → If yes, correct or remove
+        - Did I complete a partial value? → If yes, use only what was actually written
+        If you are unsure about any extracted value, DO NOT include it.
+        Empty values are better than wrong values.
        ═══════════════════════════════════════════════════════════════════
         {confidence_instruction}
         ═══════════════════════════════════════════════════════════════════
