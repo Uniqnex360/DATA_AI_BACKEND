@@ -1392,6 +1392,7 @@ async def check_data_quality(
                 details=f"Placeholder or invalid value detected: '{val_str}'",
                 resolved=False
             ))
+            
 @router.post('/export/batch', status_code=200)
 async def batch_export_products(request: BatchExportRequest, db: AsyncSession = Depends(get_session)):
     try:
@@ -1444,6 +1445,7 @@ async def batch_export_products(request: BatchExportRequest, db: AsyncSession = 
         logger.error(f'Batch export failed {e}')
         raise HTTPException(
             status_code=500, detail='Failed to download results!')
+        
 async def serialize_products_with_attributes(db: AsyncSession, product: Product) -> dict:
     product_dict = product.dict()
     attr_stmt = (
@@ -1462,29 +1464,29 @@ async def serialize_products_with_attributes(db: AsyncSession, product: Product)
             'unit': uom,
             'sources': []
         }
-    if product.attributes and isinstance(product.attributes, dict):
-        for attr_name, attr_value in product.attributes.items():
-            if attr_name in attributes:
-                continue  
-            if isinstance(attr_value, dict):
-                value = attr_value.get('value') or '—'
-                unit = attr_value.get('unit') or attr_value.get('uom') or None
-                confidence = attr_value.get('confidence', 1.0)
-                sources = attr_value.get('sources', [])
-            else:
-                value = str(attr_value) if attr_value else '—'
-                unit = None
-                confidence = 1.0
-                sources = []
-            if value and value != '—':
-                attributes[attr_name] = {
-                    'name': attr_name,
-                    'value': value,
-                    'unit': unit,
-                    'confidence': confidence,
-                    'sources': sources
-                }
-    product_dict['attributes'] = attributes
+    # if product.attributes and isinstance(product.attributes, dict):
+    #     for attr_name, attr_value in product.attributes.items():
+    #         if attr_name in attributes:
+    #             continue  
+    #         if isinstance(attr_value, dict):
+    #             value = attr_value.get('value') or '—'
+    #             unit = attr_value.get('unit') or attr_value.get('uom') or None
+    #             confidence = attr_value.get('confidence', 1.0)
+    #             sources = attr_value.get('sources', [])
+    #         else:
+    #             value = str(attr_value) if attr_value else '—'
+    #             unit = None
+    #             confidence = 1.0
+    #             sources = []
+    #         if value and value != '—':
+    #             attributes[attr_name] = {
+    #                 'name': attr_name,
+    #                 'value': value,
+    #                 'unit': unit,
+    #                 'confidence': confidence,
+    #                 'sources': sources
+    #             }
+    # product_dict['attributes'] = attributes
     return product_dict
 @router.get("/project/{project_id}/products-with-movement")
 async def get_products_with_movement(
