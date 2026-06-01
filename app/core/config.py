@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     anthropic_api_key:str
     PDF_UPLOAD_DIR: str = "/app/uploads/pdf"
     claude_model: str = "claude-sonnet-4-5"
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-2.5-flash-lite"
     enrichment_confidence_threashold:float=0.8
     HITL_CONFIDENCE_THRESHOLD:float=0.85
     cloudinary_cloud_name:str 
