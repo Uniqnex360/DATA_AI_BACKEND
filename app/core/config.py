@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     cloudinary_api_key:str 
     cloudinary_api_secret:str 
     SECRET_KEY:str
+    FIRECRAWL_API_KEY:str
     cloudinary_folder:str=''
     serpapi_key:str
     class Config:

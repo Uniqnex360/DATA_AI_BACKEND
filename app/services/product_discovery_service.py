@@ -32,7 +32,8 @@ class ProductDiscoveryService:
             return False
         if len(tokens) == 1:
             return re.search(rf"(?<![a-z0-9]){re.escape(tokens[0])}(?![a-z0-9])", text) is not None
-        return any(re.search(rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])", text) for t in tokens)
+        return all(re.search(rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])", text) for t in tokens)
+
     async def discover_manufacturer_domain(
         self,
         brand: str,
@@ -57,15 +58,27 @@ class ProductDiscoveryService:
         logger.info(f"[Manufacturer Discovery] Query: {query}")
         results = await self.search_service.search(query=query)
         discovered_url = None
+
         for result in results:
-            url = result.get("link") or result.get("url", "")
+            url = result.get("link")
+
             if not url:
                 continue
-            domain = urlparse(url).netloc.lower()
-            if brand.lower().replace(" ", "") in domain:
+
+            domain = urlparse(url).netloc.lower().replace("www.", "")
+            brand_base = brand.lower().replace(" ", "")
+
+            logger.info(f"Checking domain: {domain}")
+
+            # Skip marketplaces
+            if any(x in domain for x in ["amazon.com", "walmart.com", "ebay.com"]):
+                continue
+
+            if domain.startswith(brand_base):
                 discovered_url = f"https://{domain}"
                 logger.info(f"✓ Manufacturer domain found via search: {discovered_url}")
                 break
+
         if discovered_url and db and brand_record:
             try:
                 brand_record.website = discovered_url
@@ -195,15 +208,15 @@ class ProductDiscoveryService:
     ) -> dict:
         path = urlparse(url).path.lower()
         category_patterns = [
-        "/collections/",
-        "/lightings/",
-        "/lighting/",
-        "/category/",
-        "/shop/",
-        "/browse/",
-        "/products/",  
-        "/items/",
-    ]
+            "/collections/",
+            "/category/",
+            "/shop/",
+            "/browse/",
+            "/items/",
+            "/locations/",   # Block Fastenal locations
+            "/branches/",    # Block other store locators
+            "/stores/",      # Block store lists
+        ]
         is_category_page = any(pattern in path for pattern in category_patterns)
         product_patterns = [
         "/product/",
@@ -214,7 +227,13 @@ class ProductDiscoveryService:
         "/-p-", 
     ]
         is_product_page = any(pattern in path for pattern in product_patterns)
-
+        if "/products/" in path:
+            path_parts = [p for p in path.split('/') if p]
+            # If there's something after 'products', treat it as a potential product
+            if len(path_parts) > 1:
+                is_product_page = True
+            else:
+                is_category_page = True
         if is_category_page and not is_product_page:
             logger.info(f"Rejecting category/listing page: {url}")
             return {"is_valid": False, "score": 0}
