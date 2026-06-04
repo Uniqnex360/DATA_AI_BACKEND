@@ -25,7 +25,7 @@ class ProductResponse(BaseModel):
     mpn: Optional[str] = None
     enrichment_status: str = "pending"
     attributes: Dict = {} 
-    completeness_score: int = 0
+    completeness_score: float = 0.0
     image_url_1: Optional[str] = None
 
     class Config:

@@ -73,7 +73,7 @@ class Product(UUIDModel,table=True):
     description:Optional[str]=None
     image_url_1:Optional[str]=None
     enrichment_status:str=Field(default='pending')
-    completeness_score:int=Field(default=0)
+    completeness_score: float = Field(default=0.0)
     attributes:Dict=Field(default={},sa_column=Column(JSON))
     product_type:Optional[str]=None
     parent_sku:Optional[str]=None
