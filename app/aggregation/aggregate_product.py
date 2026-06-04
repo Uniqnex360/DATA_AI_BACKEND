@@ -1039,7 +1039,7 @@ async def aggregate_product(
                     response_model="UnifiedStandardizedResponse",
                     llm_provider=llm_provider,
                     estimated_tokens=3000 + len(raw_attrs_for_combine) * 200,
-                    max_tokens=8000
+                    max_tokens=4000
                 )
         golden_attributes = combined_result.attributes
         input_names = set(a['name'] for a in raw_attrs_for_combine)
