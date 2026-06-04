@@ -1448,6 +1448,11 @@ async def batch_export_products(request: BatchExportRequest, db: AsyncSession = 
         
 async def serialize_products_with_attributes(db: AsyncSession, product: Product) -> dict:
     product_dict = product.dict()
+    EXCLUDED_ATTRS = {
+        'brand', 'manufacturer', 'manufacturer part number', 
+        'model number', 'part number', 'mpn', 'upc', 'item #', 
+        'model_numer', 'brand_name'
+    }
     attr_stmt = (
         select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom)
         .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
@@ -1458,6 +1463,8 @@ async def serialize_products_with_attributes(db: AsyncSession, product: Product)
     attr_result = await db.execute(attr_stmt)
     attributes = {}
     for attr_name, value, uom in attr_result.all():
+        if attr_name.lower() in EXCLUDED_ATTRS:
+            continue
         attributes[attr_name] = {
             'name': attr_name,
             'value': value,
@@ -1466,7 +1473,8 @@ async def serialize_products_with_attributes(db: AsyncSession, product: Product)
         }
     if product.attributes and isinstance(product.attributes, dict):
         for attr_name, attr_value in product.attributes.items():
-            if attr_name in attributes:
+            attr_name_lower = attr_name.lower()
+            if attr_name_lower in EXCLUDED_ATTRS or attr_name in attributes:
                 continue  
             if isinstance(attr_value, dict):
                 value = attr_value.get('value') or '—'
@@ -1588,9 +1596,11 @@ async def get_product_extraction_logs(
         product = await db.get(Product, product_id)
         if not product:
             raise HTTPException(404, "Product not found")
+        
         source_stmt = select(Source).where(Source.project_id == product.project_id)
         source_result = await db.execute(source_stmt)
         all_sources = {str(s.id): s.source_url for s in source_result.scalars().all()}
+        
         raw_stmt = select(RawExtraction).where(
             RawExtraction.source_id.in_(
                 select(Source.id).where(Source.project_id == product.project_id)
@@ -1598,6 +1608,7 @@ async def get_product_extraction_logs(
         ).order_by(RawExtraction.extracted_at)
         raw_result = await db.execute(raw_stmt)
         raw_extractions = raw_result.scalars().all()
+        
         source_logs = {}
         for ext in raw_extractions:
             src_url = all_sources.get(str(ext.source_id), "Unknown")
@@ -1607,6 +1618,7 @@ async def get_product_extraction_logs(
                     "attributes": [],
                     "extracted_at": ext.extracted_at.isoformat() if ext.extracted_at else None,
                 }
+            
             raw_attrs = ext.raw_attributes or {}
             for attr_name, attr_value in raw_attrs.items():
                 if isinstance(attr_value, dict):
@@ -1616,6 +1628,8 @@ async def get_product_extraction_logs(
                         "unit": attr_value.get("unit"),
                         "raw_text": str(attr_value.get("raw", attr_value)),
                         "confidence": ext.confidence,
+                        "extraction_algorithm": attr_value.get("extraction_algorithm", "Algo 1"),  # ✓ NEW
+                        "extraction_source": attr_value.get("extraction_source", "html"),  # ✓ NEW
                     })
                 else:
                     source_logs[src_url]["attributes"].append({
@@ -1624,7 +1638,10 @@ async def get_product_extraction_logs(
                         "unit": None,
                         "raw_text": str(attr_value),
                         "confidence": ext.confidence,
+                        "extraction_algorithm": "Algo 1",  # ✓ NEW (default)
+                        "extraction_source": "html",  # ✓ NEW (default)
                     })
+        
         final_attrs = product.attributes or {}
         attr_source_map = {}
         for attr_name, attr_data in final_attrs.items():
@@ -1634,7 +1651,10 @@ async def get_product_extraction_logs(
                     "unit": attr_data.get("unit"),
                     "confidence": attr_data.get("confidence", 0),
                     "sources": attr_data.get("sources", []),
+                    "extraction_algorithm": attr_data.get("extraction_algorithm", "Algo 1"),  # ✓ NEW
+                    "extraction_source": attr_data.get("extraction_source", "html"),  # ✓ NEW
                 }
+        
         return {
             "product_name": product.product_name,
             "product_code": product.product_code,

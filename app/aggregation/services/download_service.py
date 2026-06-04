@@ -109,32 +109,113 @@ class HttpDownloadService(IDownloadService):
     async def _download_playwright(self, url: str) -> Optional[Dict]:
         try:
             async with async_playwright() as p:
+
                 launch_args = {
-                    "headless": True,
+                    "headless": True,   # set False temporarily for debugging
                     "args": [
-                        '--no-sandbox',
-                        '--disable-setuid-sandbox'
+                        "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                        "--disable-blink-features=AutomationControlled"
                     ]
                 }
 
                 if self.proxy:
-                    launch_args["proxy"] = {
-                        "server": self.proxy
-                    }
+                    launch_args["proxy"] = {"server": self.proxy}
 
                 browser = await p.chromium.launch(**launch_args)
-                page = await browser.new_page()
-                await page.goto(url, timeout=self.timeout * 1000, wait_until="domcontentloaded")
+
+                context = await browser.new_context(
+                    user_agent=(
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/120.0.0.0 Safari/537.36"
+                    ),
+                    viewport={"width": 1920, "height": 1080}
+                )
+
+                page = await context.new_page()
+
+                # Navigate and wait for JS
+                await page.goto(url, timeout=self.timeout * 1000, wait_until="networkidle")
+
+                # Small buffer
+                await page.wait_for_timeout(1500)
+
+                # Scroll entire page (triggers lazy load)
+                await page.evaluate("""
+                    async () => {
+                        await new Promise(resolve => {
+                            let totalHeight = 0;
+                            let distance = 500;
+                            let timer = setInterval(() => {
+                                window.scrollBy(0, distance);
+                                totalHeight += distance;
+                                if(totalHeight >= document.body.scrollHeight){
+                                    clearInterval(timer);
+                                    resolve();
+                                }
+                            }, 300);
+                        });
+                    }
+                """)
+
+                await page.wait_for_timeout(1500)
+
+                # Try clicking common spec tabs / expanders
+                expand_selectors = [
+                    "text=Specifications",
+                    "text=Specification",
+                    "text=Product Details",
+                    "text=View Specifications",
+                    "text=Show More",
+                    "text=View More",
+                    "button:has-text('Specifications')",
+                    "a:has-text('Specifications')"
+                ]
+
+                for selector in expand_selectors:
+                    try:
+                        elements = await page.query_selector_all(selector)
+                        for el in elements:
+                            try:
+                                await el.click()
+                                await page.wait_for_timeout(800)
+                            except:
+                                pass
+                    except:
+                        pass
+
+                # Click generic expandable buttons
+                try:
+                    buttons = await page.query_selector_all("button")
+                    for btn in buttons:
+                        try:
+                            text = await btn.inner_text()
+                            if any(keyword in text.lower() for keyword in ["spec", "expand", "more", "details"]):
+                                await btn.click()
+                                await page.wait_for_timeout(500)
+                        except:
+                            pass
+                except:
+                    pass
+
+                await page.wait_for_timeout(2000)
+
                 content = await page.content()
+
                 await browser.close()
-                
-                if content and len(content) > 500:
+
+                if content and len(content) > 20000:
+                    logger.info(f"✅ Playwright FULL HTML fetched: {len(content)} bytes from {url}")
                     return {
                         "source_url": url,
-                        "raw_bytes": content.encode('utf-8'),
+                        "raw_bytes": content.encode("utf-8"),
                         "type": "html",
                     }
+
+                logger.warning(f"⚠ Playwright returned small HTML ({len(content)}) for {url}")
                 return None
+
         except Exception as e:
             logger.error(f"Playwright download failed for {url}: {e}")
             return None

@@ -53,7 +53,7 @@ class Product(UUIDModel,table=True):
     vendor_name: Optional[str] = Field(default="")
     vendor: Optional[Vendor] = Relationship(back_populates="products")
     mpn:Optional[str]=Field(index=True,default=None)
-    model_numer:Optional[str]=Field(index=True,default=None)
+    model_number:Optional[str]=Field(index=True,default=None)
     attribute_objs: List["Attribute"] = Relationship(
         back_populates="products", 
         link_model=ProductAttributeLinkModel

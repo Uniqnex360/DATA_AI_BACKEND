@@ -1,36 +1,28 @@
+from bs4 import BeautifulSoup
 import logging
 from typing import Optional, List
 logger = logging.getLogger('extraction_prompts')
-from bs4 import BeautifulSoup
+
+
 def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
     soup = BeautifulSoup(html_content, "html.parser")
-
-    # Remove noise
     for tag in soup(["script", "style", "noscript", "svg"]):
         tag.decompose()
-
     sections = []
-
-    # 1. Tables
     for table in soup.find_all("table"):
         rows = table.find_all("tr")
         if len(rows) >= 3:
             sections.append(str(table))
-
-    # 2. Definition lists
     for dl in soup.find_all("dl"):
         if len(dl.find_all("dt")) >= 2:
             sections.append(str(dl))
-
-    # 3. Structured div grids (label-value patterns)
     for div in soup.find_all("div"):
         children = div.find_all(["div", "span", "p"], recursive=False)
         if len(children) >= 4:
-            texts = [c.get_text(strip=True) for c in children if c.get_text(strip=True)]
+            texts = [c.get_text(strip=True)
+                     for c in children if c.get_text(strip=True)]
             if len(texts) >= 4 and len(" ".join(texts)) < 6000:
                 sections.append(str(div))
-
-    # 4. Section headers indicating spec areas
     for section in soup.find_all("section"):
         header = section.find(["h1", "h2", "h3", "h4"])
         if header:
@@ -41,39 +33,30 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
             ]):
                 if len(section.get_text()) < 15000:
                     sections.append(str(section))
-
-    # Deduplicate
     unique_sections = list(dict.fromkeys(sections))
-
     content = "\n\n".join(unique_sections[:max_sections])
-
-    # Hard safety cap
     MAX_CHARS = 120000
     return content[:MAX_CHARS]
+
+
 def extract_product_descriptions(html_content: str) -> str:
     """Extract all product-related text from HTML with fallbacks."""
     from bs4 import BeautifulSoup
-    
     soup = BeautifulSoup(html_content, "html.parser")
     text_parts = []
-    
-    # Remove noise early
     for tag in soup.find_all(['script', 'style', 'nav', 'footer']):
         tag.decompose()
-    
-    # 1. Meta description
     meta_tag = soup.find('meta', attrs={'name': 'description'})
     if meta_tag:
         meta_desc = meta_tag.get('content', '').strip()
         if meta_desc:
             text_parts.append(meta_desc)
-    
-    # 2. Semantic containers
     description_selectors = [
-        {'class': lambda x: x and any(k in x.lower() for k in ['description', 'overview', 'details', 'about', 'product-info', 'specs', 'specification'])},
-        {'id': lambda x: x and any(k in x.lower() for k in ['description', 'overview', 'details', 'specs'])},
+        {'class': lambda x: x and any(k in x.lower() for k in [
+                                      'description', 'overview', 'details', 'about', 'product-info', 'specs', 'specification'])},
+        {'id': lambda x: x and any(k in x.lower() for k in [
+                                   'description', 'overview', 'details', 'specs'])},
     ]
-    
     seen_texts = set()
     for selector in description_selectors:
         for tag in soup.find_all(['div', 'section', 'article'], attrs=selector):
@@ -83,23 +66,21 @@ def extract_product_descriptions(html_content: str) -> str:
                 if text_hash not in seen_texts:
                     text_parts.append(text)
                     seen_texts.add(text_hash)
-    
-    # 3. Fallback content
     if len(' '.join(text_parts)) < 300:
-        main_content = soup.find('main') or soup.find('article') or soup.find('body')
+        main_content = soup.find('main') or soup.find(
+            'article') or soup.find('body')
         if main_content:
             for tag in main_content.find_all(['p', 'li', 'dd']):
                 text = tag.get_text(strip=True)
-                if (text and len(text) > 20 
+                if (text and len(text) > 20
                     and not any(skip in text.lower() for skip in ['cookie', 'subscribe', 'newsletter', 'contact us', 'privacy', 'terms'])
-                    and text[:150] not in seen_texts):
+                        and text[:150] not in seen_texts):
                     text_parts.append(text)
                     seen_texts.add(text[:150])
-    
-    # Join all text with newlines
     desc_text = ''.join(text_parts)
     return desc_text[:3000]
-  
+
+
 def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: str,
                             primary_attributes: list, html_content: str,
                             candidate_images: Optional[List[str]] = None, source_url: str = "") -> dict:
@@ -139,9 +120,7 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         primary_attrs_display = "\n".join(
             [f"  {i+1}. {attr}" for i, attr in enumerate(primary_list)])
         spec_content = extract_high_signal_specs(html_content)
-        desc_text = extract_product_descriptions(html_content) 
-
-
+        desc_text = extract_product_descriptions(html_content)
         prompt = f"""
         You are extracting technical specifications from product content.
         PRODUCT CONTEXT:
@@ -151,7 +130,6 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         - Category: {taxonomy}
            DESCRIPTION CONTENT:
         {desc_text}
-        
         ═══════════════════════════════════════════════════════════════════
         CRITICAL RULE: NO HALLUCINATION - STRICT EXTRACTION ONLY
         ═══════════════════════════════════════════════════════════════════
@@ -265,7 +243,6 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         DYNAMIC ATTRIBUTE DEDUPLICATION
         ═══════════════════════════════════════════════════════════════════
         NORMALIZATION ALGORITHM (for ANY attribute, ANY category):
-
         1. EXTRACT: Find attribute name from HTML
         2. NORMALIZE: 
            - Convert to lowercase
@@ -276,10 +253,8 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
            - If normalized forms identical → use PRIMARY ATTRIBUTE name (exact spelling)
            - If no match → use HTML name
         4. OUTPUT: Return normalized name to prevent duplicates
-
         This algorithm works for ANY product category, ANY attribute variation.
         No hardcoded rules. Pure semantic matching via normalization.
-
         ══════════════════════════════════════════════════════════════════
           ═══════════════════════════════════════════════════════════════════
         EXTRACTION RULES
@@ -326,19 +301,16 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         DESCRIPTION EXTRACTION
         ═══════════════════════════════════════════════════════════════════
         Extract product descriptions from the page:
-
         SHORT DESCRIPTION (short_description):
         - Look for: <meta name="description"> tag content
         - Product overview/summary paragraphs (usually at top of page)
         - "About this item" section (first 1-2 sentences)
         - Keep it concise: 1-2 sentences max
-
         LONG DESCRIPTION (long_description):
         - Look for: "Product details", "Description", "Overview" sections
         - Feature lists, bullet points
         - Detailed product information paragraphs
         - Can be longer (3-5 sentences or bullet points)
-
         RULES:
         - ONLY extract descriptions that exist on the page
         - Do NOT generate or create descriptions from attributes
