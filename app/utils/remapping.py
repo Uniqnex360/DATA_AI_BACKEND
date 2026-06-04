@@ -5,18 +5,16 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 from scipy.spatial.distance import cosine
 
-logger = logging.getLogger("aggregate_product")
+logger = logging.getLogger("cluster_attributes_by_meaning")
 _embedding_model = None
 
 
 async def get_embedding_model():
-    global _embedding_model
-    if _embedding_model is None:
-        logger.info("Loading SentenceTransformer model...")
-        _embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-        logger.info("✓ Model loaded")
-    return _embedding_model
-
+    from app.main import _global_embedding_model
+    if _global_embedding_model is None:
+        from sentence_transformers import SentenceTransformer
+        return SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
+    return _global_embedding_model
 
 async def cluster_attributes_by_meaning(
     raw_attrs: List[Dict],

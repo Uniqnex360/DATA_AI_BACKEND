@@ -4,10 +4,25 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 from pathlib import Path
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from app.core.database import init_db
+from sentence_transformers import SentenceTransformer
 from app.api.v1.endpoints import auth,audit, pdf_extraction,users,golden_records,dashboard,products,rules,projects,extraction,cleansing,aggregation,standardization,enrichment,hitl,publishing,business_rules,reporting
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api_main")
+logger.info("MASTER PROCESS: Pre-loading SentenceTransformer (Shared Memory)...")
+try:
+    _global_embedding_model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
+    logger.info("✓ Shared model weights loaded into RAM")
+except Exception as e:
+    logger.error(f"Failed to pre-load model: {e}")
+    _global_embedding_model = None
 app = FastAPI(title="Product Data Aggregation Engine - Production Backend")
 app.add_middleware(
     CORSMiddleware,
