@@ -445,6 +445,15 @@ async def save_cleaned_attributes(
                 attr_val.uom = final_unit
                 db_session.add(attr_val)
                 updated = True
+                if product.attributes is None:
+                    product.attributes = {}
+                product.attributes[ca.name] = {
+                    "name": ca.name,
+                    "value": final_val,
+                    "unit": final_unit,
+                    "sources": [llm_provider]
+                }
+                flag_modified(product, "attributes")
             if name_changed:
                 attr_stmt = select(Attribute).where(
                     Attribute.id == attr_val.attribute_id)
@@ -702,6 +711,15 @@ async def update_product_attributes(
                         f"Cleaning failed for attribute {attr_name}: {e}")
                     attr_val.value = incoming.value
                     attr_val.uom = incoming.uom or ""
+                if product.attributes is None:
+                    product_attributes={}
+                product.attributes[attr_name]={
+                    "name":attr_name,
+                    "value":attr_val.value,
+                    "unit":attr_val.uom,
+                    "sources":['bulk_manual_update']
+                }
+                flag_modified(product,'attributes')
                 new_value=str(attr_val.value or "")
                 if old_value !=new_value  or old_uom !=attr_val.uom:
                     edit_log=AttributeEditLog(
