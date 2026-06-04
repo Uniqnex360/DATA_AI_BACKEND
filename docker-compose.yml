@@ -23,6 +23,8 @@ services:
       - db
     volumes:
       - ./storage:/app/storage
+    shm_size: '2gb'         
+    mem_limit: 8g 
   adminer:
     image: adminer
     restart: always
