@@ -722,29 +722,26 @@ async def get_attribute_summary(
     db: AsyncSession = Depends(get_session)
 ):
     try:
-        # 1. Verify these model names match your actual database models!
         from app.models.attribute import Attribute, AttributeValue
-        from app.models.product_attribute_link import ProductAttributeValueLinkModel 
+        from app.models.product_attribute_link import ProductAttributeValueLinkModel
 
         start_dt = parse_date(start_date, end=False)
         end_dt = parse_date(end_date, end=True)
-        
         filters = build_product_filters(project_id, start_dt, end_dt, date_field=date_field)
-        
+
         if taxonomy:
-            # Using ilike and trim makes the match much more reliable
-            filters.append(func.trim(Product.taxonomy).ilike(taxonomy.strip()))
+            # FUZZY MATCHING: Handles spacing differences like "A > B" vs "A>B"
+            # We use ILIKE with wildcards to find the category path anywhere in the string
+            clean_tax = taxonomy.strip()
+            filters.append(Product.taxonomy.ilike(f"%{clean_tax}%"))
 
-        # --- DEBUG LOGGING ---
-        # First, check if products exist at all for this taxonomy and date
-        count_stmt = select(func.count(Product.id)).where(*filters)
-        count_res = await db.execute(count_stmt)
-        total_prods = count_res.scalar()
-        logger.info(f"DEBUG: Found {total_prods} products for taxonomy '{taxonomy}' and dates {start_date} to {end_date}")
+        # Log count for debugging
+        count_check = await db.execute(select(func.count(Product.id)).where(*filters))
+        prod_count = count_check.scalar() or 0
+        logger.info(f"DEBUG: Found {prod_count} products for taxonomy '{taxonomy}' in date range")
 
-        if total_prods == 0:
+        if prod_count == 0:
             return []
-        # ---------------------
 
         stmt = (
             select(
@@ -753,18 +750,9 @@ async def get_attribute_summary(
                 func.array_agg(func.distinct(AttributeValue.uom)).label("uoms")
             )
             .select_from(Product) 
-            .join(
-                ProductAttributeValueLinkModel, 
-                ProductAttributeValueLinkModel.product_id == Product.id
-            )
-            .join(
-                AttributeValue, 
-                ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id
-            )
-            .join(
-                Attribute, 
-                AttributeValue.attribute_id == Attribute.id
-            )
+            .join(ProductAttributeValueLinkModel, ProductAttributeValueLinkModel.product_id == Product.id)
+            .join(AttributeValue, ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+            .join(Attribute, AttributeValue.attribute_id == Attribute.id)
             .where(*filters)
             .group_by(Attribute.attribute_name)
             .order_by(func.count(func.distinct(AttributeValue.value)).desc())
@@ -772,17 +760,13 @@ async def get_attribute_summary(
         )
 
         result = await db.execute(stmt)
-        rows = result.all()
-        
-        logger.info(f"DEBUG: Successfully joined and found {len(rows)} attributes")
-
         return [
             {
                 "attribute_name": row.attribute_name,
                 "unique_values": row.unique_values,
                 "uoms": [u for u in row.uoms if u]
             }
-            for row in rows
+            for row in result.all()
         ]
     except Exception as e:
         logger.error(f"Failed to get attribute summary: {e}", exc_info=True)
