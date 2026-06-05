@@ -798,55 +798,61 @@ async def get_taxonomies_list(
     except Exception as e:
         logger.error(f"Failed to get taxonomies list: {e}")
         return []
+    
 @router.get("/taxonomy-attribute-metrics")
 async def get_taxonomy_attribute_metrics(
     taxonomy: str = Query(...),
     project_id: Optional[str] = Query(None),
-    start_date: Optional[str] = Query(None),
-    end_date: Optional[str] = Query(None),
-    date_field: DateField = Query("created_at"),
     db: AsyncSession = Depends(get_session)
 ):
     try:
         from app.models.attribute import Attribute, AttributeValue
         from app.models.product_attribute_link import ProductAttributeValueLinkModel
-
-        start_dt = parse_date(start_date, end=False)
-        end_dt = parse_date(end_date, end=True)
-        filters = build_product_filters(project_id, start_dt, end_dt, date_field=date_field)
-        
-        # Apply same fuzzy taxonomy filter
-        filters.append(Product.taxonomy.ilike(f"%{taxonomy.strip()}%"))
-
-        # 1. Total Products Count
-        prod_stmt = select(func.count(Product.id)).where(*filters)
-        total_products = (await db.execute(prod_stmt)).scalar() or 0
-
-        # 2. Attribute Specific Metrics
+        count_stmt = select(func.count(Product.id)).where(Product.taxonomy == taxonomy)
+        if project_id:
+            count_stmt = count_stmt.where(Product.project_id == project_id)
+        total_products_res = await db.execute(count_stmt)
+        total_products = total_products_res.scalar() or 0
         attr_stmt = (
             select(
                 func.count(func.distinct(Attribute.id)).label("attr_count"),
                 func.count(func.distinct(AttributeValue.id)).label("value_count")
             )
-            .select_from(Product)
-            .join(ProductAttributeValueLinkModel, ProductAttributeValueLinkModel.product_id == Product.id)
-            .join(AttributeValue, ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
-            .join(Attribute, AttributeValue.attribute_id == Attribute.id)
-            .where(*filters)
+            .select_from(Product) 
+            .join(
+                ProductAttributeValueLinkModel, 
+                ProductAttributeValueLinkModel.product_id == Product.id
+            )
+            .join(
+                AttributeValue, 
+                ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id
+            )
+            .join(
+                Attribute, 
+                AttributeValue.attribute_id == Attribute.id
+            )
+            .where(Product.taxonomy == taxonomy)
         )
-
+        if project_id:
+            attr_stmt = attr_stmt.where(Product.project_id == project_id)
         stats_res = await db.execute(attr_stmt)
         stats = stats_res.first()
-
         total_attributes = stats.attr_count if stats else 0
         total_values = stats.value_count if stats else 0
-
+        avg_unique = 0
+        if total_attributes > 0:
+            avg_unique = round(total_values / total_attributes, 1)
         return {
             "totalProducts": total_products,
             "totalAttributes": total_attributes,
-            "avgUniqueValues": round(total_values / total_attributes, 1) if total_attributes > 0 else 0,
+            "avgUniqueValues": avg_unique,
             "avgDensity": 0 
         }
     except Exception as e:
-        logger.error(f"Failed taxonomy metrics: {e}")
-        return {"totalProducts": 0, "totalAttributes": 0, "avgUniqueValues": 0, "avgDensity": 0}
+        logger.error(f"Failed to get taxonomy attribute metrics: {e}", exc_info=True)
+        return {
+            "totalProducts": 0,
+            "totalAttributes": 0,
+            "avgUniqueValues": 0,
+            "avgDensity": 0
+        }
