@@ -215,14 +215,30 @@ async def generate_products_excel(
                 final_template.append(name)
                 return True
             return False
+        # for attr in data['user_defined']:
+        #     add_if_unique(attr)
+        # if tax != "Unknown":
+        #     category_attrs = await get_taxonomy_attribute_hints(tax, db)
+        #     for cat_attr in category_attrs:
+        #         add_if_unique(cat_attr)
+        # for ai_attr in sorted(data['ai_discovered']):
+        #     add_if_unique(ai_attr)
+        # taxonomy_templates[tax] = final_template[:MAX_ATTRIBUTES]
+                # 1. Add attributes the AI actually FOUND first (Highest Priority)
+        # This ensures 'Amperage', 'Lock-On Switch', etc. are always in the file
+        for ai_attr in sorted(data['ai_discovered']):
+            add_if_unique(ai_attr)
+
+        # 2. Add User Defined attributes from the input file
         for attr in data['user_defined']:
             add_if_unique(attr)
+
+        # 3. Add Category Hints to fill up the remaining of the 100 slots
         if tax != "Unknown":
             category_attrs = await get_taxonomy_attribute_hints(tax, db)
             for cat_attr in category_attrs:
                 add_if_unique(cat_attr)
-        for ai_attr in sorted(data['ai_discovered']):
-            add_if_unique(ai_attr)
+        
         taxonomy_templates[tax] = final_template[:MAX_ATTRIBUTES]
     is_validation_mode = 'validation' in use_case if use_case else False
     project_name_cache = {}
@@ -401,8 +417,11 @@ async def generate_products_excel(
                     orig_val_str = clean_for_excel(orig_match.get('value'))
                     orig_uom_str = clean_for_excel(orig_match.get('uom') or orig_match.get('unit'))
                     used_original_indexes[template_norm] = next_idx + 1
-            final_val = ai_val_str if ai_val_str else orig_val_str
-            final_uom = ai_uom_str if ai_val_str else orig_uom_str
+            # final_val = ai_val_str if ai_val_str else orig_val_str
+            # final_uom = ai_uom_str if ai_val_str else orig_uom_str
+            final_val = orig_val_str if orig_val_str else ai_val_str
+            final_uom = orig_uom_str if orig_val_str else ai_uom_str
+            
             row[f"attribute_value{i}"] = final_val
             row[f"attribute_uom{i}"] = final_uom
             if orig_match and orig_match.get('validation_value'):
@@ -449,10 +468,18 @@ async def generate_products_excel(
                 remaining_attrs.append(k)
         
         # NOW process remaining_attrs (separate loop)
-        current_slot = len(attribute_template) + 1
+        # current_slot = len(attribute_template) + 1
+        # for ai_key in remaining_attrs:
+        #     if current_slot > MAX_ATTRIBUTES:
+        #         break
+        current_slot = len([k for k in row.keys() if k.startswith('attribute_name') and row[k]]) + 1
         for ai_key in remaining_attrs:
             if current_slot > MAX_ATTRIBUTES:
                 break
+            while row.get(f"attribute_name{current_slot}") and current_slot <= MAX_ATTRIBUTES:
+                current_slot += 1
+            
+            if current_slot > MAX_ATTRIBUTES: break
             row[f"attribute_name{current_slot}"] = ai_key.replace('_', ' ').title()
             row[f"attribute_value{current_slot}"] = clean_for_excel(ai_data[ai_key], ai_key)
             if isinstance(ai_data[ai_key], dict):
