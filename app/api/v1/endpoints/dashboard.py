@@ -876,3 +876,102 @@ async def get_attribute_summary(
     except Exception as e:
         logger.error(f"Failed to get attribute summary: {e}", exc_info=True)
         return []
+from sqlalchemy.orm import aliased
+
+@router.get("/taxonomies-list")
+async def get_taxonomies_list(
+    project_id: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    Returns a list of all taxonomies and their product counts.
+    Used for the dropdown selection in the Attributes tab.
+    """
+    try:
+        stmt = select(
+            Product.taxonomy,
+            func.count(Product.id).label("count")
+        ).where(
+            Product.taxonomy.isnot(None),
+            Product.taxonomy != ""
+        )
+        
+        if project_id:
+            stmt = stmt.where(Product.project_id == project_id)
+            
+        stmt = stmt.group_by(Product.taxonomy).order_by(func.count(Product.id).desc())
+        
+        result = await db.execute(stmt)
+        return [{"taxonomy": row.taxonomy, "count": row.count} for row in result.all()]
+    except Exception as e:
+        logger.error(f"Failed to get taxonomies list: {e}")
+        return []
+
+
+@router.get("/taxonomy-attribute-metrics")
+async def get_taxonomy_attribute_metrics(
+    taxonomy: str = Query(...),
+    project_id: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    Calculates the 3 main metric cards for the selected taxonomy:
+    1. Total Attributes (schema size)
+    2. Total Products (segment size)
+    3. Avg Unique Values (data diversity/normalization health)
+    """
+    try:
+        # Import models locally as done in your get_attribute_summary
+        from app.models.attribute import Attribute, AttributeValue
+        from app.models.product_attribute_link import ProductAttributeValueLinkModel
+
+        # 1. Total Products Count in this taxonomy
+        count_stmt = select(func.count(Product.id)).where(Product.taxonomy == taxonomy)
+        if project_id:
+            count_stmt = count_stmt.where(Product.project_id == project_id)
+        
+        total_products = (await db.execute(count_stmt)).scalar() or 0
+
+        # 2. Attribute and Value Diversity
+        # We need to find how many unique attributes are linked to this taxonomy
+        # and how many unique values exist across those attributes.
+        attr_stmt = (
+            select(
+                func.count(func.distinct(Attribute.id)).label("attr_count"),
+                func.count(func.distinct(AttributeValue.id)).label("value_count")
+            )
+            .join(ProductAttributeValueLinkModel, ProductAttributeValueLinkModel.product_id == Product.id)
+            .join(AttributeValue, ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+            .join(Attribute, AttributeValue.attribute_id == Attribute.id)
+            .where(Product.taxonomy == taxonomy)
+        )
+        
+        if project_id:
+            attr_stmt = attr_stmt.where(Product.project_id == project_id)
+
+        stats_res = await db.execute(attr_stmt)
+        stats = stats_res.first()
+
+        total_attributes = stats.attr_count if stats else 0
+        total_values = stats.value_count if stats else 0
+
+        # Avg Unique Values = Total unique value entries / Total attributes
+        avg_unique = 0
+        if total_attributes > 0:
+            avg_unique = round(total_values / total_attributes, 1)
+
+        return {
+            "totalProducts": total_products,
+            "totalAttributes": total_attributes,
+            "avgUniqueValues": avg_unique,
+            "avgDensity": 0 # Placeholder if you want to calculate fill-rate later
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to get taxonomy attribute metrics: {e}", exc_info=True)
+        return {
+            "totalProducts": 0,
+            "totalAttributes": 0,
+            "avgUniqueValues": 0,
+            "avgDensity": 0
+        }
