@@ -787,7 +787,7 @@ async def get_attribute_summary(
     except Exception as e:
         logger.error(f"Failed to get attribute summary: {e}", exc_info=True)
         return []
-    ``
+    
 from sqlalchemy.orm import aliased
 @router.get("/taxonomies-list")
 async def get_taxonomies_list(
