@@ -722,14 +722,30 @@ async def get_attribute_summary(
     db: AsyncSession = Depends(get_session)
 ):
     try:
+        # 1. Verify these model names match your actual database models!
         from app.models.attribute import Attribute, AttributeValue
-        from app.models.product_attribute_link import ProductAttributeValueLinkModel
+        from app.models.product_attribute_link import ProductAttributeValueLinkModel 
+
         start_dt = parse_date(start_date, end=False)
         end_dt = parse_date(end_date, end=True)
-        filters = build_product_filters(
-            project_id, start_dt, end_dt, date_field=date_field)
+        
+        filters = build_product_filters(project_id, start_dt, end_dt, date_field=date_field)
+        
         if taxonomy:
-            filters.append(Product.taxonomy == taxonomy)
+            # Using ilike and trim makes the match much more reliable
+            filters.append(func.trim(Product.taxonomy).ilike(taxonomy.strip()))
+
+        # --- DEBUG LOGGING ---
+        # First, check if products exist at all for this taxonomy and date
+        count_stmt = select(func.count(Product.id)).where(*filters)
+        count_res = await db.execute(count_stmt)
+        total_prods = count_res.scalar()
+        logger.info(f"DEBUG: Found {total_prods} products for taxonomy '{taxonomy}' and dates {start_date} to {end_date}")
+
+        if total_prods == 0:
+            return []
+        # ---------------------
+
         stmt = (
             select(
                 Attribute.attribute_name,
@@ -754,18 +770,24 @@ async def get_attribute_summary(
             .order_by(func.count(func.distinct(AttributeValue.value)).desc())
             .limit(40) 
         )
+
         result = await db.execute(stmt)
+        rows = result.all()
+        
+        logger.info(f"DEBUG: Successfully joined and found {len(rows)} attributes")
+
         return [
             {
                 "attribute_name": row.attribute_name,
                 "unique_values": row.unique_values,
                 "uoms": [u for u in row.uoms if u]
             }
-            for row in result.all()
+            for row in rows
         ]
     except Exception as e:
         logger.error(f"Failed to get attribute summary: {e}", exc_info=True)
         return []
+    ``
 from sqlalchemy.orm import aliased
 @router.get("/taxonomies-list")
 async def get_taxonomies_list(
