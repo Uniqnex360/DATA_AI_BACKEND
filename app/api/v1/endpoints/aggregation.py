@@ -649,10 +649,12 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                     logger.info(f"   └─ Primary attrs: {primary_attrs}")
                     job.current_product = product.product_code
                     job.successful = successful
+                    product.aggregation_index = idx + 1 
                     job.failed = failed
                     progress_percentage = ((successful + failed) / total) * 100
                     job.progress_percentage = progress_percentage  
                     job.current_product = product.product_code
+                    logger.info(f"[Job {job_id}] Aggregating {idx+1}/{total}: {product.product_code}")
                     db_session.add(job)
                     await db_session.commit()
                     if has_missing_llm:
@@ -1359,6 +1361,7 @@ async def aggregate_with_retry(
                  cached_urls=cached_urls,  
                 is_algo2_run=is_algo2_run
             )
+            
             logger.info(f"Aggregation result for {mpn}: {result}")
             image_url = result.get('golden_record', {}).get('image_url')
             logger.info(f" Image URL in result: {image_url}")

@@ -15,6 +15,7 @@ class Product(UUIDModel,table=True):
         Index("ix_product_updated_at_project", "updated_at", "project_id"),
     )
     id: UUID = Field(default_factory=uuid4, primary_key=True)
+    aggregation_index: Optional[int] = Field(default=None, index=True) 
     product_code:str=Field(index=True)
     product_name:str
     sku: Optional[str] = Field(index=True)

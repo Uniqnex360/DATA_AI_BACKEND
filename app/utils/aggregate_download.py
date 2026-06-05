@@ -28,7 +28,7 @@ async def generate_products_excel(
         MAX_ATTRIBUTES = 100
     else:
         MAX_ATTRIBUTES = 100
-    core_headers = ["Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name", "Brand", "GTIN",
+    core_headers = ["Sequence","Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name", "Brand", "GTIN",
                     "ean", "upc", "unspc", "MPN", "Status", "Lifecycle_Stage", "Launch_Date", "Discontinue_Status"]
     cat_headers = ["industry_name", "category 1", "category 2", "category 3",
                    "category 4", "category 5", "category 6", "category 7", "category 8", "Taxonomy"]
@@ -275,6 +275,7 @@ async def generate_products_excel(
                                     row['Dimension_Unit'] = uom_clean
                     break
         row.update({
+             "Sequence": p.aggregation_index or "", 
             "Prod ID": str(p.id) if p.id else "",
             "SKU": row.get("SKU") or p.sku or "",
             "Product_Type": row.get("Product_Type") or getattr(p, 'product_type', '') or "",
