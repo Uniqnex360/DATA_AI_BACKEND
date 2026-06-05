@@ -907,42 +907,44 @@ async def get_taxonomies_list(
         logger.error(f"Failed to get taxonomies list: {e}")
         return []
 
-
 @router.get("/taxonomy-attribute-metrics")
 async def get_taxonomy_attribute_metrics(
     taxonomy: str = Query(...),
     project_id: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_session)
 ):
-    """
-    Calculates the 3 main metric cards for the selected taxonomy:
-    1. Total Attributes (schema size)
-    2. Total Products (segment size)
-    3. Avg Unique Values (data diversity/normalization health)
-    """
     try:
-        # Import models locally as done in your get_attribute_summary
         from app.models.attribute import Attribute, AttributeValue
         from app.models.product_attribute_link import ProductAttributeValueLinkModel
 
-        # 1. Total Products Count in this taxonomy
+        # 1. Total Products Count (This one is usually fine)
         count_stmt = select(func.count(Product.id)).where(Product.taxonomy == taxonomy)
         if project_id:
             count_stmt = count_stmt.where(Product.project_id == project_id)
         
-        total_products = (await db.execute(count_stmt)).scalar() or 0
+        total_products_res = await db.execute(count_stmt)
+        total_products = total_products_res.scalar() or 0
 
         # 2. Attribute and Value Diversity
-        # We need to find how many unique attributes are linked to this taxonomy
-        # and how many unique values exist across those attributes.
+        # ADDED .select_from(Product) to resolve the ambiguity
         attr_stmt = (
             select(
                 func.count(func.distinct(Attribute.id)).label("attr_count"),
                 func.count(func.distinct(AttributeValue.id)).label("value_count")
             )
-            .join(ProductAttributeValueLinkModel, ProductAttributeValueLinkModel.product_id == Product.id)
-            .join(AttributeValue, ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
-            .join(Attribute, AttributeValue.attribute_id == Attribute.id)
+            .select_from(Product) # <--- THIS IS THE FIX
+            .join(
+                ProductAttributeValueLinkModel, 
+                ProductAttributeValueLinkModel.product_id == Product.id
+            )
+            .join(
+                AttributeValue, 
+                ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id
+            )
+            .join(
+                Attribute, 
+                AttributeValue.attribute_id == Attribute.id
+            )
             .where(Product.taxonomy == taxonomy)
         )
         
@@ -955,7 +957,6 @@ async def get_taxonomy_attribute_metrics(
         total_attributes = stats.attr_count if stats else 0
         total_values = stats.value_count if stats else 0
 
-        # Avg Unique Values = Total unique value entries / Total attributes
         avg_unique = 0
         if total_attributes > 0:
             avg_unique = round(total_values / total_attributes, 1)
@@ -964,7 +965,7 @@ async def get_taxonomy_attribute_metrics(
             "totalProducts": total_products,
             "totalAttributes": total_attributes,
             "avgUniqueValues": avg_unique,
-            "avgDensity": 0 # Placeholder if you want to calculate fill-rate later
+            "avgDensity": 0 
         }
 
     except Exception as e:
