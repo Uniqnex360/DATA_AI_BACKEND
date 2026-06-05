@@ -1012,7 +1012,13 @@ async def aggregate_product(
                 )
                 attr_result = await db.execute(attr_stmt)
                 rows = attr_result.all()
-                canonical_names = [row[0] for row in rows if row[0]]
+                # canonical_names = [row[0] for row in rows if row[0]]
+                raw_names = {a['name'].lower() for a in raw_attrs_for_combine}
+                # Only send canonical names that are actually relevant to what we found
+                canonical_names = [
+                    row[0] for row in rows 
+                    if row[0] and (row[0].lower() in raw_names or "amp" in row[0].lower() or "speed" in row[0].lower())
+                ]
                 canonical_units = {
                     row[0]: row[1]
                     for row in rows
@@ -1023,7 +1029,7 @@ async def aggregate_product(
         raw_attrs_for_combine = await cluster_attributes_by_meaning(
             raw_attrs_for_combine,
             canonical_names=canonical_names,
-            threshold=0.85
+            threshold=0.75
         )
         logger.info(f"After clustering: {len(set(a['name'] for a in raw_attrs_for_combine))} unique names")
         project = await db.get(Project, project_id) if db and project_id else None
@@ -1332,6 +1338,11 @@ You are a Senior Product Data Engineer. Process the raw product attributes below
 Your job: clean → unify synonyms → standardize → return ONE canonical attribute per concept.
 {canonical_section}
 {mandatory_section} 
+STRICT DATA RETENTION MANDATE:
+    1. If an attribute like 'AMPS' or 'Voltage' is in the input, it MUST be in the output.
+    2. If the name is in the 'PREFERRED' list, RENAME it (e.g., 'AMPS' -> 'Amperage').
+    3. If the name is NOT in the list, keep the original name.
+    4. NEVER delete technical data. If you drop an attribute that has a value, it is a CRITICAL FAILURE.
 PRODUCT CONTEXT:
   MPN: {mpn}
   Brand: {brand}
