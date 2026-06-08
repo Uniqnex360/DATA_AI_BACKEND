@@ -318,7 +318,7 @@ async def get_dashboard_timeline(
 @router.get("/category-flow")
 async def get_category_flow(
     project_id: Optional[str] = Query(None),
-    limit: Optional[int] = Query(None), # 1. Add this parameter
+    limit: Optional[int] = Query(None), 
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
     date_field: DateField = Query("created_at"),
@@ -342,7 +342,7 @@ async def get_category_flow(
             func.count(Product.id).desc()
         )
 
-        # 2. Apply limit only if provided
+        
         if limit:
             stmt = stmt.limit(limit)
 
@@ -363,7 +363,7 @@ async def get_category_flow(
 @router.get("/brand-flow")
 async def get_brand_flow(
     project_id: Optional[str] = Query(None),
-    limit: Optional[int] = Query(None), # 1. Add this parameter
+    limit: Optional[int] = Query(None), 
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
     date_field: DateField = Query("created_at"),
@@ -389,7 +389,7 @@ async def get_brand_flow(
             func.count(Product.id).desc()
         )
 
-        # 2. Apply limit only if provided
+        
         if limit:
             stmt = stmt.limit(limit)
 
@@ -738,12 +738,12 @@ async def get_attribute_summary(
         filters = build_product_filters(project_id, start_dt, end_dt, date_field=date_field)
 
         if taxonomy:
-            # FUZZY MATCHING: Handles spacing differences like "A > B" vs "A>B"
-            # We use ILIKE with wildcards to find the category path anywhere in the string
+            
+            
             clean_tax = taxonomy.strip()
             filters.append(Product.taxonomy.ilike(f"%{clean_tax}%"))
 
-        # Log count for debugging
+        
         count_check = await db.execute(select(func.count(Product.id)).where(*filters))
         prod_count = count_check.scalar() or 0
         logger.info(f"DEBUG: Found {prod_count} products for taxonomy '{taxonomy}' in date range")
