@@ -44,31 +44,30 @@ class AutoMigration:
 
     async def _safe_migration(self):
         from app.core.database import engine
-        async with engine.begin() as conn:
+        # async with engine.begin() as conn:
 
-            existing_tables = await self._get_existing_tables(conn)
-            expected_tables = set(self.metadata.tables.keys())
+        existing_tables = await self._get_existing_tables()
+        expected_tables = set(self.metadata.tables.keys())
 
-            missing_tables = expected_tables - existing_tables
+        missing_tables = expected_tables - existing_tables
 
-            if missing_tables:
-                logger.info(
-                    f" Creating {len(missing_tables)} new tables: {missing_tables}")
-
+        if missing_tables:
+            logger.info(f" Creating {len(missing_tables)} new tables: {missing_tables}")
+            # Add this wrapper:
+            async with engine.begin() as conn:
                 await conn.run_sync(
                     lambda sync_conn: self.metadata.create_all(
                         sync_conn,
-                        tables=[self.metadata.tables[t]
-                                for t in missing_tables]
+                        tables=[self.metadata.tables[t] for t in missing_tables]
                     )
                 )
-                logger.info(f" Created {len(missing_tables)} tables")
-            else:
-                logger.info(" All tables exist")
+            logger.info(f" Created {len(missing_tables)} tables")
+        else:
+            logger.info(" All tables exist")
 
-            await self._add_missing_columns(conn, existing_tables)
+        await self._add_missing_columns(existing_tables)
 
-            await self._create_missing_indexes(conn)
+        await self._create_missing_indexes()
 
     async def _sync_database(self):
         from app.core.database import engine
@@ -87,14 +86,16 @@ class AutoMigration:
             await conn.run_sync(self.metadata.create_all)
         logger.info(" Database reset complete")
 
-    async def _get_existing_tables(self, conn) -> Set[str]:
-        def get_tables(sync_conn):
-            inspector = inspect(sync_conn)
-            return set(inspector.get_table_names())
+    async def _get_existing_tables(self) -> Set[str]:
+        from app.core.database import engine
+        async with engine.connect() as conn: 
+            def get_tables(sync_conn):
+                inspector = inspect(sync_conn)
+                return set(inspector.get_table_names())
+            return await conn.run_sync(get_tables)
 
-        return await conn.run_sync(get_tables)
-
-    async def _add_missing_columns(self, conn, existing_tables: Set[str]):
+    async def _add_missing_columns(self, existing_tables: Set[str]):
+        from app.core.database import engine    
         def get_columns(sync_conn, table_name):
             inspector = inspect(sync_conn)
             try:
@@ -106,10 +107,14 @@ class AutoMigration:
             if table_name not in self.metadata.tables:
                 continue
 
-            existing_columns = await conn.run_sync(
-                lambda sync_conn: get_columns(sync_conn, table_name)
-            )
-
+            async with engine.connect() as conn:
+                existing_columns = await conn.run_sync(
+                    lambda sync_conn: get_columns(sync_conn, table_name)
+                )
+            async with engine.connect() as conn:
+                existing_columns = await conn.run_sync(
+                    lambda sync_conn: get_columns(sync_conn, table_name)
+                )
             model_table = self.metadata.tables[table_name]
             expected_columns = {col.name: col for col in model_table.columns}
 
@@ -122,7 +127,8 @@ class AutoMigration:
 
                 for col_name in missing_columns:
                     col = expected_columns[col_name]
-                    await self._add_column(conn, table_name, col)
+                    async with engine.begin() as conn: 
+                        await self._add_column(conn, table_name, col)
 
     async def _add_column(self, conn, table_name: str, column: Column):
         try:
@@ -159,7 +165,8 @@ class AutoMigration:
             logger.warning(
                 f"    Failed to add {table_name}.{column.name}: {e}")
 
-    async def _create_missing_indexes(self, conn):
+    async def _create_missing_indexes(self):
+        from app.core.database import engine
 
         indexes = [
             ("aggregation_jobs", "project_id", False),
@@ -171,21 +178,22 @@ class AutoMigration:
         ]
 
         for table_name, column_name, unique in indexes:
-            try:
-                index_name = f"idx_{table_name}_{column_name}"
-                unique_clause = "UNIQUE" if unique else ""
+            async with engine.begin() as conn:
+                try:
+                    index_name = f"idx_{table_name}_{column_name}"
+                    unique_clause = "UNIQUE" if unique else ""
 
-                sql = text(
-                    f"CREATE {unique_clause} INDEX IF NOT EXISTS {index_name} "
-                    f"ON {table_name}({column_name})"
-                )
+                    sql = text(
+                        f"CREATE {unique_clause} INDEX IF NOT EXISTS {index_name} "
+                        f"ON {table_name}({column_name})"
+                    )
 
-                await conn.execute(sql)
-                logger.info(f"   Created index {index_name}")
+                    await conn.execute(sql)
+                    logger.info(f"   Created index {index_name}")
 
-            except Exception as e:
-                logger.debug(
-                    f"    Index {index_name} might already exist: {e}")
+                except Exception as e:
+                    logger.debug(
+                        f"    Index {index_name} might already exist: {e}")
 
 
 auto_migration = AutoMigration()

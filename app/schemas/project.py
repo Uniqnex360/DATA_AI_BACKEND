@@ -45,6 +45,7 @@ class ProjectResponse(BaseModel):
     processing_status: str = 'pending'
     cleaned_count: SafeInt = 0
     failed_count: SafeInt = 0
+    owner_id: Optional[UUID] = None
     enrichment_pending_count: SafeInt = 0
     pending_count: SafeInt = 0
     model_config = ConfigDict(from_attributes=True)

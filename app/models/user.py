@@ -1,5 +1,7 @@
+from typing import List
+
 from app.models.base import UUIDModel
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 
 class User(UUIDModel,table=True):
     __tablename__='pim_users'
@@ -8,3 +10,4 @@ class User(UUIDModel,table=True):
     full_name: str
     role: str = "admin" 
     is_active: bool = True
+    projects: List["Project"] = Relationship(back_populates="owner")

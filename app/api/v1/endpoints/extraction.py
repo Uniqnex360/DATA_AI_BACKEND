@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from sqlalchemy import func
 from io import BytesIO
+from app.auth.dependencies import get_current_user
 from app.models.attribute import Attribute, AttributeValue
 from app.models.pipeline import AuditTrail, RawExtraction, Source, SourcePriority
 from app.core.database import get_session, async_session_factory
@@ -13,6 +14,7 @@ import logging
 from sqlalchemy.orm.attributes import flag_modified
 from urllib.parse import quote
 from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
+from app.models.user import User
 from app.utils.aggregate_download import generate_products_excel
 from app.utils.attribute_helper import ensure_category_from_path, get_category_expected_attributes, save_attributes_normalized
 from app.utils.usecase_validator import validate_file_against_use_case
@@ -780,7 +782,7 @@ async def run_extraction_task(source_id: str, content: str):
             except:
                 pass
 @router.post('/aggregate/{source_id}', status_code=status.HTTP_202_ACCEPTED)
-async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_session)):
+async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_session),current_user: User = Depends(get_current_user)):
     try:
         source = await db.get(Source, source_id)
         if not source:
@@ -794,11 +796,12 @@ async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks,
         }
         db.add(source)
         await db.commit()
-        background_tasks.add_task(run_aggregation_task, str(source.id))
+        background_tasks.add_task(run_aggregation_task, str(source.id),user_id=current_user.id )
         return {
             'status': 'accepted',
             'message': "Aggregation started in the background",
-            'source_id': source.id
+            'source_id': source.id,
+            
         }
     except HTTPException:
         raise

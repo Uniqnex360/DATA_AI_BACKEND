@@ -53,6 +53,7 @@ app.include_router(auth.router,prefix=f"{settings.API_V1_STR}/auth",tags=['auth'
 app.include_router(reporting.router,prefix=f"{settings.API_V1_STR}/reporting",tags=['reporting'])
 
 
+
 @app.on_event("startup")
 async def on_startup():
     await init_db()

@@ -1,3 +1,5 @@
+from app.auth.dependencies import get_current_user
+from app.models.user import User
 from app.utils.timezone import now_ist
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -200,7 +202,8 @@ async def trigger_project_aggregation(
     project_id: str,
     request: AggregateLLMRequest,
     background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> AggregationTriggerResponse:
     try:
         project = await db.get(Project, project_id)
@@ -228,6 +231,7 @@ async def trigger_project_aggregation(
         await db.execute(update_stmt)
         job = AggregationJob(
             project_id=project_id,
+            user_id=current_user.id, 
             status='pending',
             total_products=pending_count,
             successful=0,
@@ -1593,13 +1597,15 @@ async def get_job_progress(
 @router.get("/product/{product_id}/extraction-logs")
 async def get_product_extraction_logs(
     product_id: str,
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user) 
 ):
     try:
         product = await db.get(Product, product_id)
         if not product:
             raise HTTPException(404, "Product not found")
-        
+        if project.owner_id != current_user.id and current_user.role != "admin":
+            raise HTTPException(status_code=403, detail="Access denied to this project's logs")
         source_stmt = select(Source).where(Source.project_id == product.project_id)
         source_result = await db.execute(source_stmt)
         all_sources = {str(s.id): s.source_url for s in source_result.scalars().all()}

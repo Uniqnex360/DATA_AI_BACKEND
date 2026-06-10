@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, outerjoin, and_
 from typing import Optional, List
+from app.auth.dependencies import get_current_user
 from app.core.database import get_session
 from app.models.brand import Brand
 from app.models.pipeline import AggregationJob, Source
@@ -11,6 +12,7 @@ from app.models.project import Project
 import logging
 from sqlalchemy.orm import aliased
 from datetime import datetime, timedelta, timezone
+from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectResponse
 from app.utils.timezone import now_ist
 logger = logging.getLogger("projects_router")
@@ -47,6 +49,7 @@ async def list_projects(
     tab: str | None = None,
     q: str | None = None,
     db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     try:
         active_job = aliased(AggregationJob)
@@ -203,6 +206,8 @@ async def list_projects(
             .outerjoin(active_job, and_(active_job.project_id == cast(Project.id, String), active_job.status.in_(["pending", "processing", "completed", "failed"])))
             .outerjoin(active_source, active_source.project_id == Project.id)
         )
+        if current_user.role != "admin":
+            statement = statement.where(Project.owner_id == current_user.id)
         if q:
             search_term = f"%{q}%"
             statement = statement.where(
@@ -271,7 +276,7 @@ async def list_projects(
 
 
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
-async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_session)):
+async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_session),current_user: User = Depends(get_current_user)):
     print(f"Received payload: {payload}")
     try:
         existing = await db.execute(
@@ -283,6 +288,7 @@ async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_
                 detail=f"Project '{payload.name}' already exists"
             )
         project_data = payload.model_dump()
+        project_data['owner_id'] = current_user.id
         project_data['created_at'] = now_ist()
         project_data['updated_at'] = now_ist()
         project = Project(**project_data)
@@ -308,6 +314,7 @@ async def get_project_filters(
     category: str | None = None,
     workflow_stage: str | None = None,
     db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
 
     try:
@@ -325,6 +332,9 @@ async def get_project_filters(
         )
         brand_stmt = select(Brand.name).join(
             Product, Product.brand_id == Brand.id)
+        if current_user.role != "admin":
+            category_stmt = category_stmt.join(Project, Product.project_id == Project.id).where(Project.owner_id == current_user.id)
+            brand_stmt = brand_stmt.join(Project, Product.project_id == Project.id).where(Project.owner_id == current_user.id)
         if project_id:
             category_stmt = category_stmt.where(
                 Product.project_id == project_id)

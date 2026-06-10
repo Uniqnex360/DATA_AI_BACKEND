@@ -19,7 +19,6 @@ class ProductDiscoveryService:
         from urllib.parse import urlsplit, urlunsplit
         parts = urlsplit(url)
         return urlunsplit((parts.scheme, parts.netloc, parts.path.rstrip("/"), "", ""))
-
     @staticmethod
     def _exact_mpn_match(text: str, mpn: str) -> bool:
         import re
@@ -33,7 +32,6 @@ class ProductDiscoveryService:
         if len(tokens) == 1:
             return re.search(rf"(?<![a-z0-9]){re.escape(tokens[0])}(?![a-z0-9])", text) is not None
         return all(re.search(rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])", text) for t in tokens)
-
     async def discover_manufacturer_domain(
         self,
         brand: str,
@@ -58,27 +56,19 @@ class ProductDiscoveryService:
         logger.info(f"[Manufacturer Discovery] Query: {query}")
         results = await self.search_service.search(query=query)
         discovered_url = None
-
         for result in results:
             url = result.get("link")
-
             if not url:
                 continue
-
             domain = urlparse(url).netloc.lower().replace("www.", "")
             brand_base = brand.lower().replace(" ", "")
-
             logger.info(f"Checking domain: {domain}")
-
-            # Skip marketplaces
             if any(x in domain for x in ["amazon.com", "walmart.com", "ebay.com"]):
                 continue
-
             if domain.startswith(brand_base):
                 discovered_url = f"https://{domain}"
                 logger.info(f"✓ Manufacturer domain found via search: {discovered_url}")
                 break
-
         if discovered_url and db and brand_record:
             try:
                 brand_record.website = discovered_url
@@ -97,7 +87,7 @@ class ProductDiscoveryService:
                 )
                 db.add(new_brand)
                 await db.commit()
-                logger.info(f"✓ Created new Brand record and cached domain for {brand}")
+                logger.info(f"Created new Brand record and cached domain for {brand}")
             except Exception as e:
                 logger.warning(f"Failed to create new Brand record: {e}")
                 await db.rollback()
@@ -114,35 +104,31 @@ class ProductDiscoveryService:
         clean_domain = urlparse(domain).netloc
         query = f"{brand} {mpn} site:{clean_domain}"
         logger.info(f"[Product Search] Query: {query}")
-        
         results = await self.search_service.search(query=query)
-        
         mpn_normalized = mpn.lower().replace("‑", "-").replace("–", "-").replace("—", "-").strip()
         mpn_url_safe = mpn_normalized.replace(" ", "-")
-        
-        # ★ CATEGORIZE URLs
         mpm_matching_urls = []
         product_page_urls = []
         other_urls = []
-        
         for result in results:
             url = result.get("link")
-            logger.info(f"🔍 SERP result URL: {url}")
+            logger.info(f" SERP result URL: {url}")
             if not url or clean_domain not in url:
                 continue
-            
+            query_string = urlparse(url).query.lower()
+            SEARCH_QUERY_PATTERNS = ["q=", "query=", "searchterm=", "keyword=", "pagesize=", "page="]
+            if any(p in query_string for p in SEARCH_QUERY_PATTERNS):
+                logger.info(f"Skipping search/pagination URL: {url}")
+                continue
             url_lower = url.lower()
-            
             path = urlparse(url).path.lower()
             if self._exact_mpn_match(path, mpn):
                 mpm_matching_urls.append(url)
-                logger.info(f"✓ Found MPN in URL: {url}")
+                logger.info(f"Found MPN in URL: {url}")
             elif any(x in url_lower for x in ["/product/", "/products/", "/item/"]):
                 product_page_urls.append(url)
             else:
                 other_urls.append(url)
-        
-        # ★ VARIANT KEYWORDS
         variant_keywords = {
             'kit': 10,
             '-14': 9,
@@ -158,7 +144,6 @@ class ProductDiscoveryService:
             'set': 8,
             'pack': 8,
         }
-        
         def url_variant_score(url):
             url_lower = url.lower()
             score = 0
@@ -166,16 +151,10 @@ class ProductDiscoveryService:
                 if keyword in url_lower:
                     score += penalty
             return score
-        
-        # ★ SORT BY VARIANT SCORE
         mpm_matching_urls.sort(key=url_variant_score)
-        
         candidate_urls = mpm_matching_urls + product_page_urls + other_urls
-        
-        # ★ VERIFY AND RETURN
         best_url = None
         best_score = 0
-        
         for url in candidate_urls:
             verification = await self.verify_product_page(
                 url=url,
@@ -184,19 +163,17 @@ class ProductDiscoveryService:
             )
             if verification["is_valid"]:
                 logger.info(
-                    f"✓ Verified product page ({verification['score']}): {url}"
+                    f" Verified product page ({verification['score']}): {url}"
                 )
                 return url  
             if verification["score"] > best_score:
                 best_score = verification["score"]
                 best_url = url
-        
-        if best_score >= 40:
+        if best_score >= 60:
             logger.warning(
                 f"Using fallback product page ({best_score}): {best_url}"
             )
             return best_url
-        
         logger.warning("No verified product page found")
         return None
     async def verify_product_page(
@@ -207,17 +184,45 @@ class ProductDiscoveryService:
         upc: str = None
     ) -> dict:
         path = urlparse(url).path.lower()
+        query_string = urlparse(url).query.lower()
+        REJECT_URL_PATTERNS = [
+            "/collections/",
+            "/category/",
+            "/shop/",
+            "/browse/",
+            "/items/",
+            "/locations/",
+            "/branches/",
+            "/stores/",
+            "/search",      
+            "/results",     
+            "/listing",     
+        ]
+        REJECT_QUERY_PATTERNS = [
+            "q=",           
+            "query=",       
+            "searchterm=",  
+            "keyword=",     
+            "pagesize=",    
+            "pageSize=",    
+            "page=",        
+            "productCategory=",  
+        ]
         category_patterns = [
             "/collections/",
             "/category/",
             "/shop/",
             "/browse/",
             "/items/",
-            "/locations/",   # Block Fastenal locations
-            "/branches/",    # Block other store locators
-            "/stores/",      # Block store lists
+            "/locations/",   
+            "/branches/",    
+            "/stores/",      
         ]
         is_category_page = any(pattern in path for pattern in category_patterns)
+        is_search_page = any(pattern in query_string for pattern in REJECT_QUERY_PATTERNS)
+        if is_search_page:
+            logger.info(f" Rejecting search/pagination page (query params): {url}")
+            return {"is_valid": False, "score": 0}
         product_patterns = [
         "/product/",
         "/products/[a-z0-9-]+/?$",  
@@ -229,7 +234,6 @@ class ProductDiscoveryService:
         is_product_page = any(pattern in path for pattern in product_patterns)
         if "/products/" in path:
             path_parts = [p for p in path.split('/') if p]
-            # If there's something after 'products', treat it as a potential product
             if len(path_parts) > 1:
                 is_product_page = True
             else:
@@ -244,39 +248,24 @@ class ProductDiscoveryService:
             ):
                 with attempt:
                     content = await self.download_service.download(url)
-                    
-                    
-            
             if not content or content.get("type") != "html":
                 return {"is_valid": False, "score": 0}
-            
             html = content["raw_bytes"].decode("utf-8", errors="ignore").lower()
-            logger.info(f"🔍 URL: {url}")
+            logger.info(f" URL: {url}")
             brand_lower = brand.lower() if brand else ""
             mpn_lower = mpn.lower() if mpn else ""
             upc_lower = upc.lower() if upc else ""
-            logger.info(f"🔍 Content type: {content.get('type')}")
+            logger.info(f" Content type: {content.get('type')}")
             mpn_normalized = mpn_lower.replace("‑", "-").replace("–", "-").replace("—", "-").strip()
-            
             has_brand = brand_lower in html if brand_lower else False
-            logger.info(f"🔍 Brand '{brand_lower}' in HTML: {has_brand}")
-            
+            logger.info(f" Brand '{brand_lower}' in HTML: {has_brand}")
             has_mpn = False
             if mpn_lower:
-                # has_mpn_exact = mpn_lower in html
-                # has_mpn_normalized = mpn_normalized in html if mpn_normalized != mpn_lower else False
-                # mpn_no_dashes = mpn_normalized.replace("-", "")
-                # has_mpn_no_dashes = mpn_no_dashes in html
-                
-                # has_mpn = has_mpn_exact or has_mpn_normalized or has_mpn_no_dashes
                 has_mpn = self._exact_mpn_match(html, mpn) or self._exact_mpn_match(path, mpn)
-
-                logger.info(f"🔍 MPN found in HTML (exact match): {self._exact_mpn_match(html, mpn)}")
-                logger.info(f"🔍 MPN found in URL path (exact match): {self._exact_mpn_match(path, mpn)}")
-                logger.info(f"🔍 MPN found (any method): {has_mpn}")
-            
+                logger.info(f" MPN found in HTML (exact match): {self._exact_mpn_match(html, mpn)}")
+                logger.info(f" MPN found in URL path (exact match): {self._exact_mpn_match(path, mpn)}")
+                logger.info(f" MPN found (any method): {has_mpn}")
             has_upc = upc_lower in html if upc_lower else False
-            
             score = 0
             if has_brand:
                 score += 30
@@ -284,7 +273,6 @@ class ProductDiscoveryService:
                 score += 50
             if has_upc:
                 score += 20
-            
             ecommerce_indicators = [
                 "add to cart",
                 "buy now",
@@ -301,19 +289,15 @@ class ProductDiscoveryService:
             )
             if indicator_score >= 2:
                 score += 10
-            
             parsed = urlparse(url)
             is_homepage = parsed.path.strip("/") == ""
             if is_homepage and not has_mpn:
                 score -= 40
-            
             score = max(0, min(score, 100))
             is_valid = score >= 60
-            
             logger.debug(
                 f"Verification for {url}: brand={has_brand}, mpn={has_mpn}, upc={has_upc}, score={score}"
             )
-            
             return {
                 "is_valid": is_valid,
                 "score": score,

@@ -6,7 +6,6 @@ from sqlmodel import Field, Column, JSON
 from typing import Optional, Dict,Any,List
 import uuid
 from uuid import UUID
-
 class AuditTrail(UUIDModel,table=True):
     __tablename__='audit_trail'
     product_id:str=Field(index=True)
@@ -16,7 +15,7 @@ class AuditTrail(UUIDModel,table=True):
     reason:str
     stage:str
     logged_at:datetime=Field(default_factory=datetime.utcnow)
-
+    user_id: Optional[UUID] = Field(foreign_key="pim_users.id", index=True)
 class CleansingIssue(UUIDModel,table=True):
     __tablename__='cleansing_issues'
     product_id:str=Field(index=True)
@@ -33,13 +32,12 @@ class StandarizationAttribute(UUIDModel,table=True):
     standard_format:str
     derived_from:str=Field(default='[]')
     standarized_at:datetime=Field(default_factory=datetime.utcnow)
-
-
 class Source(UUIDModel,table=True):
     __tablename__='sources'
     source_type:str
     source_url:str
     project_id: Optional[UUID] = Field(default=None, foreign_key="catalog_projects.id")
+    user_id: Optional[UUID] = Field(default=None, foreign_key="pim_users.id", index=True) 
     content_data: Optional[bytes] = Field(default=None, sa_column=Column(LargeBinary))
     source_metadata: Dict = Field(
         default={}, 
@@ -49,7 +47,6 @@ class Source(UUIDModel,table=True):
     )
     status:str=Field(default='pending')
     uploaded_at:datetime=Field(default_factory=datetime.utcnow)
-    
 class ReviewItem(UUIDModel, table=True):
     __tablename__ = 'hitl_review_queue'
     product_code: str = Field(index=True)
@@ -61,10 +58,8 @@ class ReviewItem(UUIDModel, table=True):
     status: str = Field(default="pending") 
     reviewer: Optional[str] = None
     overridden_value: Optional[str] = None
-
 class SourcePriority(UUIDModel, table=True):
     __tablename__ = 'source_priority'
-    
     project_id: str = Field(index=True)
     source_id: str = Field(index=True)
     priority_rank: int = Field(default=0)
@@ -90,62 +85,48 @@ class StandardizedAttribute(UUIDModel, table=True):
     derived_from: str = Field(default="[]") 
     confidence: float = Field(default=0.0)
     reason: str = Field(default="")
-    
 class RawExtraction(UUIDModel, table=True):
     __tablename__ = 'raw_extractions'
-
     source_id: uuid.UUID = Field(foreign_key="sources.id", index=True, nullable=False)
-    
     product_keys: Dict = Field(
         default={}, 
         sa_column=Column(JSON),
         description="Identifiers found in the raw content"
     )
-    
     raw_attributes: Dict = Field(
         default={}, 
         sa_column=Column(JSON),
         description="Un-standardized key-value pairs from the source"
     )
-    
     confidence: float = Field(
         default=0.0, 
         nullable=False,
         description="AI confidence score for this specific extraction"
     )
-    
     extracted_at: datetime = Field(
         default_factory=datetime.utcnow,
         nullable=False
     )
 class PublishTarget(UUIDModel, table=True):
     __tablename__ = 'publish_targets'
-    
     project_id: str = Field(index=True, nullable=False)
     target_name: str
     target_type: str 
-    
     connection_config: Dict = Field(default={}, sa_column=Column(JSON))
-    
     field_mapping: Dict = Field(default={}, sa_column=Column(JSON))
-    
     active: bool = Field(default=True)
-    
 class AggregationJob(UUIDModel, table=True):
     __tablename__ = 'aggregation_jobs'
-    
     project_id: str = Field(index=True)
     status: str = Field(default='pending')  
-    
     total_products: int = Field(default=0)
     successful: int = Field(default=0)
     failed: int = Field(default=0)
     progress_percentage: float = Field(default=0.0)
+    user_id: UUID = Field(foreign_key="pim_users.id", index=True)
     
     current_product: Optional[str] = Field(default=None)
     error_message: Optional[str] = Field(default=None)
-    
     started_at: Optional[datetime] = Field(default=None)
     completed_at: Optional[datetime] = Field(default=None)
-    
     details: Dict = Field(default={}, sa_column=Column(JSON))

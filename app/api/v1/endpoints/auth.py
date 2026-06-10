@@ -30,7 +30,7 @@ async def register(
         email=payload.email,
         hashed_password=get_password_hash(payload.password),
         full_name=payload.full_name,
-        role="admin",  
+        role="user",  
         is_active=True,
     )
 
@@ -62,8 +62,12 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
         )
-
-    token = create_access_token({"sub": str(user.id), "role": user.role})
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account has been disabled. Contact administrator."
+        )
+    token = create_access_token(subject=str(user.id))
 
     return {
         "access_token": token,

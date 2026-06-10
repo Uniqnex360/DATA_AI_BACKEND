@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from app.models.base import UUIDModel
 from typing import Optional,List
 from datetime import datetime
@@ -21,3 +23,5 @@ class Project(UUIDModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow, sa_column_kwargs={"onupdate": datetime.utcnow})
     products: List["Product"] = Relationship(back_populates="project")
+    owner_id: UUID = Field(foreign_key="pim_users.id", index=True)
+    owner: Optional["User"] = Relationship(back_populates="projects")

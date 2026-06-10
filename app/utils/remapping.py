@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 from typing import Dict, List
 from sentence_transformers import SentenceTransformer
 import numpy as np
@@ -7,6 +8,24 @@ from scipy.spatial.distance import cosine
 
 logger = logging.getLogger("cluster_attributes_by_meaning")
 _embedding_model = None
+
+_CONTAINER_TERMS = {
+    'carton', 'pack', 'pallet', 'box', 'case', 'each', 'unit', 'piece', 'bag', 'sleeve'
+}
+
+
+def _extract_container_term(name: str) -> str:
+    words = re.findall(r"\b[a-zA-Z]+\b", name.lower())
+    found = [w for w in words if w in _CONTAINER_TERMS]
+    return found[0] if len(found) == 1 else ""
+
+
+def _should_skip_container_clustering(name_a: str, name_b: str) -> bool:
+    term_a = _extract_container_term(name_a)
+    term_b = _extract_container_term(name_b)
+    if term_a and term_b and term_a != term_b:
+        return True
+    return False
 
 
 async def get_embedding_model():
@@ -45,6 +64,11 @@ async def cluster_attributes_by_meaning(
 
         for j, name_j in enumerate(attr_names):
             if j <= i or name_j in used:
+                continue
+            if _should_skip_container_clustering(name_i, name_j):
+                logger.debug(
+                    f"  Skipping cluster between distinct container terms: '{name_i}' and '{name_j}'"
+                )
                 continue
             similarity = 1 - cosine(embeddings[i], embeddings[j])
             if similarity >= threshold:

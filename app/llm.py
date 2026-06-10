@@ -112,7 +112,7 @@ async def call_gemini_safely(model_name, prompt):
     async with _gemini_lock:
         model = genai.GenerativeModel(model_name=model_name, generation_config={'response_mime_type': 'application/json'})
         response_text = await asyncio.to_thread(_sync_call_gemini, model, prompt)
-        await asyncio.sleep(2) # Mandatory breather to stay under RPM limit
+        await asyncio.sleep(2) 
         return response_text
 
 async def call_llm_with_schema(
@@ -154,7 +154,8 @@ async def call_llm_with_schema(
                                 {"role": "user", "content": prompt}
                             ],
                             response_format=schema_class,
-                            max_tokens=max_tokens
+                            max_tokens=max_tokens,
+                            temperature=0
                         )
                         return response.choices[0].message.parsed
                     except Exception as e:
@@ -170,9 +171,9 @@ async def call_llm_with_schema(
             gemini_prompt=f"""{prompt}
             Return JSON response matching this schema:{json.dumps(schema_dict,indent=2)}
             """
-            # gemini_model=genai.GenerativeModel(model_name=settings.gemini_model,generation_config={'response_mime_type':'application/json'})
-            # def sync_call():
-            #     return gemini_model.generate_content(gemini_prompt).text
+            
+            
+            
             response_text = await call_gemini_safely(settings.gemini_model, gemini_prompt)
             parsed=parse_response(response_text)
             return schema_class.model_validate(parsed)
@@ -205,7 +206,7 @@ async def call_llm_with_schema(
     except Exception as e:
         logger.warning(f"Primary provider {llm_provider} failed. Switching to Gemini fallback...")
         try:
-            # --- TRY GEMINI ---
+            
             schema_dict = schema_class.model_json_schema()
             fallback_prompt = f"{prompt}\n\nReturn JSON response matching this schema: {json.dumps(schema_dict)}"
             
@@ -216,18 +217,19 @@ async def call_llm_with_schema(
         except Exception as gemini_err:
             logger.error(f"Gemini fallback failed: {gemini_err}. Attempting OpenAI as a final last resort...")
             
-            # --- LAST RESORT: SWITCH BACK TO GPT (OpenAI) ---
+            
             try:
                 async with _llm_semaphore:
-                    # Use a much longer timeout for the last resort
+                    
                     response = await _openai_client.beta.chat.completions.parse(
-                        model="gpt-4o-mini", # Using mini as it's more stable for high-volume
+                        model="gpt-4o-mini", 
                         messages=[
                             {"role": "system", "content": "You are a precise data extraction engine. Final attempt."},
                             {"role": "user", "content": prompt}
                         ],
                         response_format=schema_class,
-                        timeout=120.0 # High timeout for the final try
+                        timeout=120.0,
+                        temperature=0
                     )
                     return response.choices[0].message.parsed
             except Exception as final_err:
