@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from re import S
-from typing import List, Optional,Dict
+from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
 from app import llm
 from app.core.rate_limiter import openai_limiter
@@ -9,40 +9,50 @@ from app.rules.rule_engine import RuleEngine
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger('cleaning_service')
+
+
 class AttributeInput(BaseModel):
-    id: str                     
+    id: str
     name: str
     value: str
     unit: Optional[str] = None
-    source: Optional[str] = None   
+    source: Optional[str] = None
+
+
 class ProductContext(BaseModel):
     mpn: Optional[str] = None
     brand: Optional[str] = None
     product_name: Optional[str] = None
     taxonomy: Optional[str] = None
+
+
 class CleanedAttribute(BaseModel):
     id: str
     name: str
     original_value: str
     cleaned_value: str
     unit: Optional[str] = None
-    cleaning_reason: str            
-    issue_detected: bool = False    
+    cleaning_reason: str
+    issue_detected: bool = False
+
+
 class LLMCleaningResponse(BaseModel):
     cleaned_attributes: List[CleanedAttribute]
     summary: str = Field(description="Brief summary of cleaning actions taken")
+
+
 class LLMCleaningService:
     # def __init__(self,llm_provider:str, model: str = "gpt-4o-mini", max_retries: int = 3, concurrency_limit: int = 10):
     #     self.llm_provider=llm_provider
     #     self.model = model
     #     self.max_retries = max_retries
-    #     self._semaphore = asyncio.Semaphore(concurrency_limit)  
+    #     self._semaphore = asyncio.Semaphore(concurrency_limit)
     def __init__(
         self,
         llm_provider: str,
         db: Optional[AsyncSession] = None,
         project_id: Optional[str] = None,
-        model: str = "gpt-4o-mini",
+        model: str = "gpt-4o",
         max_retries: int = 3,
         concurrency_limit: int = 10
     ):
@@ -53,6 +63,7 @@ class LLMCleaningService:
         self.max_retries = max_retries
         self._semaphore = asyncio.Semaphore(concurrency_limit)
         self.rule_engine = RuleEngine(db) if db else None
+
     async def _get_dynamic_prompt(
         self,
         attributes: List[AttributeInput],
@@ -86,7 +97,8 @@ class LLMCleaningService:
         except Exception as e:
             logger.warning(f"Failed to get dynamic cleaning prompt: {e}")
             return None
-    async def clean_attributes(self,attributes: List[AttributeInput],context: ProductContext) -> LLMCleaningResponse:        
+
+    async def clean_attributes(self, attributes: List[AttributeInput], context: ProductContext) -> LLMCleaningResponse:
         from app.aggregation.aggregate_product import call_llm_with_schema
         logger.info(f"Starting cleaning for {len(attributes)} attributes")
         if not attributes:
@@ -98,9 +110,10 @@ class LLMCleaningService:
             # prompt = self._build_prompt(attributes, context)
             prompt = await self._get_dynamic_prompt(attributes, context)
             if not prompt:
-              logger.warning("No cleaning prompt configured in business rules")
-              return self._fallback_response(
-                    attributes, 
+                logger.warning(
+                    "No cleaning prompt configured in business rules")
+                return self._fallback_response(
+                    attributes,
                     "No cleaning prompt configured in business rules"
                 )
             for attempt in range(self.max_retries):
@@ -115,12 +128,15 @@ class LLMCleaningService:
                         estimated_tokens=estimated_tokens,
                         max_tokens=2000
                     )
-                    logger.info(f"LLM response received, cleaned {len(response.cleaned_attributes)} attributes")
+                    logger.info(
+                        f"LLM response received, cleaned {len(response.cleaned_attributes)} attributes")
                     input_ids = {a.id for a in attributes}
-                    response_ids = {ca.id for ca in response.cleaned_attributes}
+                    response_ids = {
+                        ca.id for ca in response.cleaned_attributes}
                     missing_ids = input_ids - response_ids
                     if missing_ids:
-                        logger.warning(f"LLM missing attributes: {missing_ids}. Adding unchanged.")
+                        logger.warning(
+                            f"LLM missing attributes: {missing_ids}. Adding unchanged.")
                         for attr in attributes:
                             if attr.id in missing_ids:
                                 response.cleaned_attributes.append(CleanedAttribute(
@@ -137,8 +153,9 @@ class LLMCleaningService:
                     logger.error(f"Cleaning attempt {attempt+1} failed: {e}")
                     if attempt == self.max_retries - 1:
                         return self._fallback_response(attributes, f"LLM error after {self.max_retries} attempts: {e}")
-                    await asyncio.sleep(2 ** attempt)  
+                    await asyncio.sleep(2 ** attempt)
         return self._fallback_response(attributes, "Max retries exceeded")
+
     async def get_global_name_mapping(
         self,
         attribute_names: List[str],
@@ -147,7 +164,7 @@ class LLMCleaningService:
         """Get global mapping of variant attribute names to canonical names."""
         if not self.rule_engine or not attribute_names:
             return None
-        
+
         try:
             # Try dynamic prompt first
             context = {
@@ -155,20 +172,21 @@ class LLMCleaningService:
                 "name_list": "\n".join([f"- {name}" for name in sorted(attribute_names)]),
                 "total_count": len(attribute_names)
             }
-            
+
             prompt = await self.rule_engine.get_active_prompt(
                 stage="attribute_mapping",
                 operation_mode="cleaning",
                 use_case="Data cleaning and Standardization",
                 context=context,
             )
-            
+
             if not prompt:
-                logger.warning("No attribute mapping prompt configured, using fallback")
+                logger.warning(
+                    "No attribute mapping prompt configured, using fallback")
                 prompt = self._build_mapping_prompt(attribute_names)
-            
+
             from app.aggregation.aggregate_product import call_llm_with_schema
-            
+
             response = await call_llm_with_schema(
                 prompt=prompt,
                 response_model="AttributeMappingResponse",
@@ -177,22 +195,23 @@ class LLMCleaningService:
                 estimated_tokens=1000 + len(attribute_names) * 50,
                 max_tokens=4000
             )
-            
+
             if response and hasattr(response, 'mapping'):
                 return response.mapping
             elif isinstance(response, dict):
                 return response.get('mapping', {})
-            
+
             return None
-            
+
         except Exception as e:
             logger.warning(f"Failed to get global name mapping: {e}")
             return None
-    
+
     def _build_mapping_prompt(self, attribute_names: List[str]) -> str:
         """Fallback prompt for attribute name mapping."""
-        name_list = "\n".join([f"- {name}" for name in sorted(attribute_names)])
-        
+        name_list = "\n".join(
+            [f"- {name}" for name in sorted(attribute_names)])
+
         return f"""
 You are a product data standardization expert. Standardize these attribute names to canonical forms.
 
@@ -231,6 +250,7 @@ Return a JSON object with mapping from original to canonical:
 
 IMPORTANT: Include EVERY attribute name from the input list in the mapping.
 """
+
     def _build_prompt(self, attributes: List[AttributeInput], context: ProductContext) -> str:
         attr_lines = []
         for attr in attributes:

@@ -1205,6 +1205,7 @@ async def aggregate_product(
             'reason': str(e),
             'golden_record': {'attributes': {}}
         }
+        
 def _build_combined_prompt(
     raw_attrs: List[Dict],
     brand: str,

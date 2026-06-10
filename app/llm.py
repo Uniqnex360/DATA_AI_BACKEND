@@ -1,7 +1,7 @@
 import logging
 import asyncio
 from anthropic import AsyncAnthropic
-from app.aggregation.services.smart_search import LinkJudgeResponse, ManufacturerScoringResponse, ManufacturerUrlResponse, ManufacturerWebsiteResponse, NavigationResponse, PageMatchScore, SimpleText, SmartSearchResponse, TargetedQueryResponse, UrlFilterResponse,ProductPageResponse
+from app.aggregation.services.smart_search import LinkJudgeResponse, ManufacturerScoringResponse, ManufacturerUrlResponse, ManufacturerWebsiteResponse, NavigationResponse, PageMatchScore, SimpleText, SmartSearchResponse, TargetedQueryResponse, UrlFilterResponse, ProductPageResponse
 from app.core.rate_limiter import openai_limiter
 from openai import OpenAI
 import google.generativeai as genai
@@ -23,9 +23,10 @@ _openai_client = AsyncOpenAI(
     api_key=settings.openai_api_key,
     timeout=90.0
 )
-_anthropic_client = AsyncAnthropic(api_key=settings.anthropic_api_key) if settings.anthropic_api_key else None
+_anthropic_client = AsyncAnthropic(
+    api_key=settings.anthropic_api_key) if settings.anthropic_api_key else None
 _llm_semaphore = asyncio.Semaphore(5)
-_gemini_lock = asyncio.Lock() 
+_gemini_lock = asyncio.Lock()
 
 
 def parse_response(content: str) -> dict:
@@ -85,46 +86,52 @@ SCHEMA_MAP = {
     "StandardizationResponse": StandardizationResponse,
     "UnifiedStandardizedResponse": UnifiedStandardizedResponse,
     "TargetedQueryResponse": TargetedQueryResponse,
-    "PDFExtractionResponse":PDFExtractionResponse,
-    "SingleProductExtraction":SingleProductExtraction,
-    "ProductIdentificationResponse":ProductIdentificationResponse,
-    "AttributeMappingResponse":AttributeMappingResponse,
+    "PDFExtractionResponse": PDFExtractionResponse,
+    "SingleProductExtraction": SingleProductExtraction,
+    "ProductIdentificationResponse": ProductIdentificationResponse,
+    "AttributeMappingResponse": AttributeMappingResponse,
     "ManufacturerWebsiteResponse": ManufacturerWebsiteResponse,
-    "ProductPageResponse":ProductPageResponse,
-    "ManufacturerScoringResponse":ManufacturerScoringResponse,
-    "PageMatchScore":PageMatchScore,
-    "SimpleText":SimpleText,
+    "ProductPageResponse": ProductPageResponse,
+    "ManufacturerScoringResponse": ManufacturerScoringResponse,
+    "PageMatchScore": PageMatchScore,
+    "SimpleText": SimpleText,
     "NavigationResponse": NavigationResponse,
     "ProductPageResponse": ProductPageResponse,
-    "LinkJudgeResponse":LinkJudgeResponse,
-    "ManufacturerUrlResponse":ManufacturerUrlResponse
+    "LinkJudgeResponse": LinkJudgeResponse,
+    "ManufacturerUrlResponse": ManufacturerUrlResponse
 
 }
+
+
 @retry(
-    retry=retry_if_exception_type(google.api_core.exceptions.ResourceExhausted),
+    retry=retry_if_exception_type(
+        google.api_core.exceptions.ResourceExhausted),
     wait=wait_exponential(multiplier=2, min=10, max=60),
     stop=stop_after_attempt(3)
 )
 def _sync_call_gemini(model, prompt):
     return model.generate_content(prompt).text
 
+
 async def call_gemini_safely(model_name, prompt):
     async with _gemini_lock:
-        model = genai.GenerativeModel(model_name=model_name, generation_config={'response_mime_type': 'application/json'})
+        model = genai.GenerativeModel(model_name=model_name, generation_config={
+                                      'response_mime_type': 'application/json'})
         response_text = await asyncio.to_thread(_sync_call_gemini, model, prompt)
-        await asyncio.sleep(2) 
+        await asyncio.sleep(2)
         return response_text
+
 
 async def call_llm_with_schema(
     prompt: str,
     response_model: str,
-    llm_provider:str,
-    model: str = "gpt-4o-mini",
+    llm_provider: str,
+    model: str = "gpt-4o",
     estimated_tokens: int = 2000,
     max_tokens: Optional[int] = None
 ) -> Any:
-    logger.info(f"CALL_LLM_WITH_SCHEMA - Using LLM provider: {llm_provider}")  
-    if llm_provider and llm_provider not in ('openai','gemini','claude'):
+    logger.info(f"CALL_LLM_WITH_SCHEMA - Using LLM provider: {llm_provider}")
+    if llm_provider and llm_provider not in ('openai', 'gemini', 'claude'):
         error_msg = (
             f"Invalid LLM provider: '{llm_provider}'. "
             f"Combined values like 'openai_gemini' must be split into primary and missing "
@@ -136,7 +143,7 @@ async def call_llm_with_schema(
     if not schema_class:
         raise ValueError(f"Unknown response model: {response_model}")
     try:
-        if llm_provider=='openai':
+        if llm_provider == 'openai':
             last_error = None
             for attempt in range(5):
                 if attempt > 0 and last_error:
@@ -166,16 +173,14 @@ async def call_llm_with_schema(
                         else:
                             raise
             raise last_error
-        elif llm_provider=='gemini':
-            schema_dict=schema_class.model_json_schema()
-            gemini_prompt=f"""{prompt}
-            Return JSON response matching this schema:{json.dumps(schema_dict,indent=2)}
+        elif llm_provider == 'gemini':
+            schema_dict = schema_class.model_json_schema()
+            gemini_prompt = f"""{prompt}
+            Return JSON response matching this schema:{json.dumps(schema_dict, indent=2)}
             """
-            
-            
-            
+
             response_text = await call_gemini_safely(settings.gemini_model, gemini_prompt)
-            parsed=parse_response(response_text)
+            parsed = parse_response(response_text)
             return schema_class.model_validate(parsed)
         elif llm_provider == 'claude':
             if not _anthropic_client:
@@ -204,25 +209,26 @@ async def call_llm_with_schema(
             parsed = parse_response(response_text)
             return schema_class.model_validate(parsed)
     except Exception as e:
-        logger.warning(f"Primary provider {llm_provider} failed. Switching to Gemini fallback...")
+        logger.warning(
+            f"Primary provider {llm_provider} failed. Switching to Gemini fallback...")
         try:
-            
+
             schema_dict = schema_class.model_json_schema()
             fallback_prompt = f"{prompt}\n\nReturn JSON response matching this schema: {json.dumps(schema_dict)}"
-            
+
             response_text = await call_gemini_safely(settings.gemini_model, fallback_prompt)
             parsed = parse_response(response_text)
             return schema_class.model_validate(parsed)
 
         except Exception as gemini_err:
-            logger.error(f"Gemini fallback failed: {gemini_err}. Attempting OpenAI as a final last resort...")
-            
-            
+            logger.error(
+                f"Gemini fallback failed: {gemini_err}. Attempting OpenAI as a final last resort...")
+
             try:
                 async with _llm_semaphore:
-                    
+
                     response = await _openai_client.beta.chat.completions.parse(
-                        model="gpt-4o-mini", 
+                        model="gpt-4o",
                         messages=[
                             {"role": "system", "content": "You are a precise data extraction engine. Final attempt."},
                             {"role": "user", "content": prompt}
@@ -233,5 +239,6 @@ async def call_llm_with_schema(
                     )
                     return response.choices[0].message.parsed
             except Exception as final_err:
-                logger.critical(f"All providers (OpenAI/Gemini) failed: {final_err}")
+                logger.critical(
+                    f"All providers (OpenAI/Gemini) failed: {final_err}")
                 raise

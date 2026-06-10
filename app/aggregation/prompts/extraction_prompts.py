@@ -387,36 +387,197 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         return None
 
 
-def build_pdf_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: str, pdf_text: str, primary_attributes: list) -> dict:
+# def build_pdf_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: str, pdf_text: str, primary_attributes: list) -> dict:
+#     try:
+#         primary_list = primary_attributes if primary_attributes else []
+#         prompt = f"""
+#         You are extracting specifications from an official product datasheet.
+#         PRODUCT:
+#         -MPN :{mpn}
+#         -Brand :{brand}
+#         -Name:{product_name}
+#         CRITICAL ATTRIBUTES (required):
+#         {chr(10).join([f"  {i+1}. {attr}" for i, attr in enumerate(primary_list)])}
+#         DATASHEET_CONTENT:
+#         {pdf_text[:10000]}
+#         EXTRACTION_RULES:
+#         1. PDFs are official sources - extract everything you find
+#         2. Look for specification tables, technical sections
+#         3. Extract values with units exactly as shown
+#         4. If a spec has multiple values (min/max), extract the typical/nominal
+#         5. Extract ALL additional specifications you find (no maximum)
+#         IGNORE:
+#         - Copyright notices
+#         - Company addresses
+#         - Ordering information
+#         - Marketing sections
+#         Return JSON following ExtractionResponse schema.
+#         IMAGE EXTRACTION:
+# - Some PDFs contain embedded images or reference image URLs in text.
+# - If you find a URL that clearly points to a product image (e.g., ends with .jpg/.png and contains product keywords), extract it.
+# - Otherwise, set `image_url` to `null`.
+#         Confidence  should be 0.95+ for PDF sources
+#         """
+#         return {
+#             'prompt': prompt,
+#             'response_schema': 'ExtractionResponse',
+#             'max_tokens': 16000,
+#             'source_type': 'pdf'
+#         }
+#     except Exception as e:
+#         logger.error(f"pdf extraction prompt  failed str{e}")
+#         return
+def build_pdf_extraction_prompt(
+    product_name: str,
+    mpn: str,
+    brand: str,
+    taxonomy: str,
+    pdf_text: str,
+    primary_attributes: list
+) -> dict:
     try:
         primary_list = primary_attributes if primary_attributes else []
         prompt = f"""
-        You are extracting specifications from an official product datasheet.
-        PRODUCT:
-        -MPN :{mpn}
-        -Brand :{brand}
-        -Name:{product_name}
-        CRITICAL ATTRIBUTES (required):
-        {chr(10).join([f"  {i+1}. {attr}" for i, attr in enumerate(primary_list)])}
-        DATASHEET_CONTENT:
-        {pdf_text[:10000]}
-        EXTRACTION_RULES:
-        1. PDFs are official sources - extract everything you find
-        2. Look for specification tables, technical sections
-        3. Extract values with units exactly as shown
-        4. If a spec has multiple values (min/max), extract the typical/nominal
-        5. Extract ALL additional specifications you find (no maximum)
-        IGNORE:
-        - Copyright notices
-        - Company addresses
-        - Ordering information
-        - Marketing sections
-        Return JSON following ExtractionResponse schema.
-        IMAGE EXTRACTION:
-- Some PDFs contain embedded images or reference image URLs in text.
-- If you find a URL that clearly points to a product image (e.g., ends with .jpg/.png and contains product keywords), extract it.
-- Otherwise, set `image_url` to `null`.
-        Confidence  should be 0.95+ for PDF sources
+You are a senior product data engineer extracting specifications from an official product document.
+
+PRODUCT CONTEXT:
+- MPN: {mpn}
+- Brand: {brand}
+- Name: {product_name}
+- Category: {taxonomy}
+
+PRIORITY ATTRIBUTES (extract these first if found):
+{chr(10).join([f"  {i+1}. {attr}" for i, attr in enumerate(primary_list)])}
+
+DOCUMENT CONTENT:
+{pdf_text[:10000]}
+
+═══════════════════════════════════════════════════════
+RULE 1: STRICT EXTRACTION — NO HALLUCINATION
+═══════════════════════════════════════════════════════
+- Extract ONLY values that are EXPLICITLY present in the document text above.
+- Do NOT use your training data to fill in missing values.
+- Do NOT guess, infer, estimate, or complete partial values.
+- If a value is ambiguous or unclear, skip it entirely.
+- Empty output is always better than wrong output.
+
+SKIP any row or value that contains:
+- "NPD" (No Performance Determined)
+- "NF" (No Failure — this is a test result category, not a value)
+- "NR" (Not Required)
+- "Not relevant"
+- Blank/empty cells
+
+═══════════════════════════════════════════════════════
+RULE 2: INTELLIGENT DOCUMENT STRUCTURE UNDERSTANDING
+═══════════════════════════════════════════════════════
+PDF documents can have many different structures:
+- Single specification tables
+- Multiple tables for different use cases or environments
+- Performance tables organized by standard/certification
+- Material safety data organized by chemical component
+- Technical data sheets with sections for different applications
+
+YOUR JOB: Understand the structure first, then extract intelligently.
+
+STEP 1 — UNDERSTAND THE DOCUMENT TYPE:
+Before extracting, identify what kind of document this is:
+- Is it a simple spec sheet? → Extract all specs directly.
+- Does it have MULTIPLE TABLES for the same product? → Apply deduplication rules.
+- Does it have sections organized by USE CASE or APPLICATION? → Read context.
+- Does it have sections organized by CHEMICAL COMPONENT? → Each component is separate.
+- Does it have a PERFORMANCE DECLARATION with multiple standards? → Read which standard each value belongs to.
+
+STEP 2 — UNDERSTAND CONTEXT FOR EACH VALUE:
+When you find an attribute value, ask yourself:
+1. Is this value the SAME as another value I already found with the same meaning?
+2. Is this value DIFFERENT from another value I found with the same attribute name?
+3. Does this attribute belong to a SPECIFIC CONTEXT (use case, environment, component)?
+
+STEP 3 — APPLY THE DEDUPLICATION PRINCIPLE:
+The core principle is simple:
+- SAME attribute name + SAME value = DUPLICATE → Keep only ONE
+- SAME attribute name + DIFFERENT values = DIFFERENT CONTEXTS → Keep BOTH with context added to the name
+- DIFFERENT attribute name + SAME meaning = SYNONYMS → Merge into ONE canonical name
+
+═══════════════════════════════════════════════════════
+RULE 3: HOW TO HANDLE REPEATED ATTRIBUTES
+═══════════════════════════════════════════════════════
+When the same attribute appears multiple times in the document:
+
+CASE A — Identical Values (True Duplicates):
+The document shows "Reaction to Fire: Class E" in three different sections.
+All three are identical.
+→ ACTION: Extract it ONCE with the most general name.
+→ OUTPUT: "Reaction to Fire: Class E"
+
+CASE B — Different Values (Different Contexts):
+The document shows:
+- Section 1: "Loss of Volume: ≤ 45%"
+- Section 2: "Loss of Volume: ≤ 55%"
+These are DIFFERENT values, so they represent DIFFERENT things.
+→ ACTION: Read the surrounding context to understand what makes them different.
+→ Add that context to the attribute name to distinguish them.
+→ OUTPUT: "Loss of Volume (Context A): ≤ 45%"
+→ OUTPUT: "Loss of Volume (Context B): ≤ 55%"
+
+The "context" you add should come from the document itself — 
+it might be an application type, a standard number, an environment, 
+a material, a temperature range, or anything else that explains 
+why the values are different.
+
+CASE C — Range or Variation (Same Attribute, Multiple Valid Values):
+The document shows a range or options: "Operating Temperature: -20°C to +80°C"
+→ ACTION: Extract it as a single range value.
+→ OUTPUT: "Operating Temperature: -20 to 80" with unit "deg C"
+
+═══════════════════════════════════════════════════════
+RULE 4: ATTRIBUTE NAMING
+═══════════════════════════════════════════════════════
+- Use the EXACT attribute name from the document when it is clear.
+- When adding context to distinguish values (Case B above), 
+  use the shortest meaningful context from the document itself.
+- Do NOT invent context labels. Use ONLY what the document says.
+- If the document uses abbreviations (e.g., "EN 15651-1"), 
+  you may use them as context labels.
+
+═══════════════════════════════════════════════════════
+RULE 5: WHAT TO EXTRACT
+═══════════════════════════════════════════════════════
+EXTRACT:
+- All technical specifications with actual measured or declared values
+- Physical properties (dimensions, weights, temperatures, pressures)
+- Performance ratings and classifications
+- Material compositions and properties
+- Certifications and standards compliance values
+- Capacity, output, speed, and power specifications
+- All priority attributes listed above if present
+
+DO NOT EXTRACT:
+- Marketing language ("best in class", "premium")
+- Company contact details, addresses, phone numbers
+- Page numbers, document version numbers, dates
+- Ordering codes, pricing, availability
+- Testing laboratory details and certifications of the lab itself
+- Signature blocks, legal disclaimers
+- Any row where the value is NPD, NF, NR, or blank
+
+═══════════════════════════════════════════════════════
+RULE 6: IMAGE EXTRACTION
+═══════════════════════════════════════════════════════
+- If the document text contains a URL ending in .jpg, .jpeg, .png, or .webp
+  that clearly refers to a product image, extract it as image_url.
+- Otherwise set image_url to null.
+
+═══════════════════════════════════════════════════════
+CONFIDENCE SCORING
+═══════════════════════════════════════════════════════
+- PDF/official documents are authoritative sources.
+- Set confidence = 0.95 for all clearly stated values.
+- Set confidence = 0.90 if the value required interpretation of context.
+- Never set confidence above 0.99.
+
+Return JSON following the ExtractionResponse schema.
         """
         return {
             'prompt': prompt,
@@ -425,5 +586,5 @@ def build_pdf_extraction_prompt(product_name: str, mpn: str, brand: str, taxonom
             'source_type': 'pdf'
         }
     except Exception as e:
-        logger.error(f"pdf extraction prompt  failed str{e}")
-        return
+        logger.error(f"PDF extraction prompt failed: {e}")
+        return None

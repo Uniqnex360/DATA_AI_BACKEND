@@ -210,6 +210,7 @@ async def run_cleaning_task(
                     product.enrichment_status = "completed"
                     product.data_quality_score = 100.0
                     product.last_algorithm_used = llm_provider 
+                    product.completeness_score = await _calculate_completeness(db, product)
                     product.updated_at = now_ist()
                     db.add(product)
                     await db.commit()
@@ -466,6 +467,7 @@ async def save_cleaned_attributes(
         if updated:
             product.last_algorithm_used = llm_provider  
             product.updated_at = now_ist()
+            product.completeness_score = await _calculate_completeness(db_session, product)
             db_session.add(product)
         return updated
     except Exception as e:
@@ -712,7 +714,7 @@ async def update_product_attributes(
                     attr_val.value = incoming.value
                     attr_val.uom = incoming.uom or ""
                 if product.attributes is None:
-                    product_attributes={}
+                    product.attributes = {}
                 product.attributes[attr_name]={
                     "name":attr_name,
                     "value":attr_val.value,
@@ -752,7 +754,7 @@ async def update_product_attributes(
         total_populated=len(attr_result.all())
         if total_populated>0:
             product.data_quality_score=max(0,100-(product.manual_edit_count/total_populated)*100)
-            
+        product.completeness_score = await _calculate_completeness(db, product)
         product.updated_at = now_ist()
         db.add(product)
         await db.commit()
@@ -764,6 +766,49 @@ async def update_product_attributes(
         logger.error(f"Failed to update attributes: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+
+async def _calculate_completeness(db: AsyncSession, product: Product) -> float:
+    
+    try:
+        score = 0.0
+
+        # 1. Attribute completeness (60% weight)
+        attr_stmt = (
+            select(AttributeValue.value)
+            .join(ProductAttributeValueLinkModel,
+                  ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+            .where(ProductAttributeValueLinkModel.product_id == product.id)
+        )
+        attr_result = await db.execute(attr_stmt)
+        attr_values = attr_result.scalars().all()
+
+        if attr_values:
+            filled = sum(1 for v in attr_values if v and str(v).strip())
+            attr_score = (filled / len(attr_values)) * 60
+            score += attr_score
+
+        # 2. Image (15% weight)
+        if product.image_url_1:
+            score += 15
+
+        # 3. Short description (10% weight)
+        if product.short_description and product.short_description.strip():
+            score += 10
+
+        # 4. Long description (10% weight)
+        if product.long_description and product.long_description.strip():
+            score += 10
+
+        # 5. Features (5% weight)
+        if product.features and len(product.features) > 0:
+            score += 5
+
+        return round(score, 1)
+
+    except Exception as e:
+        logger.warning(
+            f"Failed to calculate completeness for {product.product_code}: {e}")
+        return product.completeness_score or 0.0
 
 @router.put("/products/bulk-attributes")
 async def bulk_update_product_attributes(
@@ -864,6 +909,8 @@ async def bulk_update_product_attributes(
                 total_populated = len(attr_rows)
                 if total_populated > 0:
                     product.data_quality_score = max(0, 100 - (product.manual_edit_count / total_populated) * 100)
+                product.completeness_score = await _calculate_completeness(db, product)
+                product.updated_at = now_ist()
                 if product.validation_conflicts:
                     for attr_name in request.attributes.keys():
                         if attr_name in product.validation_conflicts:
