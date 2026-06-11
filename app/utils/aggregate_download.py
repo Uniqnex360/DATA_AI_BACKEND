@@ -63,7 +63,7 @@ async def generate_products_excel(
         "title": "Product_Name",
         "brand": "Brand",
         "manufacturer": "Brand",
-        "sku": "SKU",
+        # "sku": "SKU",
         "mpn": "MPN",
         "model": "MPN",
         "product_type": "Product_Type",
@@ -277,7 +277,7 @@ async def generate_products_excel(
         row.update({
              "Sequence": p.aggregation_index or "", 
             "Prod ID": str(p.id) if p.id else "",
-            "SKU": row.get("SKU") or p.sku or "",
+            "SKU": row.get("MPN") or p.product_code or "",
             "Product_Type": row.get("Product_Type") or getattr(p, 'product_type', '') or "",
             "Parent_SKU": row.get("Parent_SKU") or getattr(p, 'parent_sku', '') or "",
             "Product_Name": row.get("Product_Name") or p.product_name or "",

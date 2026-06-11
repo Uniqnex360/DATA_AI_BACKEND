@@ -685,6 +685,10 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                     if aggregation_result.get('status') == 'success':
                         golden = aggregation_result.get('golden_record', {})
                         ai_attributes = golden.get('attributes', {})
+                        if not product.sku:
+                            product.sku = golden.get('sku')
+                        if not product.product_code:
+                            product.product_code = golden.get('mpn')
                         product.short_description = golden.get('short_description') or product.short_description
                         product.long_description = golden.get('long_description') or product.long_description
                         product.features = golden.get('features') or product.features

@@ -1003,6 +1003,10 @@ async def run_aggregation_task(source_id: str):
                         )
                     if aggregation_result.get('status') == 'success':
                         golden = aggregation_result.get('golden_record', {})
+                        if not product.sku:
+                            product.sku = golden.get('sku')
+                        if not product.product_code:
+                            product.product_code = golden.get('mpn')
                         ai_attributes = golden.get('attributes', {})
                         product.enrichment_status = 'completed'
                         product.data_quality_score = 100.0
