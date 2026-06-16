@@ -854,34 +854,20 @@ async def aggregate_product(
                     "msn.com", "tripadvisor.com", "timeout.com",
                 ]
                 
-
-                # fallback_queries = []
-                # if direct_domains and title:
-                #     fallback_queries.append(
-                #         f"{title} site:{list(direct_domains)[0]}")
-                # if direct_domains and is_mpn_valid:
-                #     fallback_queries.append(
-                #         f'"{mpn}" site:{list(direct_domains)[0]}')
-                # if title:
-                #     fallback_queries.append(f"{brand} {title}")
-                # if is_mpn_valid:
-                #     fallback_queries.append(f'"{mpn}" {brand}')
                 fallback_queries = []
-                if direct_domains and title:
-                    fallback_queries.append(f"{title} site:{list(direct_domains)[0]}")
+
+                # === MPN-FIRST ORDER ===
                 if direct_domains and is_mpn_valid:
-                    fallback_queries.append(f'"{mpn}" site:{list(direct_domains)[0]}')
-                
-                # === NEW SMARTER SEARCH QUERIES ===
+                    fallback_queries.append(
+                        f'"{mpn}" site:{list(direct_domains)[0]}')
                 if is_mpn_valid:
-                    # 1. Exact MPN in quotes (Highly effective for finding distributor sites like elesi.com)
                     fallback_queries.append(f'"{mpn}"')
-                    # 2. Exact MPN with title
                     if title:
                         fallback_queries.append(f'"{mpn}" {title}')
-                    # 3. Exact MPN with brand
                     fallback_queries.append(f'"{mpn}" {brand}')
-                    
+                if direct_domains and title:
+                    fallback_queries.append(
+                        f"{title} site:{list(direct_domains)[0]}")
                 if title:
                     fallback_queries.append(f"{brand} {title}")
                 # ==================================
@@ -905,6 +891,9 @@ async def aggregate_product(
                                     urls.append(url)
                                     if len(urls) >= 3:
                                         break
+                            urls = [
+                                url for url in urls if search_service.is_likely_pdp_url(url)]
+                            logger.info(f"Fallback URLs after PDP filter: {urls}")
                             if urls:
                                 logger.info(
                                     f"Fallback search found {len(urls)} URLs for {mpn}: {urls}")
