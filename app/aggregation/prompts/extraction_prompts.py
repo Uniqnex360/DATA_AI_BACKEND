@@ -4,11 +4,85 @@ from typing import Optional, List
 logger = logging.getLogger('extraction_prompts')
 
 
+# def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
+#     soup = BeautifulSoup(html_content, "html.parser")
+#     json_data = []
+#     for script in soup.find_all("script"):
+#         if script.get("type") in ["application/ld+json", "application/json"] or script.get("id") == "__NEXT_DATA__":
+#             content = script.string
+#             if content and len(content) > 100:  # Only grab substantial JSON blocks
+#                 json_data.append(content)
+#     # -------------------------------------------------------------
+
+#     for tag in soup(["script", "style", "noscript", "svg"]):
+#         tag.decompose()
+
+#     sections = []
+
+#     # --- NEW: ADD EXTRACTED JSON AS A SECTION ---
+#     if json_data:
+#         json_content = "\n\n".join(json_data)
+#         if len(json_content) < 50000:  # Don't overwhelm the prompt
+#             sections.append(json_content)
+#     for tag in soup(["script", "style", "noscript", "svg"]):
+#         tag.decompose()
+#     sections = []
+#     for table in soup.find_all("table"):
+#         rows = table.find_all("tr")
+#         if len(rows) >= 3:
+#             sections.append(str(table))
+#     for dl in soup.find_all("dl"):
+#         if len(dl.find_all("dt")) >= 2:
+#             sections.append(str(dl))
+#     for div in soup.find_all("div"):
+#         children = div.find_all(["div", "span", "p"], recursive=False)
+#         if len(children) >= 4:
+#             texts = [c.get_text(strip=True)
+#                      for c in children if c.get_text(strip=True)]
+#             if len(texts) >= 4 and len(" ".join(texts)) < 6000:
+#                 sections.append(str(div))
+#     for section in soup.find_all("section"):
+#         header = section.find(["h1", "h2", "h3", "h4"])
+#         if header:
+#             header_text = header.get_text().lower()
+#             if any(k in header_text for k in [
+#                 "spec", "technical", "dimension",
+#                 "performance", "details", "data",
+#                 "ingredient", "material", "composition",
+#                 "direction", "how to use", "what's in",
+#                 "formulation", "feature", "benefit",
+#                 "included", "excluded", "allergen", "warning"
+#             ]):
+#                 if len(section.get_text()) < 15000:
+#                     sections.append(str(section))
+#     unique_sections = list(dict.fromkeys(sections))
+#     content = "\n\n".join(unique_sections[:max_sections])
+#     MAX_CHARS = 120000
+#     return content[:MAX_CHARS]
 def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
     soup = BeautifulSoup(html_content, "html.parser")
+
+    # 1. EXTRACT JSON FROM SCRIPT TAGS BEFORE DELETING THEM
+    json_data = []
+    for script in soup.find_all("script"):
+        if script.get("type") in ["application/ld+json", "application/json"] or script.get("id") == "__NEXT_DATA__":
+            content = script.string
+            if content and len(content) > 100:  # Only grab substantial JSON blocks
+                json_data.append(content)
+
+    # 2. DELETE UNWANTED TAGS
     for tag in soup(["script", "style", "noscript", "svg"]):
         tag.decompose()
+
     sections = []
+
+    # 3. ADD EXTRACTED JSON AS A SECTION
+    if json_data:
+        json_content = "\n\n".join(json_data)
+        if len(json_content) < 50000:  # Don't overwhelm the prompt
+            sections.append(json_content)
+
+    # 4. PARSE REMAINING HTML SECTIONS
     for table in soup.find_all("table"):
         rows = table.find_all("tr")
         if len(rows) >= 3:
@@ -29,18 +103,25 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
             header_text = header.get_text().lower()
             if any(k in header_text for k in [
                 "spec", "technical", "dimension",
-                "performance", "details", "data"
+                "performance", "details", "data",
+                "ingredient", "material", "composition",
+                "direction", "how to use", "what's in",
+                "formulation", "feature", "benefit",
+                "included", "excluded", "allergen", "warning"
             ]):
                 if len(section.get_text()) < 15000:
                     sections.append(str(section))
+
     unique_sections = list(dict.fromkeys(sections))
     content = "\n\n".join(unique_sections[:max_sections])
+    if len(content.strip()) < 100:
+        raw_text = soup.get_text(separator="\n", strip=True)
+        if len(raw_text) > 100:
+            content = f"RAW PAGE TEXT (Fallback):\n{raw_text}"
     MAX_CHARS = 120000
     return content[:MAX_CHARS]
 
-
 def extract_product_descriptions(html_content: str) -> str:
-    """Extract all product-related text from HTML with fallbacks."""
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html_content, "html.parser")
     text_parts = []
@@ -78,7 +159,11 @@ def extract_product_descriptions(html_content: str) -> str:
                     text_parts.append(text)
                     seen_texts.add(text[:150])
     desc_text = ''.join(text_parts)
-    return desc_text[:3000]
+    if len(desc_text.strip()) < 100:
+        raw_text = soup.get_text(separator=" ", strip=True)
+        if len(raw_text) > 100:
+            desc_text = raw_text
+    return desc_text[:10000]
 
 
 def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: str,
@@ -121,6 +206,8 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
             [f"  {i+1}. {attr}" for i, attr in enumerate(primary_list)])
         spec_content = extract_high_signal_specs(html_content)
         desc_text = extract_product_descriptions(html_content)
+        logger.info(
+            f"[Extraction Debug] Spec content length: {len(spec_content)}, Desc content length: {len(desc_text)}")
         prompt = f"""
         You are extracting technical specifications from product content.
         PRODUCT CONTEXT:
@@ -157,6 +244,7 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         {primary_attrs_display}
         ADDITIONAL ATTRIBUTES (extract ALL you find):
         - Extract EVERY other technical specification on the page
+        - Formulation, Ingredients, Excluded materials/allergens
         - Maximum Working Pressure, Output Per Stroke, Pump Material, etc.
         - Material types, dimensions, performance specs, compatibility info
         - NO LIMIT on how many attributes to extract
@@ -552,7 +640,24 @@ EXTRACT:
 - Certifications and standards compliance values
 - Capacity, output, speed, and power specifications
 - All priority attributes listed above if present
+- Wattage, Lumens, CRI, Dimmable status
+- Tilt range, Tiltable, Light source reference
+- Driver requirements, Driver type
+- Box dimensions, Boxed weight, Product weight
+- Cable length, Cable diameter, Cable colour
+- Protection class, Energy efficiency class
+- Minimum distance from lit surface
 
+★★★ CRITICAL VOLUME MANDATE ★★★
+PDF datasheets are the MOST AUTHORITATIVE source for product data.
+You MUST extract EVERY single specification you find.
+If the PDF has 15+ specs, you MUST return 15+ attributes.
+If the PDF has 20+ specs, you MUST return 20+ attributes.
+Returning only 4-5 attributes from a detailed datasheet is a CRITICAL FAILURE.
+Do NOT stop after finding a few specs. Read the ENTIRE document and extract ALL specs.
+★★★ END VOLUME MANDATE ★★★
+
+DO NOT EXTRACT:
 DO NOT EXTRACT:
 - Marketing language ("best in class", "premium")
 - Company contact details, addresses, phone numbers

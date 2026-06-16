@@ -1,10 +1,9 @@
 import logging
 import httpx
+import re
 from typing import List
 from firecrawl import Firecrawl
-from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 from app.core.config import settings
-from app.aggregation.interfaces import ISearchService
 from typing import Optional
 from urllib.parse import urlparse
 logger = logging.getLogger("search_service")
@@ -31,7 +30,12 @@ BLOCKED_PATH_PATTERNS = [
     "/search", "/cart", "/checkout", "/account", "/login", "/register"
 ]
 class SerpApiSearchService:
-    """Firecrawl search service"""
+    @staticmethod
+    def _clean_search_query(query: str) -> str:
+        query = query.replace("+", " ").replace("&", " ")
+        query = re.sub(r'\b\d+\s?(ml|l|g|kg|oz|fl oz)\b', '', query, flags=re.IGNORECASE)
+        return ' '.join(query.split())
+
     def __init__(self, max_results: int = 5):
         self.max_results = max_results
         self.firecrawl = Firecrawl(api_key=settings.FIRECRAWL_API_KEY)
@@ -98,7 +102,11 @@ class SerpApiSearchService:
         filtered.sort(key=lambda x: x[1], reverse=True)
         return [url for url, s in filtered]
     async def search(self, query: str, num: int = 5) -> List[dict]:
-        # 1. TRY FIRECRAWL FIRST
+        cleaned_query = self._clean_search_query(query)
+        if cleaned_query != query:
+            logger.info(
+                f"[Search] Cleaned query: '{query}' -> '{cleaned_query}'")
+        query = cleaned_query
         firecrawl_results = []
         try:
             results = self.firecrawl.search(query=query, limit=num)
@@ -109,40 +117,28 @@ class SerpApiSearchService:
                 title = getattr(r, "title", "")
                 if url:
                     normalized.append({"link": url, "title": title})
-            
             firecrawl_results = normalized[:num]
             logger.info(f"[Firecrawl] Found {len(firecrawl_results)} results for: {query}")
-
         except Exception as e:
             logger.warning(f"[Firecrawl] Failed: {e}. Trying SearXNG...")
-
-        # 2. ALWAYS ALSO TRY SEARXNG AND MERGE RESULTS
-        # This ensures we don't miss pages that Google indexes poorly
         searxng_results = []
         try:
             searxng_results = await self._search_searxng(query=query, num=num)
             logger.info(f"[SearXNG] Found {len(searxng_results)} results for: {query}")
         except Exception as e:
             logger.warning(f"[SearXNG] Failed: {e}")
-
-        # 3. MERGE AND DEDUPLICATE
-        # SearXNG results go first because DuckDuckGo finds product pages better
         seen_urls = set()
         merged = []
-
         for r in searxng_results + firecrawl_results:
             url = r.get("link", "")
             if url and url not in seen_urls:
                 seen_urls.add(url)
                 merged.append(r)
-
         if merged:
             logger.info(f"[Search] Total merged results: {len(merged)}")
             return merged[:num]
-
         return []
     async def _search_searxng(self, query: str, num: int = 5) -> List[dict]:
-        
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.get(
@@ -151,7 +147,6 @@ class SerpApiSearchService:
                         "q": query,
                         "format": "json",
                         "categories": "general",
-                        "engines": "duckduckgo,bing",
                         "language": "en",
                     }
                 )

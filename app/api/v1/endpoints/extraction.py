@@ -467,10 +467,17 @@ async def batch_aggregate(
         created_count = 0
         updated_count = 0
         for idx, row in enumerate(rows):
-            code = clean_numeric_string(row.get("mpn")) or clean_numeric_string(row.get("sku")) or f"UNK-{uuid4()}"
-            stmt = select(Product).where(Product.product_code == str(code),Product.project_id==projectId)
-            result = await db.execute(stmt)
-            product = result.scalars().first()
+            val_mpn = clean_numeric_string(row.get("mpn")) or None
+            val_sku = clean_numeric_string(row.get("sku")) or None
+            code = val_mpn or val_sku
+            product = None
+            if code:
+                stmt = select(Product).where(
+                    Product.product_code == str(code),
+                    Product.project_id == projectId
+                )
+                result = await db.execute(stmt)
+                product = result.scalars().first()
             if not product:
                 product = Product(
                     product_code=str(code),
@@ -484,8 +491,8 @@ async def batch_aggregate(
                 product.workflow_stage=default_workflow_stage
                 updated_count += 1
             product.product_name = row.get("product_name", "Unknown")
-            product.mpn = clean_numeric_string(row.get("mpn"))
-            product.sku = clean_numeric_string(row.get("sku"))
+            product.mpn = val_mpn 
+            product.sku = val_sku  
             product.taxonomy = row.get("taxonomy")
             product.source_url = new_source.source_url
             product.category_1 = row.get('category_1')
@@ -845,8 +852,10 @@ async def run_aggregation_task(source_id: str):
                 f"Starting aggregation task for source {source_id}, found {total} pending products.")
             for idx, product in enumerate(products):
                 try:
-                    logger.info(
-                        f"Aggregating {idx+1}/{total}: {product.product_code}")
+                    display_id = product.product_code if (product.mpn or product.sku) else product.product_name
+
+                    logger.info(f"Aggregating {idx+1}/{total}: {display_id}")
+
                     # if product.dynamic_attributes:
                     #     primary_attr_names = [
                     #         attr['name'] for attr in product.dynamic_attributes

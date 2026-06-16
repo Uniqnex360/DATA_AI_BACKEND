@@ -1608,6 +1608,7 @@ async def get_product_extraction_logs(
         product = await db.get(Product, product_id)
         if not product:
             raise HTTPException(404, "Product not found")
+        project=await db.get(Project,product.project_id)
         if project.owner_id != current_user.id and current_user.role != "admin":
             raise HTTPException(status_code=403, detail="Access denied to this project's logs")
         source_stmt = select(Source).where(Source.project_id == product.project_id)

@@ -102,6 +102,57 @@ class NavigationResponse(BaseModel):
 class TargetedQueryResponse(BaseModel):
     search_query: str
 class SmartSearchService(ISearchService):
+    def is_likely_pdp_url(self, url: str) -> bool:
+        from urllib.parse import urlparse
+
+        # Strip query parameters and fragments for checking
+        parsed = urlparse(url)
+        url_lower = (parsed.scheme + "://" +
+                     parsed.netloc + parsed.path).lower()
+
+        reject_patterns = [
+            '/lighting/', '/sale', '/january-sale', '/collections/',
+             '/search', '/category', '/shop/',
+            '?page=',  # Keep this, but srsltid is removed
+            '/stores/', '/store-locator/', '/find-a-store/',
+            '/locations/', '/our-stores/',
+            '/login', '/register', '/account',
+            '/signin', '/signup',
+            '/about', '/contact', '/faq', '/help',
+            '/privacy', '/terms', '/cookies',
+            '/blog/', '/news/', '/articles/',
+            '/journal/', '/editorial/',
+            'social-stories', 'social+stories',
+            'forum', 'topic', 'thread', 'community', 'answers',
+            'how-to', 'wiki', 'recipe', 'brewing', 'download', 'article',
+            'member', 'trophies',
+        ]
+
+        if any(p in url_lower for p in reject_patterns):
+            logger.info(
+                f"  ⛔ Rejected PDP check (category/sale pattern): {url}")
+            return False
+
+        path_segments = [s for s in parsed.path.strip('/').split('/') if s]
+
+        # Generic category keywords to reject
+        generic_keywords = ['lighting', 'lanterns', 'pendant', 'wall-lights', 'ceiling-lights',
+                            'outdoor', 'indoor', 'task', 'sale', 'collection', 'category',
+                            'january', 'february', 'march', 'april', 'may', 'june']
+
+        for segment in path_segments:
+            if segment in generic_keywords:
+                logger.info(
+                    f"  ⛔ Rejected PDP check (generic keyword '{segment}'): {url}")
+                return False
+
+        # A real PDP should have at least one path segment that looks like a product slug
+        # Reject empty paths or very short top-level categories
+        if len(path_segments) < 1:
+            return False
+
+        logger.info(f"  ✓ Accepted PDP check: {url}")
+        return True
     def __init__(
         self,
         llm_provider: str,
@@ -127,6 +178,7 @@ class SmartSearchService(ISearchService):
         category_prompt_text: Optional[str] = None,
         taxonomy: Optional[str] = None,
         selected_taxonomy: Optional[str] = None, 
+        title: Optional[str] = None
     ) -> str:
         from app.aggregation.aggregate_product import call_llm_with_schema
         effective_taxonomy = selected_taxonomy if selected_taxonomy else taxonomy   
@@ -142,13 +194,18 @@ class SmartSearchService(ISearchService):
             prompt = prompt.replace("{mpn}", mpn or "")
             logger.info(f"Using category prompt for {effective_taxonomy}")
         else:
+            is_mpn_valid = mpn and str(mpn).strip().lower() != 'none' and not str(mpn).startswith('UNK-')
+            identifier = f"MPN: {mpn}" if is_mpn_valid else f"Product: {title}"
             prompt = f"""
         You are a product data researcher. Given a product, generate the single best 
         Google search query to find its official specifications or datasheet page.
         Product:
         - Brand: {brand}
-        - MPN: {mpn}
+        - {identifier}
+
         Rules:
+        - If no MPN is provided, use the Brand and Product Name to find the official page.
+        - NEVER include the word 'None' or 'UNK' in the query.
         - The query should target the manufacturer's official site or the most authoritative 
         distributor/retailer for this type of product
         - If the MPN contains hyphens or looks like a specific kit (e.g. DCF403-1PS-NA), DO NOT 
@@ -172,7 +229,7 @@ class SmartSearchService(ISearchService):
                 return result.search_query
         except Exception as e:
             logger.warning(f"Targeted query generation failed: {e}")
-        return f"{brand} {mpn} specifications"
+        return f"{brand} {mpn if is_mpn_valid else title} specifications" 
     async def get_urls(
         self,
         query: str,
@@ -185,28 +242,46 @@ class SmartSearchService(ISearchService):
         category_prompt_text: Optional[str] = None,
         taxonomy: Optional[str] = None,
         direct_urls: Optional[List[str]] = None, 
-        selected_taxonomy: Optional[str] = None, 
+        selected_taxonomy: Optional[str] = None,
+        title: Optional[str] = None,
+        
     ) -> tuple[List[str], List[str]]:
         from app.aggregation.aggregate_product import call_llm_with_schema
+        
         if direct_urls:
-            logger.info(f"Using {len(direct_urls)} direct URLs for {mpn}: {direct_urls}")
-            image_urls = []
-            image_task = self.searxng.search_images(f"{brand} {mpn}")
-            image_results = await image_task
-            if not isinstance(image_results, Exception):
-                image_urls = list({img.get("img_src") for img in image_results if img.get("img_src")})
-            if direct_urls and brand:
-                logger.info(f"BEFORE MANUFACTURER SCORING (direct): {direct_urls}, brand={brand}")
-                scored_direct = await self.llm_score_manufacturer_urls(
-                    urls=direct_urls,
-                    brand=brand,
-                    mpn=mpn,
-                    upc=sku
-                )
-                logger.info(f"AFTER MANUFACTURER SCORING (direct): {scored_direct}")
-                return scored_direct, image_urls
+            # Filter out category/sale pages that product_discovery mistakenly verified
+            direct_urls = [
+                url for url in direct_urls if self.is_likely_pdp_url(url)]
+            logger.info(
+                f"Using {len(direct_urls)} direct URLs for {mpn}: {direct_urls}")
+            if not direct_urls:
+                logger.warning(
+                    "All direct URLs were rejected as category/sale pages. Falling back to search.")
+            if direct_urls:
+                image_urls = []
+
+                is_mpn_valid = mpn and str(mpn).strip().lower() != 'none' and not str(mpn).startswith('UNK-')
+                search_id = mpn if is_mpn_valid else title
+                image_task = self.searxng.search_images(f"{brand} {search_id}")
+                image_results = await image_task
+                if not isinstance(image_results, Exception):
+                    image_urls = list({img.get("img_src") for img in image_results if img.get("img_src")})
+                if direct_urls and brand:
+                    logger.info(f"BEFORE MANUFACTURER SCORING (direct): {direct_urls}, brand={brand}")
+                    scored_direct = await self.llm_score_manufacturer_urls(
+                        urls=direct_urls,
+                        brand=brand,
+                        mpn=mpn,
+                        upc=sku
+                    )
+                    logger.info(f"AFTER MANUFACTURER SCORING (direct): {scored_direct}")
+                    return scored_direct, image_urls
+                else:
+                    return direct_urls, image_urls
             else:
-                return direct_urls, image_urls
+                logger.warning(
+                    "All direct URLs rejected as category/sale pages. Falling back to search.")
+            
         BLOCKED_DOMAINS = [
             "zhihu.com", "baidu.com", "weibo.com",
             "superuser.com", "tenforums.com", "stackoverflow.com",
@@ -230,11 +305,13 @@ class SmartSearchService(ISearchService):
             use_case=use_case,
             brand_prompt_text=brand_prompt_text,
             category_prompt_text=category_prompt_text,
-            taxonomy=taxonomy,  selected_taxonomy=selected_taxonomy,
+            taxonomy=taxonomy,  selected_taxonomy=selected_taxonomy,title=query or title,
         )
         web_task = self.searxng._search(base_query)
         targeted_task = self.searxng._search(targeted_query_str)
-        image_task = self.searxng.search_images(f"{brand} {mpn}")
+        is_mpn_valid = mpn and str(mpn).strip().lower() != 'none' and not str(mpn).startswith('UNK-')
+        search_id = mpn if is_mpn_valid else title
+        image_task = self.searxng.search_images(f"{brand} {search_id}")
         web_results, targeted_results, image_results = await asyncio.gather(
             web_task, targeted_task, image_task, return_exceptions=True
         )
@@ -269,17 +346,22 @@ class SmartSearchService(ISearchService):
         brand_lower = (brand or "").lower()
         mpn_lower = (mpn or "").lower()
         sku_lower = (sku or "").lower()
+        is_mpn_valid = mpn and str(mpn).strip().lower() != 'none' and not str(mpn).startswith('UNK-')
         def is_relevant(r: dict) -> bool:
             text = (
                 r.get('title', '') + ' ' +
                 r.get('content', '') + ' ' +
                 r.get('url', '')
             ).lower()
-            return (
-                mpn_lower in text or
-                brand_lower in text or
-                (sku_lower and len(sku_lower) > 4 and sku_lower in text)
-            )
+            
+            if is_mpn_valid:
+                # Strict: Must have brand and MPN
+                return mpn_lower in text or brand_lower in text
+            else:
+                # Flexible: Brand must be present, check title keywords
+                title_words = [w.lower() for w in (query or title).split() if len(w) > 3]
+                title_matches = sum(1 for w in title_words if w in text)
+                return brand_lower in text and title_matches >= 2
         relevant_results = [r for r in merged if is_relevant(r)]
         if relevant_results:
             web_results = relevant_results
@@ -295,7 +377,7 @@ class SmartSearchService(ISearchService):
         prompt = f"""
         PRODUCT:
         - Brand: {brand}
-        - MPN: {mpn}
+        - Identifier: {mpn if is_mpn_valid else title}
         WEB SEARCH RESULTS:
         {web_text}
         POSSIBLE PRODUCT IMAGES (from image search):
@@ -360,8 +442,10 @@ class SmartSearchService(ISearchService):
             return urls
 
         urls_list = "\n".join(f"- {url}" for url in urls)
+        is_mpn_valid = mpn and str(mpn).strip().lower() != 'none' and not str(mpn).startswith('UNK-')
+
         prompt = f"""
-    You are scoring candidate URLs to find the official manufacturer product page.
+        You are scoring candidate URLs to find the official manufacturer product page.
 
     Product:
     - Brand: {brand}
@@ -370,7 +454,7 @@ class SmartSearchService(ISearchService):
 
     Candidate URLs:
     {urls_list}
-
+    
     Instructions:
     For each URL, assign a confidence score (0-100) based on:
     - +50 if the URL contains the exact brand name (case-insensitive)

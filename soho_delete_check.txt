@@ -1,0 +1,59 @@
+================================================================================
+CATALOG PROJECTS TO BE DELETED:
+================================================================================
+
+Found 1 projects matching 'soho':
+
+  ID: ef40c306-a498-4eee-ad0b-5aa1edc04c84
+  Name: soho
+  Created: 2026-06-16 13:07:03.744314
+
+================================================================================
+ASSOCIATED DATA TO BE DELETED (CASCADE):
+================================================================================
+
+Products: 11
+  Sample products to be deleted:
+    - LT-SH-HR-PEN901-CL (Acanthus Petite Base Leaf Pendant)
+    - LT-SH-13-PEN465-BBR (Soho Lighting Langdon Lantern Pendant Light Large Blackened Brass)
+    - LT-SH-13-PEN450-BBR (London Geotrapeze Metal Glass Lantern Pendant Light - Small (With Fixed Mounting Bar))
+    - LT-SH-02-WLT427 (Larkin Clear Glass Wall Light)
+    - DL-SH-11-TLA213-WH (Soho Lighting White 3K Warm White Tiltable LED Downlights, Fire Rated, IP44, High CRI, Dimmable)
+    ... and 6 more
+
+TOTAL RECORDS TO DELETE: 1 projects + 11 products
+
+================================================================================
+✓ READY TO DELETE
+================================================================================
+
+⚠️  WARNING: This will permanently delete 1 projects and 11 products!
+
+When ready, run this command:
+
+
+docker exec -i data_ai_api python << 'DELEOF'
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
+from app.core.config import settings
+
+sync_url = settings.DATABASE_URL.replace('postgresql+asyncpg://', 'postgresql://')
+engine = create_engine(sync_url)
+Session = sessionmaker(bind=engine)
+session = Session()
+
+try:
+    # Delete projects with CASCADE (will also delete products)
+    result = session.execute(text("DELETE FROM catalog_projects WHERE LOWER(name) LIKE '%soho%'"))
+    session.commit()
+    print(f"✓ Successfully deleted {result.rowcount} SOHO projects and all their products (CASCADE)")
+except Exception as e:
+    session.rollback()
+    print(f"✗ Error: {e}")
+    import traceback
+    traceback.print_exc()
+finally:
+    session.close()
+    engine.dispose()
+DELEOF
+        

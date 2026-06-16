@@ -43,10 +43,11 @@ class SearXNGSearchService(ISearchService):
             return []
     def _build_query(self, mpn: str, brand: str, sku: str = None) -> str:
         parts = []
-        if brand:
-            parts.append(brand) 
         if mpn:
            parts.append(mpn) 
+        if brand:
+            parts.append(brand) 
+        
         
         if sku and sku != mpn and len(sku) > 3:
             parts.append(sku)
@@ -76,13 +77,17 @@ class SearXNGSearchService(ISearchService):
         #         parts.append(" ".join(words[:max_words]))
         parts.append("specifications")
         return " ".join(parts)
-    async def _search(self, query: str) -> List[dict]:
+
+    async def _search(self, query: str, engines: Optional[str] = None) -> List[dict]:
         params = {
             "q": query,
             "format": "json",
             "engines": ",".join(self.engines),
             "categories": "general",
+            "engines": "duckduckgo,bing",
         }
+        if engines:
+            params["engines"] = engines
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 f"{self.base_url}/search",

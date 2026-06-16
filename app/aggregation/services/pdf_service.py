@@ -18,26 +18,25 @@ class PDFExtractionService:
    
     @staticmethod
     def find_pdf_links(html: str, base_url: str) -> List[str]:
-        """Extract PDF links from HTML, prioritizing datasheets/specs"""
         try:
             soup = BeautifulSoup(html, 'html.parser')
             pdf_links = []
             
-            # Find all links
+            
             for link in soup.find_all('a', href=True):
                 href_raw = link['href'].strip()
                 
-                # 1. Parse the path to ignore query parameters (?v=123...)
+                
                 parsed_path = urlparse(href_raw).path.lower()
                 
-                # 2. Check if the path (not the whole string) ends in .pdf
+                
                 if not parsed_path.endswith('.pdf'):
                     continue
                 
-                # 3. Make absolute URL using the original href (to keep parameters)
+                
                 full_url = urljoin(base_url, href_raw)
                 
-                # Prioritize technical/datasheet PDFs
+                
                 link_text = (link.get_text() or '').lower()
                 link_classes = ' '.join(link.get('class', [])).lower()
                 href_lower = href_raw.lower()
@@ -52,7 +51,7 @@ class PDFExtractionService:
                     for kw in priority_keywords
                 )
                 
-                # Skip marketing/promo PDFs
+                
                 skip_keywords = ['brochure', 'catalog', 'flyer', 'warranty', 'installation guide']
                 if any(kw in link_text or kw in href_lower for kw in skip_keywords):
                     continue
@@ -62,7 +61,7 @@ class PDFExtractionService:
                 else:
                     pdf_links.append(full_url)
             
-            # Dedupe while preserving order
+            
             seen = set()
             unique_pdfs = []
             for pdf in pdf_links:
@@ -70,7 +69,7 @@ class PDFExtractionService:
                     seen.add(pdf)
                     unique_pdfs.append(pdf)
             
-            return unique_pdfs[:3]  # Limit to top 3 PDFs
+            return unique_pdfs[:3]  
             
         except Exception as e:
             logger.warning(f"Failed to parse PDF links: {e}")

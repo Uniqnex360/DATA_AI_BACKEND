@@ -10,19 +10,23 @@ logger = logging.getLogger("download_service")
 
 
 
-playwright_lock = asyncio.Semaphore(1)
+playwright_lock = asyncio.Semaphore(3)
 
 class HttpDownloadService(IDownloadService):
     def __init__(self, timeout: int = 30, use_playwright_fallback: bool = True, proxy: Optional[str] = None):
         self.timeout = timeout
         self.use_playwright_fallback = use_playwright_fallback
         self.proxy = proxy
+        self._cache = {}
 
     async def download(self, url: str) -> Optional[Dict]:
+        if url in self._cache:
+            return self._cache[url]
         result = await self._download_curl(url)
         if result is None and self.use_playwright_fallback:
             logger.info(f"curl_cffi failed for {url}, trying Playwright...")
             result = await self._download_playwright(url)
+        if result: self._cache[url] = result
         return result
 
     async def _download_curl(self, url: str) -> Optional[Dict]:
@@ -48,8 +52,8 @@ class HttpDownloadService(IDownloadService):
                 
                 if response.status_code != 200:
                     return None
-                
-                is_pdf = "pdf" in response.headers.get("Content-Type", "").lower()
+                content_type = response.headers.get("Content-Type", "").lower()
+                is_pdf = "pdf" in content_type or url.lower().split('?')[0].endswith('.pdf')
                 return {
                     "source_url": url,
                     "raw_bytes": response.content,
@@ -63,7 +67,7 @@ class HttpDownloadService(IDownloadService):
             gc.collect()
 
     async def _download_playwright(self, url: str) -> Optional[Dict]:
-        
+        is_pdf_url = url.lower().split('?')[0].endswith('.pdf')
         async with playwright_lock:
             try:
                 async with async_playwright() as p:
@@ -89,10 +93,37 @@ class HttpDownloadService(IDownloadService):
                     page = await context.new_page()
 
                     
-                    await page.goto(url, timeout=self.timeout * 1000, wait_until="networkidle")
+                    response=await page.goto(url, timeout=self.timeout * 1000, wait_until="networkidle")
                     await page.wait_for_timeout(1500)
 
-                    
+                    content_type = response.headers.get(
+                        "Content-Type", "").lower() if response else ""
+                    is_pdf = is_pdf_url or "pdf" in content_type
+                    if is_pdf:
+                        logger.info(
+                            f"Playwright detected PDF at {url}. Fetching raw bytes using authenticated context...")
+                        try:
+                            pdf_response = await context.request.get(url)
+                            if pdf_response.ok:
+                                raw_bytes = await pdf_response.body()
+                                await browser.close()
+                                logger.info(
+                                    f"✓ Playwright successfully downloaded PDF: {len(raw_bytes)} bytes from {url}")
+                                return {
+                                    "source_url": url,
+                                    "raw_bytes": raw_bytes,
+                                    "type": "pdf",
+                                }
+                            else:
+                                logger.warning(
+                                    f"Failed to fetch PDF bytes for {url} (Status: {pdf_response.status})")
+                                await browser.close()
+                                return None
+                        except Exception as pdf_e:
+                            logger.error(
+                                f"Error fetching PDF bytes for {url}: {pdf_e}")
+                            await browser.close()
+                            return None
                     await page.evaluate("""
                         async () => {
                             await new Promise(resolve => {
@@ -101,7 +132,7 @@ class HttpDownloadService(IDownloadService):
                                 let timer = setInterval(() => {
                                     window.scrollBy(0, distance);
                                     totalHeight += distance;
-                                    if(totalHeight >= document.body.scrollHeight){
+                                    if(totalHeight >= document.body.scrollHeight || totalHeight > 10000){
                                         clearInterval(timer);
                                         resolve();
                                     }
@@ -145,8 +176,8 @@ class HttpDownloadService(IDownloadService):
 
                     await browser.close()
 
-                    if content and len(content) > 20000:
-                        logger.info(f"✅ Playwright FULL HTML fetched: {len(content)} bytes from {url}")
+                    if content and len(content) > 5000:
+                        logger.info(f"Playwright FULL HTML fetched: {len(content)} bytes from {url}")
                         return {
                             "source_url": url,
                             "raw_bytes": content.encode("utf-8"),
