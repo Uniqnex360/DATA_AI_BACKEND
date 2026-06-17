@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional
+from typing import  Optional
 from urllib.parse import urlparse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func
@@ -7,7 +7,6 @@ from sqlmodel import select
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 from app.aggregation.services.search_service import SerpApiSearchService
 from app.aggregation.services.download_service import HttpDownloadService
-from app.core.config import settings
 from app.models.brand import Brand
 import re
 logger = logging.getLogger("product_discovery")
@@ -298,7 +297,6 @@ class ProductDiscoveryService:
             if not content or content.get("type") != "html":
                 return {"is_valid": False, "score": 0}
             html = content["raw_bytes"].decode("utf-8", errors="ignore").lower()
-            logger.info(f" HTML Snippet: {html[:500]}")
             logger.info(f" URL: {url}")
             brand_lower = brand.lower() if brand else ""
             mpn_lower = mpn.lower() if mpn else ""

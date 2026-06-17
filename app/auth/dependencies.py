@@ -1,5 +1,4 @@
 from alembic.command import current
-from curl_cffi import AsyncSession
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
 from app.core.config import settings
@@ -7,6 +6,7 @@ from app.core.database import get_session
 from app.models.user import User
 from typing import Optional
 from jose import JWTError, jwt
+from sqlalchemy.ext.asyncio import AsyncSession
 SECRET_KEY=settings.SECRET_KEY
 ALGORITHM=settings.ALGORITHM
 oauth2_scheme=OAuth2PasswordBearer(tokenUrl='/api/v1/auth/login')

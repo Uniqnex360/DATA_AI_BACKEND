@@ -1,7 +1,19 @@
-from pydantic import EmailStr
-from pydantic import BaseModel, Field
-
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+from uuid import UUID
 class RegisterRequest(BaseModel):
-    full_name:str=Field(min_length=2,max_length=255)
-    email:EmailStr
-    password:str=Field(min_length=6,max_length=128)
+    email: EmailStr
+    password: str
+    full_name: str
+class UserResponse(BaseModel):
+    id: UUID
+    email: EmailStr
+    full_name: str
+    role: str
+    is_active: bool
+    class Config:
+        from_attributes = True
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, outerjoin, and_
 from typing import Optional, List
 from app.auth.dependencies import get_current_user
+from app.auth.rbac import get_auth_filters
 from app.core.database import get_session
 from app.models.brand import Brand
 from app.models.pipeline import AggregationJob, Source
@@ -49,13 +50,14 @@ async def list_projects(
     tab: str | None = None,
     q: str | None = None,
     db: AsyncSession = Depends(get_session),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    user_id:Optional[str]=Query(None)
 ):
     try:
         active_job = aliased(AggregationJob)
         active_source = aliased(Source)
         aggregated_count_subq = select(null()).label('aggregated_count')
-
+        auth_filter=get_auth_filters(current_user,user_id)
         if tab == "aggregation":
             product_count_subq = (
                 select(func.count(Product.id))
@@ -206,8 +208,10 @@ async def list_projects(
             .outerjoin(active_job, and_(active_job.project_id == cast(Project.id, String), active_job.status.in_(["pending", "processing", "completed", "failed"])))
             .outerjoin(active_source, active_source.project_id == Project.id)
         )
-        if current_user.role != "admin":
-            statement = statement.where(Project.owner_id == current_user.id)
+        # if current_user.role != "admin":
+        #     statement = statement.where(Project.owner_id == current_user.id)
+        if auth_filter:
+            statement=statement.where(*auth_filter)
         if q:
             search_term = f"%{q}%"
             statement = statement.where(

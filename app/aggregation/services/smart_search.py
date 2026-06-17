@@ -34,6 +34,16 @@ class ProductPageResponse(BaseModel):
         product_url: Optional[str] = None
         confidence: float = 0.0
         reasoning: str =""
+
+
+class URLSelectionResponse(BaseModel):
+    best_url: Optional[str] = Field(
+        None, description="The most accurate product detail page URL found.")
+    confidence: float = Field(
+        0.0, description="Confidence score from 0.0 to 1.0")
+    reasoning: str = Field(
+        ..., description="Short explanation of why this URL was chosen over others.")
+
 class LinkJudgeResponse(BaseModel):
     """
     Schema for the LLM to identify the best Product Detail Page (PDP) 
@@ -75,9 +85,9 @@ class ManufacturerUrl(BaseModel):
     )
 
     model_config = {
-        "extra": "forbid",           # ← required for OpenAI structured output
+        "extra": "forbid",           
         "json_schema_extra": {
-            "additionalProperties": False  # ← explicit for clarity
+            "additionalProperties": False  
         }
     }
 
@@ -90,13 +100,13 @@ class ManufacturerUrlResponse(BaseModel):
     )
 
     model_config = {
-        "extra": "forbid"            # ← required for OpenAI structured output
+        "extra": "forbid"            
     }
 class NavigationResponse(BaseModel):
     """LLM response for navigation step"""
     url: str
     exact_match: bool = False
-    page_type: str  # "product" | "category" | "brand" | "not_found"
+    page_type: str  
     confidence: float = 0.5
     reasoning: Optional[str] = None
 class TargetedQueryResponse(BaseModel):
@@ -105,15 +115,16 @@ class SmartSearchService(ISearchService):
     def is_likely_pdp_url(self, url: str) -> bool:
         from urllib.parse import urlparse
 
-        # Strip query parameters and fragments for checking
+        
         parsed = urlparse(url)
         url_lower = (parsed.scheme + "://" +
                      parsed.netloc + parsed.path).lower()
 
         reject_patterns = [
-            '/lighting/', '/sale', '/january-sale', '/collections/',
-             '/search', '/category', '/shop/',
-            '?page=',  # Keep this, but srsltid is removed
+            '/lighting/', '/sale', '/january-sale',
+            '/collections/', '/brands/',
+            '/search', '/category',
+            '?page=',
             '/stores/', '/store-locator/', '/find-a-store/',
             '/locations/', '/our-stores/',
             '/login', '/register', '/account',
@@ -125,17 +136,21 @@ class SmartSearchService(ISearchService):
             'social-stories', 'social+stories',
             'forum', 'topic', 'thread', 'community', 'answers',
             'how-to', 'wiki', 'recipe', 'brewing', 'download', 'article',
-            'member', 'trophies',
+            # Shopify/CMS info pages (company, about, etc.)
+            'member', 'trophies', '/pages/',
+            '/styles',
+            '/compliance-',
+            '/materials',
         ]
 
         if any(p in url_lower for p in reject_patterns):
             logger.info(
-                f"  ⛔ Rejected PDP check (category/sale pattern): {url}")
+                f"   Rejected PDP check (category/sale pattern): {url}")
             return False
 
         path_segments = [s for s in parsed.path.strip('/').split('/') if s]
 
-        # Generic category keywords to reject
+        
         generic_keywords = ['lighting', 'lanterns', 'pendant', 'wall-lights', 'ceiling-lights',
                             'outdoor', 'indoor', 'task', 'sale', 'collection', 'category',
                             'january', 'february', 'march', 'april', 'may', 'june']
@@ -143,11 +158,11 @@ class SmartSearchService(ISearchService):
         for segment in path_segments:
             if segment in generic_keywords:
                 logger.info(
-                    f"  ⛔ Rejected PDP check (generic keyword '{segment}'): {url}")
+                    f"   Rejected PDP check (generic keyword '{segment}'): {url}")
                 return False
 
-        # A real PDP should have at least one path segment that looks like a product slug
-        # Reject empty paths or very short top-level categories
+        
+        
         if len(path_segments) < 1:
             return False
 
@@ -249,7 +264,7 @@ class SmartSearchService(ISearchService):
         from app.aggregation.aggregate_product import call_llm_with_schema
         
         if direct_urls:
-            # Filter out category/sale pages that product_discovery mistakenly verified
+            
             direct_urls = [
                 url for url in direct_urls if self.is_likely_pdp_url(url)]
             logger.info(
@@ -283,6 +298,8 @@ class SmartSearchService(ISearchService):
                     "All direct URLs rejected as category/sale pages. Falling back to search.")
             
         BLOCKED_DOMAINS = [
+            'konghq.com',   
+            'miricanvas.com',
             "zhihu.com", "baidu.com", "weibo.com",
             "superuser.com", "tenforums.com", "stackoverflow.com",
             "support.google.com", "support.microsoft.com",
@@ -355,10 +372,10 @@ class SmartSearchService(ISearchService):
             ).lower()
             
             if is_mpn_valid:
-                # Strict: Must have brand and MPN
+                
                 return mpn_lower in text or brand_lower in text
             else:
-                # Flexible: Brand must be present, check title keywords
+                
                 title_words = [w.lower() for w in (query or title).split() if len(w) > 3]
                 title_matches = sum(1 for w in title_words if w in text)
                 return brand_lower in text and title_matches >= 2
@@ -476,7 +493,7 @@ class SmartSearchService(ISearchService):
                 llm_provider=self.llm_provider,
                 estimated_tokens=800
             )
-            # Sort by score descending
+            
             sorted_urls = [su.url for su in sorted(result.scored_urls, key=lambda x: x.score, reverse=True)]
             logger.info(f"Priority order: {sorted_urls}")
             return sorted_urls
