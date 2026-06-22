@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     cloudinary_api_secret: str
     SECRET_KEY: str
     FIRECRAWL_API_KEY: str
-    SEARXNG_URL: str
+    SEARXNG_URL: str = "http://searxng:8080"
 
     cloudinary_folder: str = ''
     serpapi_key: str
