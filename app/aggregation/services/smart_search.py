@@ -199,7 +199,7 @@ class SmartSearchService(ISearchService):
         self,
         llm_provider: str,
         db: AsyncSession,
-        searxng_url: str ,
+        searxng_url: Optional[str] = None,
         max_results: int = 5,
     ):
         self.db = db
