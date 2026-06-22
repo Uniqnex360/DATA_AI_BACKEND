@@ -224,6 +224,9 @@ class SmartSearchService(ISearchService):
         title: Optional[str] = None
     ) -> str:
         from app.aggregation.aggregate_product import call_llm_with_schema
+        leaf_node = ""
+        if taxonomy:
+            leaf_node = taxonomy.split('>')[-1].strip()
         effective_taxonomy = selected_taxonomy if selected_taxonomy else taxonomy
         if brand_prompt_text:
             prompt = brand_prompt_text
@@ -245,6 +248,7 @@ class SmartSearchService(ISearchService):
         Google search query to find its official specifications or datasheet page.
         Product:
         - Brand: {brand}
+        - Category: {leaf_node}
         - {identifier}
 
         Rules:
@@ -273,7 +277,7 @@ class SmartSearchService(ISearchService):
                 return result.search_query
         except Exception as e:
             logger.warning(f"Targeted query generation failed: {e}")
-        return f"{brand} {mpn if is_mpn_valid else title} specifications"
+        return f"{brand} {mpn if is_mpn_valid else title} {leaf_node} specifications"
 
     async def get_urls(
         self,
