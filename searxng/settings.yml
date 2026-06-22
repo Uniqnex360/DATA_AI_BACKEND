@@ -1,16 +1,15 @@
+# settings.yml - Complete fixed configuration
 
 use_default_settings: true
 
 server:
-  bind_address: "0.0.0.0"   
-  port: 8888            
   secret_key: "12121123123"
   limiter: false
   image_proxy: false
 
 search:
   safe_search: 0
-  default_lang: "en"             
+  default_lang: "en"              # ← Forces English results
   formats:
     - html
     - json
@@ -23,6 +22,7 @@ outgoing:
   enable_http2: true
 
 engines:
+  # ── GOOGLE ──────────────────────────────────────────
   - name: google
     engine: google
     shortcut: g
@@ -30,9 +30,10 @@ engines:
     region: "en-US"
     safesearch: 0
     timeout: 10
-    weight: 2                     
+    weight: 2                     # ← Higher weight = more trusted
     disabled: false
 
+  # ── BING ────────────────────────────────────────────
   - name: bing
     engine: bing
     shortcut: b
@@ -43,6 +44,7 @@ engines:
     weight: 2
     disabled: false
 
+  # ── DUCKDUCKGO ──────────────────────────────────────
   - name: duckduckgo
     engine: duckduckgo
     shortcut: ddg
@@ -52,6 +54,7 @@ engines:
     weight: 1
     disabled: false
 
+  # ── BRAVE ───────────────────────────────────────────
   - name: brave
     engine: brave
     shortcut: brave
@@ -61,6 +64,7 @@ engines:
     weight: 1
     disabled: false
 
+  # ── GOOGLE IMAGES (for product images) ──────────────
   - name: google images
     engine: google_images
     shortcut: gimg
@@ -69,6 +73,7 @@ engines:
     timeout: 10
     disabled: false
 
+  # ── BING IMAGES ─────────────────────────────────────
   - name: bing images
     engine: bing_images
     shortcut: bimg

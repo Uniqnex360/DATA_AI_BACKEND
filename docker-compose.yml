@@ -11,8 +11,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - ai_network
 
   api:
     build: .
@@ -23,22 +21,18 @@ services:
     env_file: .env
     depends_on:
       - db
-      - searxng
     volumes:
       - ./storage:/app/storage
     shm_size: '2gb'         
     mem_limit: 8g 
-    networks:
-      - ai_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   adminer:
     image: adminer
     restart: always
     ports:
       - "8080:8080"
-    networks:
-      - ai_network
-
   searxng:
     image: searxng/searxng:latest
     container_name: searxng
@@ -47,12 +41,9 @@ services:
       - "8888:8080"
     volumes:
       - ./searxng:/etc/searxng:rw
-    networks:
-      - ai_network
-
-networks:
-  ai_network:
-    driver: bridge
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
 volumes:
   postgres_data:
