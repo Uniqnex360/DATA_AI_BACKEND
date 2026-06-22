@@ -84,6 +84,7 @@ class SearXNGSearchService(ISearchService):
             "format": "json",
             "engines": ",".join(self.engines),
             "categories": "general",
+            "pageno": 1,
         }
         if engines:
             params["engines"] = engines
@@ -97,4 +98,6 @@ class SearXNGSearchService(ISearchService):
                     text = await resp.text()
                     raise Exception(f"SearXNG returned {resp.status}: {text[:200]}")
                 data = await resp.json()
+                results = data.get("results", [])
+                results.sort(key=lambda r: r.get("score", 0), reverse=True)
                 return data.get("results", [])
