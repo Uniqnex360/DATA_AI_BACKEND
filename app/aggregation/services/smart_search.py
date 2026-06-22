@@ -460,10 +460,30 @@ class SmartSearchService(ISearchService):
                 return mpn_lower in text or brand_lower in text
             else:
 
-                title_words = [w.lower()
-                               for w in (query or title).split() if len(w) > 3]
-                title_matches = sum(1 for w in title_words if w in text)
-                return brand_lower in text and title_matches >= 2
+                # title_words = [w.lower()
+                #                for w in (query or title).split() if len(w) > 3]
+                # title_matches = sum(1 for w in title_words if w in text)
+                # return brand_lower in text and title_matches >= 2
+                title_words_old = [w.lower() for w in (
+                    query or title).split() if len(w) > 3]
+                title_matches_old = sum(
+                    1 for w in title_words_old if w in text)
+                if brand_lower in text and title_matches_old >= 2:
+                    return True
+           
+            title_keywords = [w.lower()
+                              for w in (title or "").split() if len(w) > 3]
+
+            if title_keywords and brand_lower in text:
+                matches = sum(1 for kw in title_keywords if kw in text)
+                match_ratio = matches / len(title_keywords)
+
+                if match_ratio >= 0.6:
+                    logger.info(
+                        f"✓ Rescued result via Name Density ({int(match_ratio*100)}%): {r.get('url')}")
+                    return True
+
+            return False
         # relevant_results = [r for r in merged if is_relevant(r)]
         relevant_results = []
         for r in merged:
