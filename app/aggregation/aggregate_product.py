@@ -793,7 +793,8 @@ async def aggregate_product(
                 if not category_prompt_text:
                     logger.info(
                         f"✗ No prompt found for taxonomy: '{clean_taxonomy}'")
-            search_service = SmartSearchService(llm_provider, db=db, max_results=5)
+            search_service = SmartSearchService(
+                llm_provider, db=db, searxng_url=settings.SEARXNG_URL, max_results=5)
             query = title if (
                 mpn in title and brand in title) else f"{brand} {mpn} {title}"
             query = query.strip()
