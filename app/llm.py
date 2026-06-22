@@ -1,7 +1,7 @@
 import logging
 import asyncio
 from anthropic import AsyncAnthropic
-from app.aggregation.services.smart_search import LinkJudgeResponse, ManufacturerScoringResponse, ManufacturerUrlResponse, ManufacturerWebsiteResponse, NavigationResponse, PageMatchScore, SimpleText, SmartSearchResponse, TargetedQueryResponse, URLSelectionResponse, UrlFilterResponse, ProductPageResponse
+from app.aggregation.services.smart_search import IdentityVerificationResponse, LinkJudgeResponse, ManufacturerScoringResponse, ManufacturerUrlResponse, ManufacturerWebsiteResponse, NavigationResponse, PageMatchScore, SimpleText, SmartSearchResponse, TargetedQueryResponse, URLSelectionResponse, UrlFilterResponse, ProductPageResponse
 from app.core.rate_limiter import openai_limiter
 from openai import OpenAI
 import google.generativeai as genai
@@ -99,7 +99,8 @@ SCHEMA_MAP = {
     "ProductPageResponse": ProductPageResponse,
     "LinkJudgeResponse": LinkJudgeResponse,
     "ManufacturerUrlResponse": ManufacturerUrlResponse,
-    'URLSelectionResponse': URLSelectionResponse
+    'URLSelectionResponse': URLSelectionResponse,
+    "IdentityVerificationResponse": IdentityVerificationResponse
 
 }
 
@@ -127,7 +128,7 @@ async def call_llm_with_schema(
     prompt: str,
     response_model: str,
     llm_provider: str,
-    model: str = "gpt-4o",
+    model: str = "gpt-4o-mini",
     estimated_tokens: int = 2000,
     max_tokens: Optional[int] = None
 ) -> Any:
@@ -146,7 +147,7 @@ async def call_llm_with_schema(
     try:
         if llm_provider == 'openai':
             last_error = None
-            for attempt in range(5):
+            for attempt in range(2):
                 if attempt > 0 and last_error:
                     wait_time = (2 ** (attempt - 1)) + random.uniform(0, 1)
                     logger.warning(
@@ -229,7 +230,7 @@ async def call_llm_with_schema(
                 async with _llm_semaphore:
 
                     response = await _openai_client.beta.chat.completions.parse(
-                        model="gpt-4o",
+                        model="gpt-4o-mini",
                         messages=[
                             {"role": "system", "content": "You are a precise data extraction engine. Final attempt."},
                             {"role": "user", "content": prompt}

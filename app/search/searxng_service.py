@@ -84,7 +84,6 @@ class SearXNGSearchService(ISearchService):
             "format": "json",
             "engines": ",".join(self.engines),
             "categories": "general",
-            "engines": "duckduckgo,bing",
         }
         if engines:
             params["engines"] = engines

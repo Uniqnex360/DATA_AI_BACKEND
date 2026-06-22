@@ -149,7 +149,7 @@ async def search_pdfs_url(mpn: str, brand: str) -> List[str]:
     try:
         logger.info(f"🔍 [1/4] Starting PDF search for MPN: {mpn}")
         searxng = SearXNGSearchService(
-            base_url="http://searxng:8080", max_results=20)
+            base_url=f"{settings.SEARXNG_URL}/search", max_results=20)
         search_queries = [
             f"{mpn} datasheet pdf",
             f"{mpn} specification sheet pdf",

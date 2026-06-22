@@ -42,7 +42,7 @@ class LLMCleaningResponse(BaseModel):
 
 
 class LLMCleaningService:
-    # def __init__(self,llm_provider:str, model: str = "gpt-4o-mini", max_retries: int = 3, concurrency_limit: int = 10):
+    # def __init__(self,llm_provider:str, model: str = "gpt-4o-mini-mini", max_retries: int = 3, concurrency_limit: int = 10):
     #     self.llm_provider=llm_provider
     #     self.model = model
     #     self.max_retries = max_retries
@@ -52,7 +52,7 @@ class LLMCleaningService:
         llm_provider: str,
         db: Optional[AsyncSession] = None,
         project_id: Optional[str] = None,
-        model: str = "gpt-4o",
+        model: str = "gpt-4o-mini",
         max_retries: int = 3,
         concurrency_limit: int = 10
     ):

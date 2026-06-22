@@ -23,7 +23,8 @@ class HttpDownloadService(IDownloadService):
         if url in self._cache:
             return self._cache[url]
         result = await self._download_curl(url)
-        if result is None and self.use_playwright_fallback:
+        if (result is None or result.get('status') == 404) and self.use_playwright_fallback:
+
             logger.info(f"curl_cffi failed for {url}, trying Playwright...")
             result = await self._download_playwright(url)
         if result: self._cache[url] = result
@@ -88,7 +89,8 @@ class HttpDownloadService(IDownloadService):
                     context = await browser.new_context(
                         user_agent=("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                                     "Chrome/120.0.0.0 Safari/537.36"),
-                        viewport={"width": 1920, "height": 1080}
+                        viewport={"width": 1920, "height": 1080},
+                        ignore_https_errors=True
                     )
                     page = await context.new_page()
 

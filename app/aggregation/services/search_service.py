@@ -142,7 +142,7 @@ class SerpApiSearchService:
         try:
             async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.get(
-                    "http://searxng:8080/search",
+                    f"{settings.SEARXNG_URL}/search",
                     params={
                         "q": query,
                         "format": "json",

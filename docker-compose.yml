@@ -25,6 +25,9 @@ services:
       - ./storage:/app/storage
     shm_size: '2gb'         
     mem_limit: 8g 
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   adminer:
     image: adminer
     restart: always
@@ -38,6 +41,9 @@ services:
       - "8888:8080"
     volumes:
       - ./searxng:/etc/searxng:rw
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
 volumes:
   postgres_data:

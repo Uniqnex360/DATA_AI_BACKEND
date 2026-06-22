@@ -100,27 +100,7 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
             logger.info(f" Fallback selected image with score {score}: {url}")
             return url
     return None
-def _is_likely_unrendered_spa(html_content: str, text_content: str) -> bool:
-    """Strictly checks if HTML is an unrendered SPA shell or an empty block page."""
-    html_len = len(html_content)
-    text_len = len(text_content)
-    if text_len >= 500:
-        return False
-    if html_len < 2000:
-        return False
-    if html_len > 10000 and text_len < 300:
-        html_lower = html_content.lower()
-        spa_signatures = [
-            '__next_data__',   
-            'react',           
-            '__nuxt__',        
-            'angular',         
-            'svelte',          
-            'cloudflare'       
-        ]
-        if any(sig in html_lower for sig in spa_signatures):
-            return True
-    return False
+
 def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
     mapping = {}
     for group in groups:
@@ -153,7 +133,6 @@ def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
         })
     return unified_sources
 def extract_domains_and_generate_urls(prompt_text: str) -> List[str]:
-    """Extract site: domains from prompt and generate search URLs."""
     if not prompt_text:
         return []
     import re
@@ -164,7 +143,6 @@ def extract_domains_and_generate_urls(prompt_text: str) -> List[str]:
         urls.append(f"https://{domain}/")
     return urls
 def extract_urls_from_prompt(prompt_text: str) -> List[str]:
-    """Extract URLs from prompt text."""
     if not prompt_text:
         return []
     url_pattern = r'https?://[^\s\)\"]+'
@@ -217,7 +195,7 @@ async def discover_manufacturer_urls(
                 logger.info(f"Searching: {query}")
                 async with httpx.AsyncClient(timeout=30.0) as client:
                     response = await client.get(
-                        "http://searxng:8080/search",
+                        f"{settings.SEARXNG_URL}/search",
                         params={
                             "q": query,
                             "format": "json",
@@ -374,7 +352,7 @@ async def find_product_page_with_llm(
                 logger.info(f"Query: {query}")
                 async with httpx.AsyncClient(timeout=30.0) as client:
                     response = await client.get(
-                        "http://searxng:8080/search",
+                        f"{settings.SEARXNG_URL}/search",
                         params={
                             "q": query,
                             "format": "json",
@@ -601,19 +579,65 @@ def _url_contains_product_identifier(url: str, mpn: str, title: str) -> bool:
             return True
     return False
 def is_result_actually_product(result: dict, brand: str, title: str) -> bool:
-    url = result.get("url", "")
+    url = result.get("url", "").lower()
+    content_to_check=(result.get('title','')+" "+result.get('snippet',"")).lower()
+    brand_lower=brand.lower()
+    if brand_lower not in content_to_check and brand_lower not in url:
+        return False
     snippet = (result.get("title", "") + " " + result.get("snippet", "")).lower()
     
     if brand.lower() not in snippet and brand.lower() not in url.lower():
         return False
-    
-    product_words = [
+    stop_words = {'with', 'high', 'sides', 'tray',
+                  'for', 'the', 'this', 'and', 'from', 'each'}
+    name_tokens = [
         w.lower() for w in title.split() 
-        if len(w) > 4 and w.lower() not in ['with', 'high', 'sides', 'tray', 'for', 'the', 'this']
+        if len(w) > 2 and w.lower() not in stop_words
     ]
-    
-    matches = sum(1 for word in product_words if word in snippet)
-    return matches >= 2
+    if not name_tokens:
+        return brand_lower in content_to_check
+    matches = sum(
+        1 for token in name_tokens if token in content_to_check or token in url)
+    match_ratio = matches / len(name_tokens)
+
+    if match_ratio >= 0.5:
+        return True
+
+    return False
+
+
+async def verify_page_identity_with_llm(url, html, brand, title, mpn, llm_provider):
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, 'html.parser')
+    page_text = soup.get_text(separator=' ', strip=True)[:5000]
+
+    prompt = f"""
+    You are a Product Matcher. I am looking for a specific product and found a candidate page.
+    The specific ID/MPN '{mpn}' was NOT found in the text of the page, but it might be the correct product line.
+
+    TARGET PRODUCT:
+    - Brand: {brand}
+    - Title: {title}
+    - Expected ID: {mpn}
+
+    CANDIDATE PAGE:
+    - URL: {url}
+    - Visible Text (Snippet): {page_text}
+
+    TASK:
+    Determine if this is the EXACT Product Detail Page for the requested item.
+    - If the Brand and the main Product Name match perfectly, return true.
+    - If this is a category page, a different product, or a different brand, return false.
+    - If it's the right product but a different size/color, return true (it's a variant page).
+
+    Return JSON: {{"is_match": true/false, "reasoning": "..."}}
+    """
+    try:
+        from app.llm import call_llm_with_schema
+        res = await call_llm_with_schema(prompt, "IdentityVerificationResponse", llm_provider)
+        return res.is_match if res else False
+    except:
+        return False
 async def aggregate_product(
     mpn: str,
     title: str,
@@ -884,7 +908,7 @@ async def aggregate_product(
                         logger.info(f"Fallback query: '{fb_query}'")
                         async with _httpx.AsyncClient(timeout=30.0) as client:
                             response = await client.get(
-                                "http://searxng:8080/search",
+                                f"{settings.SEARXNG_URL}/search",
                                 params={"q": fb_query, "format": "json",
                                         "categories": "general"}
                             )
@@ -1067,8 +1091,21 @@ async def aggregate_product(
                             if mpn.lower() in html_lower:
                                 logger.info(f"✓ MPN verified in HTML for {url}")
                             else:
-                                logger.warning(f"⛔ Skipping {url} — DB has MPN {mpn}, but it was NOT found on page.")
-                                return []
+                                # --- NEW SAFETY NET START ---
+                                # If MPN is missing, check if the Brand + Title is strong enough
+                                title_keywords = [w.lower() for w in title.split() if len(w) > 3]
+                                if title_keywords:
+                                    title_hits = sum(1 for kw in title_keywords if kw in html_lower)
+                                    title_match_ratio = title_hits / len(title_keywords)
+                                    
+                                    # If Brand is present AND 60% of the name matches, do NOT skip.
+                                    if brand.lower() in html_lower and title_match_ratio >= 0.6:
+                                        logger.info(f"✓ Recovery: ID {mpn} missing, but Brand + Name ({int(title_match_ratio*100)}%) matched on {url}")
+                                    else:
+                                        logger.warning(f"⛔ Skipping {url} — Neither MPN nor strong Title match found.")
+                                        return []
+                                else:
+                                    return []
                         elif title:
                             title_keywords = [w for w in title.lower().split() if len(w) > 3]
                             if title_keywords:

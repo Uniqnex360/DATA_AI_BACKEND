@@ -273,7 +273,7 @@ class TaxonomyFallbackService:
 
             async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
                 response = await client.get(
-                    "http://searxng:8080/search",
+                    f"{settings.SEARXNG_URL}/search",
                     params={
                         "q": search_query,
                         "format": "json",

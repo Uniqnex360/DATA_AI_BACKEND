@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     DB_ECHO_LOG: bool = False
     openai_api_key: str
     ALGORITHM: str
-    llm_model: str = 'gpt-4o'
+    llm_model: str = 'gpt-4o-mini'
     MIGRATION_MODE: str = "safe"
     enrichment_threshold: int
     gemini_api_key: str
@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     cloudinary_api_secret: str
     SECRET_KEY: str
     FIRECRAWL_API_KEY: str
+    SEARXNG_URL: str
+
     cloudinary_folder: str = ''
     serpapi_key: str
 

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Optional,Dict
+from typing import Any, List, Optional, Dict
 from pydantic import BaseModel, Field
 from app.aggregation.interfaces import ISearchService
 from app.rules.rule_engine import RuleEngine
@@ -7,33 +7,49 @@ from app.search.searxng_service import SearXNGSearchService
 from sqlalchemy.ext.asyncio import AsyncSession
 import asyncio
 logger = logging.getLogger("smart_search")
+
+
 class ScoredUrl(BaseModel):
     url: str
-    score: int 
+    score: int
     reasoning: str
+
+
 class PageMatchScore(BaseModel):
-        brand_found: bool
-        mpn_found: bool
-        upc_found: bool
-        score: int
-        reasoning: str
+    brand_found: bool
+    mpn_found: bool
+    upc_found: bool
+    score: int
+    reasoning: str
+
+
 class SimpleText(BaseModel):
     text: str
+
+
 class ManufacturerScoringResponse(BaseModel):
     scored_urls: List[ScoredUrl]
     best_url: Optional[str] = None
+
+
 class UrlFilterResponse(BaseModel):
     selected_urls: List[str]
+
+
 class ManufacturerWebsiteResponse(BaseModel):
-        manufacturer_url: str
-        confidence: float
+    manufacturer_url: str
+    confidence: float
+
+
 class SmartSearchResponse(BaseModel):
     selected_urls: List[str]
     candidate_image_urls: List[str] = []
+
+
 class ProductPageResponse(BaseModel):
-        product_url: Optional[str] = None
-        confidence: float = 0.0
-        reasoning: str =""
+    product_url: Optional[str] = None
+    confidence: float = 0.0
+    reasoning: str = ""
 
 
 class URLSelectionResponse(BaseModel):
@@ -44,28 +60,36 @@ class URLSelectionResponse(BaseModel):
     reasoning: str = Field(
         ..., description="Short explanation of why this URL was chosen over others.")
 
+
+class IdentityVerificationResponse(BaseModel):
+    is_match: bool = Field(
+        ..., description="True if this page is definitely the Product Detail Page for the requested item.")
+    reasoning: str = Field(...,
+                           description="Why this page matches or doesn't match.")
 class LinkJudgeResponse(BaseModel):
     """
     Schema for the LLM to identify the best Product Detail Page (PDP) 
     from a list of search results.
     """
     best_id: str = Field(
-        ..., 
+        ...,
         description="The ID number of the best matching result (e.g., '0', '1'). Return 'None' if no product page is found."
     )
     reasoning: str = Field(
-        ..., 
+        ...,
         description="Brief explanation of why this link was chosen (e.g., 'Matches MPN in URL' or 'Title indicates a datasheet')."
     )
     confidence: float = Field(
-        ..., 
-        ge=0.0, le=1.0, 
+        ...,
+        ge=0.0, le=1.0,
         description="Confidence score between 0.0 and 1.0."
     )
     is_pdp: bool = Field(
-        ..., 
+        ...,
         description="True if the link is a specific Product Detail Page, False if it is a category or search result."
     )
+
+
 class ManufacturerUrl(BaseModel):
     """A single verified manufacturer URL with metadata."""
     url: str = Field(default="", description="Full manufacturer URL")
@@ -85,9 +109,9 @@ class ManufacturerUrl(BaseModel):
     )
 
     model_config = {
-        "extra": "forbid",           
+        "extra": "forbid",
         "json_schema_extra": {
-            "additionalProperties": False  
+            "additionalProperties": False
         }
     }
 
@@ -100,22 +124,27 @@ class ManufacturerUrlResponse(BaseModel):
     )
 
     model_config = {
-        "extra": "forbid"            
+        "extra": "forbid"
     }
+
+
 class NavigationResponse(BaseModel):
     """LLM response for navigation step"""
     url: str
     exact_match: bool = False
-    page_type: str  
+    page_type: str
     confidence: float = 0.5
     reasoning: Optional[str] = None
+
+
 class TargetedQueryResponse(BaseModel):
     search_query: str
+
+
 class SmartSearchService(ISearchService):
     def is_likely_pdp_url(self, url: str) -> bool:
         from urllib.parse import urlparse
 
-        
         parsed = urlparse(url)
         url_lower = (parsed.scheme + "://" +
                      parsed.netloc + parsed.path).lower()
@@ -150,7 +179,6 @@ class SmartSearchService(ISearchService):
 
         path_segments = [s for s in parsed.path.strip('/').split('/') if s]
 
-        
         generic_keywords = ['lighting', 'lanterns', 'pendant', 'wall-lights', 'ceiling-lights',
                             'outdoor', 'indoor', 'task', 'sale', 'collection', 'category',
                             'january', 'february', 'march', 'april', 'may', 'june']
@@ -161,18 +189,17 @@ class SmartSearchService(ISearchService):
                     f"   Rejected PDP check (generic keyword '{segment}'): {url}")
                 return False
 
-        
-        
         if len(path_segments) < 1:
             return False
 
         logger.info(f"  ✓ Accepted PDP check: {url}")
         return True
+
     def __init__(
         self,
         llm_provider: str,
         db: AsyncSession,
-        searxng_url: str = "http://searxng:8080",
+        searxng_url: str = "http://host.docker.internal:8888",
         max_results: int = 5,
     ):
         self.db = db
@@ -182,6 +209,7 @@ class SmartSearchService(ISearchService):
             max_results=15,
         )
         self.max_results = max_results
+
     async def _build_targeted_query(
         self,
         mpn: str,
@@ -192,11 +220,11 @@ class SmartSearchService(ISearchService):
         brand_prompt_text: Optional[str] = None,
         category_prompt_text: Optional[str] = None,
         taxonomy: Optional[str] = None,
-        selected_taxonomy: Optional[str] = None, 
+        selected_taxonomy: Optional[str] = None,
         title: Optional[str] = None
     ) -> str:
         from app.aggregation.aggregate_product import call_llm_with_schema
-        effective_taxonomy = selected_taxonomy if selected_taxonomy else taxonomy   
+        effective_taxonomy = selected_taxonomy if selected_taxonomy else taxonomy
         if brand_prompt_text:
             prompt = brand_prompt_text
             prompt = prompt.replace("{brand}", brand or "")
@@ -204,12 +232,13 @@ class SmartSearchService(ISearchService):
             logger.info(f"Using brand prompt for {brand}")
         elif category_prompt_text:
             prompt = category_prompt_text
-            prompt = prompt.replace("{category}", effective_taxonomy or "")  
+            prompt = prompt.replace("{category}", effective_taxonomy or "")
             prompt = prompt.replace("{brand}", brand or "")
             prompt = prompt.replace("{mpn}", mpn or "")
             logger.info(f"Using category prompt for {effective_taxonomy}")
         else:
-            is_mpn_valid = mpn and str(mpn).strip().lower() != 'none' and not str(mpn).startswith('UNK-')
+            is_mpn_valid = mpn and str(mpn).strip().lower(
+            ) != 'none' and not str(mpn).startswith('UNK-')
             identifier = f"MPN: {mpn}" if is_mpn_valid else f"Product: {title}"
             prompt = f"""
         You are a product data researcher. Given a product, generate the single best 
@@ -244,7 +273,8 @@ class SmartSearchService(ISearchService):
                 return result.search_query
         except Exception as e:
             logger.warning(f"Targeted query generation failed: {e}")
-        return f"{brand} {mpn if is_mpn_valid else title} specifications" 
+        return f"{brand} {mpn if is_mpn_valid else title} specifications"
+
     async def get_urls(
         self,
         query: str,
@@ -256,15 +286,15 @@ class SmartSearchService(ISearchService):
         brand_prompt_text: Optional[str] = None,
         category_prompt_text: Optional[str] = None,
         taxonomy: Optional[str] = None,
-        direct_urls: Optional[List[str]] = None, 
+        direct_urls: Optional[List[str]] = None,
         selected_taxonomy: Optional[str] = None,
         title: Optional[str] = None,
-        
+
     ) -> tuple[List[str], List[str]]:
         from app.aggregation.aggregate_product import call_llm_with_schema
-        
+
         if direct_urls:
-            
+
             direct_urls = [
                 url for url in direct_urls if self.is_likely_pdp_url(url)]
             logger.info(
@@ -275,30 +305,34 @@ class SmartSearchService(ISearchService):
             if direct_urls:
                 image_urls = []
 
-                is_mpn_valid = mpn and str(mpn).strip().lower() != 'none' and not str(mpn).startswith('UNK-')
+                is_mpn_valid = mpn and str(mpn).strip().lower(
+                ) != 'none' and not str(mpn).startswith('UNK-')
                 search_id = mpn if is_mpn_valid else title
                 image_task = self.searxng.search_images(f"{brand} {search_id}")
                 image_results = await image_task
                 if not isinstance(image_results, Exception):
-                    image_urls = list({img.get("img_src") for img in image_results if img.get("img_src")})
+                    image_urls = list({img.get("img_src")
+                                      for img in image_results if img.get("img_src")})
                 if direct_urls and brand:
-                    logger.info(f"BEFORE MANUFACTURER SCORING (direct): {direct_urls}, brand={brand}")
+                    logger.info(
+                        f"BEFORE MANUFACTURER SCORING (direct): {direct_urls}, brand={brand}")
                     scored_direct = await self.llm_score_manufacturer_urls(
                         urls=direct_urls,
                         brand=brand,
                         mpn=mpn,
                         upc=sku
                     )
-                    logger.info(f"AFTER MANUFACTURER SCORING (direct): {scored_direct}")
+                    logger.info(
+                        f"AFTER MANUFACTURER SCORING (direct): {scored_direct}")
                     return scored_direct, image_urls
                 else:
                     return direct_urls, image_urls
             else:
                 logger.warning(
                     "All direct URLs rejected as category/sale pages. Falling back to search.")
-            
+
         BLOCKED_DOMAINS = [
-            'konghq.com',   
+            'konghq.com',
             'miricanvas.com',
             "zhihu.com", "baidu.com", "weibo.com",
             "superuser.com", "tenforums.com", "stackoverflow.com",
@@ -322,16 +356,56 @@ class SmartSearchService(ISearchService):
             use_case=use_case,
             brand_prompt_text=brand_prompt_text,
             category_prompt_text=category_prompt_text,
-            taxonomy=taxonomy,  selected_taxonomy=selected_taxonomy,title=query or title,
+            taxonomy=taxonomy,  selected_taxonomy=selected_taxonomy, title=query or title,
         )
+        is_mpn_valid = mpn and str(mpn).strip().lower(
+        ) != 'none' and not str(mpn).startswith('UNK-')
+        import re
+        # If site: operator is present, also create a fallback query without it
+        targeted_query_no_site = None
+        if 'site:' in targeted_query_str:
+            site_match = re.search(r'site:(\S+)', targeted_query_str)
+            if site_match:
+                domain = site_match.group(1).replace('www.', '')
+                targeted_query_no_site = re.sub(
+                    r'site:\S+\s*', '', targeted_query_str).strip()
+                # Remove numeric MPN - petdrugsonline doesn't use MPNs
+                if is_mpn_valid and mpn.isdigit():
+                    targeted_query_no_site = re.sub(
+                        r'\b' + mpn + r'\b', '', targeted_query_no_site).strip()
+                    targeted_query_no_site = re.sub(
+                        r'\s+', ' ', targeted_query_no_site)
+                targeted_query_no_site = f"{targeted_query_no_site} {domain}"
+                
+                logger.info(
+                    f"Targeted query (no site: fallback): {targeted_query_no_site}")
+
+        
         web_task = self.searxng._search(base_query)
         targeted_task = self.searxng._search(targeted_query_str)
-        is_mpn_valid = mpn and str(mpn).strip().lower() != 'none' and not str(mpn).startswith('UNK-')
+        
         search_id = mpn if is_mpn_valid else title
         image_task = self.searxng.search_images(f"{brand} {search_id}")
         web_results, targeted_results, image_results = await asyncio.gather(
             web_task, targeted_task, image_task, return_exceptions=True
         )
+        if targeted_query_no_site and (isinstance(targeted_results, Exception) or not targeted_results or len(targeted_results) == 0):
+            logger.info(
+                f"Site: query failed, trying without site: {targeted_query_no_site}")
+            targeted_results = await self.searxng._search(targeted_query_no_site)
+            if targeted_results and not isinstance(targeted_results, Exception):
+                logger.info(
+                    f"Fallback (no site:) found {len(targeted_results)} results")
+                # Filter to only results from the target domain or matching brand
+                domain = targeted_query_no_site.split(
+                )[-1].replace('.co.uk', '')
+                brand_lower = (brand or "").lower()
+                targeted_results = [
+                    r for r in targeted_results
+                    if domain in r.get('url', '') or brand_lower in r.get('url', '').lower()
+                ]
+                logger.info(
+                    f"No-site results filtered: {len(targeted_results)} results")
         if isinstance(web_results, Exception):
             logger.error(f"Web search failed: {web_results}")
             web_results = []
@@ -344,7 +418,8 @@ class SmartSearchService(ISearchService):
         if not web_results and not targeted_results:
             logger.warning(f"SearXNG returned no results for {mpn}")
             return [], []
-        image_urls = list({img.get("img_src") for img in image_results if img.get("img_src")})
+        image_urls = list({img.get("img_src")
+                          for img in image_results if img.get("img_src")})
         seen_urls = set()
         merged = []
         for r in (targeted_results + web_results):
@@ -356,6 +431,8 @@ class SmartSearchService(ISearchService):
             r for r in merged
             if not any(d in r.get('url', '').lower() for d in BLOCKED_DOMAINS)
         ]
+        logger.info(
+            f"[DEBUG] URLs after domain filter (before relevance check): {[r.get('url') for r in merged[:10]]}")
         if not merged:
             logger.warning(f"All results blocked for {mpn}")
             return [], image_urls[:3]
@@ -363,28 +440,44 @@ class SmartSearchService(ISearchService):
         brand_lower = (brand or "").lower()
         mpn_lower = (mpn or "").lower()
         sku_lower = (sku or "").lower()
-        is_mpn_valid = mpn and str(mpn).strip().lower() != 'none' and not str(mpn).startswith('UNK-')
+        is_mpn_valid = mpn and str(mpn).strip().lower(
+        ) != 'none' and not str(mpn).startswith('UNK-')
+
         def is_relevant(r: dict) -> bool:
             text = (
                 r.get('title', '') + ' ' +
                 r.get('content', '') + ' ' +
                 r.get('url', '')
             ).lower()
-            
+
             if is_mpn_valid:
-                
+                if mpn.isdigit():
+                    return mpn_lower in text and brand_lower in text
                 return mpn_lower in text or brand_lower in text
             else:
-                
-                title_words = [w.lower() for w in (query or title).split() if len(w) > 3]
+
+                title_words = [w.lower()
+                               for w in (query or title).split() if len(w) > 3]
                 title_matches = sum(1 for w in title_words if w in text)
                 return brand_lower in text and title_matches >= 2
-        relevant_results = [r for r in merged if is_relevant(r)]
+        # relevant_results = [r for r in merged if is_relevant(r)]
+        relevant_results = []
+        for r in merged:
+            if is_relevant(r):
+                relevant_results.append(r)
+            elif targeted_query_no_site and brand_lower in (
+                r.get('title', '') + ' ' +
+                r.get('content', '') + ' ' + r.get('url', '')
+            ).lower():
+                relevant_results.append(r)
+                logger.info(f"Passed for LLM verification: {r.get('url')}")
         if relevant_results:
             web_results = relevant_results
-            logger.info(f"Pre-filter: {len(web_results)} relevant results for {mpn}")
+            logger.info(
+                f"Pre-filter: {len(web_results)} relevant results for {mpn}")
         else:
-            logger.warning(f"Pre-filter: no relevant results for {mpn} — all off-topic")
+            logger.warning(
+                f"Pre-filter: no relevant results for {mpn} — all off-topic")
             return [], image_urls[:3]
         web_text = "\n".join(
             f"[{i+1}] {r.get('title', 'No title')}\n    URL: {r['url']}\n    Description: {r.get('content', '')[:150]}"
@@ -436,30 +529,50 @@ class SmartSearchService(ISearchService):
         except Exception as e:
             logger.exception(f"LLM filtering failed: {e}")
             final_urls = [r["url"] for r in web_results[:self.max_results]]
-        logger.info(f"BEFORE MANUFACTURER SCORING: final_urls={final_urls}, brand={brand}")
+        
+        if final_urls and targeted_query_str and 'site:' in targeted_query_str:
+            site_match = re.search(r'site:(\S+)', targeted_query_str)
+            if site_match:
+                preferred_domain = site_match.group(1).replace('www.', '')
+                preferred_urls = [
+                    r['url'] for r in web_results
+                    if preferred_domain in r.get('url', '')
+                ]
+                if preferred_urls:
+                    # Move preferred domain URLs to front
+                    final_urls = preferred_urls[:2] + \
+                        [u for u in final_urls if u not in preferred_urls]
+                    logger.info(
+                        f"Boosted preferred domain URLs: {preferred_urls[:2]}")
+
+        logger.info(
+            f"BEFORE MANUFACTURER SCORING: final_urls={final_urls}, brand={brand}")
         if final_urls and brand:
             final_urls = await self.llm_score_manufacturer_urls(
                 urls=final_urls,
                 brand=brand,
                 mpn=mpn,
-                upc=sku 
+                upc=sku
             )
             logger.info(f"AFTER MANUFACTURER SCORING: {final_urls}")
         return final_urls, candidate_imgs
+
     async def llm_score_manufacturer_urls(
-    self,
-    urls: List[str],
-    brand: str,
-    mpn: str,
-    upc: Optional[str] = None,
-) -> List[str]:
-        logger.info(f"llm_score_manufacturer_urls called with {len(urls)} URLs, brand={brand}, mpn={mpn}")
+        self,
+        urls: List[str],
+        brand: str,
+        mpn: str,
+        upc: Optional[str] = None,
+    ) -> List[str]:
+        logger.info(
+            f"llm_score_manufacturer_urls called with {len(urls)} URLs, brand={brand}, mpn={mpn}")
         from app.llm import call_llm_with_schema
         if not urls:
             return urls
 
         urls_list = "\n".join(f"- {url}" for url in urls)
-        is_mpn_valid = mpn and str(mpn).strip().lower() != 'none' and not str(mpn).startswith('UNK-')
+        is_mpn_valid = mpn and str(mpn).strip().lower(
+        ) != 'none' and not str(mpn).startswith('UNK-')
 
         prompt = f"""
         You are scoring candidate URLs to find the official manufacturer product page.
@@ -493,10 +606,12 @@ class SmartSearchService(ISearchService):
                 llm_provider=self.llm_provider,
                 estimated_tokens=800
             )
-            
-            sorted_urls = [su.url for su in sorted(result.scored_urls, key=lambda x: x.score, reverse=True)]
+
+            sorted_urls = [su.url for su in sorted(
+                result.scored_urls, key=lambda x: x.score, reverse=True)]
             logger.info(f"Priority order: {sorted_urls}")
             return sorted_urls
         except Exception as e:
-            logger.warning(f"LLM scoring failed: {e}, returning original order")
+            logger.warning(
+                f"LLM scoring failed: {e}, returning original order")
             return urls
