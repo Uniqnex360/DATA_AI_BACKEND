@@ -199,7 +199,7 @@ class SmartSearchService(ISearchService):
         self,
         llm_provider: str,
         db: AsyncSession,
-        searxng_url: str = "http://host.docker.internal:8888",
+        searxng_url: str ,
         max_results: int = 5,
     ):
         self.db = db
