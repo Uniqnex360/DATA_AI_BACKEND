@@ -18,7 +18,6 @@ logger = logging.getLogger("dashboard_metrics")
 router = APIRouter()
 DateField = Literal["created_at", "updated_at"]
 
-
 def build_product_filters(
     current_user: User,
     target_user_id: Optional[str] = None,
@@ -43,12 +42,13 @@ def build_product_filters(
 async def calculate_metrics(
     db: AsyncSession,
     current_user: User,
-    project_id: Optional[str] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
+    project_id: str | None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
     date_field: DateField = "created_at",
     mode: Optional[str] = None,
     target_user_id: Optional[str] = None,
+
 ) -> dict:
     try:
         if project_id:
@@ -63,12 +63,6 @@ async def calculate_metrics(
                                         end_date,
                                         date_field=date_field
                                         )
-        # Build mode filter if provided
-        mode_filter = []
-        if mode and mode in ["aggregation", "cleaning", "enrichment"]:
-            mode_filter = [Project.operation_mode == mode]
-
-        # Consolidate all stats into single query
         stmt = select(
             func.count(Product.id).label("total"),
             func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label(
@@ -78,22 +72,26 @@ async def calculate_metrics(
             func.sum(case((Product.enrichment_status == "pending", 1), else_=0)).label(
                 "pending"),
             func.avg(Product.completeness_score).label("health"),
-            func.count(func.distinct(Product.brand_name)
-                       ).label("total_brands"),
-            func.count(func.distinct(Product.taxonomy)
-                       ).label("total_categories"),
-        ).join(Project, Product.project_id == Project.id).where(
-            Product.brand_name.isnot(None),
-            Product.brand_name != "",
-            Product.taxonomy.isnot(None),
-            Product.taxonomy != "",
-            *filters,
-            *mode_filter
-        )
+        ).join(Project, Product.project_id == Project.id).where(*filters)
+        if mode and mode in ["aggregation", "cleaning", "enrichment"]:
+            stmt = stmt.where(Project.operation_mode == mode)
 
+        brand_count_stmt = select(func.count(func.distinct(Product.brand_name))).join(Project, Product.project_id == Project.id).where(
+            Product.brand_name.isnot(None), Product.brand_name != "", *filters
+        )
+        if mode and mode in ["aggregation", "cleaning", "enrichment"]:
+            brand_count_stmt = brand_count_stmt.where(
+                Project.operation_mode == mode)
+        cat_count_stmt = select(func.count(func.distinct(Product.taxonomy))).join(Project, Product.project_id == Project.id).where(
+            Product.taxonomy.isnot(None), Product.taxonomy != "", *filters
+        )
+        if mode and mode in ["aggregation", "cleaning", "enrichment"]:
+            cat_count_stmt = cat_count_stmt.where(
+                Project.operation_mode == mode)
+
+        total_brands = (await db.execute(brand_count_stmt)).scalar() or 0
+        total_categories = (await db.execute(cat_count_stmt)).scalar() or 0
         stats = (await db.execute(stmt)).first()
-        total_brands = stats.total_brands or 0
-        total_categories = stats.total_categories or 0
         completed_count = stats.aggregated or 0
         failed_count = stats.failed or 0
         pending_count = stats.pending or 0
@@ -119,16 +117,15 @@ async def calculate_metrics(
         active_projects = 0
         project_name = "Global Overview"
         proj = None
-        if project_id and not proj:
+        if project_id:
             proj = await db.get(Project, project_id)
-
-        if project_id and proj:
-            project_name = proj.name
-            total_projects = 1
-            active_projects = (
-                1 if proj.status in (
-                    "processing", "partially_completed") else 0
-            )
+            if proj:
+                project_name = proj.name
+                total_projects = 1
+                active_projects = (
+                    1 if proj.status in (
+                        "processing", "partially_completed") else 0
+                )
         else:
             auth_filters = get_auth_filters(current_user, target_user_id)
             proj_stmt = select(
@@ -211,35 +208,32 @@ async def calculate_metrics(
             "totalCategories": total_categories,
         }
     except Exception as e:
-        logger.error(f"Error calculating metrics: {str(e)}", exc_info=True)
+        print(f"Error calculating metrics: {str(e)}")
         raise
-
 
 @router.get('/users-list')
-async def get_user_list(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
+async def get_user_list(current_user: User=Depends(get_current_user),db:AsyncSession=Depends(get_session)):
     try:
-        if current_user.role != 'admin':
-            raise HTTPException(status_code=403, detail='Not authorized')
-
-        stmt = select(User.id, User.full_name).where(
-            User.is_active == True, User.id != current_user.id).order_by(User.full_name)
-        result = await db.execute(stmt)
-        return [{"id": str(row.id), 'full_name': row.full_name} for row in result.all()]
-    except HTTPException:
-        raise
+        if current_user.role!='admin':
+            raise HTTPException(status_code=403,detail='Not authorized')
+        
+        stmt=select(User.id,User.full_name).where(User.is_active==True,User.id!=current_user.id).order_by(User.full_name)
+        result=await db.execute(stmt)
+        return [
+            {"id":str(row.id),'full_name':row.full_name} for row in  result.all()
+        ]
+    except Exception as e:
+        raise e
     except Exception as e:
         logger.exception("Error fetching user list")
-        raise HTTPException(
-            status_code=500, detail='Failed to fetch user list') from e
-
-
+        raise HTTPException(status_code=500,detail='Failed to fetch  user list') from e
 @router.get("/metrics", response_model=DashboardMetricsResponse)
 async def get_dashboard_metrics(
-        user_id: Optional[str] = None, start_date: Optional[str] = Query(None), end_date: Optional[str] = Query(None), date_field: DateField = Query("created_at"),  mode: Optional[str] = Query(None), current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_session),):
+        user_id:Optional[str]=None,start_date: Optional[str] = Query(None), end_date: Optional[str] = Query(None), date_field: DateField = Query("created_at"),  mode: Optional[str] = Query(None), current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_session),):
     try:
         start_dt = parse_date(start_date, end=False)
         end_dt = parse_date(end_date, end=True)
-        data = await calculate_metrics(db, current_user, None, start_dt, end_dt, date_field=date_field, mode=mode, target_user_id=user_id)
+        data = await calculate_metrics(db, current_user, None, start_dt, end_dt, date_field=date_field, mode=mode,target_user_id=user_id)
         logger.info(
             f"Global dashboard metrics loaded :{data['totalProducts']} products")
         return data
@@ -263,11 +257,13 @@ async def get_project_metrics(
     db: AsyncSession = Depends(get_session),
 ):
     try:
+        logger.info(
+            f"[DEBUG] get_project_metrics called with project_id: '{project_id}' (type: {type(project_id).__name__})")
         start_dt = parse_date(start_date, end=False)
         end_dt = parse_date(end_date, end=True)
         data = await calculate_metrics(db, current_user, project_id, start_dt, end_dt, date_field=date_field, mode=mode)
         logger.info(
-            f"Project metrics loaded for {project_id}: totalProducts={data.get('totalProducts', 0)}")
+            f"[DEBUG] Project metrics loaded for {project_id}: totalProducts={data.get('totalProducts', 0)}")
         return data
     except Exception as e:
         logger.error(
@@ -309,7 +305,7 @@ async def get_dashboard_timeline(
     try:
         start_dt = parse_date(start_date, end=False)
         end_dt = parse_date(end_date, end=True)
-        filters = build_product_filters(current_user, target_user_id,
+        filters = build_product_filters(current_user,target_user_id,
                                         project_id, start_dt, end_dt, date_field=date_field)
         period = period.lower()
         if period not in {"day", "week", "month"}:
@@ -348,7 +344,7 @@ async def get_dashboard_timeline(
 @router.get("/category-flow")
 async def get_category_flow(
     project_id: Optional[str] = Query(None),
-    user_id: Optional[str] = Query(None),
+    user_id:Optional[str]=Query(None),
     limit: Optional[int] = Query(None),
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
@@ -362,7 +358,7 @@ async def get_category_flow(
         start_dt = parse_date(start_date, end=False)
         end_dt = parse_date(end_date, end=True)
         filters = build_product_filters(
-            current_user, target_user_id, project_id, start_dt, end_dt, date_field=date_field)
+            current_user,target_user_id, project_id, start_dt, end_dt, date_field=date_field)
         stmt = select(
             Product.taxonomy.label("category"),
             func.count(Product.id).label("totalProducts"),
@@ -408,7 +404,7 @@ async def get_brand_flow(
         start_dt = parse_date(start_date, end=False)
         end_dt = parse_date(end_date, end=True)
         filters = build_product_filters(
-            current_user, target_user_id, project_id, start_dt, end_dt, date_field=date_field)
+            current_user, target_user_id,project_id, start_dt, end_dt, date_field=date_field)
         stmt = select(
             Product.brand_name.label("brand"),
             func.count(Product.id).label("totalProducts"),
@@ -607,7 +603,6 @@ async def get_brand_attributes(
         logger.exception("Failed brand-attributes")
         return []
 
-
 @router.get("/category-distribution", response_model=List[CategoryDistributionStat])
 async def get_category_distribution(
     project_id: Optional[str] = Query(None),
@@ -622,7 +617,7 @@ async def get_category_distribution(
     try:
         start_dt = parse_date(start_date, end=False)
         end_dt = parse_date(end_date, end=True)
-        filters = build_product_filters(current_user, target_user_id,
+        filters = build_product_filters(current_user,target_user_id,
                                         project_id, start_dt, end_dt, date_field=date_field)
         stmt = select(
             Product.taxonomy.label("category"),
@@ -668,7 +663,7 @@ async def get_needs_attention(
         start_dt = parse_date(start_date, end=False)
         end_dt = parse_date(end_date, end=True)
         filters = build_product_filters(
-            current_user, target_user_id, project_id, start_dt, end_dt, date_field=date_field)
+            current_user,target_user_id, project_id, start_dt, end_dt, date_field=date_field)
         u_stmt = select(func.count(Product.id)).join(Project).where(
             (Product.taxonomy == None) | (Product.taxonomy == ""), *filters)
         p_stmt = select(func.count(Product.id)).join(Project).where(
@@ -703,7 +698,7 @@ async def get_recent_activity(
     try:
         start_dt = parse_date(start_date, end=False)
         end_dt = parse_date(end_date, end=True)
-        filters = build_product_filters(current_user, target_user_id,
+        filters = build_product_filters(current_user,target_user_id,
                                         project_id, start_dt, end_dt, date_field=date_field)
         stmt = select(
             Product.product_name,
@@ -741,7 +736,7 @@ def normalize_project_status(status: Optional[str]) -> str:
     return status
 
 
-def get_db_status_filters(status: Optional[str]) -> list:
+def get_db_status_filters(status: Optional[str]) -> list[str]:
     if not status or status == "all":
         return []
     if status == "yet_to_start":
@@ -767,7 +762,7 @@ async def get_projects_overview(
         # if current_user.role != "admin":
         #     base_filters.append(Project.owner_id == current_user.id)
         base_filters = get_auth_filters(current_user, user_id)
-
+        
         if search:
             base_filters.append(Project.name.ilike(f"%{search}%"))
         if db_statuses:
@@ -862,24 +857,18 @@ async def get_attribute_summary(
     try:
         from app.models.attribute import Attribute, AttributeValue
         from app.models.product_attribute_link import ProductAttributeValueLinkModel
-
-        # Validate taxonomy input
-        if not taxonomy or not isinstance(taxonomy, str):
-            return []
-
         start_dt = parse_date(start_date, end=False)
-        target_user_id = user_id
+        target_user_id=user_id
         end_dt = parse_date(end_date, end=True)
         filters = build_product_filters(
-            current_user, target_user_id, project_id, start_dt, end_dt, date_field=date_field)
-
-        clean_tax = taxonomy.strip()
-        if not clean_tax:
-            return []
-
-        filters.append(Product.taxonomy.ilike(f"%{clean_tax}%"))
+            current_user, target_user_id,project_id, start_dt, end_dt, date_field=date_field)
+        if taxonomy:
+            clean_tax = taxonomy.strip()
+            filters.append(Product.taxonomy.ilike(f"%{clean_tax}%"))
         count_check = await db.execute(select(func.count(Product.id)).where(*filters))
         prod_count = count_check.scalar() or 0
+        logger.info(
+            f"DEBUG: Found {prod_count} products for taxonomy '{taxonomy}' in date range")
         if prod_count == 0:
             return []
         stmt = (
@@ -921,7 +910,7 @@ async def get_taxonomies_list(
     current_user: User = Depends(get_current_user)
 ):
     try:
-        auth_filters = get_auth_filters(current_user, user_id)
+        auth_filters=get_auth_filters(current_user,user_id)
         stmt = select(
             Product.taxonomy,
             func.count(Product.id).label("count")
@@ -946,16 +935,15 @@ async def get_taxonomy_attribute_metrics(
     project_id: Optional[str] = Query(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_session),
-    user_id: Optional[str] = Query(None)
+    user_id:Optional[str]=Query(None)
 ):
     try:
         from app.models.attribute import Attribute, AttributeValue
         from app.models.product_attribute_link import ProductAttributeValueLinkModel
-        target_user_id = user_id
-        filters = build_product_filters(
-            current_user, target_user_id, project_id)
+        target_user_id=user_id
+        filters = build_product_filters(current_user,target_user_id, project_id)
         count_stmt = select(func.count(Product.id)).join(Project).where(
-            Product.taxonomy == taxonomy,
+            Product.taxonomy == taxonomy,   
             *filters
         )
         if project_id:
@@ -982,7 +970,7 @@ async def get_taxonomy_attribute_metrics(
                 Attribute,
                 AttributeValue.attribute_id == Attribute.id
             )
-            .where(Product.taxonomy == taxonomy, *filters)
+            .where(Product.taxonomy == taxonomy,*filters)
         )
         if project_id:
             attr_stmt = attr_stmt.where(Product.project_id == project_id)
