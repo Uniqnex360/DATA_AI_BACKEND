@@ -533,61 +533,57 @@ async def batch_aggregate(
                     updated_count += 1
 
             if not is_reused:
-                # Create NEW product
+                # ✅ Create product with ALL required fields in constructor
                 product = Product(
                     product_code=str(code),
                     workflow_stage=default_workflow_stage,
                     created_at=now_ist(),
-                    enrichment_status="pending"
+                    enrichment_status="pending",
+                    # ✅ ADD ALL REQUIRED FIELDS HERE:
+                    product_name=row.get("product_name") or row.get(
+                        "name") or str(code) or "Unknown Product",
+                    mpn=val_mpn,
+                    sku=val_sku,
+                    taxonomy=row.get("taxonomy"),
+                    source_url=new_source.source_url,
+                    category_1=row.get('category_1'),
+                    category_2=row.get('category_2'),
+                    category_3=row.get('category_3'),
+                    category_4=row.get('category_4'),
+                    category_5=row.get('category_5'),
+                    category_6=row.get('category_6'),
+                    category_7=row.get('category_7'),
+                    category_8=row.get('category_8'),
+                    gtin=row.get('gtin'),
+                    ean=row.get('ean'),
+                    upc=row.get('upc'),
+                    unspc=row.get('unspc'),
+                    product_type=row.get('product_type'),
+                    parent_sku=row.get('parent_sku'),
+                    lifecycle_stage=row.get('lifecycle_stage'),
+                    launch_date=row.get('launch_date'),
+                    discontinue_status=row.get('discontinue_status'),
+                    weight_unit=row.get('weight_unit'),
+                    dimension_unit=row.get('dimension_unit'),
+                    currency=row.get("currency", "USD"),
                 )
-                db.add(product)
-                await db.flush()
 
-                # Link new product to project
-                db.add(ProjectProductLink(
-                    project_id=projectId,
-                    product_id=product.id
-                ))
-
-                # ✅ ALL field assignments INSIDE this block:
-                product.product_name = row.get("product_name", "Unknown")
-                product.mpn = val_mpn
-                product.sku = val_sku
-                product.taxonomy = row.get("taxonomy")
-                product.source_url = new_source.source_url
-                product.category_1 = row.get('category_1')
-                product.category_2 = row.get('category_2')
-                product.category_3 = row.get('category_3')
-                product.category_4 = row.get('category_4')
-                product.category_5 = row.get('category_5')
-                product.category_6 = row.get('category_6')
-                product.category_7 = row.get('category_7')
-                product.category_8 = row.get('category_8')
-                product.gtin = row.get('gtin')
-                product.ean = row.get('ean')
-                product.upc = row.get('upc')
-                product.unspc = row.get('unspc')
-                product.product_type = row.get('product_type')
-                product.parent_sku = row.get('parent_sku')
-                product.lifecycle_stage = row.get('lifecycle_stage')
-                product.launch_date = row.get('launch_date')
-                product.discontinue_status = row.get('discontinue_status')
-
-                # ✅ MOVE THESE INSIDE:
+                # ✅ Handle numeric fields with error handling
                 try:
                     if row.get('weight'):
                         product.weight = str(row['weight']).replace(',', '')
-                    product.weight_unit = row.get('weight_unit')
                     if row.get('length'):
                         product.length = str(row['length']).replace(',', '')
                     if row.get('width'):
                         product.width = str(row['width']).replace(',', '')
                     if row.get('height'):
                         product.height = str(row['height']).replace(',', '')
-                    product.dimension_unit = row.get('dimension_unit')
-                except ValueError:
-                    pass
+                    if row.get("base_price"):
+                        product.base_price = float(str(row["base_price"]).replace(',', ''))
+                except ValueError as e:
+                    logger.warning(f"Error parsing numeric field for {code}: {e}")
 
+                # ✅ Set brand/vendor/industry relationships BEFORE flush
                 brand = await get_or_create_brand(db, row.get("brand"))
                 if brand:
                     product.brand_id = brand.id
@@ -607,39 +603,25 @@ async def batch_aggregate(
                     product.industry_id = industry.id
                     product.industry_name = industry.name
 
-                try:
-                    if row.get("base_price"):
-                        product.base_price = float(
-                            str(row["base_price"]).replace(',', ''))
-                        product.currency = row.get("currency", "USD")
-                except ValueError:
-                    pass
+                # ✅ NOW add and flush to get product.id
+                db.add(product)
+                await db.flush()  # Product now has an ID
+
+                # ✅ Create link AFTER product has an ID
+                db.add(ProjectProductLink(
+                    project_id=projectId,
+                    product_id=product.id  # Now this works!
+                ))
 
                 created_count += 1
+
             else:
-                # ✅ Just increment counter, DON'T touch product fields!
+                # Reused product - just increment counter
                 updated_count += 1
 
-            # ✅ This stays outside (only sets status for new products):
-            if not is_reused:
-                product.enrichment_status = "pending"
-
-            db.add(product)
-            await db.flush()
-
-            # dynamic_attrs = []
-            # for i in range(1, 41):
-            #     attr_name = row.get(f'attribute_name{i}')
-            #     if attr_name and str(attr_name).strip():
-            #         dynamic_attrs.append({
-            #             'name': str(attr_name).strip(),
-            #             'value': str(row.get(f'attribute_value{i}', '')).strip(),
-            #             'uom': str(row.get(f'attribute_uom{i}', '')).strip(),
-            #             'validation_value': str(row.get(f'validation_value{i}', '')).strip(),
-            #             'validation_uom': str(row.get(f'validation_uom{i}', '')).strip()
-            #         })
-            # Extract attributes from parsed row
+            # ✅ Continue with attribute processing (this part is fine)
             dynamic_attrs = row.get('attributes', [])
+
             # Also try attribute_name1..40 columns (fallback)
             if not dynamic_attrs:
                 for i in range(1, 41):

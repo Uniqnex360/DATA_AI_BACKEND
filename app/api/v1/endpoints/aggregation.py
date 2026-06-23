@@ -1075,6 +1075,12 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
             )
             logger.info(f"   └─ Taxonomy: {product.taxonomy}")
             logger.info(f"   └─ Primary attrs: {primary_attrs}")
+            link_stmt = select(ProjectProductLink).where(
+                ProjectProductLink.product_id == product.id
+            )
+            link_result = await db_session.execute(link_stmt)
+            link = link_result.scalars().first()
+            project_id = str(link.project_id) if link else None
             if len(primary_attrs) > 10:
                 logger.info(
                     f"Product has {len(primary_attrs)} attributes - using multi-pass processing")
@@ -1085,12 +1091,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                 short_desc = None
                 long_desc = None
                 features = None
-                link_stmt = select(ProjectProductLink).where(
-    ProjectProductLink.product_id == product.id
-)
-                link_result = await db_session.execute(link_stmt)
-                link = link_result.scalars().first()
-                project_id = str(link.project_id) if link else None
+                
                 for idx, chunk in enumerate(attr_chunks, 1):
                     logger.info(
                         f"   └─ Pass {idx}/{len(attr_chunks)}: Processing attributes {chunk}")
