@@ -5,14 +5,18 @@ from datetime import datetime
 from typing import List
 from uuid import UUID, uuid4
 from sqlmodel import Relationship
+from app.models.project_product_link import ProjectProductLink
 from app.models.vendor import Vendor
 from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
 from app.utils.timezone import now_ist
 class Product(UUIDModel,table=True):
     __tablename__='product_master'
     __table_args__ = (
-        Index("ix_product_created_at_project", "created_at", "project_id"),
-        Index("ix_product_updated_at_project", "updated_at", "project_id"),
+        
+        Index("ix_product_code", "product_code"),
+        Index("ix_product_enrichment_status", "enrichment_status"),
+        Index("ix_product_created_at", "created_at"),  
+        Index("ix_product_updated_at", "updated_at"),  
     )
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     aggregation_index: Optional[int] = Field(default=None, index=True) 
@@ -69,8 +73,12 @@ class Product(UUIDModel,table=True):
     sources_consulted: Optional[List[str]] = Field(default=None, sa_column=Column(JSON))
     published_at: Optional[datetime] = Field(default=None, nullable=True)
     source_url: Optional[str] = Field(default=None) 
-    project_id: Optional[UUID] = Field(default=None, index=True, foreign_key="catalog_projects.id")
-    project: Optional["Project"] = Relationship(back_populates="products")
+    
+    
+    projects: List["Project"] = Relationship(
+        back_populates="products",
+        link_model=ProjectProductLink
+    )
     description:Optional[str]=None
     image_url_1:Optional[str]=None
     enrichment_status:str=Field(default='pending')

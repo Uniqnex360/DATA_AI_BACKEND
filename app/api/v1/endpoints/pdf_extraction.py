@@ -21,6 +21,7 @@ from app.llm import call_llm_with_schema
 from app.models.pipeline import Source
 from app.models.product import Product
 from app.models.project import Project
+from app.models.project_product_link import ProjectProductLink
 from app.schemas.pdf_extraction import FreshAggregationRequest, PDFExtractionResponse
 import uuid
 import logging
@@ -44,7 +45,11 @@ async def sync_project_status(db, project_id: str) -> None:
         func.sum(case((Product.enrichment_status == "failed", 1), else_=0)),
         func.sum(case((Product.enrichment_status == "processing", 1), else_=0)),
         func.sum(case((Product.enrichment_status == "pending", 1), else_=0)),
-    ).where(Product.project_id == project_id)
+    ).join(
+        ProjectProductLink, Product.id == ProjectProductLink.product_id  
+    ).where(
+        ProjectProductLink.project_id == project_id  
+    )
     result = await db.execute(stmt)
     row = result.one()
     total = row[0] or 0
@@ -96,7 +101,8 @@ async def fresh_aggregation(
             batch_id = existing_source.id
             existing_source.status = "processing"
             existing_source.source_metadata["processing_status"] = "processing"
-            existing_source.source_metadata["started_at"] = now_ist().isoformat()
+            existing_source.source_metadata["started_at"] = now_ist(
+            ).isoformat()
             flag_modified(existing_source, "source_metadata")
             db.add(existing_source)
         else:
@@ -121,8 +127,11 @@ async def fresh_aggregation(
         if request.mpns:
             await db.execute(
                 sa_update(Product)
+                .join(
+                    ProjectProductLink, Product.id == ProjectProductLink.product_id  
+                )
                 .where(
-                    Product.project_id == request.project_id,
+                    ProjectProductLink.project_id == request.project_id,  
                     Product.product_code.in_(request.mpns),
                     Product.enrichment_status.in_(["pending", "failed"]),
                 )
@@ -270,33 +279,33 @@ async def blind_pdf_extraction(
 
 async def extract_product_with_claude(mpn: str, pdf_text: str, source_url: str, db: AsyncSession = None, project_id: str = None) -> Optional[Dict]:
     try:
-        # prompt = f"""
-        # You are a product data extraction expert.Extract product information from the following PDF datasheet content.
-        # MPN:{mpn}
-        # PDF Content:
-        # {pdf_text[:12000]}
-        # Extract the following fields. If a field is not found, leave it empty:
-        # - product_name: Full product name
-        # - brand_name: Manufacturer/brand name
-        # - sku: Stock Keeping Unit (if available)
-        # - taxonomy: Product category (e.g., "Electronics > Computers > Laptops")
-        # - description: Product description/summary
-        # - image_url: Main product image URL (if referenced in the PDF)
-        # - specifications: Key technical specifications as key-value pairs (e.g., "Voltage": "12V", "Weight": "2.5kg")
-        # Return ONLY valid JSON
-        # """
-        # schema = {
-        #     "type": 'object',
-        #     "properties": {
-        #         "product_name": {"type": "string"},
-        #         "brand_name": {"type": "string"},
-        #         "sku": {"type": "string"},
-        #         "taxonomy": {"type": "string"},
-        #         "description": {"type": "string"},
-        #         "image_url": {"type": "string"},
-        #         "specifications": {"type": "object"}
-        #     }
-        # }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         prompt_service = PDFPromptService(db, project_id)
         prompt = await prompt_service.get_extraction_prompt(
             pdf_text, mpn, "Fresh PDF Aggregation", is_unstructured=False
@@ -462,24 +471,24 @@ async def identify_products_in_pdf(pdf_text: str, filename: str, product_hint: s
         logger.warning(f"{error_msg} for project {project_id}")
         return None
 
-    # prompt = f"""
-    #     You are a product identification expert. Your task is to find products that match the following description.
-    #     PRODUCT HINT: "{product_hint}"
-    #     Document: {filename}
-    #     Content:
-    #     {pdf_text[:15000]}
-    #     CRITICAL INSTRUCTIONS:
-    #     1. The hint "{product_hint}" appears in this document.
-    #     2. Find the product that contains or is associated with this hint.
-    #     3. If the hint appears in a product name, model number, SKU, or description, extract that product.
-    #     4. Return ONLY the product that contains the hint.
-    #     For the matching product, provide:
-    #     - title: The exact product name/title
-    #     - context: Brief description
-    #     - confidence: 0.0-1.0
-    #     Format:
-    #     [{{"title": "Product Name", "context": "Contains hint...", "confidence": 0.95}}]
-    #     """
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     try:
         response = await call_llm_with_schema(
             prompt=prompt,
@@ -518,37 +527,37 @@ async def identify_products_in_pdf(pdf_text: str, filename: str, product_hint: s
 async def extract_blind_product_details(pdf_text: str, product_info: Dict, db: AsyncSession = None, project_id: str = None) -> Optional[Dict]:
     title = product_info.get('title', 'Unknown Product')
     context = product_info.get('context', '')
-    # prompt = f"""
-    # You are a product data extraction expert. Extract detailed information for this product:
-    # Product: {title}
-    # Context from document: {context}
-    # Document content:
-    # {pdf_text[:12000]}
-    # CRITICAL INSTRUCTIONS:
-    # - ONLY use information explicitly present in the document content
-    # - DO NOT use any external knowledge or information from outside this document
-    # - DO NOT search the internet or use prior knowledge
-    # - If information is not found in the document, leave the field empty
-    # - DO NOT guess or fabricate any values
-    # Extract the following fields. If not found, leave empty:
-    # - product_name: Full product name
-    # - brand_name: Manufacturer/brand name
-    # - sku: Stock Keeping Unit (if available)
-    # - taxonomy: Product category (e.g., "Electronics > Computers > Laptops")
-    # - description: Product description/summary
-    # - image_url: Main product image URL (if referenced)
-    # - specifications: Key technical specifications as key-value pairs
-    # Return ONLY a single valid JSON object in this format:
-    # {{
-    # "product_name": "",
-    # "brand_name": "",
-    # "sku": "",
-    # "taxonomy": "",
-    # "description": "",
-    # "image_url": "",
-    # "specifications": {{}}
-    # }}
-    # """
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     prompt_service = PDFPromptService(db, project_id)
     prompt = await prompt_service.get_blind_extraction_prompt(
         pdf_text, product_info, "Title & Description Based PDF Extraction"
@@ -601,8 +610,9 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                         brand = context.get('brand', '')
                         logger.info(
                             f"Processing MPN {idx+1}/{len(mpns)}: {mpn}")
-                        stmt = select(Product).where(
-                            Product.project_id == project_id,
+                        stmt = select(Product).join(
+                            ProjectProductLink, Product.id == ProjectProductLink.product_id  
+                        ).where(
                             Product.product_code == mpn
                         )
                         result = await db.execute(stmt)
@@ -619,13 +629,15 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                     product_code=mpn,
                                     product_name=f"Failed: {mpn}",
                                     mpn=mpn,
-                                    project_id=project_id,
                                     workflow_stage='aggregation',
                                     enrichment_status='failed',
                                     source_url='web_search_failed',
                                     completeness_score=0
                                 )
                                 db.add(product)
+                                await db.flush()
+                                db.add(ProjectProductLink(
+                                    project_id=project_id, product_id=product.id))
                             continue
                         product_data = None
                         for pdf_url in pdf_urls:
@@ -689,7 +701,6 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                     description=product_data.get(
                                         'description', ''),
                                     image_url_1=product_data.get('image_url'),
-                                    project_id=project_id,
                                     workflow_stage=workflow_stage,
                                     enrichment_status=enrichment_status,
                                     ready_for_export=is_ready_for_export,
@@ -701,6 +712,9 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                     completeness_score=completeness_score
                                 )
                                 db.add(product)
+                                await db.flush()
+                                db.add(ProjectProductLink(
+                                    project_id=project_id, product_id=product.id))
                             products.append(product_data)
                             successful += 1
                             logger.info(
@@ -717,18 +731,21 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                     product_code=mpn,
                                     product_name=f"Failed: {mpn}",
                                     mpn=mpn,
-                                    project_id=project_id,
                                     workflow_stage='aggregation',
                                     enrichment_status='failed',
                                     source_url='web_search_failed',
                                     completeness_score=0
                                 )
                                 db.add(product)
+                                await db.flush()
+                                db.add(ProjectProductLink(
+                                    project_id=project_id, product_id=product.id))
                     except Exception as e:
                         logger.error(f"Error processing MPN {mpn}: {e}")
                         failed_mpns.append(mpn)
-                        stmt = select(Product).where(
-                            Product.project_id == project_id,
+                        stmt = select(Product).join(
+                            ProjectProductLink, Product.id == ProjectProductLink.product_id  
+                        ).where(
                             Product.product_code == mpn
                         )
                         result = await db.execute(stmt)
@@ -741,13 +758,15 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                 product_code=mpn,
                                 product_name=f"Error: {mpn}",
                                 mpn=mpn,
-                                project_id=project_id,
                                 workflow_stage='aggregation',
                                 enrichment_status='failed',
                                 source_url='web_search_error',
                                 completeness_score=0
                             )
                             db.add(product)
+                            await db.flush()
+                            db.add(ProjectProductLink(
+                                project_id=project_id, product_id=product.id))
                     if (idx + 1) % 3 == 0 or idx + 1 == len(mpns):
                         source = await db.get(Source, batch_id)
                         if source:
@@ -888,21 +907,21 @@ async def process_structured_pdf_extraction(
                                     tables.append(row_dict)
             truncated_text = full_text[:15000]
             truncated_tables = json.dumps(tables, indent=2)[:5000]
-            # prompt = f"""
-            # You are a product data extraction expert. Extract product information for MPN "{mpn}" from the document below.
-            # CRITICAL INSTRUCTIONS:
-            # - ONLY use information explicitly present in the document content
-            # - DO NOT use any external knowledge or information from outside this document
-            # - DO NOT search the internet or use prior knowledge about this product
-            # - If information is not found in the document, leave the field empty
-            # - DO NOT guess or fabricate any values
-            # Document content (text):
-            # {truncated_text}
-            # Table data:
-            # {truncated_tables}
-            # Extract: product_name, brand_name, sku, taxonomy, description, image_url, specifications
-            # Return ONLY valid JSON.
-            # """
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             prompt_service = PDFPromptService(db, project_id)
             prompt = await prompt_service.get_structured_extraction_prompt(
                 truncated_text, truncated_tables, mpn, "Structured PDF Extraction (Given MPNs)"
@@ -910,7 +929,7 @@ async def process_structured_pdf_extraction(
             if not prompt:
                 error_msg = "No business rule prompt configured for Structured PDF Extraction"
                 logger.warning(f"{error_msg} for project {project_id}")
-                
+
                 source = await db.get(Source, batch_id)
                 if source:
                     source.status = "failed"
@@ -924,10 +943,11 @@ async def process_structured_pdf_extraction(
                     db.add(source)
                     await db.commit()
                     await sync_project_status(db, project_id)
+
                 
-                # Update product status
-                stmt = select(Product).where(
-                    Product.project_id == project_id,
+                stmt = select(Product).join(
+                    ProjectProductLink, Product.id == ProjectProductLink.product_id  
+                ).where(
                     Product.product_code == mpn
                 )
                 result = await db.execute(stmt)
@@ -936,7 +956,7 @@ async def process_structured_pdf_extraction(
                     product.enrichment_status = "failed"
                     db.add(product)
                     await db.commit()
-                
+
                 return
             logger.info(
                 f"Extracted text length: {len(full_text)}, tables: {len(tables)}")
@@ -960,7 +980,7 @@ async def process_structured_pdf_extraction(
                     'processing_status': 'completed',
                     'completed_at': now_ist().isoformat()
                 })
-                flag_modified(source, "source_metadata") 
+                flag_modified(source, "source_metadata")
                 db.add(source)
             await db.commit()
             await sync_project_status(db, project_id)
@@ -1011,8 +1031,9 @@ async def save_pdf_source(
             }
         )
         db.add(source)
-        stmt = select(Product).where(
-            Product.project_id == project_id,
+        stmt = select(Product).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id  
+        ).where(
             Product.product_code == mpn
         )
         result = await db.execute(stmt)
@@ -1022,13 +1043,15 @@ async def save_pdf_source(
                 product_code=mpn,
                 product_name=f"{mpn}",
                 mpn=mpn,
-                project_id=project_id,
                 workflow_stage="aggregation",
                 enrichment_status="pending",
                 source_url=file.filename,
                 completeness_score=0
             )
             db.add(product)
+            await db.flush()
+            db.add(ProjectProductLink(
+                project_id=project_id, product_id=product.id))
         logger.info(
             f"Saving source with content_data size: {len(pdf_bytes)} bytes")
         await db.commit()
@@ -1112,41 +1135,41 @@ async def process_multi_pdf_extraction_for_single_mpn(
                     f"Best match: {best_pdf['filename']} (score: {best_score})")
                 truncated_text = slice_text_around_mpn(
                     best_pdf["text"], mpn, window=15000, back=6000)
-                # prompt = f"""
-                # You are a product data extraction expert. Extract product information for MPN "{mpn}" from the document below.
-                # The document is a product specification/catalog PDF. Extract whatever product specifications you can find.
-                # CRITICAL INSTRUCTIONS:
-                # - ONLY use information explicitly present in the document content
-                # - DO NOT use any external knowledge or information from outside this document
-                # - DO NOT search the internet or use prior knowledge about this product
-                # - If information is not found in the document, leave the field empty
-                # - DO NOT guess or fabricate any values
-                # Document content:
-                # {truncated_text}
-                # Look for:
-                # - Product name/title
-                # - Brand/manufacturer name
-                # - Technical specifications (dimensions, weight, materials, features)
-                # - Product category/taxonomy
-                # Extract the following fields if present. If missing, leave empty:
-                # - product_name
-                # - brand_name
-                # - sku
-                # - taxonomy
-                # - description
-                # - image_url
-                # - specifications (as key-value pairs)
-                # Return ONLY a single valid JSON object in this format:
-                # {{
-                # "product_name": "",
-                # "brand_name": "",
-                # "sku": "",
-                # "taxonomy": "",
-                # "description": "",
-                # "image_url": "",
-                # "specifications": {{}}
-                # }}
-                # """
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 prompt_service = PDFPromptService(db, project_id)
                 prompt = await prompt_service.get_extraction_prompt(
                     truncated_text, mpn, "Multi-PDF & Multi-MPN Data Extraction.", is_unstructured=False
@@ -1173,7 +1196,8 @@ async def process_multi_pdf_extraction_for_single_mpn(
                     if extracted_count >= source.source_metadata.get("total_mpns", 0):
                         source.status = "completed"
                         source.source_metadata["processing_status"] = "completed"
-                        source.source_metadata["completed_at"] = now_ist().isoformat()
+                        source.source_metadata["completed_at"] = now_ist(
+                        ).isoformat()
 
                     db.add(source)
                     await db.commit()
@@ -1188,8 +1212,9 @@ async def process_multi_pdf_extraction_for_single_mpn(
             logger.error(
                 f" Failed to extract {mpn} from multi-PDF: {e}", exc_info=True)
             await db.rollback()
-            stmt = select(Product).where(
-                Product.project_id == project_id,
+            stmt = select(Product).join(
+                ProjectProductLink, Product.id == ProjectProductLink.product_id  
+            ).where(
                 Product.product_code == mpn
             )
             result = await db.execute(stmt)
@@ -1245,8 +1270,11 @@ async def extract_pending_pdf(
         db.add(source)
         await db.execute(
             sa_update(Product)
+            .join(
+                ProjectProductLink, Product.id == ProjectProductLink.product_id  
+            )
             .where(
-                Product.project_id == project_id,
+                ProjectProductLink.project_id == project_id,  
                 Product.product_code == mpn,
                 Product.enrichment_status.in_(["pending", "failed"]),
             )
@@ -1361,8 +1389,9 @@ async def upsert_product_from_extraction(
     routed_to_enrichment_at = None
     enrichment_status = 'completed'
     existing_product = await db.execute(
-        select(Product).where(
-            Product.project_id == project_id,
+        select(Product).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id  
+        ).where(
             Product.product_code == mpn
         )
     )
@@ -1395,7 +1424,6 @@ async def upsert_product_from_extraction(
             taxonomy=prod_dict.get('taxonomy', ''),
             description=prod_dict.get('description', ''),
             image_url_1=prod_dict.get('image_url', ''),
-            project_id=project_id,
             workflow_stage=workflow_stage,
             needs_enrichment=needs_enrichment,
             ready_for_export=ready_for_export,
@@ -1406,6 +1434,8 @@ async def upsert_product_from_extraction(
             completeness_score=completeness_score
         )
         db.add(product)
+        await db.flush()
+        db.add(ProjectProductLink(project_id=project_id, product_id=product.id))
         return product
 
 
@@ -1435,8 +1465,10 @@ async def save_pending_mpns(
         db.add(source)
         products_added = 0
         for mpn in request.mpns:
-            stmt = select(Product).where(
-                Product.project_id == request.project_id,
+            stmt = select(Product).join(
+                ProjectProductLink, Product.id == ProjectProductLink.product_id  
+            ).where(
+                ProjectProductLink.project_id == request.project_id,  
                 Product.product_code == mpn
             )
             result = await db.execute(stmt)
@@ -1455,7 +1487,6 @@ async def save_pending_mpns(
                     product_name=product_name,
                     brand_name=brand,
                     mpn=mpn,
-                    project_id=request.project_id,
                     workflow_stage='aggregation',
                     enrichment_status='pending',
                     source_url='web_search_pending',
@@ -1463,6 +1494,9 @@ async def save_pending_mpns(
                     attributes={}
                 )
                 db.add(product)
+                await db.flush()
+                db.add(ProjectProductLink(
+                    project_id=request.project_id, product_id=product.id))
                 products_added += 1
         await db.commit()
         logger.info(
@@ -1509,41 +1543,41 @@ async def process_unstructured_pdf_extraction(
                         logger.warning(f"   Page {i+1} failed: {e}")
                         continue
             truncated_text = full_text[:15000]
-            # prompt = f"""
-            #     You are a product data extraction expert. Extract product information for MPN "{mpn}" from the unstructured document below.
-            #     The document is free-form text without structured tables. Extract whatever product specifications you can find.
-            #     CRITICAL INSTRUCTIONS:
-            #     - ONLY use information explicitly present in the document content
-            #     - DO NOT use any external knowledge or information from outside this document
-            #     - DO NOT search the internet or use prior knowledge about the product or brand
-            #     - If information is not found in the document, leave the field empty
-            #     - DO NOT guess or fabricate any values
-            #     Document content:
-            #     {truncated_text}
-            #     Look for:
-            #     - Product name/title (usually at the top, in headings, or near the MPN)
-            #     - Brand/manufacturer name
-            #     - Any technical specifications mentioned in the text
-            #     - Product category/hints for taxonomy
-            #     Extract the following fields if present. If missing, leave empty:
-            #     - product_name
-            #     - brand_name
-            #     - sku
-            #     - taxonomy
-            #     - description
-            #     - image_url
-            #     - specifications (as key-value pairs)
-            #     Return ONLY a single valid JSON object in this format:
-            #     {{
-            #     "product_name": "",
-            #     "brand_name": "",
-            #     "sku": "",
-            #     "taxonomy": "",
-            #     "description": "",
-            #     "image_url": "",
-            #     "specifications": {{}}
-            #     }}
-            #     """
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
             prompt_service = PDFPromptService(db, project_id)
             prompt = await prompt_service.get_unstructured_extraction_prompt(
                 truncated_text, mpn, "Unstructured PDF Extraction (Given MPNs)"
@@ -1551,7 +1585,7 @@ async def process_unstructured_pdf_extraction(
             if not prompt:
                 error_msg = "No business rule prompt configured for Unstructured PDF Extraction"
                 logger.warning(f"{error_msg} for project {project_id}")
-                
+
                 source = await db.get(Source, batch_id)
                 if source:
                     source.status = "failed"
@@ -1565,9 +1599,10 @@ async def process_unstructured_pdf_extraction(
                     db.add(source)
                     await db.commit()
                     await sync_project_status(db, project_id)
-                
-                stmt = select(Product).where(
-                    Product.project_id == project_id,
+
+                stmt = select(Product).join(
+                    ProjectProductLink, Product.id == ProjectProductLink.product_id  
+                ).where(
                     Product.product_code == mpn
                 )
                 result = await db.execute(stmt)
@@ -1576,7 +1611,7 @@ async def process_unstructured_pdf_extraction(
                     product.enrichment_status = "failed"
                     db.add(product)
                     await db.commit()
-                
+
                 return
             logger.info(f"Extracted text length for {mpn}: {len(full_text)}")
             response = await call_llm_with_schema(
@@ -1599,7 +1634,7 @@ async def process_unstructured_pdf_extraction(
                     'processing_status': 'completed',
                     'completed_at': now_ist().isoformat()
                 })
-                flag_modified(source, "source_metadata") 
+                flag_modified(source, "source_metadata")
                 db.add(source)
             await db.commit()
             await sync_project_status(db, project_id)
@@ -1627,7 +1662,7 @@ async def multi_pdf_extraction(
     use_case: str = Form(...),
     db: AsyncSession = Depends(get_session)
 ):
-    
+
     try:
         mpn_list = [m.strip() for m in mpns.split(',') if m.strip()]
         if len(mpn_list) == 0:
@@ -1681,8 +1716,9 @@ async def multi_pdf_extraction(
         source.content_data = pickle.dumps(pdf_documents)
         products_added = 0
         for mpn in mpn_list:
-            stmt = select(Product).where(
-                Product.project_id == project_id,
+            stmt = select(Product).join(
+                ProjectProductLink, Product.id == ProjectProductLink.product_id  
+            ).where(
                 Product.product_code == mpn
             )
             result = await db.execute(stmt)
@@ -1692,7 +1728,6 @@ async def multi_pdf_extraction(
                     product_code=mpn,
                     product_name=f"{mpn}",
                     mpn=mpn,
-                    project_id=project_id,
                     workflow_stage="aggregation",
                     enrichment_status="pending",
                     source_url=f"multi_pdf_batch_{batch_id[:8]}",
@@ -1700,6 +1735,9 @@ async def multi_pdf_extraction(
                     attributes={}
                 )
                 db.add(product)
+                await db.flush()
+                db.add(ProjectProductLink(
+                    project_id=project_id, product_id=product.id))
                 products_added += 1
         await db.commit()
         return {
@@ -1762,8 +1800,9 @@ async def process_multi_pdf_extraction(
             for mpn in mpns:
                 try:
                     logger.info(f"🔍 Processing MPN: {mpn}")
-                    stmt = select(Product).where(
-                        Product.project_id == project_id,
+                    stmt = select(Product).join(
+                        ProjectProductLink, Product.id == ProjectProductLink.product_id  
+                    ).where(
                         Product.product_code == mpn
                     )
                     result = await db.execute(stmt)
@@ -1792,43 +1831,44 @@ async def process_multi_pdf_extraction(
                             f"Best match: {best_pdf['filename']} (score: {best_score})")
                         truncated_text = slice_text_around_mpn(
                             best_pdf["text"], mpn, window=15000, back=6000)
-                    #     prompt = f"""
-                    # You are a product data extraction expert. Extract product information for MPN "{mpn}" from the document below.
-                    # The document is a product specification/catalog PDF. Extract whatever product specifications you can find.
-                    # Document content:
-                    # {truncated_text}
-                    # Look for:
-                    # - Product name/title
-                    # - Brand/manufacturer name
-                    # - Technical specifications (dimensions, weight, materials, features)
-                    # - Product category/taxonomy
-                    # Extract the following fields if present. If missing, leave empty:
-                    # - product_name
-                    # - brand_name
-                    # - sku
-                    # - taxonomy
-                    # - description
-                    # - image_url
-                    # - specifications (as key-value pairs)
-                    # Return ONLY a single valid JSON object in this format:
-                    # {{
-                    # "product_name": "",
-                    # "brand_name": "",
-                    # "sku": "",
-                    # "taxonomy": "",
-                    # "description": "",
-                    # "image_url": "",
-                    # "specifications": {{}}
-                    # }}
-                    # """
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                         prompt_service = PDFPromptService(db, project_id)
                         prompt = await prompt_service.get_extraction_prompt(
                             truncated_text, mpn, "Multi-PDF & Multi-MPN Data Extraction.", is_unstructured=False
                         )
-                        
+
                         if not prompt:
                             error_msg = "No business rule prompt configured for Multi-PDF Extraction"
-                            logger.warning(f"{error_msg} for project {project_id}")
+                            logger.warning(
+                                f"{error_msg} for project {project_id}")
                             raise ValueError(error_msg)
                         response = await call_llm_with_schema(
                             prompt=prompt,
@@ -1879,8 +1919,9 @@ async def process_multi_pdf_extraction(
                         'status': 'failed',
                         'reason': str(e)
                     })
-                    stmt = select(Product).where(
-                        Product.project_id == project_id,
+                    stmt = select(Product).join(
+                        ProjectProductLink, Product.id == ProjectProductLink.product_id  
+                    ).where(
                         Product.product_code == mpn
                     )
                     result = await db.execute(stmt)
@@ -2068,8 +2109,9 @@ async def _create_pending_products_with_context(
                     }
             products_added = 0
             for mpn in mpns:
-                stmt = select(Product).where(
-                    Product.project_id == project_id,
+                stmt = select(Product).join(
+                    ProjectProductLink, Product.id == ProjectProductLink.product_id  
+                ).where(
                     Product.product_code == mpn
                 )
                 result = await db.execute(stmt)
@@ -2081,7 +2123,6 @@ async def _create_pending_products_with_context(
                         product_name=ctx.get('product_name', f"{mpn}"),
                         brand_name=ctx.get('brand', ''),
                         mpn=mpn,
-                        project_id=project_id,
                         workflow_stage='aggregation',
                         enrichment_status='pending',
                         source_url='excel_upload_pending',
@@ -2089,6 +2130,9 @@ async def _create_pending_products_with_context(
                         attributes={}
                     )
                     db.add(product)
+                    await db.flush()
+                    db.add(ProjectProductLink(
+                        project_id=project_id, product_id=product.id))
                     products_added += 1
             await db.commit()
             source = await db.get(Source, batch_id)

@@ -14,6 +14,7 @@ import logging
 from sqlalchemy.orm.attributes import flag_modified
 from urllib.parse import quote
 from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
+from app.models.project_product_link import ProjectProductLink
 from app.models.user import User
 from app.utils.aggregate_download import generate_products_excel
 from app.utils.attribute_helper import ensure_category_from_path, get_category_expected_attributes, save_attributes_normalized
@@ -42,6 +43,8 @@ router = APIRouter()
 ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
 MAX_FILE_SIZE = 10 * 1024 * 1024
 MAX_ROWS = 1000
+
+
 def merge_attributes_preserving_order(
     primary_attributes: List[str],
     existing_attrs: dict,
@@ -59,6 +62,8 @@ def merge_attributes_preserving_order(
         if attr_name not in merged:
             merged[attr_name] = ai_val
     return merged
+
+
 @router.get("/", response_model=List[SourceResponse])
 async def getAllSources(db: AsyncSession = Depends(get_session)):
     try:
@@ -70,6 +75,8 @@ async def getAllSources(db: AsyncSession = Depends(get_session)):
         logger.error(f"Failed to fetch sources: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Could not retrieve import history")
+
+
 @router.post("/", status_code=status.HTTP_202_ACCEPTED)
 async def extract_from_source(
     payload: ExtractionRequest,
@@ -111,6 +118,8 @@ async def extract_from_source(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="System failed to initialize the extraction pipeline"
         )
+
+
 @router.get("/priorities/{project_id}", response_model=List[SourcePriorityResponse], status_code=status.HTTP_200_OK)
 async def get_project_priorities(project_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -130,6 +139,8 @@ async def get_project_priorities(project_id: str, db: AsyncSession = Depends(get
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal system error while retrieving source rankings"
         )
+
+
 @router.get('/project/{project_id}', response_model=List[SourceResponse])
 async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -144,10 +155,14 @@ async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get
     except Exception as e:
         logger.error(f"Failed to fetch project sources:{e}")
         return []
+
+
 def sanitize_for_excel(val):
     if not isinstance(val, str):
         return val
     return re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', val)
+
+
 def clean_for_excel(val, attr_name=None):
     if val is None or val == "":
         return ""
@@ -172,12 +187,13 @@ def clean_for_excel(val, attr_name=None):
     if val_str.lower() in ["n/a", "none", "null", "nan", "not available", "increase", "*"]:
         return ""
     return sanitize_for_excel(val_str)
-    
+
+
 @router.get("/{source_id}/download")
 async def download_file(
     source_id: str,
     download_type: str = Query("input", alias="type"),
-    format: str = Query("pdf", alias="format"), 
+    format: str = Query("pdf", alias="format"),
     db: AsyncSession = Depends(get_session)
 ):
     try:
@@ -208,9 +224,10 @@ async def download_file(
                             zip_buffer = BytesIO()
                             with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
                                 for pdf_doc in pdf_documents:
-                                    zip_file.writestr(pdf_doc['filename'], pdf_doc['content'])
+                                    zip_file.writestr(
+                                        pdf_doc['filename'], pdf_doc['content'])
                             zip_buffer.seek(0)
-                            
+
                             zip_filename = f"multi_pdf_batch_{str(source.id)[:8]}.zip"
                             encoded_filename = quote(zip_filename)
                             return StreamingResponse(
@@ -243,7 +260,8 @@ async def download_file(
                     mpn = source.source_metadata.get('mpn')
                     mpns = [mpn] if mpn else []
                 if mpns:
-                    content = f"MPNs submitted for extraction:\n\n" + "\n".join(mpns)
+                    content = f"MPNs submitted for extraction:\n\n" + \
+                        "\n".join(mpns)
                     content += f"\n\nTotal: {len(mpns)} MPN(s)"
                     content += f"\nUse Case: {source.source_metadata.get('use_case', 'N/A')}"
                     return StreamingResponse(
@@ -256,12 +274,12 @@ async def download_file(
                     )
                 else:
                     return StreamingResponse(
-                        io.BytesIO(b"No data available"), 
+                        io.BytesIO(b"No data available"),
                         media_type="text/plain"
                     )
         elif download_type == 'output':
-            stmt = select(Product).where(
-                Product.project_id == source.project_id,
+            stmt = select(Product).join(ProjectProductLink).where(
+                ProjectProductLink.project_id == source.project_id,
                 Product.source_url == source.source_url
             ).order_by(Product.created_at.asc())
             result = await db.execute(stmt)
@@ -269,34 +287,39 @@ async def download_file(
             if not products:
                 mpns = source.source_metadata.get('mpns', [])
                 if not mpns:
-                    extracted_products = source.source_metadata.get('extracted_products', [])
+                    extracted_products = source.source_metadata.get(
+                        'extracted_products', [])
                     mpn = source.source_metadata.get('mpn')
-                    mpns = [p.get('mpn') for p in extracted_products if p.get('mpn')]
+                    mpns = [p.get('mpn')
+                            for p in extracted_products if p.get('mpn')]
                 if mpns:
-                    stmt = select(Product).where(
-                        Product.project_id == source.project_id,
+                    stmt = select(Product).join(ProjectProductLink).where(
+                        ProjectProductLink.project_id == source.project_id,
                         Product.product_code.in_(mpns)
                     ).order_by(Product.created_at.asc())
                     result = await db.execute(stmt)
                     products = result.scalars().all()
             if not products:
                 pdf_files = source.source_metadata.get('pdf_files', [])
-                filenames = [f.get('filename') for f in pdf_files if f.get('filename')]
-        
+                filenames = [f.get('filename')
+                             for f in pdf_files if f.get('filename')]
+
                 if filenames:
-                    stmt = select(Product).where(
-                        Product.project_id == source.project_id,
+                    stmt = select(Product).join(ProjectProductLink).where(
+                        ProjectProductLink.project_id == source.project_id,
                         Product.source_url.in_(filenames)
                     ).order_by(Product.created_at.asc())
                     result = await db.execute(stmt)
                     products = result.scalars().all()
             if not products:
-                raise HTTPException(status_code=404, detail="No enriched data found")
-            
-            project = await db.get(Project, products[0].project_id) if products else None
+                raise HTTPException(
+                    status_code=404, detail="No enriched data found")
+
+            project = await db.get(Project, source.project_id) if products else None
             project_name = project.name if project else None
-            use_case_lower = (project.use_case or "").lower() if project else ""
-            
+            use_case_lower = (
+                project.use_case or "").lower() if project else ""
+
             if source.source_url and source.source_url.endswith('.pdf'):
                 output_filename = source.source_url.rsplit('.', 1)[0] + '.xlsx'
             elif source.source_type == "pdf_multi_pending":
@@ -305,7 +328,8 @@ async def download_file(
                     first_pdf = pdf_files[0].get('filename', 'extracted')
                     output_filename = first_pdf.rsplit('.', 1)[0] + '.xlsx'
                 else:
-                    output_filename = source.source_url.rsplit('.', 1)[0] + '.xlsx' if '.' in source.source_url else f"{source.source_url}.xlsx"
+                    output_filename = source.source_url.rsplit(
+                        '.', 1)[0] + '.xlsx' if '.' in source.source_url else f"{source.source_url}.xlsx"
             elif source.source_type == "pdf_fresh_pending":
                 output_filename = f"{project_name}_extracted.xlsx" if project_name else "fresh_extracted.xlsx"
             elif source.source_url and '.' in source.source_url:
@@ -325,6 +349,8 @@ async def download_file(
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Error generating download")
+
+
 def clean_numeric_string(value):
     if value is None or value == '':
         return ''
@@ -337,7 +363,8 @@ def clean_numeric_string(value):
             return str(int(f))
     except (ValueError, OverflowError):
         pass
-    return s        
+    return s
+
 
 @router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
 async def batch_aggregate(
@@ -352,7 +379,8 @@ async def batch_aggregate(
             raise HTTPException(status.HTTP_400_BAD_REQUEST,
                                 "Project ID is required.")
         project = await db.get(Project, projectId)
-        logger.info(f"Project {projectId} operation_mode: {project.operation_mode}")
+        logger.info(
+            f"Project {projectId} operation_mode: {project.operation_mode}")
         if not project:
             raise HTTPException(status.HTTP_404_NOT_FOUND,
                                 f"Project {projectId} not found")
@@ -392,28 +420,30 @@ async def batch_aggregate(
         rows = parse_import_file(content, file.filename)
         valid_rows = []
         rejected_count = 0
-        with_mpn_count=0
-        without_mpn_count=0
+        with_mpn_count = 0
+        without_mpn_count = 0
         for r in rows:
             mpn = clean_numeric_string(r.get('mpn', ''))
             brand = str(r.get('brand', '')).strip()
-            sku=str(r.get('sku','')).strip()
-            product_name=str(r.get('product_name',"")).strip()
-            has_identifier=bool(mpn or sku or product_name)
+            sku = str(r.get('sku', '')).strip()
+            product_name = str(r.get('product_name', "")).strip()
+            has_identifier = bool(mpn or sku or product_name)
             if brand and has_identifier:
                 valid_rows.append(r)
                 if mpn:
-                    with_mpn_count+=1
+                    with_mpn_count += 1
                 else:
-                    without_mpn_count+=1
+                    without_mpn_count += 1
             else:
                 rejected_count += 1
-                logger.warning(f"Rejected row: missing required fields Brand='{brand}', MPN='{mpn}', SKU='{sku}', Product_Name='{product_name}'")
+                logger.warning(
+                    f"Rejected row: missing required fields Brand='{brand}', MPN='{mpn}', SKU='{sku}', Product_Name='{product_name}'")
         if rejected_count > 0:
             logger.info(
                 f"Rejected {rejected_count} rows due to missing SKU, MPN, or Brand")
         if not valid_rows:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST,detail="No valid rows found. Each row must contain Brand and at least one of MPN, SKU, or Product Name.")
+            raise HTTPException(status.HTTP_400_BAD_REQUEST,
+                                detail="No valid rows found. Each row must contain Brand and at least one of MPN, SKU, or Product Name.")
         rows = valid_rows
         total_rows = len(rows)
         if total_rows == 0:
@@ -441,8 +471,9 @@ async def batch_aggregate(
                 if inferred:
                     row["taxonomy"] = inferred
                     inferred_count += 1
-        original_filename=file.filename or 'import'
-        base_name = original_filename.rsplit('.', 1)[0] if '.' in original_filename else original_filename
+        original_filename = file.filename or 'import'
+        base_name = original_filename.rsplit(
+            '.', 1)[0] if '.' in original_filename else original_filename
         source_url = re.sub(r'[^a-zA-Z0-9_-]', '_', base_name)
         new_source = Source(
             source_type="excel" if file_ext in ['.xlsx', '.xls'] else "csv",
@@ -456,9 +487,9 @@ async def batch_aggregate(
                 "total": total_rows,
                 "inferred_taxonomies": inferred_count,
                 "processing_status": "pending",
-                'with_mpn_count':with_mpn_count,
-                'without_mpn_count':without_mpn_count,
-                'rejected_count':rejected_count
+                'with_mpn_count': with_mpn_count,
+                'without_mpn_count': without_mpn_count,
+                'rejected_count': rejected_count
             }
         )
         db.add(new_source)
@@ -471,84 +502,128 @@ async def batch_aggregate(
             val_sku = clean_numeric_string(row.get("sku")) or None
             code = val_mpn or val_sku
             product = None
+            is_reused = False
+
             if code:
+                # Look for COMPLETED product globally
                 stmt = select(Product).where(
                     Product.product_code == str(code),
-                    Product.project_id == projectId
-                )
+                    Product.enrichment_status == "completed"
+                ).order_by(Product.updated_at.desc())
                 result = await db.execute(stmt)
                 product = result.scalars().first()
-            if not product:
+
+                if product:
+                    # Check if already linked to this project
+                    link_stmt = select(ProjectProductLink).where(
+                        ProjectProductLink.product_id == product.id,
+                        ProjectProductLink.project_id == projectId
+                    )
+                    link_result = await db.execute(link_stmt)
+
+                    if not link_result.scalars().first():
+                        # Link existing product to this project
+                        db.add(ProjectProductLink(
+                            project_id=projectId,
+                            product_id=product.id
+                        ))
+                        await db.flush()
+
+                    is_reused = True
+                    updated_count += 1
+
+            if not is_reused:
+                # Create NEW product
                 product = Product(
                     product_code=str(code),
-                    project_id=projectId,
                     workflow_stage=default_workflow_stage,
-                    created_at=now_ist()
+                    created_at=now_ist(),
+                    enrichment_status="pending"
                 )
+                db.add(product)
+                await db.flush()
+
+                # Link new product to project
+                db.add(ProjectProductLink(
+                    project_id=projectId,
+                    product_id=product.id
+                ))
+
+                # ✅ ALL field assignments INSIDE this block:
+                product.product_name = row.get("product_name", "Unknown")
+                product.mpn = val_mpn
+                product.sku = val_sku
+                product.taxonomy = row.get("taxonomy")
+                product.source_url = new_source.source_url
+                product.category_1 = row.get('category_1')
+                product.category_2 = row.get('category_2')
+                product.category_3 = row.get('category_3')
+                product.category_4 = row.get('category_4')
+                product.category_5 = row.get('category_5')
+                product.category_6 = row.get('category_6')
+                product.category_7 = row.get('category_7')
+                product.category_8 = row.get('category_8')
+                product.gtin = row.get('gtin')
+                product.ean = row.get('ean')
+                product.upc = row.get('upc')
+                product.unspc = row.get('unspc')
+                product.product_type = row.get('product_type')
+                product.parent_sku = row.get('parent_sku')
+                product.lifecycle_stage = row.get('lifecycle_stage')
+                product.launch_date = row.get('launch_date')
+                product.discontinue_status = row.get('discontinue_status')
+
+                # ✅ MOVE THESE INSIDE:
+                try:
+                    if row.get('weight'):
+                        product.weight = str(row['weight']).replace(',', '')
+                    product.weight_unit = row.get('weight_unit')
+                    if row.get('length'):
+                        product.length = str(row['length']).replace(',', '')
+                    if row.get('width'):
+                        product.width = str(row['width']).replace(',', '')
+                    if row.get('height'):
+                        product.height = str(row['height']).replace(',', '')
+                    product.dimension_unit = row.get('dimension_unit')
+                except ValueError:
+                    pass
+
+                brand = await get_or_create_brand(db, row.get("brand"))
+                if brand:
+                    product.brand_id = brand.id
+                    product.brand_name = brand.name
+                    brand.product_count = (brand.product_count or 0) + 1
+                    if row.get('country_of_origin'):
+                        brand.country_of_origin = row.get('country_of_origin')
+                        db.add(brand)
+
+                vendor = await get_or_create_vendor(db, row.get("vendor"))
+                if vendor:
+                    product.vendor_id = vendor.id
+                    product.vendor_name = vendor.name
+
+                industry = await get_or_create_industry(db, row.get("industry_name"))
+                if industry:
+                    product.industry_id = industry.id
+                    product.industry_name = industry.name
+
+                try:
+                    if row.get("base_price"):
+                        product.base_price = float(
+                            str(row["base_price"]).replace(',', ''))
+                        product.currency = row.get("currency", "USD")
+                except ValueError:
+                    pass
+
                 created_count += 1
             else:
-                product.project_id = projectId
-                product.workflow_stage=default_workflow_stage
+                # ✅ Just increment counter, DON'T touch product fields!
                 updated_count += 1
-            product.product_name = row.get("product_name", "Unknown")
-            product.mpn = val_mpn 
-            product.sku = val_sku  
-            product.taxonomy = row.get("taxonomy")
-            product.source_url = new_source.source_url
-            product.category_1 = row.get('category_1')
-            product.category_2 = row.get('category_2')
-            product.category_3 = row.get('category_3')
-            product.category_4 = row.get('category_4')
-            product.category_5 = row.get('category_5')
-            product.category_6 = row.get('category_6')
-            product.category_7 = row.get('category_7')
-            product.category_8 = row.get('category_8')
-            product.gtin = row.get('gtin')
-            product.ean = row.get('ean')
-            product.upc = row.get('upc')
-            product.unspc = row.get('unspc')
-            product.product_type = row.get('product_type')
-            product.parent_sku = row.get('parent_sku')
-            product.lifecycle_stage = row.get('lifecycle_stage')
-            product.launch_date = row.get('launch_date')
-            product.discontinue_status = row.get('discontinue_status')
-            try:
-                if row.get('weight'):
-                    product.weight = str(row['weight']).replace(',', '')
-                product.weight_unit = row.get('weight_unit')
-                if row.get('length'):
-                    product.length = str(row['length']).replace(',', '')
-                if row.get('width'):
-                    product.width = str(row['width']).replace(',', '')
-                if row.get('height'):
-                    product.height = str(row['height']).replace(',', '')
-                product.dimension_unit = row.get('dimension_unit')
-            except ValueError:
-                pass
-            brand = await get_or_create_brand(db, row.get("brand"))
-            if brand:
-                product.brand_id = brand.id
-                product.brand_name = brand.name
-                brand.product_count = (brand.product_count or 0) + 1 
-                if row.get('country_of_origin'):
-                    brand.country_of_origin = row.get('country_of_origin')
-                    db.add(brand)
-            vendor = await get_or_create_vendor(db, row.get("vendor"))
-            if vendor:
-                product.vendor_id = vendor.id
-                product.vendor_name = vendor.name
-            industry = await get_or_create_industry(db, row.get("industry_name"))
-            if industry:
-                product.industry_id = industry.id
-                product.industry_name = industry.name
-            try:
-                if row.get("base_price"):
-                    product.base_price = float(
-                        str(row["base_price"]).replace(',', ''))
-                    product.currency = row.get("currency", "USD")
-            except ValueError:
-                pass
-            product.enrichment_status = "pending"
+
+            # ✅ This stays outside (only sets status for new products):
+            if not is_reused:
+                product.enrichment_status = "pending"
+
             db.add(product)
             await db.flush()
 
@@ -563,7 +638,7 @@ async def batch_aggregate(
             #             'validation_value': str(row.get(f'validation_value{i}', '')).strip(),
             #             'validation_uom': str(row.get(f'validation_uom{i}', '')).strip()
             #         })
-                        # Extract attributes from parsed row
+            # Extract attributes from parsed row
             dynamic_attrs = row.get('attributes', [])
             # Also try attribute_name1..40 columns (fallback)
             if not dynamic_attrs:
@@ -584,7 +659,7 @@ async def batch_aggregate(
                 cat = getattr(product, f'category_{i}', None)
                 if cat and str(cat).strip():
                     path_parts.append(str(cat).strip())
-            
+
             category_id = None
             if path_parts:
                 category_id = await ensure_category_from_path(db, path_parts)
@@ -597,7 +672,8 @@ async def batch_aggregate(
                 try:
                     await save_attributes_normalized(db, product, dynamic_attrs, category_id)
                 except Exception as e:
-                    logger.error(f"Failed to normalize attributes for {product.product_code}: {e}")
+                    logger.error(
+                        f"Failed to normalize attributes for {product.product_code}: {e}")
         await db.commit()
         logger.info(
             f"Batch import saved: {created_count} new, {updated_count} updated. Waiting for manual aggregation.")
@@ -605,13 +681,13 @@ async def batch_aggregate(
             "status": "accepted",
             "batch_id": str(new_source.id),
             "message": f"Imported {len(valid_rows)} products. Ready for aggregation.",
-             "summary": {
-            "total_rows": total_rows,
-            "valid_rows": len(valid_rows),
-            "rejected_rows": rejected_count,
-            "with_mpn_count": with_mpn_count,
-            "without_mpn_count": without_mpn_count,
-    }
+            "summary": {
+                "total_rows": total_rows,
+                "valid_rows": len(valid_rows),
+                "rejected_rows": rejected_count,
+                "with_mpn_count": with_mpn_count,
+                "without_mpn_count": without_mpn_count,
+            }
         }
     except HTTPException:
         raise
@@ -622,6 +698,8 @@ async def batch_aggregate(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Batch processing failed: {str(e)}"
         )
+
+
 @router.get("/batch-status/{batch_id}")
 async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -640,6 +718,8 @@ async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_session
         logger.error(f"Error fetching batch status: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Failed to fetch batch status")
+
+
 @router.get("/{source_id}/metrics", response_model=SourceMetricsResponse)
 async def get_source_metrics(source_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -684,6 +764,8 @@ async def get_source_metrics(source_id: str, db: AsyncSession = Depends(get_sess
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Analytics engine failed to calculate metrics"
         )
+
+
 async def run_extraction_task(source_id: str, content: str):
     async with async_session_factory() as db_session:
         try:
@@ -726,18 +808,35 @@ async def run_extraction_task(source_id: str, content: str):
                     if not product:
                         product = Product(
                             product_code=sku,
-                            product_name=title or sku,
+                            # product_name=title or sku,
                             brand_name=brand,
                             mpn=sku,
-                            project_id=source.project_id,
+                            # project_id=source.project_id,
                             source_url=source.source_url,
                             attributes=raw_attributes,
                             enrichment_status='pending',
                             completeness_score=10
                         )
                         db_session.add(product)
+                        await db_session.flush()
+
+                        # Link product to project
+                        db_session.add(ProjectProductLink(
+                            project_id=source.project_id,
+                            product_id=product.id
+                        ))
                         logger.info(f"Created product: {sku}")
                     else:
+                        link_stmt = select(ProjectProductLink).where(
+                            ProjectProductLink.product_id == product.id,
+                            ProjectProductLink.project_id == source.project_id
+                        )
+                        link_result = await db_session.execute(link_stmt)
+                        if not link_result.scalars().first():
+                            db_session.add(ProjectProductLink(
+                                project_id=source.project_id,
+                                product_id=product.id
+                            ))
                         product.source_url = source.source_url
                         product.attributes = {
                             **product.attributes, **raw_attributes}
@@ -788,8 +887,10 @@ async def run_extraction_task(source_id: str, content: str):
                         await error_session.commit()
             except:
                 pass
+
+
 @router.post('/aggregate/{source_id}', status_code=status.HTTP_202_ACCEPTED)
-async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_session),current_user: User = Depends(get_current_user)):
+async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
     try:
         source = await db.get(Source, source_id)
         if not source:
@@ -803,12 +904,13 @@ async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks,
         }
         db.add(source)
         await db.commit()
-        background_tasks.add_task(run_aggregation_task, str(source.id),user_id=current_user.id )
+        background_tasks.add_task(run_aggregation_task, str(
+            source.id), user_id=current_user.id)
         return {
             'status': 'accepted',
             'message': "Aggregation started in the background",
             'source_id': source.id,
-            
+
         }
     except HTTPException:
         raise
@@ -816,8 +918,12 @@ async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks,
         logger.error(f"Failed to trigger aggregation:{str(e)}")
         raise HTTPException(
             status_code=500, detail="Failed to start aggregation")
+
+
 def normalize_key(key: str) -> str:
     return str(key).lower().replace("_", "").replace(" ", "").strip()
+
+
 def fuzzy_match_key(key: str, key_list: List[str]) -> Optional[str]:
     def normalize(s):
         s = re.sub(r'\(.*?\)', '', s)
@@ -827,6 +933,8 @@ def fuzzy_match_key(key: str, key_list: List[str]) -> Optional[str]:
         if normalize(k) == target:
             return k
     return None
+
+
 async def run_aggregation_task(source_id: str):
     async with async_session_factory() as db_session:
         try:
@@ -839,8 +947,12 @@ async def run_aggregation_task(source_id: str):
                     f"Project or use_case not found for source {source_id}")
                 return
             logger.info(f"Project use case {project.use_case}")
-            stmt = select(Product).where(
-                Product.project_id == source.project_id,
+            # stmt = select(Product).where(
+            #     ProjectProductLink.project_id,  == source.project_id,
+            #     Product.enrichment_status == 'pending'
+            # )
+            stmt = select(Product).join(ProjectProductLink).where(
+                ProjectProductLink.project_id == source.project_id,
                 Product.enrichment_status == 'pending'
             )
             result = await db_session.execute(stmt)
@@ -852,7 +964,8 @@ async def run_aggregation_task(source_id: str):
                 f"Starting aggregation task for source {source_id}, found {total} pending products.")
             for idx, product in enumerate(products):
                 try:
-                    display_id = product.product_code if (product.mpn or product.sku) else product.product_name
+                    display_id = product.product_code if (
+                        product.mpn or product.sku) else product.product_name
 
                     logger.info(f"Aggregating {idx+1}/{total}: {display_id}")
 
@@ -888,7 +1001,7 @@ async def run_aggregation_task(source_id: str):
                     # try:
                     #     stmt = (
                     #         select(AttributeValue)
-                    #         .join(ProductAttributeValueLinkModel, 
+                    #         .join(ProductAttributeValueLinkModel,
                     #               ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
                     #         .where(ProductAttributeValueLinkModel.product_id == product.id)
                     #     )
@@ -907,26 +1020,27 @@ async def run_aggregation_task(source_id: str):
                     #             }
                     # except Exception as e:
                     #     logger.warning(f"Failed to read normalized attributes for {product.product_code}: {e}")
-                                        # Get category expected attributes
+                    # Get category expected attributes
                     category_attrs = []
                     if product.category_id:
                         category_attrs = await get_category_expected_attributes(
                             db_session, product.category_id
                         )
-                    
+
                     # Get product's existing attributes
                     existing_data = {}
                     try:
                         stmt = (
                             select(AttributeValue)
-                            .join(ProductAttributeValueLinkModel, 
+                            .join(ProductAttributeValueLinkModel,
                                   ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
                             .where(ProductAttributeValueLinkModel.product_id == product.id)
                         )
                         result = await db_session.execute(stmt)
                         attr_values = result.scalars().all()
                         for av in attr_values:
-                            attr_stmt = select(Attribute).where(Attribute.id == av.attribute_id)
+                            attr_stmt = select(Attribute).where(
+                                Attribute.id == av.attribute_id)
                             attr_result = await db_session.execute(attr_stmt)
                             attribute = attr_result.scalars().first()
                             if attribute:
@@ -936,26 +1050,33 @@ async def run_aggregation_task(source_id: str):
                                     'uom': av.uom or ''
                                 }
                     except Exception as e:
-                        logger.warning(f"Failed to read existing attributes for {product.product_code}: {e}")
-                    
+                        logger.warning(
+                            f"Failed to read existing attributes for {product.product_code}: {e}")
+
                     # Merge: category attrs + existing attrs (deduplicated, category first)
                     existing_names = set(existing_data.keys())
-                    primary_attr_names = list(category_attrs)  # Start with category
+                    primary_attr_names = list(
+                        category_attrs)  # Start with category
                     for name in existing_names:
                         if name not in primary_attr_names:
                             primary_attr_names.append(name)
-                    
+
                     if not primary_attr_names:
                         primary_attr_names = list(existing_names)
-                    
+
                     logger.info(f"  Category attrs: {category_attrs}")
                     logger.info(f"  Existing attrs: {list(existing_names)}")
-                    logger.info(f"EXISTING DATA BUILT for {product.product_code}:")
-                    logger.info(f"  primary_attr_names count: {len(primary_attr_names)}")
-                    logger.info(f"  existing_data keys: {list(existing_data.keys())}")
+                    logger.info(
+                        f"EXISTING DATA BUILT for {product.product_code}:")
+                    logger.info(
+                        f"  primary_attr_names count: {len(primary_attr_names)}")
+                    logger.info(
+                        f"  existing_data keys: {list(existing_data.keys())}")
                     if existing_data:
-                        logger.info(f"  Excel attributes: {list(existing_data.keys())[:5]}")
-                    logger.info(f"Primary attributes found in DB: {primary_attr_names}")
+                        logger.info(
+                            f"  Excel attributes: {list(existing_data.keys())[:5]}")
+                    logger.info(
+                        f"Primary attributes found in DB: {primary_attr_names}")
                     if len(primary_attr_names) > 10:
                         logger.info(
                             f" Product has {len(primary_attr_names)} attributes - using multi-pass processing")
@@ -1065,12 +1186,15 @@ async def run_aggregation_task(source_id: str):
                                     if attr_name in ai_data_for_merge:
                                         ai_val = ai_data_for_merge[attr_name]
                                         if isinstance(ai_val, dict):
-                                            validation_value = ai_val.get('value', '')
-                                            validation_uom = ai_val.get('unit', '') or ai_val.get('uom', '')
+                                            validation_value = ai_val.get(
+                                                'value', '')
+                                            validation_uom = ai_val.get(
+                                                'unit', '') or ai_val.get('uom', '')
                                         else:
-                                            validation_value = str(ai_val) if ai_val else ''
+                                            validation_value = str(
+                                                ai_val) if ai_val else ''
                                             validation_uom = ''
-                                        
+
                                         # Update validation values in attribute_value table
                                         try:
                                             val_stmt = select(AttributeValue).join(
@@ -1084,13 +1208,14 @@ async def run_aggregation_task(source_id: str):
                                             )
                                             val_result = await db_session.execute(val_stmt)
                                             attr_val = val_result.scalars().first()
-                                            
+
                                             if attr_val:
                                                 attr_val.validation_value = validation_value
                                                 attr_val.validation_uom = validation_uom
                                                 db_session.add(attr_val)
                                         except Exception as e:
-                                            logger.error(f"Failed to update validation for {attr_name}: {e}")
+                                            logger.error(
+                                                f"Failed to update validation for {attr_name}: {e}")
                             product.attributes = merge_attributes_preserving_order(
                                 primary_attributes=primary_attr_names,
                                 existing_attrs=existing_data,
@@ -1121,27 +1246,35 @@ async def run_aggregation_task(source_id: str):
                         await db_session.commit()
                         await db_session.get(Product, product.id)
                         try:
-                            for attr_name,attr_value in ai_attributes.items():
-                                value=attr_value.get('value') if isinstance(attr_value,dict) else str(attr_value)
-                                uom = attr_value.get("unit", "") if isinstance(attr_value, dict) else ''
-                                attr_stmt=select(Attribute).where(
-                                    func.lower(Attribute.attribute_name) == attr_name.lower().strip()
+                            for attr_name, attr_value in ai_attributes.items():
+                                value = attr_value.get('value') if isinstance(
+                                    attr_value, dict) else str(attr_value)
+                                uom = attr_value.get("unit", "") if isinstance(
+                                    attr_value, dict) else ''
+                                attr_stmt = select(Attribute).where(
+                                    func.lower(
+                                        Attribute.attribute_name) == attr_name.lower().strip()
                                 )
                                 attr_result = await db_session.execute(attr_stmt)
-                                attribute=attr_result.scalars().first()
+                                attribute = attr_result.scalars().first()
                                 if not attribute:
                                     display_name = attr_name.strip()
                                     if display_name:
-                                        display_name = display_name[0].upper() + display_name[1:] if len(display_name) > 1 else display_name.upper()
-                                    attribute=Attribute(attribute_name=display_name,attribute_code=attr_name.lower().replace(" ","_").replace('/',"_"),data_type="string")
+                                        display_name = display_name[0].upper(
+                                        ) + display_name[1:] if len(display_name) > 1 else display_name.upper()
+                                    attribute = Attribute(attribute_name=display_name, attribute_code=attr_name.lower(
+                                    ).replace(" ", "_").replace('/', "_"), data_type="string")
                                     db_session.add(attribute)
                                     await db_session.flush()
-                                link_stmt=select(ProductAttributeLinkModel).where(ProductAttributeLinkModel.product_id==product.id,ProductAttributeLinkModel.attribute_id==attribute.id,)
+                                link_stmt = select(ProductAttributeLinkModel).where(
+                                    ProductAttributeLinkModel.product_id == product.id, ProductAttributeLinkModel.attribute_id == attribute.id,)
                                 if not (await db_session.execute(link_stmt)).scalars().first():
-                                    db_session.add(ProductAttributeLinkModel(product_id=product.id,attribute_id=attribute.id))
-                                val_stmt=select(AttributeValue).where(AttributeValue.attribute_id==attribute.id,AttributeValue.value==str(value))
-                                val_result=await db_session.execute(val_stmt)
-                                attr_value_obj=val_result.scalars().first()
+                                    db_session.add(ProductAttributeLinkModel(
+                                        product_id=product.id, attribute_id=attribute.id))
+                                val_stmt = select(AttributeValue).where(
+                                    AttributeValue.attribute_id == attribute.id, AttributeValue.value == str(value))
+                                val_result = await db_session.execute(val_stmt)
+                                attr_value_obj = val_result.scalars().first()
                                 if not attr_value_obj:
                                     attr_value_obj = AttributeValue(
                                         attribute_id=attribute.id,
@@ -1150,7 +1283,7 @@ async def run_aggregation_task(source_id: str):
                                     )
                                     db_session.add(attr_value_obj)
                                     await db_session.flush()
-                                
+
                                 # Link Product → AttributeValue (always run)
                                 pv_stmt = select(ProductAttributeValueLinkModel).where(
                                     ProductAttributeValueLinkModel.product_id == product.id,
@@ -1161,7 +1294,7 @@ async def run_aggregation_task(source_id: str):
                                         product_id=product.id,
                                         attribute_value_id=attr_value_obj.id
                                     ))
-                                
+
                                 # Link new attribute to the product's category (always run)
                                 if product.category_id:
                                     from app.models.attribute import CategoryAttribute
@@ -1174,12 +1307,11 @@ async def run_aggregation_task(source_id: str):
                                             category_id=product.category_id,
                                             attribute_id=attribute.id,
                                         ))
-                                    
-                                    
+
                         except Exception as e:
-                            logger.error(f"Failed to sync AI attributes to normalized tables: {e}")
-                                    
-                                
+                            logger.error(
+                                f"Failed to sync AI attributes to normalized tables: {e}")
+
                         successful += 1
                     else:
                         failed += 1

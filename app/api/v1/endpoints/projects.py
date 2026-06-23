@@ -13,6 +13,7 @@ from app.models.project import Project
 import logging
 from sqlalchemy.orm import aliased
 from datetime import datetime, timedelta, timezone
+from app.models.project_product_link import ProjectProductLink
 from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectResponse
 from app.utils.timezone import now_ist
@@ -51,19 +52,22 @@ async def list_projects(
     q: str | None = None,
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
-    user_id:Optional[str]=Query(None)
+    user_id: Optional[str] = Query(None)
 ):
     try:
         active_job = aliased(AggregationJob)
         active_source = aliased(Source)
         aggregated_count_subq = select(null()).label('aggregated_count')
-        auth_filter=get_auth_filters(current_user,user_id)
+        auth_filter = get_auth_filters(current_user, user_id)
         if tab == "aggregation":
             product_count_subq = (
                 select(func.count(Product.id))
+                # ✅ ADD
+                .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+                .join(Project, Project.id == ProjectProductLink.project_id)  # ✅ ADD
                 .where(
                     and_(
-                        Product.project_id == Project.id,
+                        ProjectProductLink.project_id == Project.id,  # ✅ CHANGE
                         Product.workflow_stage == "aggregation",
                         Product.enrichment_status.in_(
                             ["pending", "failed", "completed", "processing"])
@@ -74,16 +78,26 @@ async def list_projects(
             )
             aggregated_count_subq = (
                 select(func.count(Product.id))
-                .where(Product.project_id == Project.id, Product.workflow_stage == 'aggregation', Product.enrichment_status == 'completed')
+                # ✅ ADD
+                .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+                .join(Project, Project.id == ProjectProductLink.project_id)  # ✅ ADD
+                .where(
+                    ProjectProductLink.project_id == Project.id,  # ✅ CHANGE
+                    Product.workflow_stage == 'aggregation',
+                    Product.enrichment_status == 'completed'
+                )
                 .scalar_subquery()
                 .label('aggregated_count')
             )
         elif tab == "enrichment":
             product_count_subq = (
                 select(func.count(Product.id))
+                # ✅ ADD
+                .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+                .join(Project, Project.id == ProjectProductLink.project_id)  # ✅ ADD
                 .where(
                     and_(
-                        Product.project_id == Project.id,
+                        ProjectProductLink.project_id == Project.id,  # ✅ CHANGE
                         Product.workflow_stage == "enrichment",
                         Product.enrichment_status.in_(["pending", "failed"])
                     )
@@ -94,64 +108,115 @@ async def list_projects(
         else:
             product_count_subq = (
                 select(func.count(Product.id))
-                .where(Product.project_id == Project.id)
+                # ✅ ADD
+                .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+                .join(Project, Project.id == ProjectProductLink.project_id)  # ✅ ADD
+                .where(ProjectProductLink.project_id == Project.id)  # ✅ CHANGE
                 .scalar_subquery()
                 .label("product_count")
             )
         cleaned_count_subq = (
             select(func.count(Product.id))
-            .where(and_(Product.project_id == Project.id, Product.enrichment_status == 'completed'))
-            .scalar_subquery().label('cleaned_count')
+            # ✅ ADD
+            .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+            .join(Project, Project.id == ProjectProductLink.project_id)  # ✅ ADD
+            .where(
+                and_(
+                    ProjectProductLink.project_id == Project.id,  # ✅ CHANGE
+                    Product.enrichment_status == 'completed'
+                )
+            )
+            .scalar_subquery()
+            .label('cleaned_count')
         )
         failed_count_subq = (
             select(func.count(Product.id))
-            .where(and_(Product.project_id == Project.id, Product.enrichment_status == 'failed'))
-            .scalar_subquery().label('failed_count')
+            # ✅ ADD
+            .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+            .join(Project, Project.id == ProjectProductLink.project_id)  # ✅ ADD
+            .where(
+                and_(
+                    ProjectProductLink.project_id == Project.id,  # ✅ CHANGE
+                    Product.enrichment_status == 'failed'
+                )
+            )
+            .scalar_subquery()
+            .label('failed_count')
         )
         pending_count_subq = (
             select(func.count(Product.id))
-            .where(and_(Product.project_id == Project.id, Product.enrichment_status == 'pending'))
-            .scalar_subquery().label('pending_count')
+            # ✅ ADD
+            .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+            .join(Project, Project.id == ProjectProductLink.project_id)  # ✅ ADD
+            .where(
+                and_(
+                    ProjectProductLink.project_id == Project.id,  # ✅ CHANGE
+                    Product.enrichment_status == 'pending'
+                )
+            )
+            .scalar_subquery()
+            .label('pending_count')
         )
         completeness_subq = (
             select(func.avg(Product.completeness_score))
-            .where(and_(Product.project_id == Project.id, Product.workflow_stage == "aggregation"))
+            # ✅ ADD
+            .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+            .join(Project, Project.id == ProjectProductLink.project_id)  # ✅ ADD
+            .where(
+                and_(
+                    ProjectProductLink.project_id == Project.id,  # ✅ CHANGE
+                    Product.workflow_stage == "aggregation"
+                )
+            )
             .scalar_subquery()
             .label("completeness_score")
         )
         data_quality_subq = (
             select(func.avg(Product.data_quality_score))
-            .where(Product.project_id == Project.id)
+            # ✅ ADD
+            .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+            .join(Project, Project.id == ProjectProductLink.project_id)  # ✅ ADD
+            .where(ProjectProductLink.project_id == Project.id)  # ✅ CHANGE
             .scalar_subquery()
             .label("data_quality_score")
         )
-        enrichment_pending_count_subq=(
-            select(func.count(Product.id)).where(and_(
-                Product.project_id==Project.id,
-                Product.workflow_stage=='enrichment',
-                Product.enrichment_status=='pending'
-            ))
+        enrichment_pending_count_subq = (
+            select(func.count(Product.id))
+            # ✅ ADD
+            .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+            .join(Project, Project.id == ProjectProductLink.project_id)  # ✅ ADD
+            .where(
+                and_(
+                    ProjectProductLink.project_id == Project.id,  # ✅ CHANGE
+                    Product.workflow_stage == 'enrichment',
+                    Product.enrichment_status == 'pending'
+                )
+            )
             .scalar_subquery()
             .label('enrichment_pending_count')
         )
-        
 
-        
-       
         algorithm_used_subq = (
             select(
                 case(
                     (and_(
-                        func.json_extract_path_text(AggregationJob.details, 'llm_provider') == 'openai',
-                        func.json_extract_path_text(AggregationJob.details, 'missing_llm_provider') == 'gemini'
+                        func.json_extract_path_text(
+                            AggregationJob.details, 'llm_provider') == 'openai',
+                        func.json_extract_path_text(
+                            AggregationJob.details, 'missing_llm_provider') == 'gemini'
                     ), 'Algo 1 & 2'),
                     (and_(
-                        func.json_extract_path_text(AggregationJob.details, 'llm_provider') == 'gemini',
-                        func.json_extract_path_text(AggregationJob.details, 'missing_llm_provider') == 'openai'
+                        func.json_extract_path_text(
+                            AggregationJob.details, 'llm_provider') == 'gemini',
+                        func.json_extract_path_text(
+                            AggregationJob.details, 'missing_llm_provider') == 'openai'
                     ), 'Algo 2 & 1'),
-                    (func.json_extract_path_text(AggregationJob.details, 'llm_provider') == 'openai', 'Datavio Algo-1'),
-                    (func.json_extract_path_text(AggregationJob.details, 'llm_provider') == 'gemini', 'Datavio Algo-2'),
-                    (func.json_extract_path_text(AggregationJob.details, 'llm_provider') == 'claude', 'Datavio Algo-3'),
+                    (func.json_extract_path_text(AggregationJob.details,
+                     'llm_provider') == 'openai', 'Datavio Algo-1'),
+                    (func.json_extract_path_text(AggregationJob.details,
+                     'llm_provider') == 'gemini', 'Datavio Algo-2'),
+                    (func.json_extract_path_text(AggregationJob.details,
+                     'llm_provider') == 'claude', 'Datavio Algo-3'),
                     else_=None
                 )
             )
@@ -159,7 +224,8 @@ async def list_projects(
                 AggregationJob.project_id == cast(Project.id, String),
                 AggregationJob.status.in_(['completed', 'processing'])
             )
-            .order_by(AggregationJob.created_at.desc())  # ← Make sure this is the latest
+            # ← Make sure this is the latest
+            .order_by(AggregationJob.created_at.desc())
             .limit(1)
             .correlate(Project)
             .scalar_subquery()
@@ -211,7 +277,7 @@ async def list_projects(
         # if current_user.role != "admin":
         #     statement = statement.where(Project.owner_id == current_user.id)
         if auth_filter:
-            statement=statement.where(*auth_filter)
+            statement = statement.where(*auth_filter)
         if q:
             search_term = f"%{q}%"
             statement = statement.where(
@@ -240,11 +306,11 @@ async def list_projects(
             pending_count = row[4] or 0
             aggregated_count = row[5] or 0
             completeness_score = row[6] or 0
-            data_quality_score=row[7] or 0
+            data_quality_score = row[7] or 0
             enrichment_pending_count = row[8] or 0
             import_file_name = row[9]
             algorithm_used = row[10]
-            source_processing_status = row[11]  
+            source_processing_status = row[11]
             processing_status = row[12]
             source_status = row[13]
 
@@ -263,8 +329,9 @@ async def list_projects(
                 data_quality_score, 1) if data_quality_score else 0
             project_response.enrichment_pending_count = enrichment_pending_count
             project_response.import_file_name = import_file_name
-            project_response.algorithm_used=algorithm_used
-            project_response.source_processing_status = source_processing_status.replace('"', '') if source_processing_status else None
+            project_response.algorithm_used = algorithm_used
+            project_response.source_processing_status = source_processing_status.replace(
+                '"', '') if source_processing_status else None
             project_response.processing_status = processing_status or "pending"
             project_response.source_status = normalize_source_status(
                 clean_source_status, project_status=project.status)
@@ -280,7 +347,7 @@ async def list_projects(
 
 
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
-async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_session),current_user: User = Depends(get_current_user)):
+async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
     print(f"Received payload: {payload}")
     try:
         existing = await db.execute(
@@ -333,16 +400,32 @@ async def get_project_filters(
                 Product.category_2,
                 Product.category_1
             )
+        ).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id  # ✅ ADD
+        ).join(
+            Project, Project.id == ProjectProductLink.project_id  # ✅ ADD
         )
         brand_stmt = select(Brand.name).join(
-            Product, Product.brand_id == Brand.id)
+            Product, Product.brand_id == Brand.id
+        ).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id  # ✅ ADD
+        ).join(
+            Project, Project.id == ProjectProductLink.project_id  # ✅ ADD
+        )
+        # if current_user.role != "admin":
+        #     category_stmt = category_stmt.join(Project, ProjectProductLink.project_id,  == Project.id).where(
+        #         Project.owner_id == current_user.id)
+        #     brand_stmt = brand_stmt.join(Project, ProjectProductLink.project_id,  == Project.id).where(
+        #         Project.owner_id == current_user.id)
         if current_user.role != "admin":
-            category_stmt = category_stmt.join(Project, Product.project_id == Project.id).where(Project.owner_id == current_user.id)
-            brand_stmt = brand_stmt.join(Project, Product.project_id == Project.id).where(Project.owner_id == current_user.id)
+            category_stmt = category_stmt.where(
+                Project.owner_id == current_user.id)
+            brand_stmt = brand_stmt.where(Project.owner_id == current_user.id)
         if project_id:
             category_stmt = category_stmt.where(
-                Product.project_id == project_id)
-            brand_stmt = brand_stmt.where(Product.project_id == project_id)
+                ProjectProductLink.project_id == project_id)  # ✅ Already correct
+            brand_stmt = brand_stmt.where(
+                ProjectProductLink.project_id == project_id)
         category_result = await db.execute(category_stmt)
         category_rows = category_result.all()
         categories = sorted(

@@ -4,9 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from app.models.attribute import Attribute, AttributeValue
 from app.models.brand import Brand
+from app.models.project_product_link import ProjectProductLink
 from app.schemas.brand import BrandCreate
 from app.services.product_service import product_service
-from sqlmodel import select, func,and_
+from sqlmodel import select, func, and_
 from app.schemas.product import ProductCreate, ProductResponse
 import logging
 from uuid import UUID
@@ -28,32 +29,35 @@ async def read_products(
     skip: int = 0,
     limit: int = 100,
     workflow_stage: Optional[str] = None,
-    brand_name:Optional[str]=None,
-    category_1:Optional[str]=None,
-    search:Optional[str]=None
+    brand_name: Optional[str] = None,
+    category_1: Optional[str] = None,
+    search: Optional[str] = None
 ):
     try:
         statement = select(Product)
         if project_id:
-            statement = statement.where(Product.project_id == project_id)
+            statement = statement.where(
+                ProjectProductLink.project_id == project_id)
         if workflow_stage and hasattr(Product, 'workflow_stage'):
             statement = statement.where(
                 Product.workflow_stage == workflow_stage)
         if enrichment_status and enrichment_status != 'all':
-            statement = statement.where(Product.enrichment_status== enrichment_status)
+            statement = statement.where(
+                Product.enrichment_status == enrichment_status)
         if brand_name:
-            statement=statement.where(Product.brand_name==brand_name)
+            statement = statement.where(Product.brand_name == brand_name)
         if category_1:
-            statement=statement.where(Product.category_1==category_1)
+            statement = statement.where(Product.category_1 == category_1)
         if search:
-            search_term=f"%{search}%"
-            statement=statement.where((Product.product_name.ilike(search_term))|
-                                      (Product.product_code.ilike(search_term))|
-                                      (Product.brand_name.ilike(search_term)))
+            search_term = f"%{search}%"
+            statement = statement.where((Product.product_name.ilike(search_term)) |
+                                        (Product.product_code.ilike(search_term)) |
+                                        (Product.brand_name.ilike(search_term)))
         count_stmt = select(func.count()).select_from(statement.subquery())
         count_result = await db.execute(count_stmt)
         total = count_result.scalar() or 0
-        statement = statement.order_by(Product.created_at.desc()).offset(skip).limit(limit)
+        statement = statement.order_by(
+            Product.created_at.desc()).offset(skip).limit(limit)
         result = await db.execute(statement)
         products = result.scalars().all()
         project_data = None
@@ -67,10 +71,11 @@ async def read_products(
             attribute_names = []
             try:
                 val_stmt = (
-                    select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom)
+                    select(Attribute.attribute_name,
+                           AttributeValue.value, AttributeValue.uom)
                     .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
-                    .join(ProductAttributeValueLinkModel, 
-                        ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+                    .join(ProductAttributeValueLinkModel,
+                          ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
                     .where(ProductAttributeValueLinkModel.product_id == p.id)
                 )
                 val_result = await db.execute(val_stmt)
@@ -98,7 +103,7 @@ async def read_products(
                 attr_result = await db.execute(attr_stmt)
                 for row in attr_result.all():
                     existing.add(row[0])
-                    attr_count+=1
+                    attr_count += 1
             except Exception:
                 pass
             p_dict['attribute_count'] = attr_count
@@ -122,6 +127,7 @@ async def read_products(
 async def create_product(*, db: AsyncSession = Depends(get_session), product_in: ProductCreate):
     return await product_service.create(db=db, obj_in=product_in)
 
+
 def get_last_category_expr():
     return func.coalesce(
         func.nullif(Product.category_8, ''),
@@ -133,6 +139,8 @@ def get_last_category_expr():
         func.nullif(Product.category_2, ''),
         func.nullif(Product.category_1, '')
     )
+
+
 @router.get("/filters")
 async def get_products_filters(
     project_id: str | None = None,
@@ -144,34 +152,44 @@ async def get_products_filters(
     try:
         # 1. Define it FIRST
         last_cat_expr = get_last_category_expr()
-        
+
         category_stmt = select(last_cat_expr).where(last_cat_expr.isnot(None))
-        brand_stmt = select(Brand.name).join(Product, Product.brand_id == Brand.id).where(Brand.name.isnot(None))
-        
+        brand_stmt = select(Brand.name).join(
+            Product, Product.brand_id == Brand.id).where(Brand.name.isnot(None))
+
         if project_id:
-            category_stmt = category_stmt.where(Product.project_id == project_id)
-            brand_stmt = brand_stmt.where(Product.project_id == project_id)
+            category_stmt = category_stmt.where(
+                ProjectProductLink.project_id == project_id)
+            brand_stmt = brand_stmt.where(
+                ProjectProductLink.project_id == project_id)
         if workflow_stage:
-            category_stmt = category_stmt.where(Product.workflow_stage == workflow_stage)
-            brand_stmt = brand_stmt.where(Product.workflow_stage == workflow_stage)
+            category_stmt = category_stmt.where(
+                Product.workflow_stage == workflow_stage)
+            brand_stmt = brand_stmt.where(
+                Product.workflow_stage == workflow_stage)
         if brand_name:
-            category_stmt = category_stmt.where(Product.brand_name == brand_name)
-        
+            category_stmt = category_stmt.where(
+                Product.brand_name == brand_name)
+
         if category_1:
             brand_stmt = brand_stmt.where(last_cat_expr == category_1)
-        
+
         category_result = await db.execute(category_stmt.distinct())
         category_rows = category_result.all()
-        categories = sorted([row[0].strip() for row in category_rows if row[0]])
-        
+        categories = sorted([row[0].strip()
+                            for row in category_rows if row[0]])
+
         brand_result = await db.execute(brand_stmt.distinct())
         brand_rows = brand_result.all()
         brands = sorted([row[0].strip() for row in brand_rows if row[0]])
-        
+
         return {"categories": categories, "brands": brands}
     except Exception as e:
-        logger.error(f"Failed to fetch filters for project {project_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch project filters")
+        logger.error(
+            f"Failed to fetch filters for project {project_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Failed to fetch project filters")
+
 
 @router.get("/attributes")
 async def get_project_attributes(
@@ -181,7 +199,7 @@ async def get_project_attributes(
         db: AsyncSession = Depends(get_session),):
     try:
         # stmt = select(Product.dynamic_attributes).where(
-        #     Product.project_id == project_id)
+        #     ProjectProductLink.project_id == project_id)
         # if category:
         #     stmt = stmt.where(Product.category_1 == category)
         # result = await db.execute(stmt)
@@ -194,13 +212,13 @@ async def get_project_attributes(
         #         if isinstance(attr, dict):
         #             name = attr.get('name')
         #             if isinstance(name, str) and name.strip():
-        # 
+        #
         # attribute_names.add(name.strip())
         stmt = (
             select(Attribute.attribute_name)
             .join(ProductAttributeLinkModel, ProductAttributeLinkModel.attribute_id == Attribute.id)
             .join(Product, Product.id == ProductAttributeLinkModel.product_id)
-            .where(Product.project_id == project_id)
+            .where(ProjectProductLink.project_id == project_id)
             .distinct()
         )
         if category:
@@ -281,7 +299,8 @@ async def get_project_product_stats(
     db: AsyncSession = Depends(get_session)
 ) -> Dict[str, int]:
     try:
-        stmt = select(Product).where(Product.project_id == project_id)
+        stmt = select(Product).where(
+            ProjectProductLink.project_id == project_id)
         if brand_name:
             stmt = stmt.where(Product.brand_name == brand_name)
         if category_1:
@@ -343,7 +362,7 @@ async def get_multiple_project_stats(
                 Product.enrichment_status,
                 func.count(Product.id).label('count')
             ).where(
-                Product.project_id == project_id
+                ProjectProductLink.project_id == project_id
             ).group_by(Product.enrichment_status)
             query_result = await db.execute(stmt)
             rows = query_result.all()
@@ -372,35 +391,38 @@ async def get_multiple_project_stats(
             status_code=500,
             detail="Failed to fetch project statistics"
         )
+
+
 @router.get("/enrichment-counts", response_model=Dict[str, int])
 async def get_enrichment_counts(
     db: AsyncSession = Depends(get_session)
 ):
-    
+
     try:
         stmt = select(
-            Product.project_id,
+            ProjectProductLink.project_id,
             func.count(Product.id).label('count')
         ).where(
             and_(
                 Product.workflow_stage == 'enrichment',
                 Product.enrichment_status == 'pending'
             )
-        ).group_by(Product.project_id)
-        
+        ).group_by(ProjectProductLink.project_id, )
+
         result = await db.execute(stmt)
         counts = {str(row[0]): row[1] for row in result.all()}
         return counts
     except Exception as e:
         logger.error(f"Error getting enrichment counts: {str(e)}")
         return {}
-    
+
+
 @router.get("/categories", response_model=List[Dict[str, Any]])
 async def get_categories(db: AsyncSession = Depends(get_session)):
     try:
         stmt = select(Category.id, Category.name).where(
             Category.is_active == True,
-            Category.level == 1 
+            Category.level == 1
         ).order_by(Category.name)
         result = await db.execute(stmt)
         return [{"id": str(row[0]), "name": row[1]} for row in result.all()]
@@ -408,18 +430,21 @@ async def get_categories(db: AsyncSession = Depends(get_session)):
         logger.error(f"Failed to fetch categories: {e}")
         return []
 
+
 @router.get("/brands", response_model=List[Dict[str, Any]])
 async def get_brands(
     db: AsyncSession = Depends(get_session)
 ):
     try:
-        stmt = select(Brand.id, Brand.name).where(Brand.is_active == True).order_by(Brand.name)
+        stmt = select(Brand.id, Brand.name).where(
+            Brand.is_active == True).order_by(Brand.name)
         result = await db.execute(stmt)
         brands = [{"id": str(row[0]), "name": row[1]} for row in result.all()]
         return brands
     except Exception as e:
         logger.error(f"Failed to fetch brands: {e}")
         return []
+
 
 @router.post("/brands", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 async def create_brand(
@@ -430,16 +455,17 @@ async def create_brand(
         normalized = payload.name.lower().strip()
         normalized_no_spaces = normalized.replace(" ", "")
         existing = await db.execute(
-        select(Brand).where(
-            func.lower(func.replace(Brand.name, " ", "")).like(normalized_no_spaces)
+            select(Brand).where(
+                func.lower(func.replace(Brand.name, " ", "")
+                           ).like(normalized_no_spaces)
+            )
         )
-    )
         if existing.scalars().first():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Brand already exists"
             )
-        
+
         brand = Brand(
             name=payload.name,
             normalized_name=payload.name.lower().strip(),
@@ -450,9 +476,9 @@ async def create_brand(
         db.add(brand)
         await db.commit()
         await db.refresh(brand)
-        
+
         return {"id": str(brand.id), "name": brand.name}
-    
+
     except HTTPException:
         raise
     except Exception as e:
@@ -462,7 +488,8 @@ async def create_brand(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create brand"
         )
-        
+
+
 @router.post("/categories", status_code=201)
 async def create_category(
     payload: dict,
@@ -471,28 +498,31 @@ async def create_category(
     try:
         name = payload.get("name", "").strip()
         industry_id = payload.get("industry_id")
-        
+
         if not name:
-            raise HTTPException(status_code=400, detail="Category name is required")
-        
+            raise HTTPException(
+                status_code=400, detail="Category name is required")
+
         existing_stmt = select(Category).where(
             func.lower(Category.name) == func.lower(name)
         )
-        
+
         if industry_id:
-            existing_stmt = existing_stmt.where(Category.industry_id == UUID(industry_id))
-        
+            existing_stmt = existing_stmt.where(
+                Category.industry_id == UUID(industry_id))
+
         existing_result = await db.execute(existing_stmt)
         existing_category = existing_result.scalar_one_or_none()
-        
+
         if existing_category:
             raise HTTPException(
-                status_code=409, 
+                status_code=409,
                 detail=f"Category '{name}' already exists"
             )
         cat = Category(
             name=payload["name"],
-            industry_id=UUID(payload["industry_id"]) if payload.get("industry_id") else None,
+            industry_id=UUID(payload["industry_id"]) if payload.get(
+                "industry_id") else None,
             level=payload.get("level", 1),
             full_path=payload.get("full_path", payload["name"]),
             is_active=True,
@@ -504,7 +534,7 @@ async def create_category(
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 
 @router.get("/taxonomies")
 async def get_all_taxonomies(db: AsyncSession = Depends(get_session)):

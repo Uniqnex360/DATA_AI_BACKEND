@@ -9,6 +9,7 @@ from app.auth.rbac import get_auth_filters
 from app.core.database import get_session
 from app.models.product import Product
 from app.models.project import Project
+from app.models.project_product_link import ProjectProductLink
 from app.models.user import User
 from app.schemas.dashboard import BrandAttributeStat, CategoryAttributeStat, CategoryDistributionStat, DashboardMetricsResponse, ProjectOverview, TimelineStat
 from typing import Optional, List
@@ -30,7 +31,7 @@ def build_product_filters(
     # if current_user.role != "admin":
     #     filters.append(Project.owner_id == current_user.id)
     if project_id:
-        filters.append(Product.project_id == project_id)
+        filters.append(ProjectProductLink.project_id == project_id)
     col = Product.created_at if date_field == "created_at" else Product.updated_at
     if start_date:
         filters.append(col >= start_date)
@@ -72,18 +73,36 @@ async def calculate_metrics(
             func.sum(case((Product.enrichment_status == "pending", 1), else_=0)).label(
                 "pending"),
             func.avg(Product.completeness_score).label("health"),
-        ).join(Project, Product.project_id == Project.id).where(*filters)
+        ).join(ProjectProductLink, Product.id == ProjectProductLink.product_id).join(
+            Project, Project.id == ProjectProductLink.project_id  # ✅ Add this
+        ).where(*filters)
         if mode and mode in ["aggregation", "cleaning", "enrichment"]:
             stmt = stmt.where(Project.operation_mode == mode)
 
-        brand_count_stmt = select(func.count(func.distinct(Product.brand_name))).join(Project, Product.project_id == Project.id).where(
-            Product.brand_name.isnot(None), Product.brand_name != "", *filters
+        brand_count_stmt = select(
+            func.count(func.distinct(Product.brand_name))
+        ).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id
+        ).join(
+            Project, Project.id == ProjectProductLink.project_id
+        ).where(
+            Product.brand_name.isnot(None),
+            Product.brand_name != "",
+            *filters
         )
         if mode and mode in ["aggregation", "cleaning", "enrichment"]:
             brand_count_stmt = brand_count_stmt.where(
                 Project.operation_mode == mode)
-        cat_count_stmt = select(func.count(func.distinct(Product.taxonomy))).join(Project, Product.project_id == Project.id).where(
-            Product.taxonomy.isnot(None), Product.taxonomy != "", *filters
+        cat_count_stmt = select(
+            func.count(func.distinct(Product.taxonomy))
+        ).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id
+        ).join(
+            Project, Project.id == ProjectProductLink.project_id
+        ).where(
+            Product.taxonomy.isnot(None),
+            Product.taxonomy != "",
+            *filters
         )
         if mode and mode in ["aggregation", "cleaning", "enrichment"]:
             cat_count_stmt = cat_count_stmt.where(
@@ -98,10 +117,11 @@ async def calculate_metrics(
         total_products = stats.total or 0
         cat_expression = Product.taxonomy
         cat_stmt = (
-            select(cat_expression, func.count(Product.id))
-            .join(Project, Product.project_id == Project.id)
+            select(Product.taxonomy, func.count(Product.id))
+            .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+            .join(Project, Project.id == ProjectProductLink.project_id)
             .where(*filters)
-            .group_by(cat_expression)
+            .group_by(Product.taxonomy)
             .order_by(func.count(Product.id).desc())
             .limit(5)
         )
@@ -179,14 +199,14 @@ async def calculate_metrics(
             enriched_products = (
                 (await db.execute(enrichment_workflow_stmt)).scalar() or 0
             )
-            cleaning_stmt = (
-                select(func.count(Product.id))
-                .join(Project, Product.project_id == Project.id)
-                .where(
-                    *filters,
-                    Product.enrichment_status == "completed",
-                    Project.operation_mode == "cleaning"
-                )
+            cleaning_stmt = select(func.count(Product.id)).join(
+                ProjectProductLink, Product.id == ProjectProductLink.product_id
+            ).join(
+                Project, Project.id == ProjectProductLink.project_id 
+            ).where(
+                *filters,
+                Product.enrichment_status == "completed",
+                Project.operation_mode == "cleaning"
             )
             cleaned_products = (
                 (await db.execute(cleaning_stmt)).scalar() or 0
@@ -313,13 +333,15 @@ async def get_dashboard_timeline(
         col = Product.created_at if date_field == "created_at" else Product.updated_at
         period_expr = func.date_trunc(period, col)
         stmt = select(
-            period_expr.label("period"),
-            func.count(Product.id).label("total_products"),
-            func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label(
-                "aggregated_products"),
-            func.sum(case(((Product.workflow_stage == "enrichment") | (
-                Product.needs_enrichment == True), 1), else_=0)).label("moved_to_enrichment")
-        ).join(Project, Product.project_id == Project.id)
+        period_expr.label("period"),
+        func.count(Product.id).label("total_products"),
+        func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label("aggregated_products"),
+        func.sum(case(((Product.workflow_stage == "enrichment") | (Product.needs_enrichment == True), 1), else_=0)).label("moved_to_enrichment")
+        ).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id
+        ).join(
+            Project, Project.id == ProjectProductLink.project_id
+        )
 
         if mode and mode in ["aggregation", "cleaning", "enrichment"]:
             stmt = stmt.where(Project.operation_mode == mode)
@@ -370,7 +392,9 @@ async def get_category_flow(
             Product.taxonomy
         ).order_by(
             func.count(Product.id).desc()
-        ).join(Project, Product.project_id == Project.id)
+        ).join(ProjectProductLink, Product.id == ProjectProductLink.product_id).join(
+            Project, Project.id == ProjectProductLink.project_id  
+        )
         if limit:
             stmt = stmt.limit(limit)
         result = await db.execute(stmt)
@@ -410,7 +434,8 @@ async def get_brand_flow(
             func.count(Product.id).label("totalProducts"),
             func.avg(Product.completeness_score).label("avgComplete"),
             func.avg(Product.data_quality_score).label("avgQuality")
-        ).join(Project, Product.project_id == Project.id).where(
+        ).join(ProjectProductLink, Product.id == ProjectProductLink.product_id).join(
+            Project, Project.id == ProjectProductLink.project_id).where(
             Product.brand_name.isnot(None),
             Product.brand_name != "",
             *filters
@@ -458,7 +483,7 @@ async def get_brand_flow(
 #             Product.enrichment_status,
 #             Product.id,
 #             Product.attributes,
-#         ).where(*filters).join(Project, Product.project_id == Project.id)
+#         ).where(*filters).join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
 #         result = await db.execute(stmt)
 #         rows = result.all()
 #         brand_map = {}
@@ -515,7 +540,7 @@ async def get_brand_flow(
 #             Product.enrichment_status,
 #             Product.id,
 #             Product.attributes,
-#         ).where(*filters).join(Project, Product.project_id == Project.id)
+#         ).where(*filters).join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
 #         result = await db.execute(stmt)
 #         rows = result.all()
 #         category_map = {}
@@ -575,7 +600,9 @@ async def get_brand_attributes(
             select(func.count(ProductAttributeLinkModel.attribute_id))
             .where(ProductAttributeLinkModel.product_id == Product.id)
             .scalar_subquery().label("linked_attr_count")  # The linked table count
-        ).join(Project, Product.project_id == Project.id).where(*filters)
+        ).join(ProjectProductLink, Product.id == ProjectProductLink.product_id).join(
+            Project, Project.id == ProjectProductLink.project_id  # ✅ Add this
+        ).where(*filters)
 
         result = await db.execute(stmt)
         rows = result.all()
@@ -628,7 +655,11 @@ async def get_category_distribution(
             Product.taxonomy
         ).order_by(
             func.count(Product.id).desc()
-        ).join(Project, Product.project_id == Project.id)
+        ).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id
+        ).join(
+            Project, Project.id == ProjectProductLink.project_id  # ✅ Add this
+        )
         result = await db.execute(stmt)
         rows = result.all()
         total_products = sum(row.product_count for row in rows)
@@ -664,12 +695,29 @@ async def get_needs_attention(
         end_dt = parse_date(end_date, end=True)
         filters = build_product_filters(
             current_user,target_user_id, project_id, start_dt, end_dt, date_field=date_field)
-        u_stmt = select(func.count(Product.id)).join(Project).where(
-            (Product.taxonomy == None) | (Product.taxonomy == ""), *filters)
-        p_stmt = select(func.count(Product.id)).join(Project).where(
-            Product.enrichment_status == "pending", *filters)
-        f_stmt = select(func.count(Product.id)).join(Project).where(
-            Product.enrichment_status == "failed", *filters)
+        u_stmt = select(func.count(Product.id)).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id
+        ).join(
+            Project, Project.id == ProjectProductLink.project_id
+        ).where(
+            (Product.taxonomy == None) | (Product.taxonomy == ""), *filters
+        )
+
+        p_stmt = select(func.count(Product.id)).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id
+        ).join(
+            Project, Project.id == ProjectProductLink.project_id
+        ).where(
+            Product.enrichment_status == "pending", *filters
+        )
+
+        f_stmt = select(func.count(Product.id)).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id
+        ).join(
+            Project, Project.id == ProjectProductLink.project_id
+        ).where(
+            Product.enrichment_status == "failed", *filters
+        )
 
         if mode and mode in ["aggregation", "cleaning", "enrichment"]:
             u_stmt = u_stmt.where(Project.operation_mode == mode)
@@ -710,7 +758,9 @@ async def get_recent_activity(
             *filters
         ).order_by(
             Product.updated_at.desc()
-        ).limit(limit).join(Project, Product.project_id == Project.id)
+        ).limit(limit).join(ProjectProductLink, Product.id == ProjectProductLink.product_id).join(
+            Project, Project.id == ProjectProductLink.project_id  # ✅ Add this
+        )
         result = await db.execute(stmt)
         rows = result.all()
         activities = []
@@ -797,13 +847,15 @@ async def get_projects_overview(
             func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label(
                 "failed"),
             func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label(
-                "enrichment"),
+                "enrichment"),  # ✅ ADD
             func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label(
-                "enrichment_failed"),
+                "enrichment_failed"),  # ✅ ADD
             func.sum(case((Product.workflow_stage == "cleaning", 1), else_=0)).label(
-                "cleaning"),
+                "cleaning"),  # ✅ ADD
         ).outerjoin(
-            Product, Project.id == Product.project_id
+            ProjectProductLink, Project.id == ProjectProductLink.project_id
+        ).outerjoin(
+            Product, Product.id == ProjectProductLink.product_id
         ).where(
             Project.id.in_(project_ids)
         ).group_by(
@@ -879,10 +931,13 @@ async def get_attribute_summary(
                 func.array_agg(func.distinct(AttributeValue.uom)).label("uoms")
             )
             .select_from(Product)
-            .join(Project, Product.project_id == Project.id)
+            .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
             .join(ProductAttributeValueLinkModel, ProductAttributeValueLinkModel.product_id == Product.id)
             .join(AttributeValue, ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
             .join(Attribute, AttributeValue.attribute_id == Attribute.id)
+            .join(
+                Project, Project.id == ProjectProductLink.project_id  
+            )
             .where(*filters)
             .group_by(Attribute.attribute_name)
             .order_by(func.count(func.distinct(AttributeValue.value)).desc())
@@ -914,11 +969,15 @@ async def get_taxonomies_list(
         stmt = select(
             Product.taxonomy,
             func.count(Product.id).label("count")
-        ).join(Project, Product.project_id == Project.id).where(*auth_filters)
+        ).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id
+        ).join(
+            Project, Project.id == ProjectProductLink.project_id
+        ).where(*auth_filters)
         # if current_user.role != "admin":
         #     stmt = stmt.where(Project.owner_id == current_user.id)
         if project_id:
-            stmt = stmt.where(Product.project_id == project_id)
+            stmt = stmt.where(ProjectProductLink.project_id == project_id)
         stmt = stmt.where(Product.taxonomy.isnot(None), Product.taxonomy != "")
         stmt = stmt.group_by(Product.taxonomy).order_by(
             func.count(Product.id).desc())
@@ -942,12 +1001,15 @@ async def get_taxonomy_attribute_metrics(
         from app.models.product_attribute_link import ProductAttributeValueLinkModel
         target_user_id=user_id
         filters = build_product_filters(current_user,target_user_id, project_id)
-        count_stmt = select(func.count(Product.id)).join(Project).where(
-            Product.taxonomy == taxonomy,   
-            *filters
+        count_stmt = select(func.count(Product.id)).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id
+        ).join(
+            Project, Project.id == ProjectProductLink.project_id  
+        ).where(
+            Product.taxonomy == taxonomy, *filters
         )
         if project_id:
-            count_stmt = count_stmt.where(Product.project_id == project_id)
+            count_stmt = count_stmt.where(ProjectProductLink.project_id == project_id)
         total_products_res = await db.execute(count_stmt)
         total_products = total_products_res.scalar() or 0
         attr_stmt = (
@@ -957,23 +1019,15 @@ async def get_taxonomy_attribute_metrics(
                            ).label("value_count")
             )
             .select_from(Product)
-            .join(Project, Product.project_id == Project.id)
-            .join(
-                ProductAttributeValueLinkModel,
-                ProductAttributeValueLinkModel.product_id == Product.id
-            )
-            .join(
-                AttributeValue,
-                ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id
-            )
-            .join(
-                Attribute,
-                AttributeValue.attribute_id == Attribute.id
-            )
-            .where(Product.taxonomy == taxonomy,*filters)
+            .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+            .join(Project, Project.id == ProjectProductLink.project_id)
+            .join(ProductAttributeValueLinkModel, ProductAttributeValueLinkModel.product_id == Product.id)
+            .join(AttributeValue, ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+            .join(Attribute, AttributeValue.attribute_id == Attribute.id)
+            .where(Product.taxonomy == taxonomy, *filters)
         )
         if project_id:
-            attr_stmt = attr_stmt.where(Product.project_id == project_id)
+            attr_stmt = attr_stmt.where(ProjectProductLink.project_id == project_id)
         stats_res = await db.execute(attr_stmt)
         stats = stats_res.first()
         total_attributes = stats.attr_count if stats else 0

@@ -9,7 +9,6 @@ from app.models.product import Product
 from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
 from app.models.project import Project
 from app.api.v1.endpoints.aggregation import update_project_status
-
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, and_, case
@@ -23,6 +22,7 @@ import uuid
 from fastapi.responses import StreamingResponse
 import pandas as pd
 import io
+from app.models.project_product_link import ProjectProductLink
 from app.schemas.aggregation import AggregateLLMRequest, UpdateAttributesRequest
 from app.schemas.enrichment import AggregatedAttribute
 from app.schemas.cleaning import BulkUpdateAttributesRequest, ExportSelectedCleaningRequest, RunCleaningRequest
@@ -31,8 +31,6 @@ from app.utils.cleaning_helper import append_cleaning_task_log, create_cleaning_
 from app.utils.timezone import now_ist
 logger = logging.getLogger("cleansing_router")
 router = APIRouter()
-
-
 @router.get("/issues")
 async def get_all_issues(db: AsyncSession = Depends(get_session)):
     try:
@@ -43,8 +41,6 @@ async def get_all_issues(db: AsyncSession = Depends(get_session)):
     except Exception as e:
         logger.error(f"Failed to fetch cleansing issues: {e}")
         return []
-
-
 @router.post("/resolve/{issue_id}")
 async def resolve_issue(issue_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -58,8 +54,6 @@ async def resolve_issue(issue_id: str, db: AsyncSession = Depends(get_session)):
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
-
-
 async def run_cleaning_task(
     project_id: str,
     product_ids: List[str],
@@ -85,7 +79,11 @@ async def run_cleaning_task(
                     db, task_id, f"Cleaning {len(product_ids)} selected product(s)"
                 )
             else:
-                stmt = select(Product).where(Product.project_id == project_id)
+                stmt = select(Product).join(
+                    ProjectProductLink, Product.id == ProjectProductLink.product_id
+                ).where(
+                    ProjectProductLink.project_id == project_id
+                )
                 await append_cleaning_task_log(
                     db, task_id, "Cleaning all products in project"
                 )
@@ -99,11 +97,6 @@ async def run_cleaning_task(
             await append_cleaning_task_log(db, task_id, "Pass 1: Collecting all attribute names...")
             all_attribute_names = set()
             for product in products:
-                # if product.dynamic_attributes:
-                #     for attr in product.dynamic_attributes:
-                #         name = attr.get("name", "").strip()
-                #         if name:
-                #             all_attribute_names.add(name)
                 try:
                     attr_stmt = (
                         select(Attribute.attribute_name)
@@ -129,7 +122,6 @@ async def run_cleaning_task(
                         for old_name, new_name in global_mapping.items():
                             if old_name == new_name:
                                 continue
-                            # Update attribute name in attribute_master
                             attr_stmt = select(Attribute).where(
                                 Attribute.attribute_name == old_name)
                             attr_result = await db.execute(attr_stmt)
@@ -167,7 +159,7 @@ async def run_cleaning_task(
                     if not attr_rows:
                         product.enrichment_status = "completed"
                         product.data_quality_score = 100.0
-                        product.last_algorithm_used = llm_provider 
+                        product.last_algorithm_used = llm_provider
                         product.updated_at = now_ist()
                         db.add(product)
                         await db.commit()
@@ -187,7 +179,7 @@ async def run_cleaning_task(
                     if not attributes:
                         product.enrichment_status = "completed"
                         product.data_quality_score = 100.0
-                        product.last_algorithm_used = llm_provider 
+                        product.last_algorithm_used = llm_provider
                         product.updated_at = now_ist()
                         db.add(product)
                         await db.commit()
@@ -209,14 +201,13 @@ async def run_cleaning_task(
                     )
                     product.enrichment_status = "completed"
                     product.data_quality_score = 100.0
-                    product.last_algorithm_used = llm_provider 
+                    product.last_algorithm_used = llm_provider
                     product.completeness_score = await _calculate_completeness(db, product)
                     product.updated_at = now_ist()
                     db.add(product)
                     await db.commit()
                     if updated:
                         updated_count += 1
-                    
                 except Exception as product_error:
                     failed_count += 1
                     logger.error(
@@ -250,7 +241,6 @@ async def run_cleaning_task(
                 task_id,
                 f"Cleaning completed. Updated {updated_count}/{total}, failed {failed_count}",
             )
-            
             try:
                 stmt = select(Source).where(Source.project_id == project_id)
                 result = await db.execute(stmt)
@@ -258,19 +248,17 @@ async def run_cleaning_task(
                 project = await db.get(Project, project_id)
                 processing_status = project.status if project else 'completed'
                 for source in sources:
-                    new_metadata = dict(source.source_metadata) if source.source_metadata else {}
+                    new_metadata = dict(
+                        source.source_metadata) if source.source_metadata else {}
                     new_metadata['processing_status'] = processing_status
                     source.source_metadata = new_metadata
                     flag_modified(source, "source_metadata")
                     db.add(source)
-                
-                # Only ONE call to update_project_status
                 await update_project_status(db, project_id)
                 await db.commit()
-                
             except Exception as status_error:
-                logger.error(f"Failed to update source/project status: {status_error}")
-            
+                logger.error(
+                    f"Failed to update source/project status: {status_error}")
             await update_cleaning_task_status(db, task_id, "completed")
         except Exception as e:
             logger.error(f"Cleaning task {task_id} failed: {e}", exc_info=True)
@@ -291,8 +279,6 @@ async def run_cleaning_task(
                 await update_cleaning_task_status(db, task_id, "failed", str(e))
             except Exception:
                 logger.exception("Failed to mark task as failed")
-
-
 async def add_log(db: AsyncSession, task_id: str, message: str):
     task = await db.get(CleaningTask, task_id)
     if not task:
@@ -304,7 +290,6 @@ async def add_log(db: AsyncSession, task_id: str, message: str):
     task.updated_at = now_ist()
     db.add(task)
     await db.commit()
-
 @router.post("/run")
 async def run_cleaning(
     request: RunCleaningRequest,
@@ -316,10 +301,10 @@ async def run_cleaning(
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
         await update_project_status(db, request.project_id)
-        await db.commit()  
+        await db.commit()
         task_id = str(uuid.uuid4())
         await create_cleaning_task(db, task_id)
-        await db.commit() 
+        await db.commit()
         background_tasks.add_task(
             run_cleaning_task,
             request.project_id,
@@ -335,7 +320,6 @@ async def run_cleaning(
         logger.error(f"Failed to start cleaning task: {e}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Failed to start cleaning task")
-
 @router.get("/tasks/{task_id}")
 async def get_task_status(task_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -352,52 +336,6 @@ async def get_task_status(task_id: str, db: AsyncSession = Depends(get_session))
             f"Error getting task status for {task_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Failed to fetch task status")
-# async def save_cleaned_attributes(
-#     db_session: AsyncSession,
-#     product_id: str,
-#     cleaning_response: LLMCleaningResponse,
-# ) -> bool:
-#     try:
-#         product = await db_session.get(Product, product_id)
-#         if not product or not product.dynamic_attributes:
-#             return False
-#         cleaned_by_id = {
-#             str(ca.id): ca for ca in cleaning_response.cleaned_attributes
-#         }
-#         updated = False
-#         new_attrs = [dict(a) for a in product.dynamic_attributes]
-#         for idx, attr in enumerate(new_attrs):
-#             attr_id = str(idx)
-#             cleaned = cleaned_by_id.get(attr_id)
-#             if not cleaned:
-#                 continue
-#             name_changed = cleaned.name != attr.get("name")
-#             final_val = str(cleaned.cleaned_value)
-#             final_unit = cleaned.unit or ""
-#             if final_unit and final_val.endswith(f" {final_unit}"):
-#                 final_val = final_val.replace(f" {final_unit}", "").strip()
-#             val_changed = final_val != str(attr.get("value"))
-#             unit_changed = final_unit != (attr.get("unit") or attr.get("uom"))
-#             if name_changed or val_changed or unit_changed:
-#                 logger.info(
-#                     f"Updating {attr.get('name')}: {attr.get('value')} -> {cleaned.cleaned_value}"
-#                 )
-#                 attr["name"] = cleaned.name
-#                 attr["value"] = final_val
-#                 attr["unit"] = final_unit
-#                 updated = True
-#         if updated:
-#             product.dynamic_attributes = new_attrs
-#             flag_modified(product, "dynamic_attributes")
-#             product.updated_at = now_ist()
-#             db_session.add(product)
-#         return updated
-#     except Exception as e:
-#         logger.error(
-#             f"Failed saving cleaned attributes for product {product_id}: {e}", exc_info=True)
-#         raise
-
-
 async def save_cleaned_attributes(
     db_session: AsyncSession,
     product_id: str,
@@ -423,13 +361,18 @@ async def save_cleaned_attributes(
             name_changed = ca.name != ""
             val_changed = final_val != str(attr_val.value or "")
             unit_changed = final_unit != (attr_val.uom or "")
-            project = await db_session.get(Project, product.project_id)
+            link_stmt = select(ProjectProductLink).where(
+                ProjectProductLink.product_id == product_id
+            )
+            link_result = await db_session.execute(link_stmt)
+            link = link_result.scalars().first()
+            project = await db_session.get(Project, link.project_id) if link else None
             if val_changed or unit_changed:
                 edit_log = AttributeEditLog(
                     product_id=product_id,
-                    project_id=product.project_id,
+                    project_id=link.project_id if link else None, 
                     catalog_project_name=project.name if project else None,
-                    category_name=product.category_1 or product.taxonomy, 
+                    category_name=product.category_1 or product.taxonomy,
                     brand_name=product.brand_name,
                     product_name=product.product_name,
                     mpn=product.mpn,
@@ -465,7 +408,7 @@ async def save_cleaned_attributes(
                     db_session.add(attribute)
                     updated = True
         if updated:
-            product.last_algorithm_used = llm_provider  
+            product.last_algorithm_used = llm_provider
             product.updated_at = now_ist()
             product.completeness_score = await _calculate_completeness(db_session, product)
             db_session.add(product)
@@ -473,8 +416,6 @@ async def save_cleaned_attributes(
     except Exception as e:
         logger.error(f"Failed saving cleaned attributes: {e}", exc_info=True)
         raise
-
-
 @router.get("/projects/{project_id}/download")
 async def download_cleaned_project(
     project_id: str,
@@ -483,8 +424,11 @@ async def download_cleaned_project(
     project = await db.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-    stmt = select(Product).where(Product.project_id ==
-                                 project_id).order_by(Product.created_at.asc())
+    stmt = select(Product).join(
+        ProjectProductLink, Product.id == ProjectProductLink.product_id
+    ).where(
+        ProjectProductLink.project_id == project_id
+    )
     result = await db.execute(stmt)
     products = result.scalars().all()
     if not products:
@@ -566,14 +510,6 @@ async def download_cleaned_project(
         if product.sources_consulted and isinstance(product.sources_consulted, list):
             for i, url in enumerate(product.sources_consulted[:5], 1):
                 row[f"source_url_{i}"] = url
-        # if product.dynamic_attributes:
-        #     for idx, attr in enumerate(product.dynamic_attributes[:MAX_ATTRIBUTES]):
-        #         i = idx + 1
-        #         row[f"attribute_name{i}"] = attr.get("name", "")
-        #         row[f"attribute_value{i}"] = attr.get("value", "")
-        #         row[f"attribute_uom{i}"] = attr.get(
-        #             "unit") or attr.get("uom") or ""
-                # Read attributes from normalized tables
         try:
             val_stmt = (
                 select(Attribute.attribute_name,
@@ -604,8 +540,6 @@ async def download_cleaned_project(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
-
-
 @router.put("/products/{product_id}/attributes")
 async def update_product_attributes(
     product_id: str,
@@ -616,57 +550,19 @@ async def update_product_attributes(
         product = await db.get(Product, product_id)
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
-        project_id = product.project_id
-        algorithm=(product.last_algorithm_used or product.used_llms[-1] if product.used_llms else 'Unknown')
-        
+        link_stmt = select(ProjectProductLink).where(
+            ProjectProductLink.product_id == product.id
+        )
+        link_result = await db.execute(link_stmt)
+        link = link_result.scalars().first()
+        project_id = str(link.project_id) if link else None
+        algorithm = (
+            product.last_algorithm_used or product.used_llms[-1] if product.used_llms else 'Unknown')
         cleaning_service = LLMCleaningService(
-            llm_provider=request.llm_provider or "openai", 
+            llm_provider=request.llm_provider or "openai",
             db=db,
             project_id=project_id
         )
-        # if product.dynamic_attributes:
-        #     for attr in product.dynamic_attributes:
-        #         attr_name = attr.get('name')
-        #         if attr_name in request.attributes:
-        #             incoming = request.attributes[attr_name]
-        #             attribute_input = AttributeInput(
-        #                 id="0",
-        #                 name=attr_name,
-        #                 value=incoming.value,
-        #                 unit=incoming.uom or attr.get("unit") or attr.get("uom"),
-        #                 source="manual_update"
-        #             )
-        #             context = ProductContext(
-        #                 mpn=product.product_code,
-        #                 brand=product.brand_name,
-        #                 product_name=product.product_name,
-        #                 taxonomy=product.taxonomy
-        #             )
-        #             try:
-        #                 cleaning_result = await cleaning_service.clean_attributes(
-        #                     [attribute_input],
-        #                     context
-        #                 )
-        #                 if cleaning_result.cleaned_attributes:
-        #                     cleaned = cleaning_result.cleaned_attributes[0]
-        #                     attr["value"] = cleaned.cleaned_value
-        #                     attr["unit"] = cleaned.unit or incoming.uom or ""
-        #                     attr["uom"] = cleaned.unit or incoming.uom or ""
-        #                 else:
-        #                     attr["value"] = incoming.value
-        #                     attr["unit"] = incoming.uom or ""
-        #                     attr["uom"] = incoming.uom or ""
-        #             except Exception as e:
-        #                 logger.error(f"Cleaning failed for attribute {attr_name}: {e}")
-        #                 attr["value"] = incoming.value
-        #                 attr["unit"] = incoming.uom or ""
-        #                 attr["uom"] = incoming.uom or ""
-        #             if (
-        #                 product.validation_conflicts
-        #                 and attr_name in product.validation_conflicts
-        #             ):
-        #                 del product.validation_conflicts[attr_name]
-        # flag_modified(product, "dynamic_attributes")
         attr_stmt = (
             select(Attribute.attribute_name, AttributeValue)
             .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
@@ -675,13 +571,13 @@ async def update_product_attributes(
             .where(ProductAttributeValueLinkModel.product_id == product.id)
         )
         attr_result = await db.execute(attr_stmt)
-        manual_edits=0
-        project = await db.get(Project, product.project_id)  
+        manual_edits = 0
+        project = await db.get(Project, link.project_id) if link else None
         for attr_name, attr_val in attr_result.all():
             if attr_name in request.attributes:
                 incoming = request.attributes[attr_name]
-                old_value=str(attr_val.value or "")
-                old_uom=attr_val.uom or ""
+                old_value = str(attr_val.value or "")
+                old_uom = attr_val.uom or ""
                 attribute_input = AttributeInput(
                     id=str(attr_val.id),
                     name=attr_name,
@@ -707,7 +603,6 @@ async def update_product_attributes(
                     else:
                         attr_val.value = incoming.value
                         attr_val.uom = incoming.uom or ""
-                        
                 except Exception as e:
                     logger.error(
                         f"Cleaning failed for attribute {attr_name}: {e}")
@@ -715,34 +610,31 @@ async def update_product_attributes(
                     attr_val.uom = incoming.uom or ""
                 if product.attributes is None:
                     product.attributes = {}
-                product.attributes[attr_name]={
-                    "name":attr_name,
-                    "value":attr_val.value,
-                    "unit":attr_val.uom,
-                    "sources":['bulk_manual_update']
+                product.attributes[attr_name] = {
+                    "name": attr_name,
+                    "value": attr_val.value,
+                    "unit": attr_val.uom,
+                    "sources": ['bulk_manual_update']
                 }
-                flag_modified(product,'attributes')
-                new_value=str(attr_val.value or "")
-                if old_value !=new_value  or old_uom !=attr_val.uom:
-                    edit_log=AttributeEditLog(
+                flag_modified(product, 'attributes')
+                new_value = str(attr_val.value or "")
+                if old_value != new_value or old_uom != attr_val.uom:
+                    edit_log = AttributeEditLog(
                         product_id=product_id,
-                        project_id=product.project_id,
-                        catalog_project_name=project.name if project else None, 
-                        category_name=product.category_1 or product.taxonomy,  
+                        project_id=link.project_id if link else None,
+                        catalog_project_name=project.name if project else None,
+                        category_name=product.category_1 or product.taxonomy,
                         brand_name=product.brand_name,
                         product_name=product.product_name,
                         mpn=product.product_code,
                         attribute_name=attr_name,
                         old_value=old_value,
                         new_value=new_value,
-                        algorithm_used=algorithm, 
+                        algorithm_used=algorithm,
                         edit_source='manual'
-                        
                     )
                     db.add(edit_log)
-                    manual_edits+=1
-                    
-                    
+                    manual_edits += 1
                 if (
                     product.validation_conflicts
                     and attr_name in product.validation_conflicts
@@ -750,10 +642,12 @@ async def update_product_attributes(
                     del product.validation_conflicts[attr_name]
         if product.validation_conflicts:
             flag_modified(product, "validation_conflicts")
-        product.manual_edit_count=(product.manual_edit_count or 0)+manual_edits
-        total_populated=len(attr_result.all())
-        if total_populated>0:
-            product.data_quality_score=max(0,100-(product.manual_edit_count/total_populated)*100)
+        product.manual_edit_count = (
+            product.manual_edit_count or 0)+manual_edits
+        total_populated = len(attr_result.all())
+        if total_populated > 0:
+            product.data_quality_score = max(
+                0, 100-(product.manual_edit_count/total_populated)*100)
         product.completeness_score = await _calculate_completeness(db, product)
         product.updated_at = now_ist()
         db.add(product)
@@ -765,14 +659,9 @@ async def update_product_attributes(
         await db.rollback()
         logger.error(f"Failed to update attributes: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
-
 async def _calculate_completeness(db: AsyncSession, product: Product) -> float:
-    
     try:
         score = 0.0
-
-        # 1. Attribute completeness (60% weight)
         attr_stmt = (
             select(AttributeValue.value)
             .join(ProductAttributeValueLinkModel,
@@ -781,35 +670,23 @@ async def _calculate_completeness(db: AsyncSession, product: Product) -> float:
         )
         attr_result = await db.execute(attr_stmt)
         attr_values = attr_result.scalars().all()
-
         if attr_values:
             filled = sum(1 for v in attr_values if v and str(v).strip())
             attr_score = (filled / len(attr_values)) * 60
             score += attr_score
-
-        # 2. Image (15% weight)
         if product.image_url_1:
             score += 15
-
-        # 3. Short description (10% weight)
         if product.short_description and product.short_description.strip():
             score += 10
-
-        # 4. Long description (10% weight)
         if product.long_description and product.long_description.strip():
             score += 10
-
-        # 5. Features (5% weight)
         if product.features and len(product.features) > 0:
             score += 5
-
         return round(score, 1)
-
     except Exception as e:
         logger.warning(
             f"Failed to calculate completeness for {product.product_code}: {e}")
         return product.completeness_score or 0.0
-
 @router.put("/products/bulk-attributes")
 async def bulk_update_product_attributes(
     request: BulkUpdateAttributesRequest,
@@ -827,16 +704,27 @@ async def bulk_update_product_attributes(
         products = result.scalars().all()
         if not products:
             raise HTTPException(status_code=404, detail="No products found")
-        project_id = products[0].project_id if products else None
+        link_stmt = select(ProjectProductLink).where(
+            ProjectProductLink.product_id == products[0].id
+        )
+        link_result = await db.execute(link_stmt)
+        link = link_result.scalars().first()
+        project_id = str(link.project_id) if link else None
         cleaning_service = LLMCleaningService(
-            llm_provider=request.llm_provider or "openai", 
+            llm_provider=request.llm_provider or "openai",
             db=db,
             project_id=project_id
         )
         updated_count = 0
         for product in products:
-            project = await db.get(Project, product.project_id)
-            algorithm = request.llm_provider or product.last_algorithm_used or (product.used_llms[-1] if product.used_llms else 'Unknown')
+            product_link_stmt = select(ProjectProductLink).where(
+                ProjectProductLink.product_id == product.id
+            )
+            product_link_result = await db.execute(product_link_stmt)
+            product_link = product_link_result.scalars().first()
+            project = await db.get(Project, product_link.project_id) if product_link else None
+            algorithm = request.llm_provider or product.last_algorithm_used or (
+                product.used_llms[-1] if product.used_llms else 'Unknown')
             attr_stmt = (
                 select(Attribute.attribute_name, AttributeValue)
                 .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
@@ -849,7 +737,7 @@ async def bulk_update_product_attributes(
             if not attr_rows:
                 continue
             updated = False
-            manual_edits = 0 
+            manual_edits = 0
             context = ProductContext(
                 mpn=product.product_code,
                 brand=product.brand_name,
@@ -887,9 +775,9 @@ async def bulk_update_product_attributes(
                 if old_value != new_value or old_uom != attr_val.uom:
                     edit_log = AttributeEditLog(
                         product_id=product.id,
-                        project_id=product.project_id,
+                        project_id=product_link.project_id if product_link else None,
                         catalog_project_name=project.name if project else None,
-                        category_name=product.category_1 or product.taxonomy, 
+                        category_name=product.category_1 or product.taxonomy,
                         brand_name=product.brand_name,
                         product_name=product.product_name,
                         mpn=product.product_code,
@@ -901,14 +789,15 @@ async def bulk_update_product_attributes(
                     )
                     db.add(edit_log)
                     manual_edits += 1
-                
                 db.add(attr_val)
                 updated = True
             if updated:
-                product.manual_edit_count = (product.manual_edit_count or 0) + manual_edits
+                product.manual_edit_count = (
+                    product.manual_edit_count or 0) + manual_edits
                 total_populated = len(attr_rows)
                 if total_populated > 0:
-                    product.data_quality_score = max(0, 100 - (product.manual_edit_count / total_populated) * 100)
+                    product.data_quality_score = max(
+                        0, 100 - (product.manual_edit_count / total_populated) * 100)
                 product.completeness_score = await _calculate_completeness(db, product)
                 product.updated_at = now_ist()
                 if product.validation_conflicts:
@@ -934,8 +823,6 @@ async def bulk_update_product_attributes(
             status_code=500,
             detail="Failed to bulk update attributes"
         )
-
-
 @router.post("/download-selected")
 async def download_selected_cleaned_products(
     request: ExportSelectedCleaningRequest,
@@ -945,13 +832,16 @@ async def download_selected_cleaned_products(
         if not request.product_ids and not request.project_ids:
             raise HTTPException(
                 status_code=400, detail="No products or projects selected")
-        stmt = select(Product)
+        stmt = select(Product).join(
+            ProjectProductLink, Product.id == ProjectProductLink.product_id, isouter=True
+        )
         filters = []
         if request.product_ids:
             filters.append(Product.id.in_(request.product_ids))
         if request.project_ids:
-            filters.append(Product.project_id.in_(request.project_ids))
-        stmt = stmt.where(or_(*filters)).order_by(Product.created_at.asc())
+            filters.append(ProjectProductLink.project_id.in_(
+                request.project_ids))  
+        stmt = stmt.where(or_(*filters))
         result = await db.execute(stmt)
         products = result.scalars().all()
         if not products:
