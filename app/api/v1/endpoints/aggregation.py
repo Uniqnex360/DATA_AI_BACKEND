@@ -249,10 +249,15 @@ async def trigger_project_aggregation(
         pending_count = pending_result.scalar() or 0
         update_stmt = (
             update(Product)
-            .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
-            .where(ProjectProductLink.project_id == project_id)
+            .where(
+                Product.id.in_(
+                    select(ProjectProductLink.product_id)
+                    .where(ProjectProductLink.project_id == project_id)
+                )
+            )
             .values(enrichment_status='processing')
         )
+        await db.execute(update_stmt)
         await db.execute(update_stmt)
         job = AggregationJob(
             project_id=project_id,

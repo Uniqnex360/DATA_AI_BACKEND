@@ -12,6 +12,8 @@ from app.models.product import Product
 from app.models.project import Project
 import json
 
+from app.models.project_product_link import ProjectProductLink
+
 async def generate_products_excel(
     products: List[Product],
     db: AsyncSession,
@@ -21,7 +23,9 @@ async def generate_products_excel(
     if not products:
         raise HTTPException(status_code=404, detail="No products to export")
     use_case = None
-    first_project = await db.get(Project, products[0].project_id)
+    first_link_result = await db.execute(select(ProjectProductLink).where(ProjectProductLink.product_id == products[0].id))
+    first_link = first_link_result.scalars().first()
+    first_project = await db.get(Project, first_link.project_id) if first_link else None
     if first_project and first_project.use_case:
         use_case = first_project.use_case.lower()
     if 'back filling' in use_case or 'validation' in use_case:
@@ -226,10 +230,17 @@ async def generate_products_excel(
         taxonomy_templates[tax] = final_template[:MAX_ATTRIBUTES]
     is_validation_mode = 'validation' in use_case if use_case else False
     project_name_cache = {}
+    prod_to_proj = {}
     if not global_project_name:
-        project_ids = {p.project_id for p in products}
+        link_stmt = select(ProjectProductLink).where(
+            ProjectProductLink.product_id.in_([p.id for p in products]))
+        links = (await db.execute(link_stmt)).scalars().all()
+        prod_to_proj = {link.product_id: link.project_id for link in links}
+
+        project_ids = {link.project_id for link in links}
         if project_ids:
-            stmt = select(Project.id, Project.name).where(Project.id.in_(list(project_ids)))
+            stmt = select(Project.id, Project.name).where(
+                Project.id.in_(list(project_ids)))
             result = await db.execute(stmt)
             project_name_cache = {row[0]: row[1] for row in result.fetchall()}
     export_rows = []
@@ -238,7 +249,8 @@ async def generate_products_excel(
         if global_project_name:
             row["Project Name"] = global_project_name
         else:
-            row["Project Name"] = project_name_cache.get(p.project_id, "")
+            my_proj_id = prod_to_proj.get(p.id)
+            row["Project Name"] = project_name_cache.get(my_proj_id, "")
         ai_data = dict(p.attributes or {})
         taxonomy = p.taxonomy or "Unknown"
         attribute_template = taxonomy_templates.get(taxonomy, [])
