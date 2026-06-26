@@ -298,7 +298,7 @@ async def generate_products_excel(
             "ean": row.get("ean") or getattr(p, 'ean', '') or "",
             "upc": row.get("upc") or getattr(p, 'upc', '') or "",
             "unspc": row.get("unspc") or getattr(p, 'unspc', '') or "",
-            "MPN": row.get("MPN") or p.product_code or "",
+            "MPN": p.sku or p.product_code or row.get("SKU") or row.get("MPN") or "",
             "Status": row.get("Status") or getattr(p, 'status', '') or "",
             "Lifecycle_Stage": row.get("Lifecycle_Stage") or getattr(p, 'lifecycle_stage', '') or "",
             "Launch_Date": row.get("Launch_Date") or getattr(p, 'launch_date', '') or "",
