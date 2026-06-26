@@ -38,14 +38,14 @@ router = APIRouter()
 async def update_project_status(db_session: AsyncSession, project_id: str) -> None:
     stmt = select(
         func.count(Product.id).label("total"),
-        func.sum(case((Product.enrichment_status == 'completed', 1), else_=0)).label(
-            "completed"),
-        func.sum(case((Product.enrichment_status == 'failed', 1), else_=0)).label(
-            "failed"),
-        func.sum(case((Product.enrichment_status == 'pending', 1), else_=0)).label(
-            "pending"),
-        func.sum(case((Product.enrichment_status == 'processing', 1), else_=0)).label(
-            "processing"),
+        func.sum(case((ProjectProductLink.enrichment_status ==
+                 'completed', 1), else_=0)).label("completed"),
+        func.sum(case((ProjectProductLink.enrichment_status ==
+                 'failed', 1), else_=0)).label("failed"),
+        func.sum(case((ProjectProductLink.enrichment_status ==
+                 'pending', 1), else_=0)).label("pending"),
+        func.sum(case((ProjectProductLink.enrichment_status ==
+                 'processing', 1), else_=0)).label("processing"),
     ).join(
         ProjectProductLink, Product.id == ProjectProductLink.product_id
     ).where(
@@ -53,10 +53,14 @@ async def update_project_status(db_session: AsyncSession, project_id: str) -> No
     )
     result = await db_session.execute(stmt)
     stats = result.first()
-    enrichment_stmt = select(func.count(Product.id)).where(
-        and_(
-            ProjectProductLink.project_id == project_id,
-            Product.workflow_stage == 'enrichment'
+    enrichment_stmt = (
+        select(func.count(Product.id))
+        .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+        .where(
+            and_(
+                ProjectProductLink.project_id == project_id,
+                Product.workflow_stage == 'enrichment'
+            )
         )
     )
     enrichment_result = await db_session.execute(enrichment_stmt)
@@ -167,12 +171,13 @@ async def get_projects_with_aggregation_stats(
                     algorithm_used = llm_provider
             stats_stmt = select(
                 func.count(Product.id).label('total'),
-                func.sum(case((Product.enrichment_status == 'completed', 1), else_=0)).label(
-                    'completed'),
-                func.sum(case((Product.enrichment_status == 'failed', 1), else_=0)).label(
-                    'failed'),
-                func.sum(case((Product.enrichment_status == 'pending', 1), else_=0)).label(
-                    'pending')
+                func.sum(case((ProjectProductLink.enrichment_status ==
+                         'completed', 1), else_=0)).label('completed'),
+                # FIX THESE TWO LINES:
+                func.sum(case((ProjectProductLink.enrichment_status ==
+                         'failed', 1), else_=0)).label('failed'),
+                func.sum(case((ProjectProductLink.enrichment_status ==
+                         'pending', 1), else_=0)).label('pending')
             ).join(
                 ProjectProductLink, Product.id == ProjectProductLink.product_id
             ).where(
@@ -247,17 +252,21 @@ async def trigger_project_aggregation(
 )
         pending_result = await db.execute(pending_stmt)
         pending_count = pending_result.scalar() or 0
+        # update_stmt = (
+        #     update(Product)
+        #     .where(
+        #         Product.id.in_(
+        #             select(ProjectProductLink.product_id)
+        #             .where(ProjectProductLink.project_id == project_id)
+        #         )
+        #     )
+        #     .values(enrichment_status='processing')
+        # )
         update_stmt = (
-            update(Product)
-            .where(
-                Product.id.in_(
-                    select(ProjectProductLink.product_id)
-                    .where(ProjectProductLink.project_id == project_id)
-                )
-            )
+            update(ProjectProductLink)
+            .where(ProjectProductLink.project_id == project_id)
             .values(enrichment_status='processing')
         )
-        await db.execute(update_stmt)
         await db.execute(update_stmt)
         job = AggregationJob(
             project_id=project_id,
@@ -359,12 +368,27 @@ async def aggregate_single_product(
                                 detail=f'Product has been already enriched with LLM,Please try another one!')
         logger.info(
             f"Starting single product aggregation:{product.product_code}")
-        if product.enrichment_status == 'processing':
+        link_stmt = select(ProjectProductLink).where(
+            ProjectProductLink.product_id == product_id)
+        link_result = await db.execute(link_stmt)
+        link = link_result.scalars().first()
+        if not link:
+            raise HTTPException(404, "Product not linked to any project")
+
+
+        if not link:
+            raise HTTPException(404, "Product not linked to project")
+
+        if link.enrichment_status == "processing":
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Product is already being processed"
             )
-        product.enrichment_status = 'processing'
+
+        # Update link status
+        link.enrichment_status = "processing"
+        db.add(link)
+        await db.commit()
         db.add(product)
         await db.commit()
         queue_position = await worker_pool.submit(
@@ -655,14 +679,23 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
             if not product_ids:
                 logger.warning(
                     f"No product_ids in job {job_id}, falling back to status query")
-                stmt = select(Product).join(
-                    ProjectProductLink, Product.id == ProjectProductLink.product_id  
-                ).where(
-                    and_(
+                # stmt = select(Product).join(
+                #     ProjectProductLink, Product.id == ProjectProductLink.product_id  
+                # ).where(
+                #     and_(
                         
+                #         ProjectProductLink.project_id == job.project_id,
+                #         Product.enrichment_status.in_(
+                #             ['processing', 'pending', 'failed'])
+                #     )
+                # )
+                stmt = (
+                    select(Product)
+                    .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+                    .where(
                         ProjectProductLink.project_id == job.project_id,
-                        Product.enrichment_status.in_(
-                            ['processing', 'pending', 'failed'])
+                        ProjectProductLink.enrichment_status.in_(
+                            ['pending', 'failed', 'processing'])
                     )
                 )
             else:
@@ -685,6 +718,13 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
             cached_urls = [] if has_missing_llm else None
             logger.info(f"Algo 1&2 mode: caching enabled={bool(cached_html)}")
             for idx, product in enumerate(products):
+                link = await db_session.get(ProjectProductLink, {
+                    "project_id": job.project_id,
+                    "product_id": product.id
+                })
+                if not link:
+                    failed += 1
+                    continue
                 await db_session.refresh(job)
                 if job.status == 'cancelled':
                     logger.info(f"Job {job_id} cancelled during processing")
@@ -793,6 +833,8 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             product.validation_conflicts = conflicts
                             flag_modified(product, "validation_conflicts")
                             product.enrichment_status = 'completed'
+                            link.enrichment_status = 'completed'
+                            db_session.add(link)
                             product.data_quality_score = 100.0
                             await db_session.flush()
                             db_session.add(product)
@@ -870,6 +912,8 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             product.needs_enrichment = False
                             product.ready_for_export = True
                             product.enrichment_status = 'completed'
+                            link.enrichment_status = 'completed'
+                            db_session.add(link)
                             product.data_quality_score = 100.0
                             product.routed_to_enrichment_at = None
                             ready_for_export += 1
@@ -904,6 +948,8 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                 logger.warning(
                                     f"⚠ No image found for {product.product_code}")
                             product.enrichment_status = 'completed'
+                            link.enrichment_status = 'completed'
+                            db_session.add(link)
                             product.data_quality_score = 100.0
                             product.completeness_score = min(
                                 len(ai_attributes) * 5, 100)
@@ -970,12 +1016,33 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             db_session.add(product)
                             await db_session.flush()
                             await check_data_quality(db_session, product.product_code, ai_attributes)
+                            await db_session.execute(
+                                update(ProjectProductLink)
+                                .where(
+                                    ProjectProductLink.product_id == product.id,
+                                    ProjectProductLink.project_id == job.project_id  # or project_id for single
+                                )
+                                .values(enrichment_status='completed')
+                            )
+
                             successful += 1
                             logger.info(
                                 f" Aggregated {product.product_code}: {len(ai_attributes)} attributes")
                     else:
                         product.enrichment_status = 'failed'
+                        link.enrichment_status = 'failed'
+                        db_session.add(link)
                         db_session.add(product)
+                        failed += 1
+                        db_session.add(product)
+                        await db_session.execute(
+                            update(ProjectProductLink)
+                            .where(
+                                ProjectProductLink.product_id == product.id,
+                                ProjectProductLink.project_id == job.project_id
+                            )
+                            .values(enrichment_status='failed')
+                        )
                         failed += 1
                         failed_products.append({
                             'sku': product.product_code,
@@ -988,6 +1055,8 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                     logger.error(
                         f"Error aggregating {product.product_code}: {e}")
                     product.enrichment_status = 'failed'
+                    link.enrichment_status = 'failed'
+                    db_session.add(link)
                     db_session.add(product)
                     failed += 1
                     failed_products.append({
@@ -1085,8 +1154,16 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
             )
             link_result = await db_session.execute(link_stmt)
             link = link_result.scalars().first()
-            project_id = str(link.project_id) if link else None
-            if len(primary_attrs) > 10:
+
+            if not link:
+                logger.error(f"Product {product_id} not linked to any project")
+                product.enrichment_status = 'failed'
+                db_session.add(product)
+                await db_session.commit()
+                return
+
+            project_id = str(link.project_id)
+            if len(primary_attrs) > 100:
                 logger.info(
                     f"Product has {len(primary_attrs)} attributes - using multi-pass processing")
                 attr_chunks = chunk_attributes(primary_attrs, chunk_size=10)
@@ -1167,6 +1244,9 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                 )
             if result.get('status') == 'success':
                 golden = sanitize_ai_data(result.get('golden_record', {}))
+                if link:
+                    link.enrichment_status = 'completed'
+                    db_session.add(link)
                 ai_data = golden.get('attributes', {})
                 product.short_description = golden.get(
                     'short_description') or product.short_description
@@ -1642,32 +1722,82 @@ async def get_products_with_movement(
 ) -> Dict[str, Any]:
     try:
         
-        aggregation_stmt = select(Product).join(
-            ProjectProductLink, Product.id == ProjectProductLink.product_id
-        ).where(
-            and_(
-                ProjectProductLink.project_id == project_id,  
-                Product.workflow_stage == 'aggregation',
-                Product.enrichment_status.in_(['pending', 'processing', 'failed', 'completed'])
-            )
-        )
+        # aggregation_stmt = select(Product).join(
+        #     ProjectProductLink, Product.id == ProjectProductLink.product_id
+        # ).where(
+        #     and_(
+        #         ProjectProductLink.project_id == project_id,  
+        #         Product.workflow_stage == 'aggregation',
+        #         Product.enrichment_status.in_(['pending', 'processing', 'failed', 'completed'])
+        #     )
+        # )
 
-        enrichment_stmt = select(Product).join(
-            ProjectProductLink, Product.id == ProjectProductLink.product_id
-        ).where(
-            and_(
-                ProjectProductLink.project_id == project_id,  
-                Product.workflow_stage == 'enrichment',
-                Product.enrichment_status.in_(['pending', 'processing', 'failed'])
-            )
+        # enrichment_stmt = select(Product).join(
+        #     ProjectProductLink, Product.id == ProjectProductLink.product_id
+        # ).where(
+        #     and_(
+        #         ProjectProductLink.project_id == project_id,  
+        #         Product.workflow_stage == 'enrichment',
+        #         Product.enrichment_status.in_(['pending', 'processing', 'failed'])
+        #     )
+        # )
+        # aggregation_result = await db.execute(aggregation_stmt)
+        # enrichment_result = await db.execute(enrichment_stmt)
+        # aggregation_products = aggregation_result.scalars().all()
+        # enrichment_products = enrichment_result.scalars().all()
+        # completed_products = []
+        # for product in aggregation_products + enrichment_products:
+        #     if product.enrichment_status == 'completed':
+        #         completed_products.append({
+        #             "id": str(product.id),
+        #             "product_code": product.product_code,
+        #             "product_name": product.product_name,
+        #             "completeness_score": product.completeness_score,
+        #             "workflow_stage": product.workflow_stage,
+        #             "moved_to": 'aggregation' if product.completeness_score >= 90 else 'enrichment'
+        #         })
+        # latest_product_time = None
+        # all_products = list(aggregation_products) + list(enrichment_products)
+        # if all_products:
+        #     latest_product_time = max(
+        #         (p.updated_at for p in all_products if p.updated_at),
+        #         default=None
+        #     )
+        # agg_serialized = [await serialize_products_with_attributes(db, p)for p in aggregation_products]
+        # enr_serialized = [await serialize_products_with_attributes(db, p)for p in enrichment_products]
+        # return {
+        #     "aggregation_products": agg_serialized,
+        #     "enrichment_products": enr_serialized,
+        #     "completed_products": completed_products,
+        #     "last_updated": latest_product_time.isoformat() if latest_product_time else now_ist().isoformat()
+        # }
+        stmt = (
+            select(Product, ProjectProductLink)
+            .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+            .where(ProjectProductLink.project_id == project_id)
         )
-        aggregation_result = await db.execute(aggregation_stmt)
-        enrichment_result = await db.execute(enrichment_stmt)
-        aggregation_products = aggregation_result.scalars().all()
-        enrichment_products = enrichment_result.scalars().all()
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        aggregation_products = []
+        enrichment_products = []
         completed_products = []
-        for product in aggregation_products + enrichment_products:
-            if product.enrichment_status == 'completed':
+
+        for product, link in rows:
+            product_dict = await serialize_products_with_attributes(db, product)
+            product_dict["enrichment_status"] = link.enrichment_status
+
+            if link.enrichment_status == "pending":
+                product_dict["attributes"] = {}
+                product_dict["completeness_score"] = 0.0
+                product_dict["data_quality_score"] = 0.0
+
+            if product.workflow_stage == "aggregation":
+                aggregation_products.append(product_dict)
+            elif product.workflow_stage == "enrichment":
+                enrichment_products.append(product_dict)
+
+            if link.enrichment_status == "completed":
                 completed_products.append({
                     "id": str(product.id),
                     "product_code": product.product_code,
@@ -1676,18 +1806,18 @@ async def get_products_with_movement(
                     "workflow_stage": product.workflow_stage,
                     "moved_to": 'aggregation' if product.completeness_score >= 90 else 'enrichment'
                 })
+
         latest_product_time = None
-        all_products = list(aggregation_products) + list(enrichment_products)
+        all_products = aggregation_products + enrichment_products
         if all_products:
             latest_product_time = max(
-                (p.updated_at for p in all_products if p.updated_at),
+                (p.get("updated_at") for p in all_products if p.get("updated_at")),
                 default=None
             )
-        agg_serialized = [await serialize_products_with_attributes(db, p)for p in aggregation_products]
-        enr_serialized = [await serialize_products_with_attributes(db, p)for p in enrichment_products]
+
         return {
-            "aggregation_products": agg_serialized,
-            "enrichment_products": enr_serialized,
+            "aggregation_products": aggregation_products,
+            "enrichment_products": enrichment_products,
             "completed_products": completed_products,
             "last_updated": latest_product_time.isoformat() if latest_product_time else now_ist().isoformat()
         }

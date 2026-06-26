@@ -98,6 +98,15 @@ async def run_cleaning_task(
             all_attribute_names = set()
             for product in products:
                 try:
+                    link = await db.get(ProjectProductLink, {
+                        "project_id": project_id,
+                        "product_id": product.id
+                    })
+
+                    if link:
+                        link.enrichment_status = "processing"
+                        db.add(link)
+                        await db.commit()
                     attr_stmt = (
                         select(Attribute.attribute_name)
                         .join(ProductAttributeLinkModel, ProductAttributeLinkModel.attribute_id == Attribute.id)
@@ -141,6 +150,14 @@ async def run_cleaning_task(
             failed_count = 0
             for product in products:
                 try:
+                    link = await db.get(ProjectProductLink, {
+                        "project_id": project_id,
+                        "product_id": product.id
+                    })
+                    if link:
+                        link.enrichment_status = "processing"
+                        db.add(link)
+                        await db.commit()
                     product.enrichment_status = "processing"
                     product.updated_at = now_ist()
                     db.add(product)
@@ -203,6 +220,11 @@ async def run_cleaning_task(
                     product.data_quality_score = 100.0
                     product.last_algorithm_used = llm_provider
                     product.completeness_score = await _calculate_completeness(db, product)
+                    if link:
+                        link.enrichment_status = "completed"
+                        db.add(link)
+
+                    await db.commit()
                     product.updated_at = now_ist()
                     db.add(product)
                     await db.commit()
@@ -210,10 +232,17 @@ async def run_cleaning_task(
                         updated_count += 1
                 except Exception as product_error:
                     failed_count += 1
-                    logger.error(
-                        f"Failed cleaning product {product.id}: {product_error}",
-                        exc_info=True,
-                    )
+                    try:
+                        product.enrichment_status = "failed"
+                        if link:
+                            link.enrichment_status = "failed"
+                            db.add(link)
+                        await db.commit()
+                    except:
+                        logger.error(
+                            f"Failed cleaning product {product.id}: {product_error}",
+                            exc_info=True,
+                        )
                     try:
                         product.enrichment_status = "failed"
                         product.updated_at = now_ist()
@@ -640,6 +669,7 @@ async def update_product_attributes(
                     and attr_name in product.validation_conflicts
                 ):
                     del product.validation_conflicts[attr_name]
+            
         if product.validation_conflicts:
             flag_modified(product, "validation_conflicts")
         product.manual_edit_count = (
@@ -650,6 +680,12 @@ async def update_product_attributes(
                 0, 100-(product.manual_edit_count/total_populated)*100)
         product.completeness_score = await _calculate_completeness(db, product)
         product.updated_at = now_ist()
+        if link:
+            link.enrichment_status = 'completed'
+            db.add(link)
+
+        product.updated_at = now_ist()
+        await db.commit()
         db.add(product)
         await db.commit()
         return {"status": "success", "message": "Attributes updated"}
@@ -792,6 +828,13 @@ async def bulk_update_product_attributes(
                 db.add(attr_val)
                 updated = True
             if updated:
+                if product_link:
+                    product_link.enrichment_status = 'completed'
+                    db.add(product_link)
+
+                product.updated_at = now_ist()
+                db.add(product)
+
                 product.manual_edit_count = (
                     product.manual_edit_count or 0) + manual_edits
                 total_populated = len(attr_rows)

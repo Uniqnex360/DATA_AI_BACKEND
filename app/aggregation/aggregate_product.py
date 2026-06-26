@@ -35,6 +35,8 @@ from app.services.product_discovery_service import ProductDiscoveryService
 from app.utils.image_validator import validate_image_url
 from app.utils.remapping import cluster_attributes_by_meaning
 logger = logging.getLogger("aggregate_product")
+
+
 def build_pipeline() -> AggregationPipeline:
     return AggregationPipeline(
         search_service=SerpApiSearchService(max_results=5),
@@ -45,9 +47,15 @@ def build_pipeline() -> AggregationPipeline:
             PdfExtractor(),
         ]),
     )
+
+
 def chunk_attributes(attributes: List[str], chunk_size: int = 10) -> List[List[str]]:
     return [attributes[i:i + chunk_size] for i in range(0, len(attributes), chunk_size)]
+
+
 logger = logging.getLogger("aggregate_product")
+
+
 async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
     from bs4 import BeautifulSoup
     from urllib.parse import urljoin
@@ -58,6 +66,7 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
         'pixel', 'tracking', 'social', 'share', 'facebook', 'twitter', 'instagram',
         'og-image', 'social-share', 'carton', 'box', 'camozzi', 'default', 'nophoto'
     ]
+
     def is_junk(url_str: str) -> bool:
         u = url_str.lower()
         return any(k in u for k in HARD_BLOCK_KEYWORDS)
@@ -101,6 +110,7 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
             return url
     return None
 
+
 def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
     mapping = {}
     for group in groups:
@@ -132,6 +142,8 @@ def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
             'attributes': unified_attrs
         })
     return unified_sources
+
+
 def extract_domains_and_generate_urls(prompt_text: str) -> List[str]:
     if not prompt_text:
         return []
@@ -142,17 +154,21 @@ def extract_domains_and_generate_urls(prompt_text: str) -> List[str]:
     for domain in domains:
         urls.append(f"https://{domain}/")
     return urls
+
+
 def extract_urls_from_prompt(prompt_text: str) -> List[str]:
     if not prompt_text:
         return []
     url_pattern = r'https?://[^\s\)\"]+'
     return re.findall(url_pattern, prompt_text)
+
+
 async def discover_manufacturer_urls(
     brand: str,
     taxonomy: str,
     mpn: str,
     llm_provider: str = 'openai',
-    title:Optional[str]=None,
+    title: Optional[str] = None,
 ) -> List[str]:
     import httpx
     from urllib.parse import urlparse
@@ -219,7 +235,7 @@ async def discover_manufacturer_urls(
                         'amazon', 'ebay', 'walmart', 'target', 'alibaba',
                         'aliexpress', 'pinterest', 'youtube', 'linkedin',
                         'twitter', 'facebook', 'instagram', 'reddit',
-                        '.gov', '.edu', 'wikipedia','/blog'
+                        '.gov', '.edu', 'wikipedia', '/blog'
                     ]
                     if any(keyword in url.lower() for keyword in blocked_keywords):
                         continue
@@ -272,8 +288,9 @@ async def discover_manufacturer_urls(
             if is_mpn_valid and mpn.lower() in url.lower():
                 final_urls.append(url)
             elif not is_mpn_valid:
-                final_urls.append(url) 
-            logger.info(f"Found product URL for {mpn if is_mpn_valid else 'title'}: {url}")
+                final_urls.append(url)
+            logger.info(
+                f"Found product URL for {mpn if is_mpn_valid else 'title'}: {url}")
         if not final_urls:
             final_urls.extend(product_urls)
         if not final_urls:
@@ -312,6 +329,8 @@ async def discover_manufacturer_urls(
     except Exception as e:
         logger.error(f"Manufacturer URL discovery failed: {e}")
         return []
+
+
 async def find_product_page_with_llm(
     domain_url: str,
     mpn: str,
@@ -334,7 +353,8 @@ async def find_product_page_with_llm(
     try:
         domain = urlparse(domain_url).netloc.replace('www.', '')
         if is_mpn_valid:
-            search_queries = [f"{brand} {mpn}", mpn, f"{brand} {title.split()[0]}"]
+            search_queries = [f"{brand} {mpn}",
+                              mpn, f"{brand} {title.split()[0]}"]
         else:
             search_queries = [f"{brand} {title}", title]
         if taxonomy:
@@ -342,9 +362,11 @@ async def find_product_page_with_llm(
             main_category = taxonomy_parts[-1] if taxonomy_parts else taxonomy
             mpn_suffix = f" {mpn}" if is_mpn_valid else ""
             search_queries.insert(0, f"{brand} {main_category}{mpn_suffix}")
-            search_queries.insert(1, f"{main_category} {mpn if is_mpn_valid else ''}".strip())
+            search_queries.insert(
+                1, f"{main_category} {mpn if is_mpn_valid else ''}".strip())
             search_queries.insert(2, f"{brand} {main_category}")
-        logger.info(f"Searching {domain} for identifier: {mpn if is_mpn_valid else title}")
+        logger.info(
+            f"Searching {domain} for identifier: {mpn if is_mpn_valid else title}")
         from app.aggregation.services.download_service import HttpDownloadService
         download_service = HttpDownloadService(timeout=20)
         for query in search_queries:
@@ -416,7 +438,8 @@ async def find_product_page_with_llm(
                         if content and content['type'] == 'html':
                             html = content['raw_bytes'].decode(
                                 'utf-8', errors='ignore').lower()
-                            has_mpn_in_html = (mpn.lower() in html) if is_mpn_valid else False
+                            has_mpn_in_html = (
+                                mpn.lower() in html) if is_mpn_valid else False
                             has_brand_in_html = brand.lower() in html
                             product_indicators = [
                                 'add to cart', 'add to bag', 'buy now', 'add to quote',
@@ -433,9 +456,12 @@ async def find_product_page_with_llm(
                                 f"Brand={has_brand_in_html}, "
                                 f"Indicators={indicator_count}"
                             )
-                            title_keywords = [w for w in title.lower().split() if len(w) > 3]
-                            title_hits = sum(1 for kw in title_keywords if kw in html)
-                            has_title_density = (title_hits / len(title_keywords) >= 0.5) if title_keywords else False
+                            title_keywords = [
+                                w for w in title.lower().split() if len(w) > 3]
+                            title_hits = sum(
+                                1 for kw in title_keywords if kw in html)
+                            has_title_density = (
+                                title_hits / len(title_keywords) >= 0.5) if title_keywords else False
                             parsed_url = urlparse(url)
                             is_homepage = parsed_url.path in ['', '/']
                             is_product_url = '/product/' in url.lower() or '/products/' in url.lower()
@@ -455,17 +481,21 @@ async def find_product_page_with_llm(
                                     continue
                             if is_mpn_valid:
                                 if is_product_url and (has_mpn_in_html or indicator_count >= 1):
-                                    logger.info(f"✓ VERIFIED product page (MPN/Heuristic): {url}")
+                                    logger.info(
+                                        f"✓ VERIFIED product page (MPN/Heuristic): {url}")
                                     return url
                                 if has_mpn_in_html and not is_homepage:
-                                    logger.info(f"✓ VERIFIED page (MPN found): {url}")
+                                    logger.info(
+                                        f"✓ VERIFIED page (MPN found): {url}")
                                     return url
                             else:
                                 if is_product_url and has_brand_in_html and has_title_density:
-                                    logger.info(f"✓ VERIFIED via title density: {url}")
+                                    logger.info(
+                                        f"✓ VERIFIED via title density: {url}")
                                     return url
                                 if not is_homepage and has_brand_in_html and indicator_count >= 2:
-                                    logger.info(f"✓ VERIFIED via brand + indicators: {url}")
+                                    logger.info(
+                                        f"✓ VERIFIED via brand + indicators: {url}")
                                     return url
                     except Exception as e:
                         logger.debug(f"Verification failed: {e}")
@@ -561,6 +591,8 @@ async def find_product_page_with_llm(
     except Exception as e:
         logger.warning(f"Product discovery failed: {e}")
         return None
+
+
 def _url_contains_product_identifier(url: str, mpn: str, title: str) -> bool:
     if not url:
         return False
@@ -578,20 +610,23 @@ def _url_contains_product_identifier(url: str, mpn: str, title: str) -> bool:
         if len(words) >= 2 and hits >= 2:
             return True
     return False
+
+
 def is_result_actually_product(result: dict, brand: str, title: str) -> bool:
     url = result.get("url", "").lower()
-    content_to_check=(result.get('title','')+" "+result.get('snippet',"")).lower()
-    brand_lower=brand.lower()
+    content_to_check = (result.get('title', '')+" " +
+                        result.get('snippet', "")).lower()
+    brand_lower = brand.lower()
     if brand_lower not in content_to_check and brand_lower not in url:
         return False
-    snippet = (result.get("title", "") + " " + result.get("snippet", "")).lower()
-    
+    snippet = (result.get("title", "") + " " +
+               result.get("snippet", "")).lower()
     if brand.lower() not in snippet and brand.lower() not in url.lower():
         return False
     stop_words = {'with', 'high', 'sides', 'tray',
                   'for', 'the', 'this', 'and', 'from', 'each'}
     name_tokens = [
-        w.lower() for w in title.split() 
+        w.lower() for w in title.split()
         if len(w) > 2 and w.lower() not in stop_words
     ]
     if not name_tokens:
@@ -599,10 +634,8 @@ def is_result_actually_product(result: dict, brand: str, title: str) -> bool:
     matches = sum(
         1 for token in name_tokens if token in content_to_check or token in url)
     match_ratio = matches / len(name_tokens)
-
     if match_ratio >= 0.5:
         return True
-
     return False
 
 
@@ -610,26 +643,21 @@ async def verify_page_identity_with_llm(url, html, brand, title, mpn, llm_provid
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html, 'html.parser')
     page_text = soup.get_text(separator=' ', strip=True)[:5000]
-
     prompt = f"""
     You are a Product Matcher. I am looking for a specific product and found a candidate page.
     The specific ID/MPN '{mpn}' was NOT found in the text of the page, but it might be the correct product line.
-
     TARGET PRODUCT:
     - Brand: {brand}
     - Title: {title}
     - Expected ID: {mpn}
-
     CANDIDATE PAGE:
     - URL: {url}
     - Visible Text (Snippet): {page_text}
-
     TASK:
     Determine if this is the EXACT Product Detail Page for the requested item.
     - If the Brand and the main Product Name match perfectly, return true.
     - If this is a category page, a different product, or a different brand, return false.
     - If it's the right product but a different size/color, return true (it's a variant page).
-
     Return JSON: {{"is_match": true/false, "reasoning": "..."}}
     """
     try:
@@ -638,6 +666,8 @@ async def verify_page_identity_with_llm(url, html, brand, title, mpn, llm_provid
         return res.is_match if res else False
     except:
         return False
+
+
 async def aggregate_product(
     mpn: str,
     title: str,
@@ -654,7 +684,7 @@ async def aggregate_product(
     missing_llm_provider: str = None,
     is_algo2_run: bool = False,
     cached_html: Optional[Dict[str, str]] = None,
-    cached_urls: Optional[List[str]] = None, 
+    cached_urls: Optional[List[str]] = None,
 ) -> Dict:
     try:
         if missing_llm_provider is None:
@@ -670,7 +700,8 @@ async def aggregate_product(
             all_extractions = []
             for url in urls:
                 if url not in cached_html:
-                    logger.warning(f"Algo 2: Cached HTML missing for {url}, skipping")
+                    logger.warning(
+                        f"Algo 2: Cached HTML missing for {url}, skipping")
                     continue
                 html_text = cached_html[url]
                 logger.info(
@@ -809,18 +840,21 @@ async def aggregate_product(
                     title=title
                 )
                 if manufacturer_domain:
-                    logger.info(f"✓ Manufacturer domain found: {manufacturer_domain}")
+                    logger.info(
+                        f"✓ Manufacturer domain found: {manufacturer_domain}")
                     direct_domains.add(urlparse(manufacturer_domain).netloc)
             if brand_prompt_text:
                 brand_urls = extract_urls_from_prompt(brand_prompt_text)
                 if not brand_urls:
-                    brand_urls = extract_domains_and_generate_urls(brand_prompt_text)
+                    brand_urls = extract_domains_and_generate_urls(
+                        brand_prompt_text)
                 for url in brand_urls:
                     direct_domains.add(urlparse(url).netloc)
             elif category_prompt_text:
                 category_urls = extract_urls_from_prompt(category_prompt_text)
                 if not category_urls:
-                    category_urls = extract_domains_and_generate_urls(category_prompt_text)
+                    category_urls = extract_domains_and_generate_urls(
+                        category_prompt_text)
                 for url in category_urls:
                     direct_domains.add(urlparse(url).netloc)
             for domain in direct_domains:
@@ -833,25 +867,31 @@ async def aggregate_product(
                     taxonomy=taxonomy
                 )
                 if product_url:
-                    if not _url_contains_product_identifier(product_url,mpn,title):
+                    if not _url_contains_product_identifier(product_url, mpn, title):
                         logger.warning(
                             f" Rejecting discovery result (no product identifier in URL): {product_url}"
                         )
                         continue
-                    logger.info(f"✓ Found product page on {domain}: {product_url}")
+                    logger.info(
+                        f"✓ Found product page on {domain}: {product_url}")
                     direct_urls.append(product_url)
             seen = set()
-            direct_urls = [u for u in direct_urls if not (u in seen or seen.add(u))]
+            direct_urls = [u for u in direct_urls if not (
+                u in seen or seen.add(u))]
             if direct_urls:
-                logger.info(f"Final direct product URLs for {mpn}: {direct_urls}")
+                logger.info(
+                    f"Final direct product URLs for {mpn}: {direct_urls}")
             is_mpn_valid = mpn and str(mpn).strip().lower() != 'none'
             clean_mpn = mpn if is_mpn_valid else ""
             if is_mpn_valid:
-                query = title if (clean_mpn in title and brand in title) else f"{brand} {clean_mpn} {title}"
+                query = title if (
+                    clean_mpn in title and brand in title) else f"{brand} {clean_mpn} {title}"
             else:
-                query = f"{brand} {title}" if brand and brand.lower() not in title.lower() else title
+                query = f"{brand} {title}" if brand and brand.lower(
+                ) not in title.lower() else title
             query = query.strip()
-            logger.info(f"Generated search query: {query} (MPN Valid: {is_mpn_valid})")
+            logger.info(
+                f"Generated search query: {query} (MPN Valid: {is_mpn_valid})")
             if cached_urls and len(cached_urls) > 0:
                 logger.info("Multi-pass: Reusing previously discovered URLs")
                 urls = list(cached_urls)
@@ -881,23 +921,27 @@ async def aggregate_product(
                     "excel-", "tutorial", "qa108", "outline-delete"
                 ]
                 fallback_queries = []
-                is_retailer_sku=is_mpn_valid and str(mpn).isdigit() and len(str(mpn))==10
+                is_retailer_sku = is_mpn_valid and str(
+                    mpn).isdigit() and len(str(mpn)) == 10
                 if manufacturer_has_product and direct_domains:
                     if is_mpn_valid:
-                        fallback_queries.append(f'"{mpn}" site:{list(direct_domains)[0]}')
+                        fallback_queries.append(
+                            f'"{mpn}" site:{list(direct_domains)[0]}')
                     if title:
-                        fallback_queries.append(f"{title} site:{list(direct_domains)[0]}")
+                        fallback_queries.append(
+                            f"{title} site:{list(direct_domains)[0]}")
                 else:
                     if is_retailer_sku:
                         fallback_queries.append(f"{brand} {title}")
                         fallback_queries.append(f"{brand} {title} buy")
                         fallback_queries.append(f"{title} {brand} shop")
                     else:
-                        logger.info("Manufacturer domain has no product page. Searching broader web...")
+                        logger.info(
+                            "Manufacturer domain has no product page. Searching broader web...")
                         if is_mpn_valid and title:
-                            fallback_queries.append(f'{mpn} {title}')  
+                            fallback_queries.append(f'{mpn} {title}')
                         if is_mpn_valid:
-                            fallback_queries.append(f'{mpn} {brand} buy')  
+                            fallback_queries.append(f'{mpn} {brand} buy')
                             fallback_queries.append(f'{mpn}')
                         if title:
                             fallback_queries.append(f"{brand} {title}")
@@ -918,7 +962,8 @@ async def aggregate_product(
                             for r in fb_results:
                                 url = r.get("url", "")
                                 if not is_result_actually_product(r, brand, title):
-                                    logger.info(f"Skipping irrelevant result: {url}")
+                                    logger.info(
+                                        f"Skipping irrelevant result: {url}")
                                     continue
                                 if not any(d in url.lower() for d in BLOCKED_FALLBACK) and not url.lower().endswith(".pdf"):
                                     urls.append(url)
@@ -926,7 +971,8 @@ async def aggregate_product(
                                         break
                             urls = [
                                 url for url in urls if search_service.is_likely_pdp_url(url)]
-                            logger.info(f"Fallback URLs after PDP filter: {urls}")
+                            logger.info(
+                                f"Fallback URLs after PDP filter: {urls}")
                             if urls:
                                 logger.info(
                                     f"Fallback search found {len(urls)} URLs for {mpn}: {urls}")
@@ -937,25 +983,27 @@ async def aggregate_product(
                 cached_urls.clear()
                 cached_urls.extend(urls)
                 logger.info(f"Cached {len(cached_urls)} URLs for Algo 2")
-            
             if not urls:
                 return {
                     'status': 'failed',
                     'reason': 'No sources found',
                     'golden_record': {'attributes': {}}
                 }
-            logger.info(f"Stage 2: Download & Extraction from {len(urls)} sources")
+            logger.info(
+                f"Stage 2: Download & Extraction from {len(urls)} sources")
             download_service = HttpDownloadService(
                 timeout=30
             )
             all_extractions = []
             _url_semaphore = asyncio.Semaphore(1)
             found_image_global = None
+
             async def process_url(url):
                 extractions = []
                 nonlocal found_image_global
                 if found_image_global:
-                    logger.info(f"Image already found; skipping image extraction for {url}")
+                    logger.info(
+                        f"Image already found; skipping image extraction for {url}")
                 short_description = None
                 long_description = None
                 async with _url_semaphore:
@@ -966,20 +1014,24 @@ async def aggregate_product(
                         if is_algo2_run and cached_html and url in cached_html:
                             html_text = cached_html[url]
                             content_type = "html"
-                            logger.info(f"Algo 2: Using cached HTML for {url} - size: {len(html_text)} bytes")
+                            logger.info(
+                                f"Algo 2: Using cached HTML for {url} - size: {len(html_text)} bytes")
                         else:
                             content = await download_service.download(url)
                             if content is None:
                                 return []
                             content_type = content.get("type")
                             if content_type == "pdf":
-                                pdf_service = PDFExtractionService(max_pages=10)
+                                pdf_service = PDFExtractionService(
+                                    max_pages=10)
                                 pdf_text = await pdf_service.extract_text(content["raw_bytes"])
                                 if pdf_text and len(pdf_text.strip()) > 100:
-                                    logger.info(f"Extracted {len(pdf_text)} chars from PDF")
+                                    logger.info(
+                                        f"Extracted {len(pdf_text)} chars from PDF")
                                     attrs_to_use = primary_attributes or []
                                     if attribute_chunk:
-                                        other_attrs = [a for a in attrs_to_use if a not in attribute_chunk]
+                                        other_attrs = [
+                                            a for a in attrs_to_use if a not in attribute_chunk]
                                         attrs_to_use = attribute_chunk + other_attrs
                                     prompt_config = build_pdf_extraction_prompt(
                                         product_name=title,
@@ -1016,8 +1068,10 @@ async def aggregate_product(
                                         })
                                 return extractions
                             if content_type == "html":
-                                html_text = content["raw_bytes"].decode("utf-8", errors="ignore")
-                                logger.info(f"Downloaded HTML from {url} - size: {len(html_text)} bytes")
+                                html_text = content["raw_bytes"].decode(
+                                    "utf-8", errors="ignore")
+                                logger.info(
+                                    f"Downloaded HTML from {url} - size: {len(html_text)} bytes")
                                 if len(html_text) > 5000:
                                     from bs4 import BeautifulSoup
                                     visible_text = BeautifulSoup(
@@ -1031,9 +1085,11 @@ async def aggregate_product(
                                     )
                                     is_empty_spa = len(visible_text) < 300
                                     if is_bot_blocked:
-                                        logger.info(f" [Bot Detection] Cloudflare/Security block detected on {url}. Routing to Firecrawl...")
+                                        logger.info(
+                                            f" [Bot Detection] Cloudflare/Security block detected on {url}. Routing to Firecrawl...")
                                     elif is_empty_spa:
-                                        logger.info(f" [SPA Detection] Empty HTML shell detected ({len(visible_text)}b text). Routing to Firecrawl...")
+                                        logger.info(
+                                            f" [SPA Detection] Empty HTML shell detected ({len(visible_text)}b text). Routing to Firecrawl...")
                                     if is_bot_blocked or is_empty_spa:
                                         logger.info(
                                             f"[SPA Detection] Large HTML ({len(html_text)}b) but almost no visible text ({len(visible_text)}b). Trying Firecrawl...")
@@ -1073,7 +1129,11 @@ async def aggregate_product(
                                 return []
                         if not html_text:
                             return []
-                        html_lower = html_text.lower()                    
+                        if 'visible_text' not in locals() or not visible_text:
+                            from bs4 import BeautifulSoup
+                            visible_text = BeautifulSoup(html_text, 'html.parser').get_text(
+                                separator=' ', strip=True).lower()
+                        html_lower = html_text.lower()
                         not_found_phrases = [
                             "page not found",
                             "404 error",
@@ -1084,49 +1144,60 @@ async def aggregate_product(
                             "this page doesn't exist",
                             "we're sorry, but the page"
                         ]
-                        if any(phrase in html_lower for phrase in not_found_phrases):
+                        if any(phrase in visible_text for phrase in not_found_phrases):
+                            matched_phrase = [
+                                p for p in not_found_phrases if p in visible_text]
                             logger.warning(
-                                f"Skipping {url} — Soft 404 / Page Not Found detected")
+                                f"Skipping {url} — Soft 404 / Page Not Found detected. Matched: {matched_phrase}")
                             return []
                         if is_mpn_valid:
                             if mpn.lower() in html_lower:
-                                logger.info(f"✓ MPN verified in HTML for {url}")
+                                logger.info(
+                                    f"✓ MPN verified in HTML for {url}")
                             else:
-                                # --- NEW SAFETY NET START ---
-                                # If MPN is missing, check if the Brand + Title is strong enough
-                                title_keywords = [w.lower() for w in title.split() if len(w) > 3]
+                                title_keywords = [
+                                    w.lower() for w in title.split() if len(w) > 3]
                                 if title_keywords:
-                                    title_hits = sum(1 for kw in title_keywords if kw in html_lower)
-                                    title_match_ratio = title_hits / len(title_keywords)
-                                    
-                                    # If Brand is present AND 60% of the name matches, do NOT skip.
+                                    title_hits = sum(
+                                        1 for kw in title_keywords if kw in html_lower)
+                                    title_match_ratio = title_hits / \
+                                        len(title_keywords)
                                     if brand.lower() in html_lower and title_match_ratio >= 0.6:
-                                        logger.info(f"✓ Recovery: ID {mpn} missing, but Brand + Name ({int(title_match_ratio*100)}%) matched on {url}")
+                                        logger.info(
+                                            f"✓ Recovery: ID {mpn} missing, but Brand + Name ({int(title_match_ratio*100)}%) matched on {url}")
                                     else:
-                                        logger.warning(f"⛔ Skipping {url} — Neither MPN nor strong Title match found.")
+                                        logger.warning(
+                                            f"Skipping {url} — Neither MPN nor strong Title match found.")
                                         return []
                                 else:
                                     return []
                         elif title:
-                            title_keywords = [w for w in title.lower().split() if len(w) > 3]
+                            title_keywords = [
+                                w for w in title.lower().split() if len(w) > 3]
                             if title_keywords:
-                                title_hits = sum(1 for kw in title_keywords if kw in html_lower)
+                                title_hits = sum(
+                                    1 for kw in title_keywords if kw in html_lower)
                                 if (title_hits / len(title_keywords) >= 0.5):
-                                    logger.info(f"✓ Title keywords verified in HTML for {url} (No MPN in DB)")
+                                    logger.info(
+                                        f"✓ Title keywords verified in HTML for {url} (No MPN in DB)")
                                 else:
-                                    logger.warning(f"⛔ Skipping {url} — No MPN in DB and title match too low.")
+                                    logger.warning(
+                                        f" Skipping {url} — No MPN in DB and title match too low.")
                                     return []
                             else:
                                 return []
                         has_missing_llm = missing_llm_provider and missing_llm_provider != llm_provider
                         if has_missing_llm:
                             attrs_to_use = []
-                            logger.info(f"Algo 1 & 2 detected - extracting all attributes for {mpn}")
+                            logger.info(
+                                f"Algo 1 & 2 detected - extracting all attributes for {mpn}")
                         else:
                             attrs_to_use = primary_attributes or []
-                            logger.info(f"Standard mode - extracting primary attributes for {mpn}")
+                            logger.info(
+                                f"Standard mode - extracting primary attributes for {mpn}")
                         if attribute_chunk:
-                            other_attrs = [a for a in attrs_to_use if a not in attribute_chunk]
+                            other_attrs = [
+                                a for a in attrs_to_use if a not in attribute_chunk]
                             attrs_to_use = attribute_chunk + other_attrs
                         prompt_config = build_extraction_prompt(
                             product_name=title,
@@ -1150,12 +1221,15 @@ async def aggregate_product(
                             logger.info(
                                 f"Image URL: {extraction_result.image_url if hasattr(extraction_result, 'image_url') else 'None'}"
                             )
-                            logger.info(f"Number of attributes extracted: {len(extraction_result.attributes)}")
+                            logger.info(
+                                f"Number of attributes extracted: {len(extraction_result.attributes)}")
                             for attr in extraction_result.attributes:
-                                logger.info(f"  - {attr.name}: {attr.value} {getattr(attr, 'unit', '')}")
+                                logger.info(
+                                    f"  - {attr.name}: {attr.value} {getattr(attr, 'unit', '')}")
                         else:
                             logger.info("Product detected: NO")
-                            logger.info(f"Extraction result: {extraction_result}")
+                            logger.info(
+                                f"Extraction result: {extraction_result}")
                         logger.info("=====================================")
                         attr_dicts = []
                         image_url = None
@@ -1166,7 +1240,8 @@ async def aggregate_product(
                                 if not image_url:
                                     image_url = await extract_best_image(html_text, url, mpn)
                                 if image_url:
-                                    logger.info(f"✓ Image locked from {url}: {image_url}")
+                                    logger.info(
+                                        f"✓ Image locked from {url}: {image_url}")
                                     found_image_global = image_url
                             else:
                                 image_url = None
@@ -1181,11 +1256,13 @@ async def aggregate_product(
                                     "unit": attr.unit if hasattr(attr, "unit") else None,
                                     "confidence": attr.confidence if hasattr(attr, "confidence") else 0.9
                                 })
-                        pdf_links = PDFExtractionService.find_pdf_links(html_text, url)
+                        pdf_links = PDFExtractionService.find_pdf_links(
+                            html_text, url)
                         logger.info(
                             f"find_pdf_links found {len(pdf_links)} PDF(s) on {url}")
                         pdf_keyword_count = html_text.lower().count('.pdf')
-                        logger.info(f"Sanity Check: The string '.pdf' appears {pdf_keyword_count} times in the raw content.")
+                        logger.info(
+                            f"Sanity Check: The string '.pdf' appears {pdf_keyword_count} times in the raw content.")
                         if not pdf_links:
                             logger.info(
                                 f"Starting fallback PDF regex search on {len(html_text)} bytes of content.")
@@ -1201,9 +1278,12 @@ async def aggregate_product(
                                 html_text,
                                 _re.IGNORECASE
                             )
-                            bare_absolute_pdfs = _re.findall(r'(https?://[^\s\'"<>\[\]()]+\.pdf)', html_text)
-                            bare_relative_pdfs = _re.findall(r'(/[^\s\'"<>\[\]()]+\.pdf)', html_text, _re.IGNORECASE)
-                            logger.info(f"Regex matches -> HTML: {len(html_pdfs)}, MD: {len(markdown_pdfs)}, Abs: {len(bare_absolute_pdfs)}, Rel: {len(bare_relative_pdfs)}")
+                            bare_absolute_pdfs = _re.findall(
+                                r'(https?://[^\s\'"<>\[\]()]+\.pdf)', html_text)
+                            bare_relative_pdfs = _re.findall(
+                                r'(/[^\s\'"<>\[\]()]+\.pdf)', html_text, _re.IGNORECASE)
+                            logger.info(
+                                f"Regex matches -> HTML: {len(html_pdfs)}, MD: {len(markdown_pdfs)}, Abs: {len(bare_absolute_pdfs)}, Rel: {len(bare_relative_pdfs)}")
                             pdf_hrefs = html_pdfs + markdown_pdfs + bare_absolute_pdfs + bare_relative_pdfs
                             logger.info(
                                 f"Combined fallback matches: {len(pdf_hrefs)}")
@@ -1215,16 +1295,19 @@ async def aggregate_product(
                                 logger.info(
                                     f"Fallback regex found {len(pdf_links)} PDF link(s) on {url}")
                         if pdf_links:
-                            logger.info(f"🔍 Found {len(pdf_links)} PDF link(s) on {url}")
+                            logger.info(
+                                f" Found {len(pdf_links)} PDF link(s) on {url}")
                         for pdf_url in pdf_links or []:
                             try:
-                                logger.info(f"📄 Downloading PDF: {pdf_url}")
+                                logger.info(f"Downloading PDF: {pdf_url}")
                                 pdf_content = await download_service.download(pdf_url)
                                 if pdf_content and pdf_content["type"] == "pdf":
-                                    pdf_service = PDFExtractionService(max_pages=10)
+                                    pdf_service = PDFExtractionService(
+                                        max_pages=10)
                                     pdf_text = await pdf_service.extract_text(pdf_content["raw_bytes"])
                                     if pdf_text and len(pdf_text.strip()) > 100:
-                                        logger.info(f"✓ Extracted {len(pdf_text)} chars from PDF")
+                                        logger.info(
+                                            f"✓ Extracted {len(pdf_text)} chars from PDF")
                                         pdf_lower = pdf_text.lower()
                                         has_mpn_in_pdf = is_mpn_valid and mpn.lower() in pdf_lower
                                         has_title_in_pdf = False
@@ -1250,7 +1333,8 @@ async def aggregate_product(
                                             continue
                                         attrs_to_use = primary_attributes or []
                                         if attribute_chunk:
-                                            other_attrs = [a for a in attrs_to_use if a not in attribute_chunk]
+                                            other_attrs = [
+                                                a for a in attrs_to_use if a not in attribute_chunk]
                                             attrs_to_use = attribute_chunk + other_attrs
                                         pdf_prompt = build_pdf_extraction_prompt(
                                             product_name=title,
@@ -1284,11 +1368,14 @@ async def aggregate_product(
                                                 "short_description": None,
                                                 "long_description": None
                                             })
-                                            logger.info(f"✓ PDF extraction: {len(pdf_attrs)} attributes from {pdf_url}")
+                                            logger.info(
+                                                f"✓ PDF extraction: {len(pdf_attrs)} attributes from {pdf_url}")
                                             for attr in pdf_attrs:
-                                                logger.info(f"  📄 - {attr['name']}: {attr['value']} {attr.get('unit') or ''}")
+                                                logger.info(
+                                                    f"  - {attr['name']}: {attr['value']} {attr.get('unit') or ''}")
                             except Exception as pdf_err:
-                                logger.warning(f"Failed to process PDF {pdf_url}: {pdf_err}")
+                                logger.warning(
+                                    f"Failed to process PDF {pdf_url}: {pdf_err}")
                                 continue
                         extractions.append({
                             "url": url,
@@ -1306,15 +1393,16 @@ async def aggregate_product(
             tasks = [process_url(url) for url in urls[:5]]
             results = await asyncio.gather(*tasks)
             all_extractions = [e for sub in results if sub for e in sub]
-            
             if not all_extractions:
                 return {
                     'status': 'failed',
                     'reason': 'No valid extractions',
                     'golden_record': {'attributes': {}}
                 }
-            html_attrs = sum(len(s['attributes']) for s in all_extractions if s.get('source_type') == 'html')
-            pdf_attrs = sum(len(s['attributes']) for s in all_extractions if s.get('source_type') == 'pdf')
+            html_attrs = sum(len(s['attributes']) for s in all_extractions if s.get(
+                'source_type') == 'html')
+            pdf_attrs = sum(len(s['attributes'])
+                            for s in all_extractions if s.get('source_type') == 'pdf')
             total_attrs = html_attrs + pdf_attrs
             logger.info(
                 f"Stage 2 extracted {total_attrs} total attributes "
@@ -1331,6 +1419,12 @@ async def aggregate_product(
                 'golden_record': {'attributes': {}}
             }
         logger.info("Stage 3: Combined Cleaning, Unification & Standardization")
+        algo_name_map = {
+            'openai': 'Algo 1',
+            'gemini': 'Algo 2',
+            'claude': 'Algo 3'
+        }
+        current_algo_name = algo_name_map.get(llm_provider, llm_provider)
         raw_attrs_for_combine = []
         for src_idx, source in enumerate(all_extractions):
             source_type = source.get('source_type', 'html')
@@ -1342,8 +1436,9 @@ async def aggregate_product(
                     'unit': attr.get('unit'),
                     'source_url': source['url'],
                     'confidence': attr.get('confidence', 0.9),
-                    'extraction_algorithm': 'Algo 2' if is_algo2_run else 'Algo 1',  
-                    'extraction_source': source_type  
+                    # 'extraction_algorithm': 'Algo 2' if is_algo2_run else 'Algo 1',
+                    'extraction_algorithm': current_algo_name,
+                    'extraction_source': source_type
                 })
         canonical_names = []
         canonical_units = {}
@@ -1368,7 +1463,7 @@ async def aggregate_product(
                 rows = attr_result.all()
                 raw_names = {a['name'].lower() for a in raw_attrs_for_combine}
                 canonical_names = [
-                    row[0] for row in rows 
+                    row[0] for row in rows
                     if row[0] and (row[0].lower() in raw_names or "amp" in row[0].lower() or "speed" in row[0].lower())
                 ]
                 canonical_units = {
@@ -1376,20 +1471,22 @@ async def aggregate_product(
                     for row in rows
                     if row[0] and row[1]
                 }
-                logger.info(f"Loaded {len(canonical_names)} canonical names, {len(canonical_units)} units for: {taxonomy}")
+                logger.info(
+                    f"Loaded {len(canonical_names)} canonical names, {len(canonical_units)} units for: {taxonomy}")
         logger.info("Stage 2.5: Semantic Attribute Clustering")
         raw_attrs_for_combine = await cluster_attributes_by_meaning(
             raw_attrs_for_combine,
             canonical_names=canonical_names,
             threshold=0.75
         )
-        logger.info(f"After clustering: {len(set(a['name'] for a in raw_attrs_for_combine))} unique names")
+        logger.info(
+            f"After clustering: {len(set(a['name'] for a in raw_attrs_for_combine))} unique names")
         project = await db.get(Project, project_id) if db and project_id else None
         use_case = project.use_case.lower() if project and project.use_case else ""
         combine_prompt = _build_combined_prompt(
-    raw_attrs_for_combine, brand, mpn, title, taxonomy,
-    existing_excel_attrs=existing_excel_attrs, use_case=use_case,
-    canonical_names=canonical_names,canonical_units=canonical_units)
+            raw_attrs_for_combine, brand, mpn, title, taxonomy,
+            existing_excel_attrs=existing_excel_attrs, use_case=use_case,
+            canonical_names=canonical_names, canonical_units=canonical_units)
         async for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)):
             with attempt:
                 combined_result = await call_llm_with_schema(
@@ -1479,24 +1576,25 @@ async def aggregate_product(
         else:
             avg_conf = 0.0
         golden_attr_dicts = [
-              {
-        'name': a.name,
-        'value': a.value,
-        'unit': a.unit,
-        'confidence': a.confidence,
-        'sources': a.sources,
-        'extraction_algorithm': getattr(a, 'extraction_algorithm', 'Algo 1'),  
-        'extraction_source': getattr(a, 'extraction_source', 'html')  
-    }
+            {
+                'name': a.name,
+                'value': a.value,
+                'unit': a.unit,
+                'confidence': a.confidence,
+                'sources': a.sources,
+                # 'extraction_algorithm': getattr(a, 'extraction_algorithm', 'Algo 1'),
+                'extraction_algorithm': getattr(a, 'extraction_algorithm', current_algo_name),
+                'extraction_source': getattr(a, 'extraction_source', 'html')
+            }
             for a in golden_attributes
         ]
-        best_short_description=None
-        best_long_description=None
+        best_short_description = None
+        best_long_description = None
         for source in all_extractions:
             if source.get('short_description') and not best_short_description:
-                best_short_description=source['short_description']
+                best_short_description = source['short_description']
             if source.get('long_description') and not best_long_description:
-                best_long_description=source['long_description']
+                best_long_description = source['long_description']
             if best_short_description and best_long_description:
                 break
         logger.info("Stage 6: Marketing Enrichment")
@@ -1523,7 +1621,8 @@ async def aggregate_product(
                 estimated_tokens=2000,
                 max_tokens=4000
             )
-        best_image = found_image_global or extract_best_image_fallback(all_extractions)
+        best_image = found_image_global or extract_best_image_fallback(
+            all_extractions)
         if not best_image and candidate_images:
             for candidate in candidate_images:
                 is_valid = await validate_image_url(candidate)
@@ -1532,7 +1631,7 @@ async def aggregate_product(
                     best_image = candidate
                     break
         if 'download_service' in locals():
-            download_service._cache.clear()        
+            download_service._cache.clear()
         return {
             'status': 'success',
             'golden_record': {
@@ -1555,6 +1654,8 @@ async def aggregate_product(
             'reason': str(e),
             'golden_record': {'attributes': {}}
         }
+
+
 def _build_combined_prompt(
     raw_attrs: List[Dict],
     brand: str,
@@ -1654,7 +1755,8 @@ def _build_combined_prompt(
     ═══════════════════════════════════════════════════════
     """
     if canonical_units:
-        units_list = "\n".join(f"  - {name}: {unit}" for name, unit in canonical_units.items())
+        units_list = "\n".join(
+            f"  - {name}: {unit}" for name, unit in canonical_units.items())
         canonical_section += f"""
     ═══════════════════════════════════════════════════════
     PREFERRED UNITS FOR THIS TAXONOMY (use EXACTLY these units):
@@ -1966,18 +2068,21 @@ INPUT ATTRIBUTES
 ═══════════════════════════════════════════════════════
 {attributes_text}
 ═══════════════════════════════════════════════════════
-    CRITICAL: PRESERVE EXTRACTION METADATA
+        CRITICAL: PRESERVE EXTRACTION METADATA
     ═══════════════════════════════════════════════════════
     Each attribute includes:
-    - Algorithm: Which LLM extraction (Algo 1 or Algo 2)
+    - Algorithm: Which LLM extraction (Algo 1, Algo 2, or Algo 3)
     - Source Type: html or pdf
     When consolidating duplicates:
     1. Keep metadata from HIGHER PRIORITY source:
-       - Algo 2 > Algo 1 (Algo 2 fills gaps, more targeted)
-       - pdf > html (datasheets more authoritative)
+       - Gap-filling algorithms (Algo 2, Algo 3) are HIGHER priority than base (Algo 1) because they are more targeted.
+       - pdf is HIGHER priority than html (datasheets are more authoritative).
     2. Return in output: extraction_algorithm, extraction_source
     Example:
     Input: "Voltage" (Algo 1, html) + "Voltage Rating" (Algo 2, html)
     Output: "Voltage Rating" (Algo 2, html)
+    
+    Input: "Voltage" (Algo 1, html) + "Voltage Rating" (Algo 3, pdf)
+    Output: "Voltage Rating" (Algo 3, pdf)
 """
     return prompt

@@ -57,14 +57,24 @@ async def calculate_metrics(
                                         end_date,
                                         date_field=date_field
                                         )
+        # stmt = select(
+        #     func.count(Product.id).label("total"),
+        #     func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label(
+        #         "aggregated"),
+        #     func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label(
+        #         "failed"),
+        #     func.sum(case((Product.enrichment_status == "pending", 1), else_=0)).label(
+        #         "pending"),
+        #     func.avg(Product.completeness_score).label("health"),
         stmt = select(
             func.count(Product.id).label("total"),
-            func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label(
-                "aggregated"),
-            func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label(
-                "failed"),
-            func.sum(case((Product.enrichment_status == "pending", 1), else_=0)).label(
-                "pending"),
+            # Change Product to ProjectProductLink for all status counts
+            func.sum(case((ProjectProductLink.enrichment_status ==
+                     "completed", 1), else_=0)).label("aggregated"),
+            func.sum(case((ProjectProductLink.enrichment_status ==
+                     "failed", 1), else_=0)).label("failed"),
+            func.sum(case((ProjectProductLink.enrichment_status ==
+                     "pending", 1), else_=0)).label("pending"),
             func.avg(Product.completeness_score).label("health"),
         ).join(ProjectProductLink, Product.id == ProjectProductLink.product_id).join(
             Project, Project.id == ProjectProductLink.project_id  
@@ -317,7 +327,8 @@ async def get_dashboard_timeline(
         stmt = select(
         period_expr.label("period"),
         func.count(Product.id).label("total_products"),
-        func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label("aggregated_products"),
+            func.sum(case((ProjectProductLink.enrichment_status ==
+                     "completed", 1), else_=0)).label("aggregated_products"),
         func.sum(case(((Product.workflow_stage == "enrichment") | (Product.needs_enrichment == True), 1), else_=0)).label("moved_to_enrichment")
         ).join(
             ProjectProductLink, Product.id == ProjectProductLink.product_id
@@ -548,20 +559,39 @@ async def get_needs_attention(
         ).where(
             (Product.taxonomy == None) | (Product.taxonomy == ""), *filters
         )
+        # p_stmt = select(func.count(Product.id)).join(
+        #     ProjectProductLink, Product.id == ProjectProductLink.product_id
+        # ).join(
+        #     Project, Project.id == ProjectProductLink.project_id
+        # ).where(
+        #     Product.enrichment_status == "pending", *filters
+        # )
         p_stmt = select(func.count(Product.id)).join(
             ProjectProductLink, Product.id == ProjectProductLink.product_id
         ).join(
             Project, Project.id == ProjectProductLink.project_id
         ).where(
-            Product.enrichment_status == "pending", *filters
+            ProjectProductLink.enrichment_status == "pending",
+            *filters
         )
+
+        # Failed Block
         f_stmt = select(func.count(Product.id)).join(
             ProjectProductLink, Product.id == ProjectProductLink.product_id
         ).join(
             Project, Project.id == ProjectProductLink.project_id
         ).where(
-            Product.enrichment_status == "failed", *filters
+            ProjectProductLink.enrichment_status == "failed",
+            *filters
         )
+        # f_stmt = select(func.count(Product.id)).join(
+        #     ProjectProductLink, Product.id == ProjectProductLink.product_id
+        # ).join(
+        #     Project, Project.id == ProjectProductLink.project_id
+        # ).where(
+        #     Product.enrichment_status == "failed", *filters
+        # )
+       
         if mode and mode in ["aggregation", "cleaning", "enrichment"]:
             u_stmt = u_stmt.where(Project.operation_mode == mode)
             p_stmt = p_stmt.where(Project.operation_mode == mode)
@@ -673,14 +703,22 @@ async def get_projects_overview(
             Project.use_case,
             Project.updated_at,
             func.count(Product.id).label("total_products"),
-            func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label(
-                "aggregated"),
-            func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label(
-                "failed"),
-            func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label(
-                "enrichment"),  
-            func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label(
-                "enrichment_failed"),  
+            # func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label(
+            #     "aggregated"),
+            # func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label(
+            #     "failed"),
+            # func.sum(case((Product.enrichment_status == "completed", 1), else_=0)).label(
+            #     "enrichment"),  
+            # func.sum(case((Product.enrichment_status == "failed", 1), else_=0)).label(
+            #     "enrichment_failed"),
+            func.sum(case((ProjectProductLink.enrichment_status ==
+                     "completed", 1), else_=0)).label("aggregated"),
+            func.sum(case((ProjectProductLink.enrichment_status ==
+                     "failed", 1), else_=0)).label("failed"),
+            func.sum(case((ProjectProductLink.enrichment_status ==
+                     "completed", 1), else_=0)).label("enrichment"),
+            func.sum(case((ProjectProductLink.enrichment_status ==
+                     "failed", 1), else_=0)).label("enrichment_failed"),    
             func.sum(case((Product.workflow_stage == "cleaning", 1), else_=0)).label(
                 "cleaning"),  
         ).outerjoin(

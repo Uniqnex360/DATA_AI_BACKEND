@@ -354,13 +354,13 @@ async def list_projects(
         active_source = aliased(Source)
         auth_filter = get_auth_filters(current_user, user_id)
 
-        # ✅ FIX: Initialize ALL subqueries at the start
         aggregated_count_subq = select(func.count(Product.id)).join(
             ProjectProductLink, Product.id == ProjectProductLink.product_id
         ).where(
             ProjectProductLink.project_id == Project.id,
             Product.workflow_stage == 'aggregation',
-            Product.enrichment_status == 'completed'
+            # CHANGE THIS LINE:
+            ProjectProductLink.enrichment_status == 'completed'
         ).correlate(Project).scalar_subquery().label('aggregated_count')
 
         if tab == "aggregation":
@@ -405,11 +405,9 @@ async def list_projects(
             .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
             .where(
                 ProjectProductLink.project_id == Project.id,
-                Product.enrichment_status == 'completed'
+                ProjectProductLink.enrichment_status == 'completed'
             )
-            .correlate(Project)
-            .scalar_subquery()
-            .label('cleaned_count')
+            .correlate(Project).scalar_subquery().label('cleaned_count')
         )
 
         failed_count_subq = (
@@ -417,11 +415,9 @@ async def list_projects(
             .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
             .where(
                 ProjectProductLink.project_id == Project.id,
-                Product.enrichment_status == 'failed'
+                ProjectProductLink.enrichment_status == 'failed'
             )
-            .correlate(Project)
-            .scalar_subquery()
-            .label('failed_count')
+            .correlate(Project).scalar_subquery().label('failed_count')
         )
 
         pending_count_subq = (
@@ -429,15 +425,19 @@ async def list_projects(
             .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
             .where(
                 ProjectProductLink.project_id == Project.id,
-                Product.enrichment_status == 'pending'
+                ProjectProductLink.enrichment_status == 'pending'
             )
-            .correlate(Project)
-            .scalar_subquery()
-            .label('pending_count')
+            .correlate(Project).scalar_subquery().label('pending_count')
         )
 
         completeness_subq = (
-            select(func.avg(Product.completeness_score))
+            select(func.avg(
+                case(
+                    (ProjectProductLink.enrichment_status ==
+                     "completed", Product.completeness_score),
+                    else_=0
+                )
+            ))
             .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
             .where(
                 ProjectProductLink.project_id == Project.id,
@@ -463,7 +463,7 @@ async def list_projects(
             .where(
                 ProjectProductLink.project_id == Project.id,
                 Product.workflow_stage == 'enrichment',
-                Product.enrichment_status == 'pending'
+                ProjectProductLink.enrichment_status == 'pending'
             )
             .correlate(Project)
             .scalar_subquery()

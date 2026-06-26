@@ -156,7 +156,7 @@ async def fresh_aggregation(
 
 async def search_pdfs_url(mpn: str, brand: str) -> List[str]:
     try:
-        logger.info(f"🔍 [1/4] Starting PDF search for MPN: {mpn}")
+        logger.info(f" [1/4] Starting PDF search for MPN: {mpn}")
         searxng = SearXNGSearchService(
             base_url=f"{settings.SEARXNG_URL}/search", max_results=20)
         search_queries = [
@@ -357,7 +357,7 @@ async def process_blind_pdf_extraction(
             failed = 0
             for pdf_doc in pdf_documents:
                 try:
-                    logger.info(f"📄 Processing: {pdf_doc['filename']}")
+                    logger.info(f" Processing: {pdf_doc['filename']}")
                     full_text = ""
                     with pdfplumber.open(BytesIO(pdf_doc['content'])) as pdf:
                         for page in pdf.pages[:20]:
@@ -1085,7 +1085,7 @@ async def process_multi_pdf_extraction_for_single_mpn(
             if not pdf_documents:
                 raise ValueError("No PDFs found in source")
             logger.info(
-                f"📄 Processing MPN {mpn} from multi-PDF source with {len(pdf_documents)} PDFs")
+                f" Processing MPN {mpn} from multi-PDF source with {len(pdf_documents)} PDFs")
             pdf_texts = []
             for pdf_doc in pdf_documents:
                 try:
@@ -1784,7 +1784,7 @@ async def process_multi_pdf_extraction(
                         'length': len(full_text)
                     })
                     logger.info(
-                        f"📄 Extracted {len(full_text)} chars from {pdf_doc['filename']}")
+                        f" Extracted {len(full_text)} chars from {pdf_doc['filename']}")
                 except Exception as e:
                     logger.error(
                         f"Failed to extract {pdf_doc['filename']}: {e}")
@@ -1799,7 +1799,7 @@ async def process_multi_pdf_extraction(
             results = []
             for mpn in mpns:
                 try:
-                    logger.info(f"🔍 Processing MPN: {mpn}")
+                    logger.info(f" Processing MPN: {mpn}")
                     stmt = select(Product).join(
                         ProjectProductLink, Product.id == ProjectProductLink.product_id  
                     ).where(

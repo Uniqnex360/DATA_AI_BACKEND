@@ -22,13 +22,21 @@ class SearXNGSearchService(ISearchService):
             "format": "json",
             "categories": "images",
             "pageno": 1,
+            "engines": self.engines[0],
+            "language": "en",
+            "safesearch": 0,
         }
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{self.base_url}/search", params=params, timeout=30)
-            resp.raise_for_status()
-            data = resp.json()
-            
-            return data.get("results", [])
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"{self.base_url}/search",
+                params=params,
+                timeout=aiohttp.ClientTimeout(total=self.timeout),
+            ) as resp:
+                if resp.status != 200:
+                    text = await resp.text()
+                    raise Exception(f"SearXNG returned {resp.status}: {text[:200]}")
+                data = await resp.json()
+                return data.get("results", [])
     async def get_urls(
         self, query: str, mpn: str, brand: str
     ) -> List[str]:
@@ -85,6 +93,9 @@ class SearXNGSearchService(ISearchService):
             "engines": ",".join(self.engines),
             "categories": "general",
             "pageno": 1,
+            "language": "en",       
+    "time_range": "",        
+    "safesearch": 0, 
         }
         if engines:
             params["engines"] = engines
@@ -100,4 +111,4 @@ class SearXNGSearchService(ISearchService):
                 data = await resp.json()
                 results = data.get("results", [])
                 results.sort(key=lambda r: r.get("score", 0), reverse=True)
-                return data.get("results", [])
+                return results

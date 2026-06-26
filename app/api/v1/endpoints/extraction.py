@@ -525,7 +525,8 @@ async def batch_aggregate(
                         # Link existing product to this project
                         db.add(ProjectProductLink(
                             project_id=projectId,
-                            product_id=product.id
+                            product_id=product.id,
+                            enrichment_status="pending"
                         ))
                         await db.flush()
 
@@ -610,7 +611,8 @@ async def batch_aggregate(
                 # ✅ Create link AFTER product has an ID
                 db.add(ProjectProductLink(
                     project_id=projectId,
-                    product_id=product.id  # Now this works!
+                    product_id=product.id,
+                    enrichment_status="pending"
                 ))
 
                 created_count += 1
@@ -1059,7 +1061,7 @@ async def run_aggregation_task(source_id: str):
                             f"  Excel attributes: {list(existing_data.keys())[:5]}")
                     logger.info(
                         f"Primary attributes found in DB: {primary_attr_names}")
-                    if len(primary_attr_names) > 10:
+                    if len(primary_attr_names) > 100:
                         logger.info(
                             f" Product has {len(primary_attr_names)} attributes - using multi-pass processing")
                         from app.aggregation.aggregate_product import chunk_attributes

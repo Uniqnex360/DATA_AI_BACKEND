@@ -2,7 +2,6 @@ import re
 import io
 from fastapi import HTTPException
 import pandas as pd
-from datetime import datetime
 from typing import List, Optional
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -56,7 +55,8 @@ async def generate_products_excel(
     for i in range(1, MAX_ATTRIBUTES + 1):
         attr_headers.extend([
             f"attribute_name{i}", f"attribute_value{i}",
-            f"attribute_uom{i}", f"validation_value{i}", f"validation_uom{i}"
+            f"attribute_uom{i}", f"validation_value{i}", f"validation_uom{i}",
+            f"attribute_algorithm{i}", f"attribute_source{i}"
         ])
     source_url_headers = [f"source_url_{i}" for i in range(1, 6)]
     all_headers = ["Project Name"] + core_headers + cat_headers + phys_headers + price_headers + \
@@ -289,7 +289,7 @@ async def generate_products_excel(
         row.update({
              "Sequence": p.aggregation_index or "", 
             "Prod ID": str(p.id) if p.id else "",
-            "SKU": row.get("MPN") or p.product_code or "",
+            "SKU": p.sku or p.product_code or row.get("SKU") or row.get("MPN") or "",
             "Product_Type": row.get("Product_Type") or getattr(p, 'product_type', '') or "",
             "Parent_SKU": row.get("Parent_SKU") or getattr(p, 'parent_sku', '') or "",
             "Product_Name": row.get("Product_Name") or p.product_name or "",
@@ -395,6 +395,7 @@ async def generate_products_excel(
                     ai_match_key = ai_key
                     break
             ai_val_str = ""
+            ai_algo_str = ""
             ai_uom_str = ""
             if ai_match_key:
                 raw_val = ai_data[ai_match_key]
@@ -402,6 +403,8 @@ async def generate_products_excel(
                 if isinstance(raw_val, dict):
                     uom_obj = raw_val.get("uom") or raw_val.get("unit")
                     ai_uom_str = clean_for_excel(uom_obj)
+                    ai_algo_str = raw_val.get(
+                        "extraction_algorithm", "Algo 1")   
                 used_ai_keys.add(ai_match_key)
             orig_val_str = ""
             orig_uom_str = ""
@@ -418,6 +421,7 @@ async def generate_products_excel(
             final_uom = ai_uom_str if ai_val_str else orig_uom_str
             row[f"attribute_value{i}"] = final_val
             row[f"attribute_uom{i}"] = final_uom
+            row[f"attribute_algorithm{i}"] = ai_algo_str
             if orig_match and orig_match.get('validation_value'):
                 validation_val = clean_for_excel(orig_match.get('validation_value'))
                 original_val = clean_for_excel(orig_match.get('value'))
@@ -472,6 +476,8 @@ async def generate_products_excel(
                 uom = ai_data[ai_key].get("uom", "")
                 if uom and uom.lower() not in ["n/a", "na", "none", "null"]:
                     row[f"attribute_uom{current_slot}"] = clean_for_excel(uom)
+                row[f"attribute_algorithm{current_slot}"] = ai_data[ai_key].get(
+                    "extraction_algorithm", "Algo 1")
             current_slot += 1
         if p.source_url:
             row["source_url_1"] = p.source_url
