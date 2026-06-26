@@ -1,4 +1,4 @@
-from sqlalchemy import cast, String, case, null, or_
+from sqlalchemy import Float, cast, String, case, null, or_
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, outerjoin, and_
