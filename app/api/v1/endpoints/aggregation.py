@@ -234,6 +234,14 @@ async def trigger_project_aggregation(
 ) -> AggregationTriggerResponse:
     try:
         project = await db.get(Project, project_id)
+        if project.status == "completed":
+             return AggregationTriggerResponse(
+                status='success',
+                message='Project is already fully aggregated',
+                job_id='none',
+                project_id=project_id,
+                total_products=0
+            )
         if not project:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -726,6 +734,13 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                     failed += 1
                     continue
                 await db_session.refresh(job)
+                if product.enrichment_status == 'completed':
+                    logger.info(f"Product {product.product_code} already completed globally. Reusing data for this project.")
+                    link.enrichment_status = 'completed'
+                    db_session.add(link)
+                    successful += 1
+                    await db_session.commit()
+                    continue
                 if job.status == 'cancelled':
                     logger.info(f"Job {job_id} cancelled during processing")
                     break
@@ -1154,7 +1169,13 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
             )
             link_result = await db_session.execute(link_stmt)
             link = link_result.scalars().first()
-
+            if product.enrichment_status == 'completed':
+                logger.info(f"Product {product.product_code} already completed globally. Reusing data.")
+                if link:
+                    link.enrichment_status = 'completed'
+                    db_session.add(link)
+                await db_session.commit()
+                return 
             if not link:
                 logger.error(f"Product {product_id} not linked to any project")
                 product.enrichment_status = 'failed'
