@@ -451,13 +451,19 @@ async def list_projects(
         )
 
         data_quality_subq = (
-            select(func.avg(Product.data_quality_score))
+            select(func.avg(
+                case(
+                    (ProjectProductLink.enrichment_status == "completed", Product.data_quality_score),
+                    else_=0
+                )
+            ))
             .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
             .where(ProjectProductLink.project_id == Project.id)
             .correlate(Project)
             .scalar_subquery()
             .label("data_quality_score")
         )
+
 
         enrichment_pending_count_subq = (
             select(func.count(Product.id))
