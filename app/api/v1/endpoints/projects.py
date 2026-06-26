@@ -1,4 +1,4 @@
-from sqlalchemy import Float, cast, String, case, null, or_
+from sqlalchemy import cast, String, case, null, or_
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, outerjoin, and_
@@ -340,6 +340,7 @@ def normalize_source_status(status: str | None, project_status: str | None = Non
 #             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
 #             detail="Failed to fetch projects",
 #         )
+
 @router.get("/", response_model=List[ProjectResponse])
 async def list_projects(
     operation_mode: str | None = None,
@@ -370,9 +371,10 @@ async def list_projects(
                 .where(
                     ProjectProductLink.project_id == Project.id,
                     Product.workflow_stage == "aggregation",
-                    Product.enrichment_status.in_(
+                    ProjectProductLink.enrichment_status.in_(
                         ["pending", "failed", "completed", "processing"])
                 )
+
                 .correlate(Project)
                 .scalar_subquery()
                 .label("product_count")
@@ -384,8 +386,8 @@ async def list_projects(
                 .where(
                     ProjectProductLink.project_id == Project.id,
                     Product.workflow_stage == "enrichment",
-                    Product.enrichment_status.in_(["pending", "failed"])
-                )
+                    ProjectProductLink.enrichment_status.in_(["pending", "failed"])
+                )   
                 .correlate(Project)
                 .scalar_subquery()
                 .label("product_count")
@@ -430,38 +432,14 @@ async def list_projects(
             .correlate(Project).scalar_subquery().label('pending_count')
         )
 
-        # completeness_subq = (
-        #     select(func.avg(
-        #         case(
-        #             (ProjectProductLink.enrichment_status ==
-        #              "completed", Product.completeness_score),
-        #             else_=0
-        #         )
-        #     ))
-        #     .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
-        #     .where(
-        #         ProjectProductLink.project_id == Project.id,
-        #         Product.workflow_stage == "aggregation"
-        #     )
-        #     .correlate(Project)
-        #     .scalar_subquery()
-        #     .label("completeness_score")
-        # )
         completeness_subq = (
-            select(
-                func.coalesce(
-                    func.round(
-                        (
-                            func.count(case(
-                                (ProjectProductLink.enrichment_status == "completed", 1)
-                            )).cast(Float) * 100.0 / 
-                            func.nullif(func.count(Product.id).cast(Float), 0)
-                        ),
-                        1
-                    ),
-                    0.0
+            select(func.avg(
+                case(
+                    (ProjectProductLink.enrichment_status ==
+                     "completed", Product.completeness_score),
+                    else_=0
                 )
-            )
+            ))
             .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
             .where(
                 ProjectProductLink.project_id == Project.id,
@@ -471,6 +449,7 @@ async def list_projects(
             .scalar_subquery()
             .label("completeness_score")
         )
+
         data_quality_subq = (
             select(func.avg(Product.data_quality_score))
             .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
