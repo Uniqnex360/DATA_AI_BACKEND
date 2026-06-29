@@ -67,9 +67,17 @@ async def generate_products_excel(
         "title": "Product_Name",
         "brand": "Brand",
         "manufacturer": "Brand",
-        # "sku": "SKU",
+        "manufacturer part number": "MPN",   
+        "manufacturer_part_number": "MPN",   
+        "model_number": "MPN",  
+        "model number": "MPN",   
+        "sku": "SKU",
         "mpn": "MPN",
+        "brand_name": "Brand",    
         "model": "MPN",
+        "category": "Taxonomy",  
+        "taxonomy": "Taxonomy",
+        "product_code": "SKU",   
         "product_type": "Product_Type",
         "type": "Product_Type",
         "parent_sku": "Parent_SKU",
@@ -78,6 +86,7 @@ async def generate_products_excel(
         "gtin12": "upc",
         "ean": "ean",
         "upc": "upc",
+         "brand name": "Brand", 
         "unspc": "unspc",
         "status": "Status",
         "lifecycle_stage": "Lifecycle_Stage",
@@ -160,7 +169,10 @@ async def generate_products_excel(
         "baton_led_road_flares", "baton_road_flares_features",
         "battery_operated_led_road_flares_features", "flex_fit_tripods",
         "led_flares_vs_incendiary_flares", "led_road_flares", "patterns_and_run_times",
-        "price_range", "usage", "voc_level", 'category'
+        "price_range", "usage", "voc_level", 'category',"categories","category_1", "category_2", "category_3", 
+        "category_4", "category_5", "category_6",
+        "category_7", "category_8", "workflow_stage", "enrichment_status",  
+        
     }
     def normalize_attr_name(s: str) -> str:
         return s.strip().lower().replace('_', '').replace(' ', '').replace('-', '')
@@ -192,15 +204,24 @@ async def generate_products_excel(
         except Exception:
             pass
         if p.attributes:
+            NORMALIZED_IGNORED = {normalize_attr_name(k) for k in IGNORED_KEYS}
+            NORM_DEDICATED_KEYS = {normalize_attr_name(k) for k in DEDICATED_COLUMN_MAPPING.keys()}
             for key in p.attributes.keys():
-                key_lower = key.lower().strip()
-                if key_lower in IGNORED_KEYS:
+                key_norm = normalize_attr_name(key)
+                # key_lower = key.lower().strip()
+                # if key_lower in IGNORED_KEYS:
+                #     continue
+                # # key_norm = key_lower.replace('_', '').replace(' ', '').replace('-', '')
+                # key_norm = normalize_attr_name(key_lower)
+                if key_norm in NORMALIZED_IGNORED or key_norm in NORM_DEDICATED_KEYS:
                     continue
-                key_norm = key_lower.replace('_', '').replace(' ', '').replace('-', '')
                 is_dedicated = False
                 for map_key in DEDICATED_COLUMN_MAPPING.keys():
-                    map_norm = map_key.lower().replace('_', '').replace(' ', '').replace('-', '')
-                    if key_norm == map_norm:
+                    # map_norm = map_key.lower().replace('_', '').replace(' ', '').replace('-', '')
+                    # if key_norm == map_norm:
+                    #     is_dedicated = True
+                    #     break
+                    if key_norm == normalize_attr_name(map_key):
                         is_dedicated = True
                         break
                 if not is_dedicated:
@@ -269,23 +290,38 @@ async def generate_products_excel(
             row['image_url_1'] = clean_for_excel(ai_data.pop('image'))
         if not row.get("image_url_1") and p.image_url_1:
             row["image_url_1"] = p.image_url_1
+        NORM_DEDICATED_MAP = {normalize_attr_name(k): target for k, target in DEDICATED_COLUMN_MAPPING.items()}
         for ai_key in list(ai_data.keys()):
-            ai_key_norm = ai_key.lower().replace('_', '').replace(' ', '').replace('-', '')
-            for map_key, target_col in DEDICATED_COLUMN_MAPPING.items():
-                map_key_norm = map_key.lower().replace('_', '').replace(' ', '').replace('-', '')
-                if ai_key_norm == map_key_norm:
-                    value = ai_data.pop(ai_key)
-                    row[target_col] = clean_for_excel(value)
-                    if isinstance(value, dict):
-                        uom = value.get('uom') or value.get('unit')
-                        if uom:
-                            uom_clean = clean_for_excel(uom)
-                            if target_col == 'Weight':
-                                row['Weight_Unit'] = uom_clean
-                            elif target_col in ['Length', 'Width', 'Height']:
-                                if not row['Dimension_Unit']:
-                                    row['Dimension_Unit'] = uom_clean
-                    break
+            ai_key_norm = normalize_attr_name(ai_key)
+            if ai_key_norm in NORM_DEDICATED_MAP:
+                target_col = NORM_DEDICATED_MAP[ai_key_norm]
+                value = ai_data.pop(ai_key) # Physically remove it so it can't leak
+                row[target_col] = clean_for_excel(value)
+                
+                # Handle units for length/weight if they are in the dict
+                if isinstance(value, dict):
+                    uom = value.get('uom') or value.get('unit')
+                    if uom:
+                        uom_clean = clean_for_excel(uom)
+                        if target_col == 'Weight' and not row['Weight_Unit']:
+                            row['Weight_Unit'] = uom_clean
+                        elif target_col in ['Length', 'Width', 'Height'] and not row['Dimension_Unit']:
+                            row['Dimension_Unit'] = uom_clean
+            # for map_key, target_col in DEDICATED_COLUMN_MAPPING.items():
+            #     map_key_norm = map_key.lower().replace('_', '').replace(' ', '').replace('-', '')
+            #     if ai_key_norm == map_key_norm:
+            #         value = ai_data.pop(ai_key)
+            #         row[target_col] = clean_for_excel(value)
+            #         if isinstance(value, dict):
+            #             uom = value.get('uom') or value.get('unit')
+            #             if uom:
+            #                 uom_clean = clean_for_excel(uom)
+            #                 if target_col == 'Weight':
+            #                     row['Weight_Unit'] = uom_clean
+            #                 elif target_col in ['Length', 'Width', 'Height']:
+            #                     if not row['Dimension_Unit']:
+            #                         row['Dimension_Unit'] = uom_clean
+                    # break
         row.update({
              "Sequence": p.aggregation_index or "", 
             "Prod ID": str(p.id) if p.id else "",
@@ -381,6 +417,7 @@ async def generate_products_excel(
             pass
         used_ai_keys = set()
         used_original_indexes = {}
+        NORMALIZED_IGNORED_KEYS = {normalize_attr_name(k) for k in IGNORED_KEYS}
         for i, template_attr_name in enumerate(attribute_template, 1):
             if i > MAX_ATTRIBUTES:
                 break
@@ -391,6 +428,8 @@ async def generate_products_excel(
                 if ai_key in used_ai_keys or ai_key.lower() in IGNORED_KEYS:
                     continue
                 ai_norm = normalize_attr_name(ai_key)
+                if ai_key in used_ai_keys or ai_norm in NORMALIZED_IGNORED_KEYS:
+                    continue
                 if template_norm == ai_norm or (template_norm in ai_norm and len(template_norm) > 3):
                     ai_match_key = ai_key
                     break
@@ -452,11 +491,13 @@ async def generate_products_excel(
                         row[f"validation_value{i}"] = orig_val_str
                         row[f"validation_uom{i}"] = orig_uom_str
         remaining_attrs = []
+        NORMALIZED_IGNORED = {normalize_attr_name(k) for k in IGNORED_KEYS}
         for k in ai_data.keys():
-            if k in used_ai_keys or k.lower() in IGNORED_KEYS:
+            if k in used_ai_keys:
                 continue
-            # NEW CHECK: Skip if matches dedicated column
             k_norm = normalize_attr_name(k)
+            if k_norm in NORMALIZED_IGNORED:
+                continue
             is_dedicated = False
             for map_key in DEDICATED_COLUMN_MAPPING.keys():
                 if k_norm == normalize_attr_name(map_key):

@@ -637,37 +637,121 @@ def is_result_actually_product(result: dict, brand: str, title: str) -> bool:
     if match_ratio >= 0.5:
         return True
     return False
-
-
-async def verify_page_identity_with_llm(url, html, brand, title, mpn, llm_provider):
+def _base_model_tokens_match(mpn: str, url: str) -> bool:
+    tokens = re.findall(r'[A-Z0-9]+', mpn.upper())
+    if not tokens:
+        return False
+    
+    url_upper = url.upper()
+    url_slug = urlparse(url).path.upper()
+    
+    # Strategy 1: all base tokens in URL
+    base_tokens = tokens[:-1]
+    if base_tokens and all(t in url_upper for t in base_tokens):
+        return True
+    
+    # Strategy 2: MPN without last token as substring in slug
+    base_str = ''.join(base_tokens)
+    if len(base_str) >= 4 and base_str in url_slug.replace('-', '').replace('_', ''):
+        return True
+    
+    # Strategy 3: majority match (60%)
+    if base_tokens:
+        ratio = sum(1 for t in base_tokens if t in url_upper) / len(base_tokens)
+        if ratio >= 0.6:
+            return True
+    
+    return False
+async def verify_page_identity_with_llm(url: str, html: str, brand: str, title: str, mpn: str, llm_provider: str,manufacturer_domain:str) -> bool:
+    
     from bs4 import BeautifulSoup
+    from app.core.config import settings
+    import logging
+
+    logger = logging.getLogger("aggregate_product")
+    is_mfr_url = (
+        manufacturer_domain and 
+        manufacturer_domain.replace("https://", "").replace("www.", "") in url
+    )
+    if is_mfr_url and _base_model_tokens_match(mpn, url):
+        logger.info(f"✓ Base token match on mfr domain, skip LLM: {url}")
+        return True
+
+    # 1. Clean the HTML to extract only relevant visible text
     soup = BeautifulSoup(html, 'html.parser')
-    page_text = soup.get_text(separator=' ', strip=True)[:5000]
+    
+    # Remove heavy junk that confuses the LLM and wastes tokens
+    for junk in soup(["script", "style", "nav", "footer", "header", "aside"]):
+        junk.decompose()
+        
+    page_text = soup.get_text(separator=' ', strip=True)
+
+    # 2. SPA Detection: If the text is very thin, the scraper likely got an empty JS shell
+    if len(page_text) < 500:
+        logger.info(f"Verification text for {url} is too thin. Attempting Firecrawl rendering...")
+        try:
+            from firecrawl import Firecrawl
+            fc_client = Firecrawl(api_key=settings.FIRECRAWL_API_KEY)
+            fc_result = fc_client.scrape_url(url)
+            
+            # ✅ FIX: Handle both object and dictionary return types safely
+            rendered_text = ""
+            if isinstance(fc_result, dict):
+                rendered_text = fc_result.get('markdown') or fc_result.get('content') or ""
+            else:
+                # Access attributes directly from the Document object
+                rendered_text = getattr(fc_result, 'markdown', '') or getattr(fc_result, 'content', '') or ""
+            
+            if rendered_text:
+                page_text = rendered_text
+        except Exception as e:
+            logger.warning(f"Firecrawl fallback failed: {e}")
+
+    # 3. Limit snippet to 6000 characters to stay within context limits
+    snippet = page_text[:6000]
+
+    # 4. Construct the prompt with industry-specific matching logic
     prompt = f"""
-    You are a Product Matcher. I am looking for a specific product and found a candidate page.
-    The specific ID/MPN '{mpn}' was NOT found in the text of the page, but it might be the correct product line.
+    You are a Senior Product Data Matcher. Verify if the following web page is the official Product Detail Page (PDP) for the requested item.
+
     TARGET PRODUCT:
     - Brand: {brand}
     - Title: {title}
-    - Expected ID: {mpn}
-    CANDIDATE PAGE:
+    - Target MPN/ID: {mpn}
+
+    CANDIDATE PAGE TO EVALUATE:
     - URL: {url}
-    - Visible Text (Snippet): {page_text}
-    TASK:
-    Determine if this is the EXACT Product Detail Page for the requested item.
-    - If the Brand and the main Product Name match perfectly, return true.
-    - If this is a category page, a different product, or a different brand, return false.
-    - If it's the right product but a different size/color, return true (it's a variant page).
-    Return JSON: {{"is_match": true/false, "reasoning": "..."}}
+    - Page Content Snippet: {snippet}
+
+    VERIFICATION RULES:
+    1. MATCH if the Brand '{brand}' is the primary subject of the page.
+    2. MATCH if the base model matches, even if the suffix/finish is different.
+       (Example: Target 'BE365VCAM716' matches a page for 'BE365 Camelot Deadbolt' because 'VCAM716' is just the color code).
+    3. MATCH if the product name describes the exact same physical item (Example: 'GTPOBUS1225' matches 'Gozney Tread Oven').
+    4. REJECT (False) if it is a Category or Search Results page showing multiple different products.
+    5. REJECT (False) if it is an Installation Manual, Support PDF, News Article, or Store Locator.
+    6. REJECT (False) if the page says "Product Not Found" or is a 404 error.
+
+    Return your decision in strict JSON format.
     """
+
     try:
         from app.llm import call_llm_with_schema
+        # Note: Ensure IdentityVerificationResponse schema includes 'confidence' field
         res = await call_llm_with_schema(prompt, "IdentityVerificationResponse", llm_provider)
-        return res.is_match if res else False
-    except:
+        
+        if res:
+            logger.info(f"AI Verification Result for {url}: {res.is_match} (Confidence: {res.confidence}) - Reasoning: {res.reasoning}")
+            
+            # Logic: Accept if AI says it's a match and is confident (> 0.7)
+            # This prevents accepting "uncertain" pages.
+            return res.is_match if res.confidence > 0.7 else False
+            
         return False
-
-
+    except Exception as e:
+        logger.error(f"LLM Identity Verification failed for {url}: {e}")
+        return False
+    
 async def aggregate_product(
     mpn: str,
     title: str,
@@ -753,6 +837,9 @@ async def aggregate_product(
         else:
             logger.info("Stage 1: URL Discovery")
             logger.info(f"Starting aggregation for {mpn}")
+            download_service = HttpDownloadService(
+                timeout=30
+            )
             brand_prompt_text = None
             if brand and db:
                 brand_stmt = select(BrandPrompt.prompt_text).join(
@@ -867,14 +954,32 @@ async def aggregate_product(
                     taxonomy=taxonomy
                 )
                 if product_url:
-                    if not _url_contains_product_identifier(product_url, mpn, title):
-                        logger.warning(
-                            f" Rejecting discovery result (no product identifier in URL): {product_url}"
-                        )
-                        continue
-                    logger.info(
-                        f"✓ Found product page on {domain}: {product_url}")
-                    direct_urls.append(product_url)
+                    if _url_contains_product_identifier(product_url, mpn, title):
+                        logger.info(f"✓ Found product page via strict match: {product_url}")
+                        direct_urls.append(product_url)
+                    else:
+                        logger.info(f"Strict match failed for {product_url}. Verifying semantically...")
+                        
+                        content = await download_service.download(product_url)
+                        if content and content.get("type") == "html":
+                            html_text = content["raw_bytes"].decode("utf-8", errors="ignore")
+                            
+                            is_match = await verify_page_identity_with_llm(
+                                url=product_url, 
+                                html=html_text, 
+                                brand=brand, 
+                                title=title, 
+                                mpn=mpn, 
+                                llm_provider=llm_provider,
+                                manufacturer_domain=manufacturer_domain
+                            )
+                            
+                            if is_match:
+                                logger.info(f"✓ AI confirmed this is the correct product line: {product_url}")
+                                direct_urls.append(product_url)
+                            else:
+                                logger.warning(f"⛔ AI rejected this page: {product_url}")
+                    # direct_urls.append(product_url)
             seen = set()
             direct_urls = [u for u in direct_urls if not (
                 u in seen or seen.add(u))]
@@ -991,9 +1096,7 @@ async def aggregate_product(
                 }
             logger.info(
                 f"Stage 2: Download & Extraction from {len(urls)} sources")
-            download_service = HttpDownloadService(
-                timeout=30
-            )
+            
             all_extractions = []
             _url_semaphore = asyncio.Semaphore(1)
             found_image_global = None

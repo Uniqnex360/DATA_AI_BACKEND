@@ -124,7 +124,8 @@ class ProductDiscoveryService:
         clean_title = SerpApiSearchService._clean_search_query(
             title) if title else ""
         if is_mpn_valid:
-            queries = [f"{brand} {mpn} site:{clean_domain}{exclusion_str}"]
+            # queries = [f"{brand} {mpn} site:{clean_domain}{exclusion_str}"]
+            queries = [f"{brand} {mpn} site:{clean_domain}"] 
         else:
             queries = [
                 f"{brand} {clean_title} site:{clean_domain}{exclusion_str}",

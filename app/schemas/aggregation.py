@@ -59,6 +59,8 @@ class FinalAttribute(BaseModel):
     sources: List[str] = []     
     source_ids: List[str] = []         
     original_values: List[str] = []    
+    extraction_algorithm: Optional[str] = None
+    extraction_source: Optional[str] = None   
 
 class UnifiedStandardizedResponse(BaseModel):
     attributes: List[FinalAttribute]

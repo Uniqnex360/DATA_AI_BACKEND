@@ -27,9 +27,10 @@ class ProductWorkerPool:
                 product_id = task_data['product_id']
                 llm_provider=task_data['llm_provider']
                 missing_llm_provider = task_data.get('missing_llm_provider')
+                user_role = task_data.get('user_role', 'user') 
                 logger.info(f" Worker {worker_id} processing {product_id} with LLM: {llm_provider}")
                 
-                await self.process_function(product_id, llm_provider, missing_llm_provider)
+                await self.process_function(product_id, llm_provider, missing_llm_provider,user_role)
                 
                 logger.info(f" Worker {worker_id} completed {product_id}")
                 
@@ -50,9 +51,9 @@ class ProductWorkerPool:
         self.workers_started = True
         logger.info(f" Started {self.worker_count} workers")
     
-    async def submit(self, product_id: str, llm_provider: str = 'openai', missing_llm_provider: Optional[str] = None) -> int:
+    async def submit(self, product_id: str, llm_provider: str = 'openai', missing_llm_provider: Optional[str] = None,user_role: Optional[str] = 'user') -> int:
         await self.start()
-        await self.queue.put({'product_id': product_id, 'llm_provider': llm_provider, 'missing_llm_provider': missing_llm_provider})
+        await self.queue.put({'product_id': product_id, 'llm_provider': llm_provider, 'missing_llm_provider': missing_llm_provider,'user_role': user_role })
         return self.queue.qsize()
     
     def get_status(self) -> Dict[str, Any]:

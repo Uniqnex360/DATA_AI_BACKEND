@@ -60,12 +60,13 @@ class URLSelectionResponse(BaseModel):
     reasoning: str = Field(
         ..., description="Short explanation of why this URL was chosen over others.")
 
-
 class IdentityVerificationResponse(BaseModel):
     is_match: bool = Field(
         ..., description="True if this page is definitely the Product Detail Page for the requested item.")
-    reasoning: str = Field(...,
-                           description="Why this page matches or doesn't match.")
+    confidence: float = Field(
+        ..., description="How certain you are (0.0 to 1.0).")
+    reasoning: str = Field(
+        ..., description="Why this page matches or doesn't match.")
 class LinkJudgeResponse(BaseModel):
     """
     Schema for the LLM to identify the best Product Detail Page (PDP) 

@@ -361,7 +361,8 @@ async def aggregate_single_product(
     product_id: str,
     request: AggregateLLMRequest,
     background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ) -> ProductAggregationResponse:
     try:
         product = await db.get(Product, product_id)
@@ -397,12 +398,11 @@ async def aggregate_single_product(
         link.enrichment_status = "processing"
         db.add(link)
         await db.commit()
-        db.add(product)
-        await db.commit()
         queue_position = await worker_pool.submit(
             str(product.id),
             request.llm_provider,
-            getattr(request, 'missing_llm_provider', None)
+            getattr(request, 'missing_llm_provider', None),
+            current_user.role 
         )
         logger.info(
             f"Queued {product.product_code} at position {queue_position}")
@@ -671,8 +671,11 @@ async def get_product_attributes_for_aggregation(
 async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai', missing_llm_provider: str = None) -> None:
     async with async_session_factory() as db_session:
         job: Optional[AggregationJob] = None
+        
         try:
             job = await db_session.get(AggregationJob, job_id)
+            user = await db_session.get(User, job.user_id)
+            user_role = user.role if user else 'user'
             if not job:
                 logger.error(f"Aggregation job {job_id} not found")
                 return
@@ -721,11 +724,12 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                 f"Starting aggregation job {job_id} for {total} products")
             logger.info(
                 f"Starting aggregation job {job_id} for {total} products")
-            has_missing_llm = missing_llm_provider and missing_llm_provider != llm_provider
-            cached_html = {} if has_missing_llm else None
-            cached_urls = [] if has_missing_llm else None
-            logger.info(f"Algo 1&2 mode: caching enabled={bool(cached_html)}")
+            
             for idx, product in enumerate(products):
+                has_missing_llm = missing_llm_provider and missing_llm_provider != llm_provider
+                cached_html = {} if has_missing_llm else None
+                cached_urls = [] if has_missing_llm else None
+                logger.info(f"Algo 1&2 mode: caching enabled={bool(cached_html)}")
                 link = await db_session.get(ProjectProductLink, {
                     "project_id": job.project_id,
                     "product_id": product.id
@@ -734,7 +738,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                     failed += 1
                     continue
                 await db_session.refresh(job)
-                if product.enrichment_status == 'completed':
+                if user_role == 'user' and product.enrichment_status == 'completed':    
                     logger.info(f"Product {product.product_code} already completed globally. Reusing data for this project.")
                     link.enrichment_status = 'completed'
                     db_session.add(link)
@@ -1147,7 +1151,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                         f"Failed to update job status: {commit_error}")
 
 
-async def run_single_product_aggregation(product_id: str, llm_provider: str = 'openai', missing_llm_provider: str = None) -> None:
+async def run_single_product_aggregation(product_id: str, llm_provider: str = 'openai', missing_llm_provider: str = None,user_role: str = 'user' ) -> None:
     async with async_session_factory() as db_session:
         try:
             product = await db_session.get(Product, product_id)
@@ -1169,7 +1173,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
             )
             link_result = await db_session.execute(link_stmt)
             link = link_result.scalars().first()
-            if product.enrichment_status == 'completed':
+            if user_role == 'user' and product.enrichment_status == 'completed':
                 logger.info(f"Product {product.product_code} already completed globally. Reusing data.")
                 if link:
                     link.enrichment_status = 'completed'
