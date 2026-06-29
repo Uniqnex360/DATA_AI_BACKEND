@@ -725,8 +725,20 @@ async def verify_page_identity_with_llm(url: str, html: str, brand: str, title: 
 
     VERIFICATION RULES:
     1. MATCH if the Brand '{brand}' is the primary subject of the page.
-    2. MATCH if the base model matches, even if the suffix/finish is different.
-       (Example: Target 'BE365VCAM716' matches a page for 'BE365 Camelot Deadbolt' because 'VCAM716' is just the color code).
+    2. MATCH if the base model string appears in the URL, even if finish/variant suffix differs.
+       
+       HOW TO CHECK:
+       - Extract the alphabetic+numeric base from the MPN (ignore single letters, ignore 3-digit finish codes like 716, 619, 619ACC)
+       - Check if that base appears anywhere in the candidate URL
+       
+       EXAMPLES (all should be MATCH):
+       - MPN: BE365VCAM716     → base: BE365CAM  → URL has BE365CAMFFF     ✓ MATCH
+       - MPN: FE595VCAM716ACC  → base: FE595CAM  → URL has FE595CAMFFFACC  ✓ MATCH  
+       - MPN: FE595VCAM619ACC  → base: FE595CAM  → URL has FE595CAMFFFACC  ✓ MATCH
+       - MPN: ND80PD-RH-619    → base: ND80PD    → URL has ND80PD-RH       ✓ MATCH
+       
+       RULE: If ≥60% of the MPN base characters appear in sequence in the URL slug → MATCH.
+       Do NOT reject just because the finish code (3 digits) or variant prefix (single letter V/B/F) is missing.
     3. MATCH if the product name describes the exact same physical item (Example: 'GTPOBUS1225' matches 'Gozney Tread Oven').
     4. REJECT (False) if it is a Category or Search Results page showing multiple different products.
     5. REJECT (False) if it is an Installation Manual, Support PDF, News Article, or Store Locator.
