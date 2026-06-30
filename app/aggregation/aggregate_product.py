@@ -1935,7 +1935,12 @@ RULE 1 — UNIT ISOLATION  ★ HIGHEST PRIORITY ★
     "15.4 in-lb"      → value: "15.4",        unit: "in-lb"
     "37 to 55 VDC"    → value: "37 to 55",    unit: "VDC"
     "10V - 12V"       → value: "10 to 12",    unit: "V"
-    
+RULE 1.5 — COMPOUND IMPERIAL MEASUREMENTS ★ EXCEPTION TO RULE 1 ★
+  If a value contains MULTIPLE different units (e.g., "ft" AND "in", "in" AND "ft"),
+  keep the ENTIRE string in the value field with unit=null.
+  DO NOT isolate a single number. DO NOT convert between units. DO NOT calculate.
+  This applies to ANY value with mixed units like "ft/in", "in/ft", "ft x in", etc.
+
 RULE 2 — TEMPERATURE
   Always use "deg C" or "deg F" as the unit. Extract the number only into value.
   Examples:

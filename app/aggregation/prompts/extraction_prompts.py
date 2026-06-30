@@ -69,6 +69,23 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
             content = script.string
             if content and len(content) > 100:  # Only grab substantial JSON blocks
                 json_data.append(content)
+    
+    import json as _json
+    for jd in json_data[:]:
+        try:
+            data = _json.loads(jd)
+            props = data.get('additionalProperty', [])
+            if props:
+                lines = []
+                for p in props:
+                    name = p.get('name', '')
+                    value = p.get('value', '')
+                    if name and value:
+                        lines.append(f"{name}: {value}")
+                if lines:
+                    json_data.append('\n'.join(lines))
+        except:
+            pass
 
     # 2. DELETE UNWANTED TAGS
     for tag in soup(["script", "style", "noscript", "svg"]):
@@ -77,10 +94,16 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
     sections = []
 
     # 3. ADD EXTRACTED JSON AS A SECTION
+    # if json_data:
+    #     json_content = "\n\n".join(json_data)
+    #     if len(json_content) < 50000:  # Don't overwhelm the prompt
+    #         sections.append(json_content)
     if json_data:
-        json_content = "\n\n".join(json_data)
-        if len(json_content) < 50000:  # Don't overwhelm the prompt
-            sections.append(json_content)
+        # Sort: smaller JSON blocks first (they're usually product specs, not navigation)
+        json_data_sorted = sorted(json_data, key=len)
+        for jd in json_data_sorted:
+            if len(jd) < 50000:  # Only add reasonably sized JSON
+                sections.append(jd)
 
     # 4. PARSE REMAINING HTML SECTIONS
     for table in soup.find_all("table"):
@@ -111,13 +134,16 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
             ]):
                 if len(section.get_text()) < 15000:
                     sections.append(str(section))
-
+    
     unique_sections = list(dict.fromkeys(sections))
     content = "\n\n".join(unique_sections[:max_sections])
-    if len(content.strip()) < 100:
+    non_json_content = "\n\n".join(s for s in unique_sections[:max_sections] if not s.strip().startswith('{'))
+    
+    if len(non_json_content.strip()) < 5000 and len(html_content) > 100000:
         raw_text = soup.get_text(separator="\n", strip=True)
         if len(raw_text) > 100:
-            content = f"RAW PAGE TEXT (Fallback):\n{raw_text}"
+            content = f"RAW PAGE TEXT (Fallback):\n{raw_text[:50000]}"
+            logger.info(f"Using raw text fallback: {len(raw_text[:50000])} chars")
     MAX_CHARS = 120000
     return content[:MAX_CHARS]
 
@@ -371,6 +397,9 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
           - Only extract values you SEE in the content
           - Do NOT calculate, estimate, or infer
           - Always include units: "100ml" not "100"
+          - JSON-LD DATA: When you see JSON content with "additionalProperty" arrays,
+            extract every "name":"value" pair as an attribute.
+            These are official product specs from structured data.
           - If range given, extract the range: "10-15 kg" not "12.5 kg"
           - For compound measurements like "3/8 x 15" or "1/2 x 25 ft", extract BOTH parts:
             If attribute is "Hose": value="3/8 in x 15 ft"
@@ -474,7 +503,7 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         return {
             'prompt': prompt,
             'response_schema': "ExtractionResponse",
-            'max_tokens': 8000
+            'max_tokens': 12000
         }
     except Exception as e:
         logger.error(f"Build_extraction_prompt failed: {e}")
