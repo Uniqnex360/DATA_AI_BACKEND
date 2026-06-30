@@ -1061,7 +1061,7 @@ async def run_aggregation_task(source_id: str):
                             f"  Excel attributes: {list(existing_data.keys())[:5]}")
                     logger.info(
                         f"Primary attributes found in DB: {primary_attr_names}")
-                    if len(primary_attr_names) > 100:
+                    if len(primary_attr_names) > 200:
                         logger.info(
                             f" Product has {len(primary_attr_names)} attributes - using multi-pass processing")
                         from app.aggregation.aggregate_product import chunk_attributes

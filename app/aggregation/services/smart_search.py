@@ -297,7 +297,7 @@ class SmartSearchService(ISearchService):
 
     ) -> tuple[List[str], List[str]]:
         from app.aggregation.aggregate_product import call_llm_with_schema
-
+        direct_scored = None
         if direct_urls:
 
             direct_urls = [
@@ -307,8 +307,8 @@ class SmartSearchService(ISearchService):
             if not direct_urls:
                 logger.warning(
                     "All direct URLs were rejected as category/sale pages. Falling back to search.")
+            image_urls = []        
             if direct_urls:
-                image_urls = []
 
                 is_mpn_valid = mpn and str(mpn).strip().lower(
                 ) != 'none' and not str(mpn).startswith('UNK-')
@@ -329,9 +329,11 @@ class SmartSearchService(ISearchService):
                     )
                     logger.info(
                         f"AFTER MANUFACTURER SCORING (direct): {scored_direct}")
-                    return scored_direct, image_urls
+                    # return scored_direct, image_urls
+                    direct_scored = scored_direct
                 else:
-                    return direct_urls, image_urls
+                    # return direct_urls, image_urls
+                    direct_scored = direct_urls
             else:
                 logger.warning(
                     "All direct URLs rejected as category/sale pages. Falling back to search.")
@@ -454,11 +456,13 @@ class SmartSearchService(ISearchService):
                 r.get('content', '') + ' ' +
                 r.get('url', '')
             ).lower()
-
+            normalized_text = re.sub(r'[-\s.]', '', text)
+            normalized_mpn = re.sub(r'[-\s.]', '', mpn_lower)
             if is_mpn_valid:
                 if mpn.isdigit():
                     return mpn_lower in text and brand_lower in text
-                return mpn_lower in text or brand_lower in text
+                # return mpn_lower in text or brand_lower in text
+                return normalized_mpn in normalized_text or brand_lower in text
             else:
 
                 # title_words = [w.lower()
@@ -569,9 +573,10 @@ class SmartSearchService(ISearchService):
                         [u for u in final_urls if u not in preferred_urls]
                     logger.info(
                         f"Boosted preferred domain URLs: {preferred_urls[:2]}")
-
-        logger.info(
-            f"BEFORE MANUFACTURER SCORING: final_urls={final_urls}, brand={brand}")
+        if direct_scored:
+            final_urls = list(dict.fromkeys(direct_scored + final_urls))
+            logger.info(f"Merged direct + broad URLs: {final_urls}")
+        logger.info(f"BEFORE MANUFACTURER SCORING: final_urls={final_urls}, brand={brand}")
         if final_urls and brand:
             final_urls = await self.llm_score_manufacturer_urls(
                 urls=final_urls,

@@ -1935,6 +1935,7 @@ RULE 1 — UNIT ISOLATION  ★ HIGHEST PRIORITY ★
     "15.4 in-lb"      → value: "15.4",        unit: "in-lb"
     "37 to 55 VDC"    → value: "37 to 55",    unit: "VDC"
     "10V - 12V"       → value: "10 to 12",    unit: "V"
+    
 RULE 2 — TEMPERATURE
   Always use "deg C" or "deg F" as the unit. Extract the number only into value.
   Examples:
@@ -2024,6 +2025,12 @@ RULE 12 — UNIT SYMBOL EXPANSION
   mah → "mAh"
   rpm → "RPM"
   ft. → "ft"
+  in. → "in"
+  yd. → "yd"
+  ft x in → "ft x in"
+  in x ft → "in x ft"
+  in x in → "in x in"
+  ft x ft → "ft x ft"
 RULE 13 — ROUNDING
   Round decimals to 2 places.  1.998 → 2.00
 RULE 13.5 — NORMALIZATION & DEDUPLICATION ★ CRITICAL ★
@@ -2082,6 +2089,9 @@ RULE 14 — UNIFICATION
 ✓ Are dB and dB(A) mixed? If both present with same value → keep dB(A)
   ✓ Is MPN duplicated under "Model Number", "Part Number", or "Model 
   ✓ Do any "Number of X" and "X Count" pairs exist with same value? → merge to one
+  ✓ Do any attributes differ ONLY in casing (e.g., "Spraying Capacity per Charge" vs "Spraying Capacity Per Charge")? → merge to one, keep the one with unit
+✓ If one has a unit and the other doesn't, keep the one WITH the unit (more complete)
+✓ COMPOUND vs SINGLE: If one attribute has "x" values (e.g., "0.375 x 15") and another has just a number that matches part of it (e.g., "15"), keep the compound one, drop the single
   ✓ Are VDC/VAC casing normalized to standard form (not flattened to V)?
 ═══════════════════════════════════════════════════════
 CONCRETE FEW-SHOT EXAMPLES  (exact JSON output required for these inputs)
@@ -2101,6 +2111,10 @@ Output: name="Material", value="Stainless Steel", unit=null
 Input:  Name="Material",            Value="pvc"
 Output: name="Material", value="PVC", unit=null
 Input:  Name="Width",               Value="3/4 in."
+Input:  Name="Spraying Capacity per Charge", Value="80", unit="gallons"
+        Name="Spraying Capacity Per Charge", Value="80", unit=null
+Output: name="Spraying Capacity Per Charge", value="80", unit="gallons"
+        (kept the one with unit, merged)
 Output: name="Width", value="0.75", unit="in"
 Input:  Name="Width",               Value="3/8 in."
 Output: name="Width", value="0.375", unit="in"
@@ -2138,6 +2152,10 @@ Input:  Name="Size",                Value="LxDia: 36 x 3/8 in."
 Output: name="Size", value="36 L x 0.375 W", unit="in"
 Input:  Name="Special Rating",      Value="UL;CSA C22.2"
 Output: name="Special Rating", value="UL; CSA C22.2", unit=null
+Input:  Name="Hose",               Value="0.375 x 15"
+Output: name="Hose", value="0.375 x 15", unit="in x ft"
+Input:  Name="Hose Length",        Value="0.375 x 15"
+Output: name="Hose", value="0.375 x 15", unit="in x ft"
 ═══════════════════════════════════════════════════════
 OUTPUT FORMAT
 ═══════════════════════════════════════════════════════

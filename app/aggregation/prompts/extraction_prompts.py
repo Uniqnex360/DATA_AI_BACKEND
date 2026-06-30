@@ -372,6 +372,12 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
           - Do NOT calculate, estimate, or infer
           - Always include units: "100ml" not "100"
           - If range given, extract the range: "10-15 kg" not "12.5 kg"
+          - For compound measurements like "3/8 x 15" or "1/2 x 25 ft", extract BOTH parts:
+            If attribute is "Hose": value="3/8 in x 15 ft"
+            Do NOT drop the diameter part
+          - Compound dimensions with "x" separator:
+          "3/8 x 15 ft" → value: "0.375 x 15", unit: "in x ft"
+          "1/2 x 25 in" → value: "0.5 x 25", unit: "in x in"
         ADDITIONAL ATTRIBUTES:
           - Extract ALL relevant specs beyond PRIMARY ATTRIBUTES (no maximum)
           - Use the exact names from HTML for these

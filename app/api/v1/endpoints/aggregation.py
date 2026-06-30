@@ -1188,7 +1188,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                 return
 
             project_id = str(link.project_id)
-            if len(primary_attrs) > 100:
+            if len(primary_attrs) > 200:
                 logger.info(
                     f"Product has {len(primary_attrs)} attributes - using multi-pass processing")
                 attr_chunks = chunk_attributes(primary_attrs, chunk_size=10)
