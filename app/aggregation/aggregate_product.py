@@ -638,30 +638,21 @@ def is_result_actually_product(result: dict, brand: str, title: str) -> bool:
         return True
     return False
 def _base_model_tokens_match(mpn: str, url: str) -> bool:
-    tokens = re.findall(r'[A-Z0-9]+', mpn.upper())
-    if not tokens:
+    if not mpn or not url:
         return False
+    mpn_upper = re.sub(r'[^A-Z0-9]', '', mpn.upper())
+    url_slug = re.sub(r'[^A-Z0-9]', '', urlparse(url).path.upper())
+
+    m = re.match(r'^([A-Z]+\d+)([A-Z]?)([A-Z]+)(\d{3})([A-Z]*)$', mpn_upper)
+    if not m:
+        return mpn_upper in url_slug or url_slug in mpn_upper
     
-    url_upper = url.upper()
-    url_slug = urlparse(url).path.upper()
+    base, variant_letter, style, finish, suffix = m.groups()
+    base_style = base + style          # FE595 + CAM = FE595CAM
     
-    # Strategy 1: all base tokens in URL
-    base_tokens = tokens[:-1]
-    if base_tokens and all(t in url_upper for t in base_tokens):
-        return True
-    
-    # Strategy 2: MPN without last token as substring in slug
-    base_str = ''.join(base_tokens)
-    if len(base_str) >= 4 and base_str in url_slug.replace('-', '').replace('_', ''):
-        return True
-    
-    # Strategy 3: majority match (60%)
-    if base_tokens:
-        ratio = sum(1 for t in base_tokens if t in url_upper) / len(base_tokens)
-        if ratio >= 0.6:
-            return True
-    
-    return False
+    prefix_ok = base_style in url_slug
+    suffix_ok = (not suffix) or (suffix in url_slug)
+    return prefix_ok and suffix_ok
 async def verify_page_identity_with_llm(url: str, html: str, brand: str, title: str, mpn: str, llm_provider: str,manufacturer_domain:str) -> bool:
     
     from bs4 import BeautifulSoup

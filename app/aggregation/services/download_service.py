@@ -23,9 +23,26 @@ class HttpDownloadService(IDownloadService):
         if url in self._cache:
             return self._cache[url]
         result = await self._download_curl(url)
-        if (result is None or result.get('status') == 404) and self.use_playwright_fallback:
+                # Check if HTML has actual product data or just a shell
+        needs_playwright = False
+        if result and result.get('type') == 'html':
+            html_text = result.get('raw_bytes', b'').decode('utf-8', errors='ignore')
+            # Check for common signs of empty JS shell
+            nav_count = html_text.count('mobile-nav') + html_text.count('data-testid="mobile-nav')
+            import re
+            has_spec_values = bool(
+                re.search(r'(?:height|width|length|weight|depth)\s*[":]\s*\d+\.?\d*\s*(?:in|cm|mm|lb|kg|oz|ft)', html_text, re.IGNORECASE)
+            )
+            logger.info(f"Shell detection: nav_count={nav_count}, has_spec_values={has_spec_values}")
+            if nav_count > 15 and not has_spec_values:
+                needs_playwright = True
+                logger.info(f"TRIGGERING Playwright fallback for {url}")
+            else:
+                logger.info(f"NOT triggering Playwright for {url}")
+        
+        if (result is None or needs_playwright) and self.use_playwright_fallback:
 
-            logger.info(f"curl_cffi failed for {url}, trying Playwright...")
+            logger.info(f"curl_cffi {'failed' if not result else 'got shell HTML'} for {url}, trying Playwright...")
             result = await self._download_playwright(url)
         if result: self._cache[url] = result
         return result
