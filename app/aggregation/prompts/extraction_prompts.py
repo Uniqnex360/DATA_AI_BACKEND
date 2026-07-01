@@ -275,6 +275,17 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         - Material types, dimensions, performance specs, compatibility info
         - NO LIMIT on how many attributes to extract
         **DO NOT stop after finding priority attributes. Keep extracting ALL specs.**
+        ═══════════════════════════════════════════════════════
+        CRITICAL: SHIPPING/FULFILLMENT EXCLUSION — HIGHEST PRIORITY
+        ═══════════════════════════════════════════════════════
+        Before extracting ANY attribute, check its name:
+        - If the attribute name contains any of these words: Shipping, Ship, Delivery, Freight, Transit, Handling
+        - SKIP IT. Do NOT extract it. Do NOT include it in output.
+        - These are fulfillment/logistics metadata, NOT product specifications.
+        - This rule OVERRIDES all other extraction instructions.
+        - Example: "Ship Weight: 13.6 lb" → SKIP, do not extract
+        - Example: "Shipping Weight: 13.5 lb" → SKIP, do not extract
+        - Example: "Product Weight: 11.5 lb" → EXTRACT (product spec, not shipping)
         ═══════════════════════════════════════════════════════════════════
         CRITICAL INSTRUCTION: SEMANTIC ATTRIBUTE MAPPING
         ═══════════════════════════════════════════════════════════════════
@@ -390,13 +401,11 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         - Q&A sections (questions and answers from customer Q&A)
         - Product overview/summary text (already in descriptions)
         - Pricing, availability
-        - Shipping/fulfillment info (any attribute containing Shipping, Ship, Delivery, Freight, Transit, Handling in its name — unless explicitly labeled as "Product Dimensions")
         - Product category (already in context)
         - Internal SKUs/codes (unless in PRIMARY ATTRIBUTES)
         - Customer reviews or ratings
         - UPC/EAN/Barcode numbers  
         - Division/Department codes  
-        - Shipping dimensions unless labeled as "Product Dimensions"  
         - Manufacturer/Company addresses, phone numbers, contact info
         VALUE RULES:
           - Only extract values you SEE in the content
@@ -676,7 +685,18 @@ RULE 4: ATTRIBUTE NAMING
 - Do NOT invent context labels. Use ONLY what the document says.
 - If the document uses abbreviations (e.g., "EN 15651-1"), 
   you may use them as context labels.
-
+═══════════════════════════════════════════════════════
+CRITICAL: SHIPPING/FULFILLMENT EXCLUSION — HIGHEST PRIORITY
+═══════════════════════════════════════════════════════
+Before extracting ANY attribute, check its name:
+- If the attribute name contains any of these words: Shipping, Ship, Delivery, Freight, Transit, Handling
+- SKIP IT. Do NOT extract it. Do NOT include it in output.
+- These are fulfillment/logistics metadata, NOT product specifications.
+- This rule OVERRIDES all other extraction instructions.
+- Example: "Ship Weight: 13.6 lb" → SKIP, do not extract
+- Example: "Shipping Weight: 13.5 lb" → SKIP, do not extract
+- Example: "Product Weight: 11.5 lb" → EXTRACT (product spec, not shipping)
+═══════════════════════════════════════════════════════
 ═══════════════════════════════════════════════════════
 RULE 5: WHAT TO EXTRACT
 ═══════════════════════════════════════════════════════
@@ -709,7 +729,6 @@ DO NOT EXTRACT:
 - Company contact details, addresses, phone numbers
 - Page numbers, document version numbers, dates
 - Ordering codes, pricing, availability
-- Shipping/fulfillment info (Shipping Weight, Shipping Dimensions, Free Shipping, Ships From, Delivery Time, Freight, Transit, Handling)
 - Testing laboratory details and certifications of the lab itself
 - Signature blocks, legal disclaimers
 - Any row where the value is NPD, NF, NR, or blank
