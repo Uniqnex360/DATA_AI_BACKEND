@@ -36,7 +36,7 @@ async def read_products(
     try:
         statement = select(Product)
         if project_id:
-            statement = statement.where(
+            statement = statement.join(ProjectProductLink,Product.id==ProjectProductLink.product_id).where(
                 ProjectProductLink.project_id == project_id)
         if workflow_stage and hasattr(Product, 'workflow_stage'):
             statement = statement.where(
