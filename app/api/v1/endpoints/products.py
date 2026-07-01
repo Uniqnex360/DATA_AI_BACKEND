@@ -299,7 +299,7 @@ async def get_project_product_stats(
     db: AsyncSession = Depends(get_session)
 ) -> Dict[str, int]:
     try:
-        stmt = select(Product).where(
+        stmt = select(Product).join(ProjectProductLink,Product.id==ProjectProductLink.product_id).where(
             ProjectProductLink.project_id == project_id)
         if brand_name:
             stmt = stmt.where(Product.brand_name == brand_name)
