@@ -361,7 +361,7 @@ async def get_multiple_project_stats(
             stmt = select(
                 Product.enrichment_status,
                 func.count(Product.id).label('count')
-            ).where(
+            ).join(ProjectProductLink,Product.id==ProjectProductLink.product_id).where(
                 ProjectProductLink.project_id == project_id
             ).group_by(Product.enrichment_status)
             query_result = await db.execute(stmt)
@@ -402,7 +402,7 @@ async def get_enrichment_counts(
         stmt = select(
             ProjectProductLink.project_id,
             func.count(Product.id).label('count')
-        ).where(
+        ).join(Product,Product.id==ProjectProductLink.project_id).where(
             and_(
                 Product.workflow_stage == 'enrichment',
                 Product.enrichment_status == 'pending'
