@@ -396,6 +396,7 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         - UPC/EAN/Barcode numbers  
         - Division/Department codes  
         - Shipping dimensions unless labeled as "Product Dimensions"  
+        - Manufacturer/Company addresses, phone numbers, contact info
         VALUE RULES:
           - Only extract values you SEE in the content
           - Do NOT calculate, estimate, or infer
