@@ -33,6 +33,7 @@ import logging
 from app.rules.rule_engine import RuleEngine
 from app.services.product_discovery_service import ProductDiscoveryService
 from app.utils.image_validator import validate_image_url
+from app.utils.pdf_utils import is_parts_list_pdf
 from app.utils.remapping import cluster_attributes_by_meaning
 logger = logging.getLogger("aggregate_product")
 
@@ -1131,7 +1132,12 @@ async def aggregate_product(
                                 pdf_service = PDFExtractionService(
                                     max_pages=10)
                                 pdf_text = await pdf_service.extract_text(content["raw_bytes"])
+                                
                                 if pdf_text and len(pdf_text.strip()) > 100:
+                                    pdf_lower=pdf_text.lower()
+                                    if is_parts_list_pdf(pdf_text):
+                                        logger.warning(f"Skipping PDF {url if 'pdf_url' not in dir() else pdf_url} — parts list/exploded view")
+                                        return extractions 
                                     logger.info(
                                         f"Extracted {len(pdf_text)} chars from PDF")
                                     attrs_to_use = primary_attributes or []
@@ -1416,6 +1422,8 @@ async def aggregate_product(
                                             f"✓ Extracted {len(pdf_text)} chars from PDF")
                                         pdf_lower = pdf_text.lower()
                                         has_mpn_in_pdf = is_mpn_valid and mpn.lower() in pdf_lower
+                                        if is_parts_list_pdf(pdf_text):
+                                            continue
                                         has_title_in_pdf = False
                                         if not has_mpn_in_pdf and title:
                                             title_keywords = [
@@ -1935,12 +1943,15 @@ RULE 1 — UNIT ISOLATION  ★ HIGHEST PRIORITY ★
     "15.4 in-lb"      → value: "15.4",        unit: "in-lb"
     "37 to 55 VDC"    → value: "37 to 55",    unit: "VDC"
     "10V - 12V"       → value: "10 to 12",    unit: "V"
-RULE 1.5 — COMPOUND IMPERIAL MEASUREMENTS ★ EXCEPTION TO RULE 1 ★
-  If a value contains MULTIPLE different units (e.g., "ft" AND "in", "in" AND "ft"),
-  keep the ENTIRE string in the value field with unit=null.
-  DO NOT isolate a single number. DO NOT convert between units. DO NOT calculate.
-  This applies to ANY value with mixed units like "ft/in", "in/ft", "ft x in", etc.
-
+RULE 1.5 — COMPOUND MEASUREMENTS ★ HIGHEST PRIORITY ★
+  Values with TWO different units must be preserved with both units separated by comma.
+  "1 ft. 2 in."    → value: "1, 2",    unit: "ft, in"
+  "2 ft. 5 in."    → value: "2, 5",    unit: "ft, in"
+  "8 ft. 8 in."    → value: "8, 8",    unit: "ft, in"
+  "2 m 30 cm"      → value: "2, 30",   unit: "m, cm"
+  "3/8 x 15 ft"    → value: "0.375, 15", unit: "in, ft"
+  DO NOT convert between units. DO NOT isolate a single unit.
+  Extract both numbers and both units, separated by comma.
 RULE 2 — TEMPERATURE
   Always use "deg C" or "deg F" as the unit. Extract the number only into value.
   Examples:
@@ -2179,7 +2190,7 @@ Return a JSON object:
   "summary": "Brief explanation of major changes and grouping decisions."
 }}
 CRITICAL FINAL CHECKS before returning:
-  ✓ Does any value still contain its unit string?  If yes → fix it.
+   ✓ Does any value still contain a SINGLE unit string? If yes → fix it (EXCEPTION: compound imperial per RULE 1.5 — "ft, in" format is correct).
   ✓ Are fractions still present in Length/Width/Size?  If yes → convert to decimal.
   ✓ Is any descriptive text still ALL CAPS or all lowercase?  If yes → Title Case it.
   ✓ Does "Backing Material" or "Adhesive Material" still say "PVC" or "ss"?  If yes → expand to full name.

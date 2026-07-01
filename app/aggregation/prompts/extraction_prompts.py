@@ -386,6 +386,9 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         ✗ DO NOT EXTRACT:
         - Marketing claims ("best in class", "premium quality")
         - Website metadata (dates, IDs, page numbers)
+        - Customer reviews, ratings, review body, review dates, author names
+        - Q&A sections (questions and answers from customer Q&A)
+        - Product overview/summary text (already in descriptions)
         - Product category (already in context)
         - Pricing, availability, shipping info
         - Internal SKUs/codes (unless in PRIMARY ATTRIBUTES)

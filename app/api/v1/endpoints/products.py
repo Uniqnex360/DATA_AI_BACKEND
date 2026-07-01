@@ -34,7 +34,7 @@ async def read_products(
     search: Optional[str] = None
 ):
     try:
-        statement = select(Product)
+        statement = select(Product, ProjectProductLink.enrichment_status.label('link_status'))
         if project_id:
             statement = statement.join(ProjectProductLink,Product.id==ProjectProductLink.product_id).where(
                 ProjectProductLink.project_id == project_id)
@@ -42,8 +42,12 @@ async def read_products(
             statement = statement.where(
                 Product.workflow_stage == workflow_stage)
         if enrichment_status and enrichment_status != 'all':
-            statement = statement.where(
-                Product.enrichment_status == enrichment_status)
+            if project_id:
+                statement = statement.where(
+                    ProjectProductLink.enrichment_status == enrichment_status)
+            else:
+                statement = statement.where(
+                    Product.enrichment_status == enrichment_status)
         if brand_name:
             statement = statement.where(Product.brand_name == brand_name)
         if category_1:
@@ -53,19 +57,25 @@ async def read_products(
             statement = statement.where((Product.product_name.ilike(search_term)) |
                                         (Product.product_code.ilike(search_term)) |
                                         (Product.brand_name.ilike(search_term)))
-        count_stmt = select(func.count()).select_from(statement.subquery())
+        # count_stmt = select(func.count()).select_from(statement.subquery())
+        count_stmt = select(func.count(Product.id)).select_from(statement.subquery())
+
         count_result = await db.execute(count_stmt)
         total = count_result.scalar() or 0
         statement = statement.order_by(
             Product.created_at.desc()).offset(skip).limit(limit)
         result = await db.execute(statement)
-        products = result.scalars().all()
+        # products = result.scalars().all()
+        rows = result.all()
         project_data = None
         if project_id:
             project_data = await db.get(Project, project_id)
         product_list = []
-        for p in products:
+        for row in rows:
+            p = row[0]  # Product object
+            link_status = row[1]  # link enrichment_status
             p_dict = p.dict() if hasattr(p, 'dict') else p.__dict__
+            p_dict['enrichment_status'] = link_status or p_dict.get('enrichment_status', 'pending')
             # Build attributes_dict from normalized tables
             attributes_dict = {}
             attribute_names = []

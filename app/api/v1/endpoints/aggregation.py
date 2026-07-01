@@ -1,3 +1,5 @@
+from alembic.command import current
+
 from app.auth.dependencies import get_current_user
 from app.models.project_product_link import ProjectProductLink
 from app.models.user import User
@@ -234,7 +236,13 @@ async def trigger_project_aggregation(
 ) -> AggregationTriggerResponse:
     try:
         project = await db.get(Project, project_id)
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found"
+            )
         if project.status == "completed":
+            if current_user.role=='user':
              return AggregationTriggerResponse(
                 status='success',
                 message='Project is already fully aggregated',
@@ -242,11 +250,10 @@ async def trigger_project_aggregation(
                 project_id=project_id,
                 total_products=0
             )
-        if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Project not found"
-            )
+            reset_stmt=(update(Product).where(Product.id.in_(select(ProjectProductLink.product_id).where(ProjectProductLink.project_id==project_id))).values(enrichment_status='pending'))
+            await db.execute(reset_stmt)
+            await db.commit()
+        
         active_job = await get_active_job_for_project(db, project_id)
         if active_job:
             raise HTTPException(
@@ -254,10 +261,10 @@ async def trigger_project_aggregation(
                 detail=f"Aggregation already in progress. Job ID: {active_job.id}"
             )
         pending_stmt = select(func.count(Product.id)).join(
-    ProjectProductLink, Product.id == ProjectProductLink.product_id
-).where(
-    ProjectProductLink.project_id == project_id
-)
+        ProjectProductLink, Product.id == ProjectProductLink.product_id
+        ).where(
+            ProjectProductLink.project_id == project_id
+        )
         pending_result = await db.execute(pending_stmt)
         pending_count = pending_result.scalar() or 0
         # update_stmt = (
@@ -276,6 +283,15 @@ async def trigger_project_aggregation(
             .values(enrichment_status='processing')
         )
         await db.execute(update_stmt)
+        product_update = (
+            update(Product)
+            .where(Product.id.in_(
+                select(ProjectProductLink.product_id)
+                .where(ProjectProductLink.project_id == project_id)
+            ))
+            .values(enrichment_status='pending')  # Will be set to processing by worker
+        )
+        await db.execute(product_update)
         job = AggregationJob(
             project_id=project_id,
             user_id=current_user.id,
@@ -383,10 +399,13 @@ async def aggregate_single_product(
         link = link_result.scalars().first()
         if not link:
             raise HTTPException(404, "Product not linked to any project")
+        project = await db.get(Project, link.project_id)
 
-
-        if not link:
-            raise HTTPException(404, "Product not linked to project")
+        if project and project.status=='completed' and current_user.role=='user':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Project is already completed. Contact admin to re-run."
+            )
 
         if link.enrichment_status == "processing":
             raise HTTPException(
@@ -396,6 +415,7 @@ async def aggregate_single_product(
 
         # Update link status
         link.enrichment_status = "processing"
+        product.enrichment_status = "processing"
         db.add(link)
         await db.commit()
         queue_position = await worker_pool.submit(
@@ -1307,6 +1327,9 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     await merge_dynamic_attributes(
                         db_session, product, ai_data_for_merge, is_validation_mode=('validation' in use_case))
                     product.enrichment_status = 'completed'
+                    if link:
+                        link.enrichment_status = 'completed'
+                        db_session.add(link)
                     product.data_quality_score = 100.0
                     await db_session.flush()
                     db_session.add(product)
@@ -1465,6 +1488,9 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     product.needs_enrichment = False
                     product.ready_for_export = True
                     product.enrichment_status = 'completed'
+                    if link:
+                        link.enrichment_status = 'completed'
+                        db_session.add(link)
                     product.data_quality_score = 100.0
                     product.routed_to_enrichment_at = None
                     track_llm_usage(product, llm_provider,
