@@ -2095,6 +2095,7 @@ RULE 13.5 — NORMALIZATION & DEDUPLICATION ★ CRITICAL ★
 RULE 14 — UNIFICATION
   After cleaning, group attributes that represent the same concept
   ✓ Drop "Manufacturer Address", "Company Address", "Contact Info" — these are contact details, not product specifications.
+    ✓ Drop "Marketing Language", "Language", "Supported Languages" — these are website metadata, not product specifications.
     ✓ Brand, MPN, SKU are already in product context — no need to extract them as separate attributes.
   (e.g., "CCT" and "Color Temperature", "Colour" and "Color").
   Produce ONE output attribute per concept using the most canonical name.
