@@ -58,7 +58,7 @@ async def read_products(
                                         (Product.product_code.ilike(search_term)) |
                                         (Product.brand_name.ilike(search_term)))
         # count_stmt = select(func.count()).select_from(statement.subquery())
-        count_stmt = select(func.count(Product.id)).select_from(statement.subquery())
+        count_stmt = select(func.count()).select_from(statement.subquery())
 
         count_result = await db.execute(count_stmt)
         total = count_result.scalar() or 0
