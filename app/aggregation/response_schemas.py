@@ -18,6 +18,8 @@ class ExtractionResponse(BaseModel):
     image_url: Optional[str] = None 
     description: Optional[str] = None 
     long_description: Optional[str] = None
+    features: Optional[List[str]] = None
+
 
 
 class CleanedAttribute(BaseModel):

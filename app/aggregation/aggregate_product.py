@@ -1113,6 +1113,8 @@ async def aggregate_product(
                         f"Image already found; skipping image extraction for {url}")
                 short_description = None
                 long_description = None
+                features = None
+
                 async with _url_semaphore:
                     try:
                         content = None
@@ -1357,6 +1359,8 @@ async def aggregate_product(
                                     found_image_global = image_url
                             else:
                                 image_url = None
+                            if hasattr(extraction_result,'features'):
+                                features=extraction_result.features
                             if hasattr(extraction_result, "short_description"):
                                 short_description = extraction_result.short_description
                             if hasattr(extraction_result, "long_description"):
@@ -1498,7 +1502,8 @@ async def aggregate_product(
                             "image_url": image_url,
                             "source_type": "html",
                             "short_description": short_description,
-                            "long_description": long_description
+                            "long_description": long_description,
+                            "features": features  
                         })
                         return extractions
                     except Exception as e:
@@ -1704,11 +1709,14 @@ async def aggregate_product(
         ]
         best_short_description = None
         best_long_description = None
+        best_features=None
         for source in all_extractions:
             if source.get('short_description') and not best_short_description:
                 best_short_description = source['short_description']
             if source.get('long_description') and not best_long_description:
                 best_long_description = source['long_description']
+            if source.get('features') and not best_features:
+                best_features=source['features']
             if best_short_description and best_long_description:
                 break
         logger.info("Stage 6: Marketing Enrichment")
@@ -1718,7 +1726,8 @@ async def aggregate_product(
             brand=brand or "",
             taxonomy=taxonomy or "",
             existing_short_description=best_short_description,
-            existing_long_description=best_long_description
+            existing_long_description=best_long_description,
+            existing_features=best_features
         )
         if is_algo2_run:
             logger.info(f"Algo2 :Skipping enrichment (router will do it )")

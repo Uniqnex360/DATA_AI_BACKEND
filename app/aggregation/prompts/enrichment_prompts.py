@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import List, Optional
 logger = logging.getLogger('build_enrichment_prompt')
 
 def build_enrichment_prompt(
@@ -8,7 +8,8 @@ def build_enrichment_prompt(
     brand: str,
     taxonomy: str,
     existing_short_description: Optional[str] = None,
-    existing_long_description: Optional[str] = None
+    existing_long_description: Optional[str] = None,
+    existing_features: Optional[List[str]] = None
 ) -> dict:
     try:
         attrs_text = "\n".join([
@@ -16,9 +17,10 @@ def build_enrichment_prompt(
             for attr in golden_attributes
         ])
         
-        if existing_short_description or existing_long_description:
+        if existing_short_description or existing_long_description or existing_features:
             final_short_description = existing_short_description or ""
             final_long_description = existing_long_description or ""
+            final_features = existing_features or [] 
             
             prompt = f"""You are a product marketing content generator.
 
@@ -41,19 +43,19 @@ TASK:
 - Use the EXISTING descriptions above EXACTLY as provided
 - Do NOT modify, enhance, or rewrite them
 - Return them as-is in the JSON response
-- Also generate features from the verified specifications
+- Use the EXISTING features from the website EXACTLY as provided above
+- Do NOT generate new features from specifications if website features are provided
 
 Return JSON:
 {{
     "short_description": "{final_short_description}",
     "long_description": "{final_long_description}",
-    "features": ["feature 1", "feature 2", ...]
+    "features": {final_features}
 }}
-
 RULES for features:
-- Each feature must reference a real specification
-- 5-8 bullet points
-- Format: "Feature Name: Brief explanation with spec"
+- If website features exist, return them EXACTLY as-is
+- Only if NO website features exist, generate 5-8 bullet points from specs
+- Format: Benefit-focused bullet points, not spec listings
 """
         else:
             # No existing description - generate from specs

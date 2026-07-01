@@ -389,8 +389,9 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         - Customer reviews, ratings, review body, review dates, author names
         - Q&A sections (questions and answers from customer Q&A)
         - Product overview/summary text (already in descriptions)
+        - Pricing, availability
+        - Shipping/fulfillment info (any attribute containing Shipping, Ship, Delivery, Freight, Transit, Handling in its name — unless explicitly labeled as "Product Dimensions")
         - Product category (already in context)
-        - Pricing, availability, shipping info
         - Internal SKUs/codes (unless in PRIMARY ATTRIBUTES)
         - Customer reviews or ratings
         - UPC/EAN/Barcode numbers  
@@ -435,9 +436,16 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         - Keep it concise: 1-2 sentences max
         LONG DESCRIPTION (long_description):
         - Look for: "Product details", "Description", "Overview" sections
-        - Feature lists, bullet points
-        - Detailed product information paragraphs
-        - Can be longer (3-5 sentences or bullet points)
+        - Detailed product information paragraphs (NOT feature bullet lists)
+        - Can be longer (3-5 sentences)
+        - DO NOT include feature bullet point lists here
+
+        FEATURES (features):
+        - Look for: "Features", "Key Features", "Benefits" sections on the page
+        - Extract the actual marketing feature bullet points from the page
+        - Return as a list: ["feature 1", "feature 2", ...]
+        - If no separate Features section exists, leave empty
+
         RULES:
         - ONLY extract descriptions that exist on the page
         - Do NOT generate or create descriptions from attributes
@@ -503,6 +511,7 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         - image_url: product image URL or null
         "short_description": "Short product description (1-2 sentences) or null",
           "long_description": "Detailed product description (3-5 sentences or bullet points) or null"
+          "features": ["feature 1", "feature 2", ...]
         """
         return {
             'prompt': prompt,
@@ -695,17 +704,15 @@ If the PDF has 20+ specs, you MUST return 20+ attributes.
 Returning only 4-5 attributes from a detailed datasheet is a CRITICAL FAILURE.
 Do NOT stop after finding a few specs. Read the ENTIRE document and extract ALL specs.
 ★★★ END VOLUME MANDATE ★★★
-
-DO NOT EXTRACT:
 DO NOT EXTRACT:
 - Marketing language ("best in class", "premium")
 - Company contact details, addresses, phone numbers
 - Page numbers, document version numbers, dates
 - Ordering codes, pricing, availability
+- Shipping/fulfillment info (Shipping Weight, Shipping Dimensions, Free Shipping, Ships From, Delivery Time, Freight, Transit, Handling)
 - Testing laboratory details and certifications of the lab itself
 - Signature blocks, legal disclaimers
 - Any row where the value is NPD, NF, NR, or blank
-
 ═══════════════════════════════════════════════════════
 RULE 6: IMAGE EXTRACTION
 ═══════════════════════════════════════════════════════
