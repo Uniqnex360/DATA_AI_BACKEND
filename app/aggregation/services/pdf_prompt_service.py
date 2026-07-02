@@ -67,6 +67,31 @@ class PDFPromptService:
             "text_sample": pdf_text[:2000]
         }
         return await self.get_prompt("pdf_blind_extraction", use_case, context)
+    # async def get_structured_extraction_prompt(
+    #     self, 
+    #     pdf_text: str, 
+    #     tables: str, 
+    #     mpn: str, 
+    #     use_case: str
+    # ) -> Optional[str]:
+    #     if not self.rule_engine:
+    #         return None
+    #     try:
+    #         context = {
+    #             "pdf_text": pdf_text,
+    #             "tables": tables,
+    #             "mpn": mpn,
+    #             "text_sample": pdf_text[:2000]
+    #         }
+    #         return await self.rule_engine.get_active_prompt(
+    #             stage="pdf_structured",
+    #             operation_mode="pdf_extraction",
+    #             use_case=use_case,
+    #             context=context,
+    #         )
+    #     except Exception as e:
+    #         logger.warning(f"Failed to get structured extraction prompt: {e}")
+    #         return None
     async def get_structured_extraction_prompt(
         self, 
         pdf_text: str, 
@@ -78,8 +103,8 @@ class PDFPromptService:
             return None
         try:
             context = {
-                "pdf_text": pdf_text,
-                "tables": tables,
+                "pdf_text": pdf_text[:10000],      # was: pdf_text (untruncated)
+                "tables": tables[:3000],            # was: tables (untruncated)
                 "mpn": mpn,
                 "text_sample": pdf_text[:2000]
             }
