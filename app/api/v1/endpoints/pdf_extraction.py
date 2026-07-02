@@ -1358,18 +1358,28 @@ async def extract_pending_pdf(
         flag_modified(source, "source_metadata")
         db.add(source)
         await db.execute(
-    sa_update(Product)
-    .where(
-        Product.id.in_(
-            select(ProjectProductLink.product_id).where(
-                ProjectProductLink.project_id == project_id
+            sa_update(Product)
+            .where(
+                Product.id.in_(
+                    select(ProjectProductLink.product_id).where(
+                        ProjectProductLink.project_id == project_id
+                    )
+                ),
+                Product.product_code == mpn,
+                Product.enrichment_status.in_(["pending", "failed", "completed"]), 
             )
-        ),
-        Product.product_code == mpn,
-        Product.enrichment_status.in_(["pending", "failed"]),
-    )
-    .values(enrichment_status="processing")
-)
+            .values(enrichment_status="processing")
+        )
+        await db.execute(
+            sa_update(ProjectProductLink)
+            .where(
+                ProjectProductLink.project_id == project_id,
+                ProjectProductLink.product_id.in_(
+                    select(Product.id).where(Product.product_code == mpn)
+                )
+            )
+            .values(enrichment_status="processing")
+        )
         await db.commit()
         if source.source_type == "pdf_multi_pending":
             background_tasks.add_task(
