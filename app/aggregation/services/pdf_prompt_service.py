@@ -102,9 +102,21 @@ class PDFPromptService:
         if not self.rule_engine:
             return None
         try:
+            # Smart truncation: find MPN and take surrounding context
+            mpn_lower = mpn.lower()
+            text_lower = pdf_text.lower()
+            mpn_pos = text_lower.find(mpn_lower)
+            
+            if mpn_pos != -1:
+                start = max(0, mpn_pos - 4000)
+                end = min(len(pdf_text), mpn_pos + 6000)
+                truncated_text = pdf_text[start:end]
+            else:
+                truncated_text = pdf_text[:10000]
+            
             context = {
-                "pdf_text": pdf_text[:10000],      # was: pdf_text (untruncated)
-                "tables": tables[:3000],            # was: tables (untruncated)
+                "pdf_text": truncated_text,
+                "tables": tables[:3000],
                 "mpn": mpn,
                 "text_sample": pdf_text[:2000]
             }
@@ -117,7 +129,6 @@ class PDFPromptService:
         except Exception as e:
             logger.warning(f"Failed to get structured extraction prompt: {e}")
             return None
-        
     async def get_unstructured_extraction_prompt(
         self, 
         pdf_text: str, 

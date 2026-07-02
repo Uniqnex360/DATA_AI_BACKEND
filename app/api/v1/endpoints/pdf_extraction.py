@@ -20,6 +20,7 @@ from app.core.database import get_session
 from app.llm import call_llm_with_schema
 from app.models.pipeline import Source
 from app.models.product import Product
+from app.models.product_attribute_link import ProductAttributeValueLinkModel
 from app.models.project import Project
 from app.models.project_product_link import ProjectProductLink
 from app.schemas.pdf_extraction import FreshAggregationRequest, PDFExtractionResponse
@@ -31,6 +32,7 @@ from app.core.database import async_session_factory
 from app.services.excel_mpn_service import ExcelMPNService
 from app.utils.pdf_helpers import extract_pdf_text, score_pdf_text_for_mpn, slice_text_around_mpn
 from app.utils.timezone import now_ist
+from app.models.attribute import Attribute, AttributeValue
 logger = logging.getLogger('pdf extraction')
 router = APIRouter()
 
@@ -585,7 +587,66 @@ def generate_mpn_from_title(title: str) -> str:
     slug = re.sub(r'-+', '-', slug).strip('-')
     timestamp = now_ist().strftime('%Y%m%d%H%M%S')
     return f"{slug[:30]}-{timestamp[-6:]}"
-
+async def _save_normalized_attributes(db: AsyncSession, product_id: str, specifications: dict):
+    for attr_name, attr_value in specifications.items():
+        if not attr_value:
+            continue
+        
+        # Get or create attribute_master - use case-insensitive search
+        attr_stmt = select(Attribute).where(
+            func.lower(Attribute.attribute_name) == func.lower(attr_name)
+        )
+        attr_result = await db.execute(attr_stmt)
+        attribute = attr_result.scalar_one_or_none()
+        
+        if not attribute:
+            # Make attribute_code unique by appending a short UUID
+            base_code = attr_name.lower().replace(' ', '_').replace('/', '_').replace('#', 'no')[:40]
+            unique_code = f"{base_code}_{str(uuid.uuid4())[:6]}"
+            attribute = Attribute(
+                attribute_name=attr_name,
+                attribute_code=unique_code,
+                data_type='string',
+                is_active=True
+            )
+            db.add(attribute)
+            try:
+                await db.flush()
+            except:
+                await db.rollback()
+                # Race condition - another request created it, re-fetch
+                attr_result = await db.execute(attr_stmt)
+                attribute = attr_result.scalar_one_or_none()
+                if not attribute:
+                    raise
+        
+        # Get or create attribute_value
+        val_stmt = select(AttributeValue).where(
+            AttributeValue.attribute_id == attribute.id,
+            AttributeValue.value == str(attr_value)
+        )
+        val_result = await db.execute(val_stmt)
+        attr_val = val_result.scalar_one_or_none()
+        
+        if not attr_val:
+            attr_val = AttributeValue(
+                attribute_id=attribute.id,
+                value=str(attr_value)
+            )
+            db.add(attr_val)
+            await db.flush()
+        
+        # Link product to attribute_value if not already linked
+        link_stmt = select(ProductAttributeValueLinkModel).where(
+            ProductAttributeValueLinkModel.product_id == product_id,
+            ProductAttributeValueLinkModel.attribute_value_id == attr_val.id
+        )
+        link_result = await db.execute(link_stmt)
+        if not link_result.scalar_one_or_none():
+            db.add(ProductAttributeValueLinkModel(
+                product_id=product_id,
+                attribute_value_id=attr_val.id
+            ))
 
 async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_id: str, detailed_data: List[Dict] = None):
     try:
@@ -625,6 +686,15 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                             if existing_product:
                                 existing_product.enrichment_status = "failed"
                                 db.add(existing_product)
+                                link_stmt = select(ProjectProductLink).where(
+                                    ProjectProductLink.product_id == existing_product.id,
+                                    ProjectProductLink.project_id == project_id
+                                )
+                                link_result = await db.execute(link_stmt)
+                                link = link_result.scalar_one_or_none()
+                                if link:
+                                    link.enrichment_status = enrichment_status
+                                    db.add(link)
                             else:
                                 product = Product(
                                     product_code=mpn,
@@ -638,7 +708,7 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                 db.add(product)
                                 await db.flush()
                                 db.add(ProjectProductLink(
-                                    project_id=project_id, product_id=product.id))
+                                    project_id=project_id, product_id=product.id,enrichment_status=enrichment_status ))
                             continue
                         product_data = None
                         for pdf_url in pdf_urls:
@@ -689,6 +759,15 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                     'source_url', existing_product.source_url)
                                 existing_product.completeness_score = completeness_score
                                 db.add(existing_product)
+                                link_stmt = select(ProjectProductLink).where(
+                                    ProjectProductLink.product_id == existing_product.id,
+                                    ProjectProductLink.project_id == project_id
+                                )
+                                link_result = await db.execute(link_stmt)
+                                link = link_result.scalar_one_or_none()
+                                if link:
+                                    link.enrichment_status = enrichment_status
+                                    db.add(link)
                             else:
                                 product = Product(
                                     product_code=mpn,
@@ -882,6 +961,15 @@ async def process_structured_pdf_extraction(
 ) -> None:
     async with async_session_factory() as db:
         try:
+            stmt = select(Product).join(
+                ProjectProductLink, Product.id == ProjectProductLink.product_id  
+            ).where(Product.product_code == mpn)
+            result = await db.execute(stmt)
+            product = result.scalar_one_or_none()
+            if product:
+                product.enrichment_status = "processing"
+                db.add(product)
+                await db.commit()
             full_text = ""
             tables = []
             with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
@@ -1385,11 +1473,14 @@ async def upsert_product_from_extraction(
     spec_count = len(prod_dict.get('specifications', {}))
     completeness_score = min(spec_count * 5, 100)
     enrichment_threshold = getattr(settings, 'enrichment_threshold', 90)
+    if spec_count == 0:
+        enrichment_status = 'failed'
+    else:
+        enrichment_status = 'completed'
     workflow_stage = 'aggregation'
     needs_enrichment = False
     ready_for_export = True
     routed_to_enrichment_at = None
-    enrichment_status = 'completed'
     existing_product = await db.execute(
         select(Product).join(
             ProjectProductLink, Product.id == ProjectProductLink.product_id  
@@ -1415,6 +1506,17 @@ async def upsert_product_from_extraction(
         existing_product.source_url = source_url
         existing_product.completeness_score = completeness_score
         db.add(existing_product)
+        await db.flush()
+        link_stmt = select(ProjectProductLink).where(
+        ProjectProductLink.product_id == existing_product.id,
+        ProjectProductLink.project_id == project_id
+        )
+        link_result = await db.execute(link_stmt)
+        link = link_result.scalar_one_or_none()
+        if link:
+            link.enrichment_status = enrichment_status
+            db.add(link)
+        await _save_normalized_attributes(db, existing_product.id, prod_dict.get('specifications', {}))
         return existing_product
     else:
         product = Product(
@@ -1435,9 +1537,16 @@ async def upsert_product_from_extraction(
             source_url=source_url,
             completeness_score=completeness_score
         )
+        
         db.add(product)
         await db.flush()
-        db.add(ProjectProductLink(project_id=project_id, product_id=product.id))
+        db.add(ProjectProductLink(
+    project_id=project_id, 
+    product_id=product.id,
+    enrichment_status=enrichment_status
+))
+        await db.flush()
+        await _save_normalized_attributes(db, product.id, prod_dict.get('specifications', {}))
         return product
 
 
@@ -1524,6 +1633,15 @@ async def process_unstructured_pdf_extraction(
 ) -> None:
     async with async_session_factory() as db:
         try:
+            stmt = select(Product).join(
+                ProjectProductLink, Product.id == ProjectProductLink.product_id  
+            ).where(Product.product_code == mpn)
+            result = await db.execute(stmt)
+            product = result.scalar_one_or_none()
+            if product:
+                product.enrichment_status = "processing"
+                db.add(product)
+                await db.commit()
             logger.info(
                 f" Starting unstructured extraction for {mpn} (batch: {batch_id})")
             logger.info(f" Opening PDF: {filename} ({len(pdf_bytes)} bytes)")
@@ -1766,6 +1884,15 @@ async def process_multi_pdf_extraction(
 ) -> None:
     async with async_session_factory() as db:
         try:
+            stmt = select(Product).join(
+                ProjectProductLink, Product.id == ProjectProductLink.product_id  
+            ).where(Product.product_code == mpn)
+            result = await db.execute(stmt)
+            product = result.scalar_one_or_none()
+            if product:
+                product.enrichment_status = "processing"
+                db.add(product)
+                await db.commit()
             logger.info(
                 f" Starting multi-PDF extraction: {len(mpns)} MPNs, {len(pdf_documents)} PDFs")
             source = await db.get(Source, batch_id)

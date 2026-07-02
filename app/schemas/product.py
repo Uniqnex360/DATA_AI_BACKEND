@@ -1,4 +1,4 @@
-from typing import Optional,Dict
+from typing import Any, Optional,Dict
 from pydantic import BaseModel 
 from uuid import UUID
 
@@ -24,7 +24,7 @@ class ProductResponse(BaseModel):
     brand_name: Optional[str] = None
     mpn: Optional[str] = None
     enrichment_status: str = "pending"
-    attributes: Dict = {} 
+    attributes: Optional[Dict[str, Any]] = None
     completeness_score: float = 0.0
     image_url_1: Optional[str] = None
 

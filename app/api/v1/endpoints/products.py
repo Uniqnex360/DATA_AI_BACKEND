@@ -58,7 +58,29 @@ async def read_products(
                                         (Product.product_code.ilike(search_term)) |
                                         (Product.brand_name.ilike(search_term)))
         # count_stmt = select(func.count()).select_from(statement.subquery())
-        count_stmt = select(func.count()).select_from(statement.subquery())
+        if project_id:
+            count_stmt = select(func.count(Product.id)).join(
+                ProjectProductLink, Product.id == ProjectProductLink.product_id
+            ).where(ProjectProductLink.project_id == project_id)
+        else:
+            count_stmt = select(func.count(Product.id))
+
+        if enrichment_status and enrichment_status != 'all':
+            if project_id:
+                count_stmt = count_stmt.where(ProjectProductLink.enrichment_status == enrichment_status)
+            else:
+                count_stmt = count_stmt.where(Product.enrichment_status == enrichment_status)
+        if brand_name:
+            count_stmt = count_stmt.where(Product.brand_name == brand_name)
+        if category_1:
+            count_stmt = count_stmt.where(Product.category_1 == category_1)
+        if search:
+            search_term = f"%{search}%"
+            count_stmt = count_stmt.where(
+                (Product.product_name.ilike(search_term)) |
+                (Product.product_code.ilike(search_term)) |
+                (Product.brand_name.ilike(search_term))
+            )
 
         count_result = await db.execute(count_stmt)
         total = count_result.scalar() or 0
@@ -168,10 +190,12 @@ async def get_products_filters(
             Product, Product.brand_id == Brand.id).where(Brand.name.isnot(None))
 
         if project_id:
-            category_stmt = category_stmt.where(
-                ProjectProductLink.project_id == project_id)
-            brand_stmt = brand_stmt.where(
-                ProjectProductLink.project_id == project_id)
+            category_stmt = category_stmt.join(
+                ProjectProductLink, Product.id == ProjectProductLink.product_id
+            ).where(ProjectProductLink.project_id == project_id)
+            brand_stmt = brand_stmt.join(
+                ProjectProductLink, Product.id == ProjectProductLink.product_id
+            ).where(ProjectProductLink.project_id == project_id)
         if workflow_stage:
             category_stmt = category_stmt.where(
                 Product.workflow_stage == workflow_stage)
@@ -228,6 +252,7 @@ async def get_project_attributes(
             select(Attribute.attribute_name)
             .join(ProductAttributeLinkModel, ProductAttributeLinkModel.attribute_id == Attribute.id)
             .join(Product, Product.id == ProductAttributeLinkModel.product_id)
+            .join(ProjectProductLink, Product.id == ProjectProductLink.product_id) 
             .where(ProjectProductLink.project_id == project_id)
             .distinct()
         )
