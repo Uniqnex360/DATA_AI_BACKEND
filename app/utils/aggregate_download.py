@@ -10,9 +10,7 @@ from app.aggregation.prompt_builder import get_taxonomy_attribute_hints
 from app.models.product import Product
 from app.models.project import Project
 import json
-
 from app.models.project_product_link import ProjectProductLink
-
 async def generate_products_excel(
     products: List[Product],
     db: AsyncSession,
@@ -82,6 +80,8 @@ async def generate_products_excel(
         "type": "Product_Type",
         "parent_sku": "Parent_SKU",
         "gtin": "GTIN",
+        "global trade identification number": "GTIN",
+        "global trade item number": "GTIN",
         "gtin13": "ean",
         "gtin12": "upc",
         "ean": "ean",
@@ -172,7 +172,6 @@ async def generate_products_excel(
         "price_range", "usage", "voc_level", 'category',"categories","category_1", "category_2", "category_3", 
         "category_4", "category_5", "category_6",
         "category_7", "category_8", "workflow_stage", "enrichment_status",  
-        
     }
     def normalize_attr_name(s: str) -> str:
         return s.strip().lower().replace('_', '').replace(' ', '').replace('-', '')
@@ -208,19 +207,10 @@ async def generate_products_excel(
             NORM_DEDICATED_KEYS = {normalize_attr_name(k) for k in DEDICATED_COLUMN_MAPPING.keys()}
             for key in p.attributes.keys():
                 key_norm = normalize_attr_name(key)
-                # key_lower = key.lower().strip()
-                # if key_lower in IGNORED_KEYS:
-                #     continue
-                # # key_norm = key_lower.replace('_', '').replace(' ', '').replace('-', '')
-                # key_norm = normalize_attr_name(key_lower)
                 if key_norm in NORMALIZED_IGNORED or key_norm in NORM_DEDICATED_KEYS:
                     continue
                 is_dedicated = False
                 for map_key in DEDICATED_COLUMN_MAPPING.keys():
-                    # map_norm = map_key.lower().replace('_', '').replace(' ', '').replace('-', '')
-                    # if key_norm == map_norm:
-                    #     is_dedicated = True
-                    #     break
                     if key_norm == normalize_attr_name(map_key):
                         is_dedicated = True
                         break
@@ -257,7 +247,6 @@ async def generate_products_excel(
             ProjectProductLink.product_id.in_([p.id for p in products]))
         links = (await db.execute(link_stmt)).scalars().all()
         prod_to_proj = {link.product_id: link.project_id for link in links}
-
         project_ids = {link.project_id for link in links}
         if project_ids:
             stmt = select(Project.id, Project.name).where(
@@ -276,9 +265,7 @@ async def generate_products_excel(
         taxonomy = p.taxonomy or "Unknown"
         attribute_template = taxonomy_templates.get(taxonomy, [])
         from app.api.v1.endpoints.extraction import clean_for_excel, sanitize_for_excel
-        
         if 'images' in ai_data and isinstance(ai_data['images'], list):
-        
             images_list = ai_data.pop('images')
             for i, img_url in enumerate(images_list[:8], 1):
                 row[f'image_url_{i}'] = clean_for_excel(img_url)
@@ -295,10 +282,8 @@ async def generate_products_excel(
             ai_key_norm = normalize_attr_name(ai_key)
             if ai_key_norm in NORM_DEDICATED_MAP:
                 target_col = NORM_DEDICATED_MAP[ai_key_norm]
-                value = ai_data.pop(ai_key) # Physically remove it so it can't leak
+                value = ai_data.pop(ai_key) 
                 row[target_col] = clean_for_excel(value)
-                
-                # Handle units for length/weight if they are in the dict
                 if isinstance(value, dict):
                     uom = value.get('uom') or value.get('unit')
                     if uom:
@@ -307,21 +292,6 @@ async def generate_products_excel(
                             row['Weight_Unit'] = uom_clean
                         elif target_col in ['Length', 'Width', 'Height'] and not row['Dimension_Unit']:
                             row['Dimension_Unit'] = uom_clean
-            # for map_key, target_col in DEDICATED_COLUMN_MAPPING.items():
-            #     map_key_norm = map_key.lower().replace('_', '').replace(' ', '').replace('-', '')
-            #     if ai_key_norm == map_key_norm:
-            #         value = ai_data.pop(ai_key)
-            #         row[target_col] = clean_for_excel(value)
-            #         if isinstance(value, dict):
-            #             uom = value.get('uom') or value.get('unit')
-            #             if uom:
-            #                 uom_clean = clean_for_excel(uom)
-            #                 if target_col == 'Weight':
-            #                     row['Weight_Unit'] = uom_clean
-            #                 elif target_col in ['Length', 'Width', 'Height']:
-            #                     if not row['Dimension_Unit']:
-            #                         row['Dimension_Unit'] = uom_clean
-                    # break
         row.update({
              "Sequence": p.aggregation_index or "", 
             "Prod ID": str(p.id) if p.id else "",
@@ -382,14 +352,6 @@ async def generate_products_excel(
                     row[f"image_url_{i}"] = img.get("url", "")
                 else:
                     row[f"image_url_{i}"] = str(img) if img else ""
-        # original_attrs_by_norm = {}
-        # if p.dynamic_attributes:
-        #     for attr in p.dynamic_attributes:
-        #         if isinstance(attr, dict) and attr.get('name'):
-        #             k_norm = normalize_attr_name(attr['name'])
-        #             if k_norm not in original_attrs_by_norm:
-        #                 original_attrs_by_norm[k_norm] = []
-        #             original_attrs_by_norm[k_norm].append(attr)
         original_attrs_by_norm = {}
         try:
             from app.models.attribute import Attribute, AttributeValue
@@ -505,8 +467,6 @@ async def generate_products_excel(
                     break
             if not is_dedicated:
                 remaining_attrs.append(k)
-        
-        # NOW process remaining_attrs (separate loop)
         current_slot = len(attribute_template) + 1
         for ai_key in remaining_attrs:
             if current_slot > MAX_ATTRIBUTES:
@@ -541,7 +501,6 @@ async def generate_products_excel(
         filename ="Enriched_Export.xlsx"
     if not filename.endswith('.xlsx'):
         filename=f"{filename}.xlsx"
-        
     from urllib.parse import quote
     encoded_filename = quote(filename)
     return StreamingResponse(

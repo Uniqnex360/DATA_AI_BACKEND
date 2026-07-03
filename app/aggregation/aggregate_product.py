@@ -2121,6 +2121,19 @@ RULE 14 — UNIFICATION
 ✓ If one has a unit and the other doesn't, keep the one WITH the unit (more complete)
 ✓ COMPOUND vs SINGLE: If one attribute has "x" values (e.g., "0.375 x 15") and another has just a number that matches part of it (e.g., "15"), keep the compound one, drop the single
   ✓ Are VDC/VAC casing normalized to standard form (not flattened to V)?
+  RULE 15 — IDENTIFIER SUPPRESSION
+  Product identifiers (MPN, SKU, Brand) are already known from context.
+  If any attribute's value is just the MPN restated under a different
+  name (Model Name, Item Model Number, Part Number, etc.), drop that
+  attribute entirely — do not output it under any name.
+RULE 16 — SEMANTIC EQUIVALENCE (GENERAL CASE)
+  Two attributes are the same spec if they measure the same real-world
+  property, regardless of how differently they are named, worded, or
+  formatted — including cases not covered by any rule or example above.
+  Judge by meaning, not by string similarity. When in doubt, ask: would
+  a knowledgeable buyer treat these as one fact or two? If one fact,
+  merge them, keeping the version with a unit and the clearer name.
+
 ═══════════════════════════════════════════════════════
 CONCRETE FEW-SHOT EXAMPLES  (exact JSON output required for these inputs)
 ═══════════════════════════════════════════════════════
@@ -2187,6 +2200,7 @@ Output: name="Hose", value="0.375 x 15", unit="in x ft"
 ═══════════════════════════════════════════════════════
 OUTPUT FORMAT
 ═══════════════════════════════════════════════════════
+
 Return a JSON object:
 {{
   "attributes": [
