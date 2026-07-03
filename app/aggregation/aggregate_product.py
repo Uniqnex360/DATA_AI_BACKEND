@@ -33,6 +33,7 @@ import logging
 from app.rules.rule_engine import RuleEngine
 from app.services.product_discovery_service import ProductDiscoveryService
 from app.utils.image_validator import validate_image_url
+from app.utils.normalization_helper import normalize_concatenated_uom
 from app.utils.pdf_utils import is_parts_list_pdf
 from app.utils.remapping import cluster_attributes_by_meaning
 logger = logging.getLogger("aggregate_product")
@@ -1559,6 +1560,7 @@ async def aggregate_product(
                     'extraction_algorithm': current_algo_name,
                     'extraction_source': source_type
                 })
+        raw_attrs_for_combine = normalize_concatenated_uom(raw_attrs_for_combine)
         canonical_names = []
         canonical_units = {}
         if db and taxonomy:
@@ -1913,12 +1915,36 @@ STRICT DATA RETENTION MANDATE:
     1. If an attribute like 'AMPS' or 'Voltage' is in the input, it MUST be in the output.
     2. If the name is in the 'PREFERRED' list, RENAME it (e.g., 'AMPS' -> 'Amperage').
     3. If the name is NOT in the list, keep the original name.
-    4. NEVER delete technical data. If you drop an attribute that has a value, it is a CRITICAL FAILURE.
+     4. NEVER delete technical data. If you drop an attribute that has a value, it is a CRITICAL FAILURE.
+    EXCEPTION: identifiers that restate the product's own MPN/SKU/Brand
+    (see RULE 15 below) are not technical data — they are metadata already
+    known from context, and dropping them is required, not a failure.
 PRODUCT CONTEXT:
   MPN: {mpn}
   Brand: {brand}
   Title: {title}
   Taxonomy: {taxonomy or 'General'}
+    ═══════════════════════════════════════════════════════
+RULE 15 — IDENTIFIER SUPPRESSION  ★ APPLIES BEFORE ANY OTHER RULE ★
+  If any attribute's value IS the MPN, CONTAINS the MPN, or is a brand+MPN
+  combination (e.g. "Ninja FB151BL" when MPN is "FB151BL"), under any
+  attribute name (Model Name, Model Number, Item Model Number, Part Number,
+  Manufacturer Part Number, etc.), drop that attribute entirely. This is
+  the one case where dropping an attribute with a value is correct, not
+  a failure — see the exception noted in the Data Retention Mandate above.
+RULE 16 — SEMANTIC EQUIVALENCE (GENERAL CASE)
+  Two attributes are the same spec if they measure the same real-world
+  property, regardless of how differently they are named, worded, or
+  formatted — including cases not covered by any rule or example above.
+  Judge by meaning, not by string similarity. When in doubt, ask: would
+  a knowledgeable buyer treat these as one fact or two? If one fact,
+  merge them, keeping the version with a unit and the clearer name.
+RULE 17 — NAME COLLISION
+  If two attributes describe genuinely different facts but would naturally
+  share the same short name, give them distinct, more specific names
+  instead of reusing the same name, e.g. "Capacity (Volume)" vs
+  "Capacity (Can Count)" rather than two attributes both named "Capacity".
+  ═══════════════════════════════════════════════════════
   ═══════════════════════════════════════════════════════
 CONFLICT RESOLUTION RULES
 ═══════════════════════════════════════════════════════
@@ -2121,18 +2147,7 @@ RULE 14 — UNIFICATION
 ✓ If one has a unit and the other doesn't, keep the one WITH the unit (more complete)
 ✓ COMPOUND vs SINGLE: If one attribute has "x" values (e.g., "0.375 x 15") and another has just a number that matches part of it (e.g., "15"), keep the compound one, drop the single
   ✓ Are VDC/VAC casing normalized to standard form (not flattened to V)?
-  RULE 15 — IDENTIFIER SUPPRESSION
-  Product identifiers (MPN, SKU, Brand) are already known from context.
-  If any attribute's value is just the MPN restated under a different
-  name (Model Name, Item Model Number, Part Number, etc.), drop that
-  attribute entirely — do not output it under any name.
-RULE 16 — SEMANTIC EQUIVALENCE (GENERAL CASE)
-  Two attributes are the same spec if they measure the same real-world
-  property, regardless of how differently they are named, worded, or
-  formatted — including cases not covered by any rule or example above.
-  Judge by meaning, not by string similarity. When in doubt, ask: would
-  a knowledgeable buyer treat these as one fact or two? If one fact,
-  merge them, keeping the version with a unit and the clearer name.
+  
 
 ═══════════════════════════════════════════════════════
 CONCRETE FEW-SHOT EXAMPLES  (exact JSON output required for these inputs)
@@ -2227,6 +2242,8 @@ CRITICAL FINAL CHECKS before returning:
     ✓ Is "Temporary / Permanent" correctly title-cased and present? If missing, ensure it's included (set value="" if not found).
   ✓ Does "Adhesive Material" say "PVC"? If yes → it is wrong; set to empty or correct value if possible (look for a source that says "Rubber").
   ✓ Have all primary attributes been considered? If a primary attribute is missing because no matching specification was found, still include it with an empty value and note in original_values that it was not found.
+  ✓ Does any output attribute's value restate the product's own MPN (alone or combined with Brand, e.g. "Brand MPN")? If yes → remove it per RULE 15.
+  ✓ Do any two output attributes share the same name but describe different facts? If yes → rename per RULE 17 to make them distinct.
 {excel_section}
 {validation_section}
 ═══════════════════════════════════════════════════════

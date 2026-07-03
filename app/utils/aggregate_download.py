@@ -392,7 +392,9 @@ async def generate_products_excel(
                 ai_norm = normalize_attr_name(ai_key)
                 if ai_key in used_ai_keys or ai_norm in NORMALIZED_IGNORED_KEYS:
                     continue
-                if template_norm == ai_norm or (template_norm in ai_norm and len(template_norm) > 3):
+                # if template_norm == ai_norm or (template_norm in ai_norm and len(template_norm) > 3):
+                if template_norm == ai_norm:
+
                     ai_match_key = ai_key
                     break
             ai_val_str = ""
@@ -474,7 +476,8 @@ async def generate_products_excel(
             row[f"attribute_name{current_slot}"] = ai_key.replace('_', ' ').title()
             row[f"attribute_value{current_slot}"] = clean_for_excel(ai_data[ai_key], ai_key)
             if isinstance(ai_data[ai_key], dict):
-                uom = ai_data[ai_key].get("uom", "")
+                # uom = ai_data[ai_key].get("uom", "")
+                uom = ai_data[ai_key].get("uom") or ai_data[ai_key].get("unit", "")
                 if uom and uom.lower() not in ["n/a", "na", "none", "null"]:
                     row[f"attribute_uom{current_slot}"] = clean_for_excel(uom)
                 row[f"attribute_algorithm{current_slot}"] = ai_data[ai_key].get(
