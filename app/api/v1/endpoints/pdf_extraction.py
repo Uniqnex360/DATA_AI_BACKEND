@@ -18,7 +18,7 @@ import aiohttp
 from app.aggregation.services.pdf_service import PDFExtractionService
 from app.core.database import get_session
 from app.llm import call_llm_with_schema
-from app.models.pipeline import Source
+from app.models.pipeline import AggregationJob, Source
 from app.models.product import Product
 from app.models.product_attribute_link import ProductAttributeValueLinkModel
 from app.models.project import Project
@@ -42,16 +42,16 @@ async def sync_project_status(db, project_id: str) -> None:
     if not project:
         return
     stmt = select(
-        func.count(Product.id),
-        func.sum(case((Product.enrichment_status == "completed", 1), else_=0)),
-        func.sum(case((Product.enrichment_status == "failed", 1), else_=0)),
-        func.sum(case((Product.enrichment_status == "processing", 1), else_=0)),
-        func.sum(case((Product.enrichment_status == "pending", 1), else_=0)),
-    ).join(
-        ProjectProductLink, Product.id == ProjectProductLink.product_id  
-    ).where(
-        ProjectProductLink.project_id == project_id  
-    )
+    func.count(Product.id),
+    func.sum(case((ProjectProductLink.enrichment_status == "completed", 1), else_=0)),
+    func.sum(case((ProjectProductLink.enrichment_status == "failed", 1), else_=0)),
+    func.sum(case((ProjectProductLink.enrichment_status == "processing", 1), else_=0)),
+    func.sum(case((ProjectProductLink.enrichment_status == "pending", 1), else_=0)),
+).join(
+    ProjectProductLink, Product.id == ProjectProductLink.product_id  
+).where(
+    ProjectProductLink.project_id == project_id  
+)
     result = await db.execute(stmt)
     row = result.one()
     total = row[0] or 0
@@ -705,8 +705,22 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                     source_url='web_search_failed',
                                     completeness_score=0
                                 )
+                                job_stmt = select(AggregationJob).where(
+                                    AggregationJob.project_id == project_id,
+                                    AggregationJob.status == "processing"
+                                ).order_by(AggregationJob.created_at.desc()).limit(1)
+                                job_result = await db.execute(job_stmt)
+                                job = job_result.scalar_one_or_none()
+                                if job:
+                                    job.status = enrichment_status
+                                    job.completed_at = now_ist()
+                                    job.progress_percentage = 100.0 if enrichment_status == "completed" else 0.0
+                                    job.successful = 1 if enrichment_status == "completed" else 0
+                                    job.failed = 0 if enrichment_status == "completed" else 1
+                                    db.add(job)
                                 db.add(product)
                                 await db.flush()
+                                
                                 db.add(ProjectProductLink(
                                     project_id=project_id, product_id=product.id,enrichment_status=enrichment_status ))
                             continue
@@ -961,6 +975,13 @@ async def process_structured_pdf_extraction(
 ) -> None:
     async with async_session_factory() as db:
         try:
+            source = await db.get(Source, batch_id)
+            if source:
+                source.status = "processing"
+                source.source_metadata["processing_status"] = "processing"
+                flag_modified(source, "source_metadata")
+                db.add(source)
+                await db.commit()
             stmt = select(Product).join(
                 ProjectProductLink, Product.id == ProjectProductLink.product_id  
             ).where(Product.product_code == mpn)
@@ -1166,6 +1187,12 @@ async def process_multi_pdf_extraction_for_single_mpn(
     async with async_session_factory() as db:
         try:
             source = await db.get(Source, batch_id)
+            if source:
+                source.status = "processing"
+                source.source_metadata["processing_status"] = "processing"
+                flag_modified(source, "source_metadata")
+                db.add(source)
+                await db.commit()
             if not source:
                 logger.error(f"Source not found: {batch_id}")
                 return
@@ -1380,7 +1407,23 @@ async def extract_pending_pdf(
             )
             .values(enrichment_status="processing")
         )
+        project = await db.get(Project, project_id)
+        user_id = project.owner_id 
+        job = AggregationJob(
+            project_id=project_id,
+            status="processing",
+            total_products=1,
+            successful=0,
+            failed=0,
+            progress_percentage=0.0,
+             user_id=user_id,
+            current_product=mpn,
+            started_at=now_ist(),
+            details={"type": "pdf_extraction", "mpn": mpn}
+        )
+        db.add(job)
         await db.commit()
+        await sync_project_status(db, project_id)  
         if source.source_type == "pdf_multi_pending":
             background_tasks.add_task(
                 process_multi_pdf_extraction_for_single_mpn, source.id, mpn, project_id)
@@ -1516,6 +1559,19 @@ async def upsert_product_from_extraction(
         existing_product.source_url = source_url
         existing_product.completeness_score = completeness_score
         db.add(existing_product)
+        job_stmt = select(AggregationJob).where(
+        AggregationJob.project_id == project_id,
+        AggregationJob.status == "processing"
+        ).order_by(AggregationJob.created_at.desc()).limit(1)
+        job_result = await db.execute(job_stmt)
+        job = job_result.scalar_one_or_none()
+        if job:
+            job.status = enrichment_status
+            job.completed_at = now_ist()
+            job.progress_percentage = 100.0 if enrichment_status == "completed" else 0.0
+            job.successful = 1 if enrichment_status == "completed" else 0
+            job.failed = 0 if enrichment_status == "completed" else 1
+            db.add(job)
         await db.flush()
         link_stmt = select(ProjectProductLink).where(
         ProjectProductLink.product_id == existing_product.id,
@@ -1550,6 +1606,19 @@ async def upsert_product_from_extraction(
         
         db.add(product)
         await db.flush()
+        job_stmt = select(AggregationJob).where(
+        AggregationJob.project_id == project_id,
+        AggregationJob.status == "processing"
+        ).order_by(AggregationJob.created_at.desc()).limit(1)
+        job_result = await db.execute(job_stmt)
+        job = job_result.scalar_one_or_none()
+        if job:
+            job.status = enrichment_status
+            job.completed_at = now_ist()
+            job.progress_percentage = 100.0 if enrichment_status == "completed" else 0.0
+            job.successful = 1 if enrichment_status == "completed" else 0
+            job.failed = 0 if enrichment_status == "completed" else 1
+            db.add(job)
         db.add(ProjectProductLink(
     project_id=project_id, 
     product_id=product.id,
@@ -1643,6 +1712,13 @@ async def process_unstructured_pdf_extraction(
 ) -> None:
     async with async_session_factory() as db:
         try:
+            source = await db.get(Source, batch_id)
+            if source:
+                source.status = "processing"
+                source.source_metadata["processing_status"] = "processing"
+                flag_modified(source, "source_metadata")
+                db.add(source)
+                await db.commit()
             stmt = select(Product).join(
                 ProjectProductLink, Product.id == ProjectProductLink.product_id  
             ).where(Product.product_code == mpn)

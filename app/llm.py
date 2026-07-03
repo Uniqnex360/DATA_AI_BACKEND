@@ -36,10 +36,13 @@ def parse_response(content: str) -> dict:
     elif "```" in content:
         content = content.split("```")[1].split("```")[0].strip()
     try:
-        return json.loads(content)
+        parsed = json.loads(content)
+        if isinstance(parsed, dict) and "properties" in parsed and "title" in parsed:
+            raise ValueError("Model echoed schema instead of data")
+        return parsed
     except json.JSONDecodeError as e:
         print(f"JSON Parsing Error: {e} | Content: {content}")
-        return {"error": "invalid_json", "raw": content}
+        raise ValueError(f"invalid_json: {e}")
 
 
 def call_llm(prompt: str, schema: dict) -> dict:
@@ -177,11 +180,19 @@ async def call_llm_with_schema(
             raise last_error
         elif llm_provider == 'gemini':
             schema_dict = schema_class.model_json_schema()
+            simple_fields = {name: str(f.annotation) for name, f in schema_class.model_fields.items()}
             gemini_prompt = f"""{prompt}
-            Return JSON response matching this schema:{json.dumps(schema_dict, indent=2)}
+
+            Output ONLY a JSON object with these fields, filled with real extracted values:
+            {json.dumps(simple_fields, indent=2)}
+
+            Do not output field types or schema metadata like "properties", "anyOf", "title", "default". Output actual data only.
             """
 
             response_text = await call_gemini_safely(settings.gemini_model, gemini_prompt)
+            logger.info(f"Gemini raw response length: {len(response_text)}")
+            logger.info(f"Gemini raw response FULL: {response_text}")
+
             parsed = parse_response(response_text)
             return schema_class.model_validate(parsed)
         elif llm_provider == 'claude':
@@ -212,13 +223,22 @@ async def call_llm_with_schema(
             return schema_class.model_validate(parsed)
     except Exception as e:
         logger.warning(
-            f"Primary provider {llm_provider} failed. Switching to Gemini fallback...")
-        try:
+            f"Primary provider {llm_provider} failed: {e}. Switching to Gemini fallback...")
 
-            schema_dict = schema_class.model_json_schema()
-            fallback_prompt = f"{prompt}\n\nReturn JSON response matching this schema: {json.dumps(schema_dict)}"
+        try:
+            simple_fields = {name: str(f.annotation) for name, f in schema_class.model_fields.items()}
+            fallback_prompt = f"""{prompt}
+
+            Output ONLY a JSON object with these fields, filled with real extracted values:
+            {json.dumps(simple_fields, indent=2)}
+
+            Do not output field types or schema metadata like "properties", "anyOf", "title", "default". Output actual data only.
+            """
 
             response_text = await call_gemini_safely(settings.gemini_model, fallback_prompt)
+            logger.info(f"Gemini fallback raw response length: {len(response_text)}")
+            logger.info(f"Gemini fallback raw response FULL: {response_text}")
+
             parsed = parse_response(response_text)
             return schema_class.model_validate(parsed)
 
