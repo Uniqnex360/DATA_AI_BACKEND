@@ -270,9 +270,7 @@ async def blind_pdf_extraction(
         raise HTTPException(500, str(e))
 async def extract_product_with_claude(mpn: str, pdf_text: str, source_url: str, db: AsyncSession = None, project_id: str = None) -> Optional[Dict]:
     try:
-        if len(pdf_text) > 18000:
-            logger.info(f"Slicing large raw text ({len(pdf_text)} chars) around MPN context: {mpn}")
-            pdf_text = slice_text_around_mpn(pdf_text, mpn, window=22000, back=10000)
+        
         prompt_service = PDFPromptService(db, project_id)
         prompt = await prompt_service.get_extraction_prompt(
             pdf_text, mpn, "Fresh PDF Aggregation", is_unstructured=False
@@ -949,8 +947,8 @@ async def process_structured_pdf_extraction(
                                             row_dict[key] = val
                                 if row_dict:
                                     tables.append(row_dict)
-            truncated_text = full_text[:15000]
-            truncated_tables = json.dumps(tables, indent=2)[:5000]
+            truncated_text = full_text
+            truncated_tables = json.dumps(tables, indent=2)
             prompt_service = PDFPromptService(db, project_id)
             prompt = await prompt_service.get_structured_extraction_prompt(
                 truncated_text, truncated_tables, mpn, "Structured PDF Extraction (Given MPNs)"
@@ -1169,8 +1167,7 @@ async def process_multi_pdf_extraction_for_single_mpn(
             if best_pdf and best_score > 0:
                 logger.info(
                     f"Best match: {best_pdf['filename']} (score: {best_score})")
-                truncated_text = slice_text_around_mpn(
-                    best_pdf["text"], mpn, window=22000, back=10000)
+                truncated_text = best_pdf["text"] 
                 prompt_service = PDFPromptService(db, project_id)
                 prompt = await prompt_service.get_extraction_prompt(
                     truncated_text, mpn, "Multi-PDF & Multi-MPN Data Extraction.", is_unstructured=False
@@ -1200,6 +1197,14 @@ async def process_multi_pdf_extraction_for_single_mpn(
                     product = await upsert_product_from_extraction(
                         db, project_id, mpn, prod_dict, best_pdf['filename']
                     )
+                    
+                    source = await db.get(Source, batch_id)
+                    total_mpns = source.source_metadata.get("total_mpns", 1)
+                    if total_mpns <= 1:
+                        source.status = "completed"
+                        source.source_metadata["processing_status"] = "completed"
+                        source.source_metadata["completed_at"] = now_ist().isoformat()
+                        logger.info(f"✓ Single MPN batch completed: {mpn}")
                     extracted_count = source.source_metadata.get(
                         "extracted", 0) + 1
                     source.source_metadata["extracted"] = extracted_count
@@ -1222,6 +1227,21 @@ async def process_multi_pdf_extraction_for_single_mpn(
             logger.error(
                 f" Failed to extract {mpn} from multi-PDF: {e}", exc_info=True)
             await db.rollback()
+            source = await db.get(Source, batch_id)
+            if source:
+                total_mpns = source.source_metadata.get("total_mpns", 1)
+                current_failed = source.source_metadata.get("failed", 0) + 1
+                source.source_metadata["failed"] = current_failed
+                
+                if current_failed >= total_mpns:
+                    source.status = "failed"
+                    source.source_metadata["processing_status"] = "failed"
+                    logger.error(f"❌ Batch failed: 0/{total_mpns} MPNs extracted")
+                
+                source.source_metadata["error"] = str(e)
+                flag_modified(source, "source_metadata")
+                db.add(source)
+                await db.commit()
             stmt = select(Product).join(
                 ProjectProductLink, Product.id == ProjectProductLink.product_id  
             ).where(
@@ -1641,7 +1661,7 @@ async def process_unstructured_pdf_extraction(
                     except Exception as e:
                         logger.warning(f"   Page {i+1} failed: {e}")
                         continue
-            truncated_text = full_text[:15000]
+            truncated_text = full_text
             prompt_service = PDFPromptService(db, project_id)
             prompt = await prompt_service.get_unstructured_extraction_prompt(
                 truncated_text, mpn, "Unstructured PDF Extraction (Given MPNs)"
@@ -1904,8 +1924,7 @@ async def process_multi_pdf_extraction(
                     if best_pdf and best_score > 0:
                         logger.info(
                             f"Best match: {best_pdf['filename']} (score: {best_score})")
-                        truncated_text = slice_text_around_mpn(
-                            best_pdf["text"], mpn, window=15000, back=6000)
+                        truncated_text = best_pdf["text"]  
                         prompt_service = PDFPromptService(db, project_id)
                         prompt = await prompt_service.get_extraction_prompt(
                             truncated_text, mpn, "Multi-PDF & Multi-MPN Data Extraction.", is_unstructured=False

@@ -34,7 +34,7 @@ class PDFPromptService:
         use_case: str
     ) -> Optional[str]:
         context = {
-            "pdf_text": pdf_text[:15000],
+            "pdf_text": pdf_text,
             "filename": filename,
             "product_hint": product_hint,
             "text_sample": pdf_text[:2000]
@@ -49,7 +49,7 @@ class PDFPromptService:
     ) -> Optional[str]:
         stage = "pdf_unstructured" if is_unstructured else "pdf_extraction"
         context = {
-            "pdf_text": pdf_text[:15000],
+            "pdf_text": pdf_text,
             "mpn": mpn,
             "text_sample": pdf_text[:2000]
         }
