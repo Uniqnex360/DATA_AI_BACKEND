@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 from pathlib import Path
 import os
+import warnings
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -51,7 +52,11 @@ app.include_router(business_rules.router, prefix=f"{settings.API_V1_STR}/busines
 app.include_router(pdf_extraction.router, prefix=f"{settings.API_V1_STR}/extraction/pdf", tags=["pdf_extraction"])
 app.include_router(auth.router,prefix=f"{settings.API_V1_STR}/auth",tags=['auth'])
 app.include_router(reporting.router,prefix=f"{settings.API_V1_STR}/reporting",tags=['reporting'])
-
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message=".*Expected `float` but got `Decimal`.*"
+)
 
 
 @app.on_event("startup")
