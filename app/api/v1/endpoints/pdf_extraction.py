@@ -270,6 +270,9 @@ async def blind_pdf_extraction(
         raise HTTPException(500, str(e))
 async def extract_product_with_claude(mpn: str, pdf_text: str, source_url: str, db: AsyncSession = None, project_id: str = None) -> Optional[Dict]:
     try:
+        if len(pdf_text) > 18000:
+            logger.info(f"Slicing large raw text ({len(pdf_text)} chars) around MPN context: {mpn}")
+            pdf_text = slice_text_around_mpn(pdf_text, mpn, window=22000, back=10000)
         prompt_service = PDFPromptService(db, project_id)
         prompt = await prompt_service.get_extraction_prompt(
             pdf_text, mpn, "Fresh PDF Aggregation", is_unstructured=False
@@ -1169,7 +1172,7 @@ async def process_multi_pdf_extraction_for_single_mpn(
                 logger.info(
                     f"Best match: {best_pdf['filename']} (score: {best_score})")
                 truncated_text = slice_text_around_mpn(
-                    best_pdf["text"], mpn, window=15000, back=6000)
+                    best_pdf["text"], mpn, window=22000, back=10000)
                 prompt_service = PDFPromptService(db, project_id)
                 prompt = await prompt_service.get_extraction_prompt(
                     truncated_text, mpn, "Multi-PDF & Multi-MPN Data Extraction.", is_unstructured=False
