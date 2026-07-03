@@ -329,7 +329,7 @@ async def generate_products_excel(
             "Product_Type": row.get("Product_Type") or getattr(p, 'product_type', '') or "",
             "Parent_SKU": row.get("Parent_SKU") or getattr(p, 'parent_sku', '') or "",
             "Product_Name": row.get("Product_Name") or p.product_name or "",
-            "Brand": row.get("Brand") or p.brand_name or "",
+            "Brand": p.brand_name or row.get("Brand") or "",
             "GTIN": row.get("GTIN") or getattr(p, 'gtin', '') or "",
             "ean": row.get("ean") or getattr(p, 'ean', '') or "",
             "upc": row.get("upc") or getattr(p, 'upc', '') or "",
