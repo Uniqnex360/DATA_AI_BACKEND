@@ -35,8 +35,6 @@ from app.utils.timezone import now_ist
 from app.models.attribute import Attribute, AttributeValue
 logger = logging.getLogger('pdf extraction')
 router = APIRouter()
-
-
 async def sync_project_status(db, project_id: str) -> None:
     project = await db.get(Project, project_id)
     if not project:
@@ -83,8 +81,6 @@ async def sync_project_status(db, project_id: str) -> None:
     db.add(project)
     await db.commit()
     logger.info(f"Project {project_id} status updated to: {project.status}")
-
-
 @router.post("/fresh-aggregation")
 async def fresh_aggregation(
     request: FreshAggregationRequest,
@@ -155,8 +151,6 @@ async def fresh_aggregation(
     except Exception as e:
         logger.error(f"Failed to start fresh aggregation: {e}")
         raise HTTPException(500, str(e))
-
-
 async def search_pdfs_url(mpn: str, brand: str) -> List[str]:
     try:
         logger.info(f" [1/4] Starting PDF search for MPN: {mpn}")
@@ -189,8 +183,6 @@ async def search_pdfs_url(mpn: str, brand: str) -> List[str]:
     except Exception as e:
         logger.error(f"Failed to search pdf urls: {e}")
         raise HTTPException(500, str(e))
-
-
 async def download_and_extract_pdf(pdf_url: str) -> Optional[str]:
     pdf_service = PDFExtractionService(max_pages=15)
     try:
@@ -206,8 +198,6 @@ async def download_and_extract_pdf(pdf_url: str) -> Optional[str]:
     except Exception as e:
         logger.warning(f"Failed to download/extract PDF {pdf_url}: {e}")
     return None
-
-
 @router.post('/blind-pdf-extraction')
 async def blind_pdf_extraction(
     background_tasks: BackgroundTasks,
@@ -278,37 +268,8 @@ async def blind_pdf_extraction(
         logger.error(
             f"Failed to start blind PDF extraction: {e}", exc_info=True)
         raise HTTPException(500, str(e))
-
-
 async def extract_product_with_claude(mpn: str, pdf_text: str, source_url: str, db: AsyncSession = None, project_id: str = None) -> Optional[Dict]:
     try:
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         prompt_service = PDFPromptService(db, project_id)
         prompt = await prompt_service.get_extraction_prompt(
             pdf_text, mpn, "Fresh PDF Aggregation", is_unstructured=False
@@ -316,8 +277,17 @@ async def extract_product_with_claude(mpn: str, pdf_text: str, source_url: str, 
         if not prompt:
             error_msg = "No business rule prompt configured for PDF Extraction"
             logger.warning(f"{error_msg} for project {project_id}")
+            job_stmt = select(AggregationJob).where(
+        AggregationJob.project_id == project_id,
+        AggregationJob.status == "processing"
+            ).order_by(AggregationJob.created_at.desc()).limit(1)
+            job_result = await db.execute(job_stmt)
+            job = job_result.scalar_one_or_none()
+            if job:
+                job.status = "failed"
+                job.completed_at = now_ist()
+                db.add(job)
             return None
-
         extracted = await call_llm_with_schema(prompt=prompt, response_model="PDFExtractionResponse", llm_provider='claude', estimated_tokens=4000)
         if extracted:
             result = extracted.model_dump() if hasattr(
@@ -328,8 +298,6 @@ async def extract_product_with_claude(mpn: str, pdf_text: str, source_url: str, 
     except Exception as e:
         logger.error(f"Claude extraction failed for {mpn}: {e}")
     return None
-
-
 async def process_blind_pdf_extraction(
     batch_id: str,
     project_id: str
@@ -446,6 +414,18 @@ async def process_blind_pdf_extraction(
         except Exception as e:
             logger.error(f" Blind extraction failed: {e}", exc_info=True)
             await db.rollback()
+            job_stmt = select(AggregationJob).where(
+                AggregationJob.project_id == project_id,
+                AggregationJob.status == "processing"
+            ).order_by(AggregationJob.created_at.desc()).limit(1)
+            job_result = await db.execute(job_stmt)
+            job = job_result.scalar_one_or_none()
+            if job:
+                job.status = "failed"
+                job.completed_at = now_ist()
+                job.failed = 1
+                db.add(job)
+                await db.commit()
             source = await db.get(Source, batch_id)
             if source:
                 source.status = "failed"
@@ -454,8 +434,6 @@ async def process_blind_pdf_extraction(
                 db.add(source)
                 await db.commit()
                 await sync_project_status(db, project_id)
-
-
 async def identify_products_in_pdf(pdf_text: str, filename: str, product_hint: str, db: AsyncSession = None, project_id: str = None) -> List[Dict]:
     text_lower = pdf_text.lower()
     hint_lower = product_hint.lower()
@@ -472,26 +450,17 @@ async def identify_products_in_pdf(pdf_text: str, filename: str, product_hint: s
     if not prompt:
         error_msg = "No business rule prompt configured for Blind PDF Extraction"
         logger.warning(f"{error_msg} for project {project_id}")
+        job_stmt = select(AggregationJob).where(
+        AggregationJob.project_id == project_id,
+        AggregationJob.status == "processing"
+        ).order_by(AggregationJob.created_at.desc()).limit(1)
+        job_result = await db.execute(job_stmt)
+        job = job_result.scalar_one_or_none()
+        if job:
+            job.status = "failed"
+            job.completed_at = now_ist()
+            db.add(job)
         return None
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     try:
         response = await call_llm_with_schema(
             prompt=prompt,
@@ -525,42 +494,9 @@ async def identify_products_in_pdf(pdf_text: str, filename: str, product_hint: s
     except Exception as e:
         logger.error(f"Product identification failed: {e}", exc_info=True)
         return []
-
-
 async def extract_blind_product_details(pdf_text: str, product_info: Dict, db: AsyncSession = None, project_id: str = None) -> Optional[Dict]:
     title = product_info.get('title', 'Unknown Product')
     context = product_info.get('context', '')
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     prompt_service = PDFPromptService(db, project_id)
     prompt = await prompt_service.get_blind_extraction_prompt(
         pdf_text, product_info, "Title & Description Based PDF Extraction"
@@ -568,6 +504,16 @@ async def extract_blind_product_details(pdf_text: str, product_info: Dict, db: A
     if not prompt:
         error_msg = "No business rule prompt configured for PDF Identification"
         logger.warning(f"{error_msg} for project {project_id}")
+        job_stmt = select(AggregationJob).where(
+        AggregationJob.project_id == project_id,
+        AggregationJob.status == "processing"
+        ).order_by(AggregationJob.created_at.desc()).limit(1)
+        job_result = await db.execute(job_stmt)
+        job = job_result.scalar_one_or_none()
+        if job:
+            job.status = "failed"
+            job.completed_at = now_ist()
+            db.add(job)
         return []
     try:
         response = await call_llm_with_schema(
@@ -580,8 +526,6 @@ async def extract_blind_product_details(pdf_text: str, product_info: Dict, db: A
     except Exception as e:
         logger.error(f"Blind product extraction failed for {title}: {e}")
         return None
-
-
 def generate_mpn_from_title(title: str) -> str:
     slug = re.sub(r'[^a-zA-Z0-9]', '-', title.lower())
     slug = re.sub(r'-+', '-', slug).strip('-')
@@ -591,14 +535,12 @@ async def _save_normalized_attributes(db: AsyncSession, product_id: str, specifi
     for attr_name, attr_value in specifications.items():
         if not attr_value:
             continue
-        
         # Get or create attribute_master - use case-insensitive search
         attr_stmt = select(Attribute).where(
             func.lower(Attribute.attribute_name) == func.lower(attr_name)
         )
         attr_result = await db.execute(attr_stmt)
         attribute = attr_result.scalar_one_or_none()
-        
         if not attribute:
             # Make attribute_code unique by appending a short UUID
             base_code = attr_name.lower().replace(' ', '_').replace('/', '_').replace('#', 'no')[:40]
@@ -619,7 +561,6 @@ async def _save_normalized_attributes(db: AsyncSession, product_id: str, specifi
                 attribute = attr_result.scalar_one_or_none()
                 if not attribute:
                     raise
-        
         # Get or create attribute_value
         val_stmt = select(AttributeValue).where(
             AttributeValue.attribute_id == attribute.id,
@@ -627,7 +568,6 @@ async def _save_normalized_attributes(db: AsyncSession, product_id: str, specifi
         )
         val_result = await db.execute(val_stmt)
         attr_val = val_result.scalar_one_or_none()
-        
         if not attr_val:
             attr_val = AttributeValue(
                 attribute_id=attribute.id,
@@ -635,7 +575,6 @@ async def _save_normalized_attributes(db: AsyncSession, product_id: str, specifi
             )
             db.add(attr_val)
             await db.flush()
-        
         # Link product to attribute_value if not already linked
         link_stmt = select(ProductAttributeValueLinkModel).where(
             ProductAttributeValueLinkModel.product_id == product_id,
@@ -647,7 +586,6 @@ async def _save_normalized_attributes(db: AsyncSession, product_id: str, specifi
                 product_id=product_id,
                 attribute_value_id=attr_val.id
             ))
-
 async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_id: str, detailed_data: List[Dict] = None):
     try:
         async with async_session_factory() as db:
@@ -720,7 +658,6 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                     db.add(job)
                                 db.add(product)
                                 await db.flush()
-                                
                                 db.add(ProjectProductLink(
                                     project_id=project_id, product_id=product.id,enrichment_status=enrichment_status ))
                             continue
@@ -907,8 +844,6 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                     await sync_project_status(db, project_id)
     except Exception as e:
         logger.error(f"Fresh PDF aggregation outer failed: {e}")
-
-
 @router.get('/batch-status/{batch_id}')
 async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -923,8 +858,6 @@ async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_session
         }
     except Exception as e:
         raise e
-
-
 @router.post('/structured-extraction')
 async def structured_pdf_extraction(
     background_tasks: BackgroundTasks,
@@ -964,8 +897,6 @@ async def structured_pdf_extraction(
     except Exception as e:
         logger.error(f"Failed to start structured extraction: {e}")
         raise HTTPException(500, str(e))
-
-
 async def process_structured_pdf_extraction(
     batch_id: str,
     pdf_bytes: bytes,
@@ -1017,21 +948,6 @@ async def process_structured_pdf_extraction(
                                     tables.append(row_dict)
             truncated_text = full_text[:15000]
             truncated_tables = json.dumps(tables, indent=2)[:5000]
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
             prompt_service = PDFPromptService(db, project_id)
             prompt = await prompt_service.get_structured_extraction_prompt(
                 truncated_text, truncated_tables, mpn, "Structured PDF Extraction (Given MPNs)"
@@ -1039,7 +955,17 @@ async def process_structured_pdf_extraction(
             if not prompt:
                 error_msg = "No business rule prompt configured for Structured PDF Extraction"
                 logger.warning(f"{error_msg} for project {project_id}")
-
+                job_stmt = select(AggregationJob).where(
+                    AggregationJob.project_id == project_id,
+                    AggregationJob.status == "processing"
+                ).order_by(AggregationJob.created_at.desc()).limit(1)
+                job_result = await db.execute(job_stmt)
+                job = job_result.scalar_one_or_none()
+                if job:
+                    job.status = "failed"
+                    job.completed_at = now_ist()
+                    db.add(job)
+                
                 source = await db.get(Source, batch_id)
                 if source:
                     source.status = "failed"
@@ -1053,8 +979,6 @@ async def process_structured_pdf_extraction(
                     db.add(source)
                     await db.commit()
                     await sync_project_status(db, project_id)
-
-                
                 stmt = select(Product).join(
                     ProjectProductLink, Product.id == ProjectProductLink.product_id  
                 ).where(
@@ -1066,7 +990,6 @@ async def process_structured_pdf_extraction(
                     product.enrichment_status = "failed"
                     db.add(product)
                     await db.commit()
-
                 return
             logger.info(
                 f"Extracted text length: {len(full_text)}, tables: {len(tables)}")
@@ -1107,8 +1030,6 @@ async def process_structured_pdf_extraction(
                 db.add(source)
                 await db.commit()
                 await sync_project_status(db, project_id)
-
-
 @router.post('/save-pdf-source')
 async def save_pdf_source(
     file: UploadFile = File(...),
@@ -1177,8 +1098,6 @@ async def save_pdf_source(
     except Exception as e:
         logger.error(f"Failed to save PDF source: {e}")
         raise HTTPException(500, str(e))
-
-
 async def process_multi_pdf_extraction_for_single_mpn(
     batch_id: str,
     mpn: str,
@@ -1251,41 +1170,6 @@ async def process_multi_pdf_extraction_for_single_mpn(
                     f"Best match: {best_pdf['filename']} (score: {best_score})")
                 truncated_text = slice_text_around_mpn(
                     best_pdf["text"], mpn, window=15000, back=6000)
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
                 prompt_service = PDFPromptService(db, project_id)
                 prompt = await prompt_service.get_extraction_prompt(
                     truncated_text, mpn, "Multi-PDF & Multi-MPN Data Extraction.", is_unstructured=False
@@ -1293,6 +1177,16 @@ async def process_multi_pdf_extraction_for_single_mpn(
                 if not prompt:
                     error_msg = "No business rule prompt configured for Multi-PDF Extraction"
                     logger.warning(f"{error_msg} for project {project_id}")
+                    job_stmt = select(AggregationJob).where(
+                        AggregationJob.project_id == project_id,
+                        AggregationJob.status == "processing"
+                    ).order_by(AggregationJob.created_at.desc()).limit(1)
+                    job_result = await db.execute(job_stmt)
+                    job = job_result.scalar_one_or_none()
+                    if job:
+                        job.status = "failed"
+                        job.completed_at = now_ist()
+                        db.add(job)
                     raise ValueError(error_msg)
                 response = await call_llm_with_schema(
                     prompt=prompt,
@@ -1314,7 +1208,6 @@ async def process_multi_pdf_extraction_for_single_mpn(
                         source.source_metadata["processing_status"] = "completed"
                         source.source_metadata["completed_at"] = now_ist(
                         ).isoformat()
-
                     db.add(source)
                     await db.commit()
                     await sync_project_status(db, project_id)
@@ -1333,6 +1226,18 @@ async def process_multi_pdf_extraction_for_single_mpn(
             ).where(
                 Product.product_code == mpn
             )
+            job_stmt = select(AggregationJob).where(
+                AggregationJob.project_id == project_id,
+                AggregationJob.status == "processing"
+            ).order_by(AggregationJob.created_at.desc()).limit(1)
+            job_result = await db.execute(job_stmt)
+            job = job_result.scalar_one_or_none()
+            if job:
+                job.status = "failed"
+                job.completed_at = now_ist()
+                job.failed = 1
+                db.add(job)
+                await db.commit()
             result = await db.execute(stmt)
             product = result.scalar_one_or_none()
             if product:
@@ -1345,8 +1250,6 @@ async def process_multi_pdf_extraction_for_single_mpn(
                 db.add(source)
             await db.commit()
             await sync_project_status(db, project_id)
-
-
 @router.post("/extract-pending")
 async def extract_pending_pdf(
     data: dict,
@@ -1439,8 +1342,6 @@ async def extract_pending_pdf(
     except Exception as e:
         logger.error(f"Failed to start extraction: {e}", exc_info=True)
         raise HTTPException(500, f"Internal server error: {str(e)}")
-
-
 async def process_pdf_extraction_for_product(
     batch_id: str,
     mpn: str,
@@ -1484,8 +1385,6 @@ async def process_pdf_extraction_for_product(
                 db.add(source)
                 await db.commit()
                 await sync_project_status(db, project_id)
-
-
 def parse_llm_response(response, mpn: str) -> Optional[Dict]:
     product_info = None
     resp_dict = None
@@ -1514,8 +1413,6 @@ def parse_llm_response(response, mpn: str) -> Optional[Dict]:
         return product_info
     else:
         raise ValueError(f"Unexpected product_info type: {type(product_info)}")
-
-
 async def upsert_product_from_extraction(
     db: AsyncSession,
     project_id: str,
@@ -1543,8 +1440,8 @@ async def upsert_product_from_extraction(
     )
     existing_product = existing_product.scalar_one_or_none()
     if existing_product:
-        existing_product.product_name = prod_dict.get(
-            'product_name', f"Product {mpn}")
+        existing_product.product_name = prod_dict.get('product_name') or f"Product {mpn}"
+
         existing_product.brand_name = prod_dict.get('brand_name', "")
         existing_product.sku = prod_dict.get('sku', "")
         existing_product.taxonomy = prod_dict.get('taxonomy', '')
@@ -1587,7 +1484,7 @@ async def upsert_product_from_extraction(
     else:
         product = Product(
             product_code=mpn,
-            product_name=prod_dict.get('product_name', f"Product {mpn}"),
+            product_name=prod_dict.get('product_name') or f"Product {mpn}",
             brand_name=prod_dict.get('brand_name', ""),
             mpn=mpn,
             sku=prod_dict.get('sku', ""),
@@ -1603,7 +1500,6 @@ async def upsert_product_from_extraction(
             source_url=source_url,
             completeness_score=completeness_score
         )
-        
         db.add(product)
         await db.flush()
         job_stmt = select(AggregationJob).where(
@@ -1627,8 +1523,6 @@ async def upsert_product_from_extraction(
         await db.flush()
         await _save_normalized_attributes(db, product.id, prod_dict.get('specifications', {}))
         return product
-
-
 @router.post('/save-pending-mpns')
 async def save_pending_mpns(
     request: FreshAggregationRequest,
@@ -1701,8 +1595,6 @@ async def save_pending_mpns(
         logger.error(f"Failed to save pending MPNs: {e}", exc_info=True)
         await db.rollback()
         raise HTTPException(500, str(e))
-
-
 async def process_unstructured_pdf_extraction(
     batch_id: str,
     pdf_bytes: bytes,
@@ -1749,41 +1641,6 @@ async def process_unstructured_pdf_extraction(
                         logger.warning(f"   Page {i+1} failed: {e}")
                         continue
             truncated_text = full_text[:15000]
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
             prompt_service = PDFPromptService(db, project_id)
             prompt = await prompt_service.get_unstructured_extraction_prompt(
                 truncated_text, mpn, "Unstructured PDF Extraction (Given MPNs)"
@@ -1791,7 +1648,16 @@ async def process_unstructured_pdf_extraction(
             if not prompt:
                 error_msg = "No business rule prompt configured for Unstructured PDF Extraction"
                 logger.warning(f"{error_msg} for project {project_id}")
-
+                job_stmt = select(AggregationJob).where(
+                    AggregationJob.project_id == project_id,
+                    AggregationJob.status == "processing"
+                ).order_by(AggregationJob.created_at.desc()).limit(1)
+                job_result = await db.execute(job_stmt)
+                job = job_result.scalar_one_or_none()
+                if job:
+                    job.status = "failed"
+                    job.completed_at = now_ist()
+                    db.add(job)
                 source = await db.get(Source, batch_id)
                 if source:
                     source.status = "failed"
@@ -1805,7 +1671,6 @@ async def process_unstructured_pdf_extraction(
                     db.add(source)
                     await db.commit()
                     await sync_project_status(db, project_id)
-
                 stmt = select(Product).join(
                     ProjectProductLink, Product.id == ProjectProductLink.product_id  
                 ).where(
@@ -1817,7 +1682,6 @@ async def process_unstructured_pdf_extraction(
                     product.enrichment_status = "failed"
                     db.add(product)
                     await db.commit()
-
                 return
             logger.info(f"Extracted text length for {mpn}: {len(full_text)}")
             response = await call_llm_with_schema(
@@ -1857,8 +1721,6 @@ async def process_unstructured_pdf_extraction(
                 db.add(source)
                 await db.commit()
                 await sync_project_status(db, project_id)
-
-
 @router.post('/multi-pdf-extraction')
 async def multi_pdf_extraction(
     background_tasks: BackgroundTasks,
@@ -1868,7 +1730,6 @@ async def multi_pdf_extraction(
     use_case: str = Form(...),
     db: AsyncSession = Depends(get_session)
 ):
-
     try:
         mpn_list = [m.strip() for m in mpns.split(',') if m.strip()]
         if len(mpn_list) == 0:
@@ -1960,8 +1821,6 @@ async def multi_pdf_extraction(
         logger.error(
             f"Failed to save multi-PDF extraction: {e}", exc_info=True)
         raise HTTPException(500, str(e))
-
-
 async def process_multi_pdf_extraction(
     batch_id: str,
     pdf_documents: List[Dict],
@@ -2046,40 +1905,10 @@ async def process_multi_pdf_extraction(
                             f"Best match: {best_pdf['filename']} (score: {best_score})")
                         truncated_text = slice_text_around_mpn(
                             best_pdf["text"], mpn, window=15000, back=6000)
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                         prompt_service = PDFPromptService(db, project_id)
                         prompt = await prompt_service.get_extraction_prompt(
                             truncated_text, mpn, "Multi-PDF & Multi-MPN Data Extraction.", is_unstructured=False
                         )
-
                         if not prompt:
                             error_msg = "No business rule prompt configured for Multi-PDF Extraction"
                             logger.warning(
@@ -2163,6 +1992,17 @@ async def process_multi_pdf_extraction(
         except Exception as e:
             logger.error(f" Multi-PDF extraction failed: {e}", exc_info=True)
             await db.rollback()
+            job_stmt = select(AggregationJob).where(
+                AggregationJob.project_id == project_id,
+                AggregationJob.status == "processing"
+            ).order_by(AggregationJob.created_at.desc()).limit(1)
+            job_result = await db.execute(job_stmt)
+            job = job_result.scalar_one_or_none()
+            if job:
+                job.status = "failed"
+                job.completed_at = now_ist()
+                db.add(job)
+                await db.commit()
             source = await db.get(Source, batch_id)
             if source:
                 source.status = "failed"
@@ -2171,8 +2011,6 @@ async def process_multi_pdf_extraction(
                 db.add(source)
                 await db.commit()
                 await sync_project_status(db, project_id)
-
-
 @router.post('/process-excel-mpns/{batch_id}')
 async def process_excel_mpns(
     batch_id: str,
@@ -2222,8 +2060,6 @@ async def process_excel_mpns(
     except Exception as e:
         logger.error(f"Failed to process Excel MPNs: {e}", exc_info=True)
         raise HTTPException(500, str(e))
-
-
 @router.get('/download-mpn-template')
 async def download_mpn_template():
     """
@@ -2241,8 +2077,6 @@ async def download_mpn_template():
     except Exception as e:
         logger.error(f"Failed to generate template: {e}")
         raise HTTPException(500, "Failed to generate template")
-
-
 @router.post('/upload-mpns-excel')
 async def upload_mpns_from_excel(
     file: UploadFile = File(...),
@@ -2305,8 +2139,6 @@ async def upload_mpns_from_excel(
     except Exception as e:
         logger.error(f"Failed to upload MPNs Excel: {e}", exc_info=True)
         raise HTTPException(500, f"Internal server error: {str(e)}")
-
-
 async def _create_pending_products_with_context(
     batch_id: str,
     mpns: List[str],
@@ -2372,8 +2204,6 @@ async def _create_pending_products_with_context(
                 flag_modified(source, "source_metadata")
                 db.add(source)
                 await db.commit()
-
-
 @router.post('/parse-mpns-excel')
 async def parse_mpns_from_excel(
     file: UploadFile = File(...),
