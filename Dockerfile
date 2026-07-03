@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     libu2f-udev \
     libvulkan1 \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 ENV PIP_DEFAULT_TIMEOUT=200
 ENV TRANSFORMERS_CACHE=/app/hf_cache

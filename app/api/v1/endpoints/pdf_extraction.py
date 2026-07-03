@@ -335,7 +335,7 @@ async def process_blind_pdf_extraction(
                     full_text = ""
                     with pdfplumber.open(BytesIO(pdf_doc['content'])) as pdf:
                         for page in pdf.pages[:20]:
-                            page_text = page.extract_text()
+                            page_text = page.extract_text(layout=True)
                             if page_text:
                                 full_text += page_text + "\n"
                     if not full_text.strip():
@@ -929,7 +929,7 @@ async def process_structured_pdf_extraction(
             tables = []
             with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
                 for page in pdf.pages:
-                    page_text = page.extract_text()
+                    page_text = page.extract_text(layout=True)
                     if page_text:
                         full_text += page_text + "\n"
                     page_tables = page.extract_tables()
@@ -1139,8 +1139,6 @@ async def process_multi_pdf_extraction_for_single_mpn(
                     logger.info(
                         f"=== PDF CONTENT FROM {pdf_doc['filename']} ===")
                     logger.info(f"Total text length: {len(full_text)}")
-                    logger.info(f"First 1000 chars:\n{full_text[:1000]}")
-                    logger.info(f"Last 1000 chars:\n{full_text[-1000:]}")
                     text_lower = full_text.lower()
                     mpn_lower = str(mpn).lower()
                     mpn_float = str(float(mpn)) if mpn.replace(
@@ -1633,7 +1631,7 @@ async def process_unstructured_pdf_extraction(
                 for i, page in enumerate(pdf.pages):
                     logger.info(f"Processing page {i+1}/{len(pdf.pages)}...")
                     try:
-                        page_text = page.extract_text()
+                        page_text = page.extract_text(layout=True)
                         if page_text:
                             full_text += page_text + "\n"
                             logger.info(
