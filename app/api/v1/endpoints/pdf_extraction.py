@@ -1227,6 +1227,29 @@ async def process_multi_pdf_extraction_for_single_mpn(
             logger.error(
                 f" Failed to extract {mpn} from multi-PDF: {e}", exc_info=True)
             await db.rollback()
+            stmt = select(Product).join(
+                ProjectProductLink, Product.id == ProjectProductLink.product_id  
+            ).where(
+                Product.product_code == mpn,
+                ProjectProductLink.project_id == project_id
+            )
+            result = await db.execute(stmt)
+            product = result.scalar_one_or_none()
+            
+            if product:
+                product.enrichment_status = "failed"
+                db.add(product)
+                await db.flush()
+                
+                link_stmt = select(ProjectProductLink).where(
+                    ProjectProductLink.product_id == product.id,
+                    ProjectProductLink.project_id == project_id
+                )
+                link_result = await db.execute(link_stmt)
+                link = link_result.scalar_one_or_none()
+                if link:
+                    link.enrichment_status = "failed"  # ← CRITICAL FIX
+                    db.add(link)
             source = await db.get(Source, batch_id)
             if source:
                 total_mpns = source.source_metadata.get("total_mpns", 1)
