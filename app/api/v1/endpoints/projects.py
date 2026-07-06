@@ -609,11 +609,12 @@ async def list_projects(
         logger.error(f"Failed to fetch projects: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to fetch projects")
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
+
 async def create_project(payload: ProjectCreate, db: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
     print(f"Received payload: {payload}")
     try:
         existing = await db.execute(
-            select(Project).where(Project.name == payload.name)
+            select(Project).where(Project.name == payload.name,Project.owner_id==current_user.id)
         )
         if existing.scalars().first():
             raise HTTPException(
