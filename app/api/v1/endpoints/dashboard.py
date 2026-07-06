@@ -232,20 +232,23 @@ async def calculate_metrics(
         print(f"Error calculating metrics: {str(e)}")
         raise
 @router.get('/users-list')
-async def get_user_list(current_user: User=Depends(get_current_user),db:AsyncSession=Depends(get_session)):
+async def get_user_list(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
+    if current_user.role != 'admin':
+        raise HTTPException(status_code=403, detail='Not authorized')
     try:
-        if current_user.role!='admin':
-            raise HTTPException(status_code=403,detail='Not authorized')
-        stmt=select(User.id,User.full_name).where(User.is_active==True,User.id!=current_user.id).order_by(User.full_name)
-        result=await db.execute(stmt)
+        stmt = select(User.id, User.full_name, User.role).where(
+            User.is_active == True,
+            User.id != current_user.id,
+            User.role == 'user'
+        ).order_by(User.full_name)
+        result = await db.execute(stmt)
         return [
-            {"id":str(row.id),'full_name':row.full_name} for row in  result.all()
+            {"id": str(row.id), "full_name": row.full_name, "role": row.role}
+            for row in result.all()
         ]
     except Exception as e:
-        raise e
-    except Exception as e:
         logger.exception("Error fetching user list")
-        raise HTTPException(status_code=500,detail='Failed to fetch  user list') from e
+        raise HTTPException(status_code=500, detail='Failed to fetch user list') from e
 @router.get("/metrics", response_model=DashboardMetricsResponse)
 async def get_dashboard_metrics(
         user_id:Optional[str]=None,start_date: Optional[str] = Query(None), end_date: Optional[str] = Query(None), date_field: DateField = Query("created_at"),  mode: Optional[str] = Query(None), current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_session),):
