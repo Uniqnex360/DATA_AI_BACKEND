@@ -479,14 +479,14 @@ async def batch_aggregate(
             source_type="excel" if file_ext in ['.xlsx', '.xls'] else "csv",
             source_url=source_url,
             project_id=projectId,
-            status="completed",
+            status="processing",
             uploaded_at=now_ist(),
             content_data=content,
             source_metadata={
                 "file_hash": file_hash,
                 "total": total_rows,
                 "inferred_taxonomies": inferred_count,
-                "processing_status": "pending",
+                "processing_status": "processing",
                 'with_mpn_count': with_mpn_count,
                 'without_mpn_count': without_mpn_count,
                 'rejected_count': rejected_count
@@ -497,180 +497,237 @@ async def batch_aggregate(
         await db.refresh(new_source)
         created_count = 0
         updated_count = 0
+        failed_count = 0
+        failed_products = []
         for idx, row in enumerate(rows):
             val_mpn = clean_numeric_string(row.get("mpn")) or None
             val_sku = clean_numeric_string(row.get("sku")) or None
             code = val_mpn or val_sku
             product = None
             is_reused = False
+            try:
+                savepoint = await db.begin_nested()
+                if code:
+                    # Look for COMPLETED product globally
+                    stmt = select(Product).where(
+                        Product.product_code == str(code),
+                        Product.enrichment_status == "completed"
+                    ).order_by(Product.updated_at.desc())
+                    result = await db.execute(stmt)
+                    product = result.scalars().first()
 
-            if code:
-                # Look for COMPLETED product globally
-                stmt = select(Product).where(
-                    Product.product_code == str(code),
-                    Product.enrichment_status == "completed"
-                ).order_by(Product.updated_at.desc())
-                result = await db.execute(stmt)
-                product = result.scalars().first()
+                    if product:
+                        # Check if already linked to this project
+                        link_stmt = select(ProjectProductLink).where(
+                            ProjectProductLink.product_id == product.id,
+                            ProjectProductLink.project_id == projectId
+                        )
+                        link_result = await db.execute(link_stmt)
 
-                if product:
-                    # Check if already linked to this project
-                    link_stmt = select(ProjectProductLink).where(
-                        ProjectProductLink.product_id == product.id,
-                        ProjectProductLink.project_id == projectId
+                        if not link_result.scalars().first():
+                            # Link existing product to this project
+                            db.add(ProjectProductLink(
+                                project_id=projectId,
+                                product_id=product.id,
+                                enrichment_status="pending"
+                            ))
+                            await db.flush()
+
+                        is_reused = True
+                        updated_count += 1
+
+                if not is_reused:
+                    # ✅ Create product with ALL required fields in constructor
+                    product = Product(
+                        product_code=str(code),
+                        workflow_stage=default_workflow_stage,
+                        created_at=now_ist(),
+                        enrichment_status="pending",
+                        # ✅ ADD ALL REQUIRED FIELDS HERE:
+                        product_name=row.get("product_name") or row.get(
+                            "name") or str(code) or "Unknown Product",
+                        mpn=val_mpn,
+                        sku=val_sku,
+                        taxonomy=row.get("taxonomy"),
+                        source_url=new_source.source_url,
+                        category_1=row.get('category_1'),
+                        category_2=row.get('category_2'),
+                        category_3=row.get('category_3'),
+                        category_4=row.get('category_4'),
+                        category_5=row.get('category_5'),
+                        category_6=row.get('category_6'),
+                        category_7=row.get('category_7'),
+                        category_8=row.get('category_8'),
+                        gtin=row.get('gtin'),
+                        ean=row.get('ean'),
+                        upc=row.get('upc'),
+                        unspc=row.get('unspc'),
+                        product_type=row.get('product_type'),
+                        parent_sku=row.get('parent_sku'),
+                        lifecycle_stage=row.get('lifecycle_stage'),
+                        launch_date=row.get('launch_date'),
+                        discontinue_status=row.get('discontinue_status'),
+                        weight_unit=row.get('weight_unit'),
+                        dimension_unit=row.get('dimension_unit'),
+                        currency=row.get("currency", "USD"),
                     )
-                    link_result = await db.execute(link_stmt)
 
-                    if not link_result.scalars().first():
-                        # Link existing product to this project
-                        db.add(ProjectProductLink(
-                            project_id=projectId,
-                            product_id=product.id,
-                            enrichment_status="pending"
-                        ))
-                        await db.flush()
+                    # ✅ Handle numeric fields with error handling
+                    try:
+                        if row.get('weight'):
+                            product.weight = str(row['weight']).replace(',', '')
+                        if row.get('length'):
+                            product.length = str(row['length']).replace(',', '')
+                        if row.get('width'):
+                            product.width = str(row['width']).replace(',', '')
+                        if row.get('height'):
+                            product.height = str(row['height']).replace(',', '')
+                        if row.get("base_price"):
+                            product.base_price = float(str(row["base_price"]).replace(',', ''))
+                    except ValueError as e:
+                        logger.warning(f"Error parsing numeric field for {code}: {e}")
 
-                    is_reused = True
+                    # ✅ Set brand/vendor/industry relationships BEFORE flush
+                    brand = await get_or_create_brand(db, row.get("brand"))
+                    if brand:
+                        product.brand_id = brand.id
+                        product.brand_name = brand.name
+                        brand.product_count = (brand.product_count or 0) + 1
+                        if row.get('country_of_origin'):
+                            brand.country_of_origin = row.get('country_of_origin')
+                            db.add(brand)
+
+                    vendor = await get_or_create_vendor(db, row.get("vendor"))
+                    if vendor:
+                        product.vendor_id = vendor.id
+                        product.vendor_name = vendor.name
+
+                    industry = await get_or_create_industry(db, row.get("industry_name"))
+                    if industry:
+                        product.industry_id = industry.id
+                        product.industry_name = industry.name
+
+                    # ✅ NOW add and flush to get product.id
+                    db.add(product)
+                    await db.flush()  # Product now has an ID
+
+                    # ✅ Create link AFTER product has an ID
+                    db.add(ProjectProductLink(
+                        project_id=projectId,
+                        product_id=product.id,
+                        enrichment_status="pending"
+                    ))
+
+                    created_count += 1
+
+                else:
+                    # Reused product - just increment counter
                     updated_count += 1
 
-            if not is_reused:
-                # ✅ Create product with ALL required fields in constructor
-                product = Product(
-                    product_code=str(code),
-                    workflow_stage=default_workflow_stage,
-                    created_at=now_ist(),
-                    enrichment_status="pending",
-                    # ✅ ADD ALL REQUIRED FIELDS HERE:
-                    product_name=row.get("product_name") or row.get(
-                        "name") or str(code) or "Unknown Product",
-                    mpn=val_mpn,
-                    sku=val_sku,
-                    taxonomy=row.get("taxonomy"),
-                    source_url=new_source.source_url,
-                    category_1=row.get('category_1'),
-                    category_2=row.get('category_2'),
-                    category_3=row.get('category_3'),
-                    category_4=row.get('category_4'),
-                    category_5=row.get('category_5'),
-                    category_6=row.get('category_6'),
-                    category_7=row.get('category_7'),
-                    category_8=row.get('category_8'),
-                    gtin=row.get('gtin'),
-                    ean=row.get('ean'),
-                    upc=row.get('upc'),
-                    unspc=row.get('unspc'),
-                    product_type=row.get('product_type'),
-                    parent_sku=row.get('parent_sku'),
-                    lifecycle_stage=row.get('lifecycle_stage'),
-                    launch_date=row.get('launch_date'),
-                    discontinue_status=row.get('discontinue_status'),
-                    weight_unit=row.get('weight_unit'),
-                    dimension_unit=row.get('dimension_unit'),
-                    currency=row.get("currency", "USD"),
-                )
+                # ✅ Continue with attribute processing (this part is fine)
+                dynamic_attrs = row.get('attributes', [])
 
-                # ✅ Handle numeric fields with error handling
-                try:
-                    if row.get('weight'):
-                        product.weight = str(row['weight']).replace(',', '')
-                    if row.get('length'):
-                        product.length = str(row['length']).replace(',', '')
-                    if row.get('width'):
-                        product.width = str(row['width']).replace(',', '')
-                    if row.get('height'):
-                        product.height = str(row['height']).replace(',', '')
-                    if row.get("base_price"):
-                        product.base_price = float(str(row["base_price"]).replace(',', ''))
-                except ValueError as e:
-                    logger.warning(f"Error parsing numeric field for {code}: {e}")
+                # Also try attribute_name1..40 columns (fallback)
+                if not dynamic_attrs:
+                    for i in range(1, 41):
+                        attr_name = row.get(f'attribute_name{i}')
+                        if attr_name and str(attr_name).strip():
+                            dynamic_attrs.append({
+                                'name': str(attr_name).strip(),
+                                'value': str(row.get(f'attribute_value{i}', '')).strip(),
+                                'uom': str(row.get(f'attribute_uom{i}', '')).strip(),
+                                'validation_value': str(row.get(f'validation_value{i}', '')).strip(),
+                                'validation_uom': str(row.get(f'validation_uom{i}', '')).strip()
+                            })
 
-                # ✅ Set brand/vendor/industry relationships BEFORE flush
-                brand = await get_or_create_brand(db, row.get("brand"))
-                if brand:
-                    product.brand_id = brand.id
-                    product.brand_name = brand.name
-                    brand.product_count = (brand.product_count or 0) + 1
-                    if row.get('country_of_origin'):
-                        brand.country_of_origin = row.get('country_of_origin')
-                        db.add(brand)
+                # Ensure category exists and link product
+                path_parts = []
+                for i in range(1, 9):
+                    cat = getattr(product, f'category_{i}', None)
+                    if cat and str(cat).strip():
+                        path_parts.append(str(cat).strip())
 
-                vendor = await get_or_create_vendor(db, row.get("vendor"))
-                if vendor:
-                    product.vendor_id = vendor.id
-                    product.vendor_name = vendor.name
+                category_id = None
+                if path_parts:
+                    category_id = await ensure_category_from_path(db, path_parts)
+                    if category_id:
+                        product.category_id = category_id
+                        db.add(product)
 
-                industry = await get_or_create_industry(db, row.get("industry_name"))
-                if industry:
-                    product.industry_id = industry.id
-                    product.industry_name = industry.name
-
-                # ✅ NOW add and flush to get product.id
-                db.add(product)
-                await db.flush()  # Product now has an ID
-
-                # ✅ Create link AFTER product has an ID
-                db.add(ProjectProductLink(
-                    project_id=projectId,
-                    product_id=product.id,
-                    enrichment_status="pending"
-                ))
-
-                created_count += 1
-
-            else:
-                # Reused product - just increment counter
-                updated_count += 1
-
-            # ✅ Continue with attribute processing (this part is fine)
-            dynamic_attrs = row.get('attributes', [])
-
-            # Also try attribute_name1..40 columns (fallback)
-            if not dynamic_attrs:
-                for i in range(1, 41):
-                    attr_name = row.get(f'attribute_name{i}')
-                    if attr_name and str(attr_name).strip():
-                        dynamic_attrs.append({
-                            'name': str(attr_name).strip(),
-                            'value': str(row.get(f'attribute_value{i}', '')).strip(),
-                            'uom': str(row.get(f'attribute_uom{i}', '')).strip(),
-                            'validation_value': str(row.get(f'validation_value{i}', '')).strip(),
-                            'validation_uom': str(row.get(f'validation_uom{i}', '')).strip()
-                        })
-
-            # Ensure category exists and link product
-            path_parts = []
-            for i in range(1, 9):
-                cat = getattr(product, f'category_{i}', None)
-                if cat and str(cat).strip():
-                    path_parts.append(str(cat).strip())
-
-            category_id = None
-            if path_parts:
-                category_id = await ensure_category_from_path(db, path_parts)
-                if category_id:
-                    product.category_id = category_id
-                    db.add(product)
-
-            # Save attributes to normalized tables
-            if dynamic_attrs:
-                try:
-                    await save_attributes_normalized(db, product, dynamic_attrs, category_id)
-                except Exception as e:
-                    logger.error(
-                        f"Failed to normalize attributes for {product.product_code}: {e}")
-        await db.commit()
+                # Save attributes to normalized tables
+                if dynamic_attrs:
+                    try:
+                        await save_attributes_normalized(db, product, dynamic_attrs, category_id)
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to normalize attributes for {product.product_code}: {e}")
+                await savepoint.commit()
+            except Exception as e:
+                await savepoint.rollback()
+                failed_count += 1
+                failed_products.append({
+                    'code': str(code),
+                    'error': str(e)
+                })
+                logger.error(f"Failed to process product {code}: {e}", exc_info=True)
+                continue
+        
+        # ✅ NEW: Update source status based on actual results
+        total_processed = created_count + updated_count
+        if failed_count == 0 and total_processed == total_rows:
+            new_source.status = "completed"
+            new_source.source_metadata = {
+                **new_source.source_metadata,
+                "processing_status": "completed",
+                "created_count": created_count,
+                "updated_count": updated_count,
+                "failed_count": 0
+            }
+            logger.info(
+                f"Batch import COMPLETED: {created_count} new, {updated_count} updated")
+        elif total_processed > 0:
+            new_source.status = "completed"
+            new_source.source_metadata = {
+                **new_source.source_metadata,
+                "processing_status": "partial",
+                "created_count": created_count,
+                "updated_count": updated_count,
+                "failed_count": failed_count,
+                "failed_products": failed_products[:10]
+            }
+            logger.warning(
+                f"Batch import PARTIAL: {created_count} new, {updated_count} updated, {failed_count} failed")
+        else:
+            new_source.status = "failed"
+            new_source.source_metadata = {
+                **new_source.source_metadata,
+                "processing_status": "failed",
+                "failed_count": failed_count,
+                "failed_products": failed_products[:10]
+            }
+            logger.error(
+                f"Batch import FAILED: All {failed_count} products failed")
+        
+        db.add(new_source)
+        await db.commit()  
+        await db.refresh(new_source)
+        
         logger.info(
             f"Batch import saved: {created_count} new, {updated_count} updated. Waiting for manual aggregation.")
+        
         return {
             "status": "accepted",
             "batch_id": str(new_source.id),
-            "message": f"Imported {len(valid_rows)} products. Ready for aggregation.",
+             "message": f"Imported {total_processed} of {total_rows} products. {failed_count} failed.",
             "summary": {
                 "total_rows": total_rows,
                 "valid_rows": len(valid_rows),
                 "rejected_rows": rejected_count,
                 "with_mpn_count": with_mpn_count,
                 "without_mpn_count": without_mpn_count,
+                "created_count": created_count,
+                "updated_count": updated_count,
+                "failed_count": failed_count
             }
         }
     except HTTPException:
