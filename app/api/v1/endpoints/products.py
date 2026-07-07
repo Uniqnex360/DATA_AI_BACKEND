@@ -7,7 +7,7 @@ from app.models.brand import Brand
 from app.models.project_product_link import ProjectProductLink
 from app.schemas.brand import BrandCreate
 from app.services.product_service import product_service
-from sqlmodel import select, func, and_
+from sqlmodel import select, func, and_, or_ 
 from app.schemas.product import ProductCreate, ProductResponse
 import logging
 from uuid import UUID
@@ -322,7 +322,6 @@ async def get_expected_attributes_async(product: Product, db: AsyncSession) -> L
     except Exception:
         return []
 
-
 @router.get("/stats/project/{project_id}")
 async def get_project_product_stats(
     project_id: UUID,
@@ -334,14 +333,32 @@ async def get_project_product_stats(
     db: AsyncSession = Depends(get_session)
 ) -> Dict[str, int]:
     try:
+        
         stmt = select(Product).join(ProjectProductLink,Product.id==ProjectProductLink.product_id).where(
             ProjectProductLink.project_id == project_id)
+        
         if brand_name:
             stmt = stmt.where(Product.brand_name == brand_name)
+        
+        # FIX: Check ALL category fields (category_1 through category_8 + taxonomy)
         if category_1:
-            stmt = stmt.where(Product.category_3== category_1)
+            stmt = stmt.where(
+                or_(
+                    Product.category_1 == category_1,
+                    Product.category_2 == category_1,
+                    Product.category_3 == category_1,
+                    Product.category_4 == category_1,
+                    Product.category_5 == category_1,
+                    Product.category_6 == category_1,
+                    Product.category_7 == category_1,
+                    Product.category_8 == category_1,
+                    Product.taxonomy == category_1,
+                )
+            )
+        
         if enrichment_status and enrichment_status != 'all':
             stmt = stmt.where(Product.enrichment_status == enrichment_status)
+        
         if search:
             search_term = f"%{search}%"
             stmt = stmt.where(
@@ -349,8 +366,10 @@ async def get_project_product_stats(
                 (Product.product_code.ilike(search_term)) |
                 (Product.brand_name.ilike(search_term))
             )
+        
         result = await db.execute(stmt)
         products = result.scalars().all()
+        
         if bulk_attributes:
             filtered_products = []
             for product in products:
@@ -369,6 +388,7 @@ async def get_project_product_stats(
                 if all(attr in product_attrs for attr in bulk_attributes):
                     filtered_products.append(product)
             products = filtered_products
+        
         stats = {
             "total": len(products),
             "completed": sum(1 for p in products if p.enrichment_status == "completed"),
@@ -383,7 +403,6 @@ async def get_project_product_stats(
             status_code=500,
             detail="Failed to fetch project statistics"
         )
-
 
 @router.get("/stats/projects/batch")
 async def get_multiple_project_stats(
