@@ -339,7 +339,7 @@ async def get_project_product_stats(
         if brand_name:
             stmt = stmt.where(Product.brand_name == brand_name)
         if category_1:
-            stmt = stmt.where(Product.category_1 == category_1)
+            stmt = stmt.where(Product.category_3== category_1)
         if enrichment_status and enrichment_status != 'all':
             stmt = stmt.where(Product.enrichment_status == enrichment_status)
         if search:

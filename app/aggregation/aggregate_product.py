@@ -33,7 +33,7 @@ import logging
 from app.rules.rule_engine import RuleEngine
 from app.services.product_discovery_service import ProductDiscoveryService
 from app.utils.image_validator import validate_image_url
-from app.utils.normalization_helper import normalize_concatenated_uom
+from app.utils.normalization_helper import _standardize_uom_in_attrs, normalize_concatenated_uom
 from app.utils.pdf_utils import is_parts_list_pdf
 from app.utils.remapping import cluster_attributes_by_meaning
 logger = logging.getLogger("aggregate_product")
@@ -1618,6 +1618,20 @@ async def aggregate_product(
                     max_tokens=4000
                 )
         golden_attributes = combined_result.attributes
+        golden_attr_dicts_temp = [
+            {'name': a.name, 'value': a.value, 'unit': a.unit}
+            for a in golden_attributes
+        ]
+        golden_attr_dicts_temp = _standardize_uom_in_attrs(golden_attr_dicts_temp)
+
+        # Apply back
+        for attr, standardized in zip(golden_attributes, golden_attr_dicts_temp):
+            if attr.unit != standardized['unit']:
+                logger.info(
+                    f"UOM standardized: '{attr.unit}' → '{standardized['unit']}' "
+                    f"for '{attr.name}'"
+                )
+                attr.unit = standardized['unit']
         input_names = set(a['name'] for a in raw_attrs_for_combine)
         output_names = set(a.name for a in golden_attributes)
         missing = input_names - output_names
@@ -2082,6 +2096,33 @@ RULE 12 — UNIT SYMBOL EXPANSION
   in x ft → "in x ft"
   in x in → "in x in"
   ft x ft → "ft x ft"
+RULE 12.1 — UOM STANDARDIZATION  ★ APPLY TO `unit` FIELD ONLY ★
+  After extracting the unit, standardize it using these EXACT mappings:
+  
+  ┌─────────────────────────────────────────────────────────────┐
+  │ INPUT VARIATIONS              →  STANDARDIZED OUTPUT       │
+  ├─────────────────────────────────────────────────────────────┤
+  │ inch, inches, in.             →  in                         │
+  │ foot, feet, ft, ft.           →  ft                         │
+  │ yard, yd, yd.                 →  yd                         │
+  │ millimeter, mm                →  mm                         │
+  │ centimeter, cm                →  cm                         │
+  │ gallon, gal, gal.             →  gal                        │
+  │ pound, lb, lbs, lb.           →  lb                         │
+  │ volt, volts, v, V             →  V                          │
+  │ amp, amps, A                  →  A                          │
+  │ watt, watts, w, W             →  W                          │
+  │ tpi, TPI                      →  TPI                        │
+  │ mil                           →  mil                        │
+  │ rpm, RPM                      →  RPM                        │
+  │ deg c, celsius, °c            →  deg C                      │
+  │ deg f, fahrenheit, °f         →  deg F                      │
+  └─────────────────────────────────────────────────────────────┘
+  
+  CRITICAL:
+  - Apply this to the `unit` field, NEVER to the `value` field
+  - Preserve compound units: "ft, in", "in x ft", "ft x in"
+  - Case matters: "V" not "v", "TPI" not "tpi", "mm" not "MM"
 RULE 13 — ROUNDING
   Round decimals to 2 places.  1.998 → 2.00
 RULE 13.5 — NORMALIZATION & DEDUPLICATION ★ CRITICAL ★
@@ -2244,6 +2285,14 @@ CRITICAL FINAL CHECKS before returning:
   ✓ Have all primary attributes been considered? If a primary attribute is missing because no matching specification was found, still include it with an empty value and note in original_values that it was not found.
   ✓ Does any output attribute's value restate the product's own MPN (alone or combined with Brand, e.g. "Brand MPN")? If yes → remove it per RULE 15.
   ✓ Do any two output attributes share the same name but describe different facts? If yes → rename per RULE 17 to make them distinct.
+  ✓ UOM STANDARDIZATION CHECK:
+  - "in" not "inches"/"in."/"Inch"
+  - "ft" not "feet"/"ft."/"Foot"  
+  - "gal" not "gallon"/"Gal"/"gallons"
+  - "V" not "volts"/"v"/"Volt"
+  - "TPI" not "tpi"
+  - "mm" not "Millimeter"/"MM"
+  If any unit is non-standard → fix it per RULE 12.1 mapping.
 {excel_section}
 {validation_section}
 ═══════════════════════════════════════════════════════

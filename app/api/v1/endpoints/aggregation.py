@@ -947,6 +947,13 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                     logger.info(
                                         f"Algo 2 returned attribute names for {product.product_code}: {sorted(list(algo2_attrs.keys()))}"
                                     )
+                                    await merge_dynamic_attributes(
+                                        db_session,
+                                        product,
+                                        algo2_attrs,
+                                        is_validation_mode=('validation' in use_case)  # or False for non-validation branch
+                                    )
+
                             product.workflow_stage = 'aggregation'
                             product.needs_enrichment = False
                             product.ready_for_export = True
@@ -1043,6 +1050,13 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                     logger.info(
                                         f"Algo 2 returned attribute names for {product.product_code}: {sorted(list(algo2_attrs.keys()))}"
                                     )
+                                    await merge_dynamic_attributes(
+                                        db_session,
+                                        product,
+                                        algo2_attrs,
+                                        is_validation_mode=('validation' in use_case)  # or False for non-validation branch
+                                    )
+
                             product.workflow_stage = 'aggregation'
                             product.needs_enrichment = False
                             product.ready_for_export = True
@@ -1404,6 +1418,13 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                             logger.info(
                                 f"Algo 2 returned attribute names for {product.product_code}: {sorted(list(algo2_attrs.keys()))}"
                             )
+                            await merge_dynamic_attributes(
+                                db_session,
+                                product,
+                                algo2_attrs,
+                                is_validation_mode=('validation' in use_case)  # or False for non-validation branch
+                            )
+
                     product.workflow_stage = 'aggregation'
                     product.needs_enrichment = False
                     product.ready_for_export = True
@@ -1484,6 +1505,13 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                             logger.info(
                                 f"Algo 2 returned attribute names for {product.product_code}: {sorted(list(algo2_attrs.keys()))}"
                             )
+                            await merge_dynamic_attributes(
+                                    db_session,
+                                    product,
+                                    algo2_attrs,
+                                    is_validation_mode=('validation' in use_case)  # or False for non-validation branch
+                                )
+
                     product.workflow_stage = 'aggregation'
                     product.needs_enrichment = False
                     product.ready_for_export = True
