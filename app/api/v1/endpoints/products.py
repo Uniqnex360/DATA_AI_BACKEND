@@ -51,7 +51,19 @@ async def read_products(
         if brand_name:
             statement = statement.where(Product.brand_name == brand_name)
         if category_1:
-            statement = statement.where(Product.category_1 == category_1)
+            statement = statement.where(
+                or_(
+                    Product.category_1 == category_1,
+                    Product.category_2 == category_1,
+                    Product.category_3 == category_1,
+                    Product.category_4 == category_1,
+                    Product.category_5 == category_1,
+                    Product.category_6 == category_1,
+                    Product.category_7 == category_1,
+                    Product.category_8 == category_1,
+                    Product.taxonomy == category_1,
+                )
+            )
         if search:
             search_term = f"%{search}%"
             statement = statement.where((Product.product_name.ilike(search_term)) |
@@ -73,7 +85,20 @@ async def read_products(
         if brand_name:
             count_stmt = count_stmt.where(Product.brand_name == brand_name)
         if category_1:
-            count_stmt = count_stmt.where(Product.category_1 == category_1)
+            count_stmt = count_stmt.where(
+                or_(
+                    Product.category_1 == category_1,
+                    Product.category_2 == category_1,
+                    Product.category_3 == category_1,
+                    Product.category_4 == category_1,
+                    Product.category_5 == category_1,
+                    Product.category_6 == category_1,
+                    Product.category_7 == category_1,
+                    Product.category_8 == category_1,
+                    Product.taxonomy == category_1,
+                )
+            )
+        
         if search:
             search_term = f"%{search}%"
             count_stmt = count_stmt.where(
