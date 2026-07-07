@@ -8,7 +8,7 @@ from app.models.product import Product
 from app.models.attribute import Attribute, AttributeValue
 from app.models.category import Category
 from app.models.attribute import CategoryAttribute
-
+import re
 from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
 
 logger = logging.getLogger("attribute_normalizer")
@@ -143,15 +143,30 @@ async def save_attributes_normalized(
             continue
     
     logger.info(f"Attributes normalized for product {product.id}: {saved_count} saved, {error_count} errors")
-
+    
+def normalize_attr_name(name: str) -> str:
+    """
+    Normalize attribute name for case-insensitive comparison.
+    Matches the function used in the database index.
+    """
+    if not name:
+        return ""
+    return re.sub(
+        re.compile(r'\s+'),
+        ' ',
+        re.sub(r'[^a-z0-9]', '', name.lower())
+    ).strip()
 
 async def get_or_create_attribute(db: AsyncSession, name: str) -> Attribute:
     try:
         
-        stmt = select(Attribute).where(Attribute.attribute_name == name)
-        result = await db.execute(stmt)
+        normalized_name = normalize_attr_name(name)
+        attr_stmt = select(Attribute).where(
+            normalize_attr_name(Attribute.attribute_name) == normalized_name
+        )
+        result = await db.execute(attr_stmt)
         attribute = result.scalars().first()
-        
+
         if attribute:
             return attribute
         
@@ -180,11 +195,30 @@ async def get_or_create_attribute(db: AsyncSession, name: str) -> Attribute:
             data_type="string",
         )
         db.add(attribute)
-        await db.flush()
-        await db.refresh(attribute)
-        
-        logger.debug(f"Created new attribute: {name} (id: {attribute.id})")
-        return attribute
+        try:
+            await db.flush()
+            await db.refresh(attribute)
+            
+            logger.debug(f"Created new attribute: {name} (id: {attribute.id})")
+            return attribute
+        except Exception as flush_error:
+            # Race condition or another process created it
+            await db.rollback()
+            logger.warning(f"Flush failed for '{name}', trying lookup again: {flush_error}")
+            
+            # Try to get it again (using normalized name)
+            attr_stmt = select(Attribute).where(
+                normalize_attr_name(Attribute.attribute_name) == normalized_name
+            )
+            result = await db.execute(attr_stmt)
+            existing_attr = result.scalars().first()
+            
+            if existing_attr:
+                return existing_attr
+            
+            # If still not found, re-raise the error
+            logger.error(f"Could not get or create attribute '{name}': {flush_error}")
+            raise
         
     except Exception as e:
         logger.error(f"Error in get_or_create_attribute for '{name}': {e}", exc_info=True)
