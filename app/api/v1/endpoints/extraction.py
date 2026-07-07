@@ -413,6 +413,7 @@ async def batch_aggregate(
             func.json_extract_path_text(
                 Source.source_metadata, 'file_hash') == file_hash,
             Source.created_at > recent_cutoff
+            Source.status != 'failed'
         )
         if await db.scalar(duplicate_check):
             raise HTTPException(status.HTTP_409_CONFLICT,
