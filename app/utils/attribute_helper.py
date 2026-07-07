@@ -156,21 +156,34 @@ def normalize_attr_name(name: str) -> str:
         ' ',
         re.sub(r'[^a-z0-9]', '', name.lower())
     ).strip()
-
 async def get_or_create_attribute(db: AsyncSession, name: str) -> Attribute:
+    """
+    Get or create an attribute. Uses normalize_attr_name to check for
+    case-insensitive duplicates (matches database index).
+    """
     try:
-        
+        # Normalize the name for case-insensitive comparison
         normalized_name = normalize_attr_name(name)
-        attr_stmt = select(Attribute).where(
-            normalize_attr_name(Attribute.attribute_name) == normalized_name
-        )
-        result = await db.execute(attr_stmt)
-        attribute = result.scalars().first()
-
-        if attribute:
-            return attribute
         
+        if not normalized_name:
+            raise ValueError(f"Invalid attribute name: {name}")
         
+        # STEP 1: Check if attribute already exists (using normalized name in Python)
+        all_attrs_stmt = select(Attribute)
+        result = await db.execute(all_attrs_stmt)
+        all_attrs = result.scalars().all()
+        
+        existing_attr = None
+        for attr in all_attrs:
+            if normalize_attr_name(attr.attribute_name) == normalized_name:
+                existing_attr = attr
+                break
+        
+        if existing_attr:
+            logger.debug(f"Attribute '{name}' found (existing: '{existing_attr.attribute_name}')")
+            return existing_attr
+        
+        # STEP 2: Generate unique attribute_code
         attribute_code = (
             name.lower()
             .replace(" ", "_")
@@ -182,43 +195,42 @@ async def get_or_create_attribute(db: AsyncSession, name: str) -> Attribute:
             .strip("_")
         )
         
-        
+        # STEP 3: Check if attribute_code already exists
         existing_code = await db.execute(
             select(Attribute).where(Attribute.attribute_code == attribute_code)
         )
         if existing_code.scalars().first():
             attribute_code = f"{attribute_code}_{uuid4().hex[:6]}"
         
+        # STEP 4: Create new attribute
         attribute = Attribute(
             attribute_name=name,
             attribute_code=attribute_code,
             data_type="string",
         )
         db.add(attribute)
+        
         try:
             await db.flush()
             await db.refresh(attribute)
-            
             logger.debug(f"Created new attribute: {name} (id: {attribute.id})")
             return attribute
         except Exception as flush_error:
-            # Race condition or another process created it
+            # Race condition: another process created it
             await db.rollback()
-            logger.warning(f"Flush failed for '{name}', trying lookup again: {flush_error}")
+            logger.warning(f"Race condition for '{name}', trying lookup again: {flush_error}")
             
-            # Try to get it again (using normalized name)
-            attr_stmt = select(Attribute).where(
-                normalize_attr_name(Attribute.attribute_name) == normalized_name
-            )
-            result = await db.execute(attr_stmt)
-            existing_attr = result.scalars().first()
+            # Try to get it again (using normalized name in Python)
+            all_attrs_stmt = select(Attribute)
+            result = await db.execute(all_attrs_stmt)
+            all_attrs = result.scalars().all()
             
-            if existing_attr:
-                return existing_attr
+            for attr in all_attrs:
+                if normalize_attr_name(attr.attribute_name) == normalized_name:
+                    return attr
             
             # If still not found, re-raise the error
-            logger.error(f"Could not get or create attribute '{name}': {flush_error}")
-            raise
+            raise flush_error
         
     except Exception as e:
         logger.error(f"Error in get_or_create_attribute for '{name}': {e}", exc_info=True)
