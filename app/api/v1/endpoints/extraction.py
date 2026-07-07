@@ -412,7 +412,7 @@ async def batch_aggregate(
             Source.project_id == projectId,
             func.json_extract_path_text(
                 Source.source_metadata, 'file_hash') == file_hash,
-            Source.created_at > recent_cutoff
+            Source.created_at > recent_cutoff,
             Source.status != 'failed'
         )
         if await db.scalar(duplicate_check):
