@@ -282,7 +282,19 @@ async def get_project_attributes(
             .distinct()
         )
         if category:
-            stmt = stmt.where(Product.category_1 == category)
+            stmt = stmt.where(
+                or_(
+                    Product.category_1 == category,
+                    Product.category_2 == category,
+                    Product.category_3 == category,
+                    Product.category_4 == category,
+                    Product.category_5 == category,
+                    Product.category_6 == category,
+                    Product.category_7 == category,
+                    Product.category_8 == category,
+                    Product.taxonomy == category,
+                )
+            )
         result = await db.execute(stmt)
         attribute_names = set(row[0] for row in result.all())
         return {
