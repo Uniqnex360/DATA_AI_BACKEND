@@ -3,6 +3,7 @@ from alembic.command import current
 from app.auth.dependencies import get_current_user
 from app.models.project_product_link import ProjectProductLink
 from app.models.user import User
+from app.utils.attribute_dedupe import deduplicate_product_attributes
 from app.utils.timezone import now_ist
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -889,7 +890,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                         logger.warning(
                                             f"⚠ Image URL invalid for {product.product_code}, not saving")
                                 else:
-                                    logger.debug(
+                                    logger.info(
                                         f"Empty image URL for {product.product_code}")
                             else:
                                 logger.warning(
@@ -988,7 +989,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                         logger.warning(
                                             f"⚠ Image invalid for {product.product_code}")
                                 else:
-                                    logger.debug(
+                                    logger.info(
                                         f"Empty image URL for {product.product_code}")
                             else:
                                 logger.warning(
@@ -1365,7 +1366,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                                     logger.warning(
                                         f"⚠ Image validation failed and no existing image for {product.product_code}")
                         else:
-                            logger.debug(
+                            logger.info(
                                 f"Empty image URL for {product.product_code}")
                     else:
                         logger.warning(
@@ -1870,7 +1871,10 @@ async def get_products_with_movement(
                 product_dict["attributes"] = {}
                 product_dict["completeness_score"] = 0.0
                 product_dict["data_quality_score"] = 0.0
-
+            if product_dict.get("attributes"):
+                product_dict["attributes"] = deduplicate_product_attributes(
+                    product_dict["attributes"]
+                )
             if product.workflow_stage == "aggregation":
                 aggregation_products.append(product_dict)
             elif product.workflow_stage == "enrichment":
