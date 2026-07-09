@@ -50,5 +50,5 @@ async def _test_image_url(url: str) -> bool:
                 if response.content.startswith((b'\xff\xd8', b'\x89PNG', b'RIFF')):
                     return True
     except Exception as e:
-        logger.debug(f"Image validation failed: {e}")
+        logger.info(f"Image validation failed: {e}")
     return False

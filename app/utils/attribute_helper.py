@@ -145,7 +145,7 @@ async def get_or_create_attribute(db: AsyncSession, name: str) -> Attribute:
                 existing_attr = attr
                 break
         if existing_attr:
-            logger.debug(f"Attribute '{name}' found (existing: '{existing_attr.attribute_name}')")
+            logger.info(f"Attribute '{name}' found (existing: '{existing_attr.attribute_name}')")
             return existing_attr
         attribute_code = (
             name.lower()
@@ -171,7 +171,7 @@ async def get_or_create_attribute(db: AsyncSession, name: str) -> Attribute:
         try:
             await db.flush()
             await db.refresh(attribute)
-            logger.debug(f"Created new attribute: {name} (id: {attribute.id})")
+            logger.info(f"Created new attribute: {name} (id: {attribute.id})")
             return attribute
         except Exception as flush_error:
             await db.rollback()
@@ -213,7 +213,7 @@ async def get_or_create_attribute_value(
         db.add(attr_value)
         await db.flush()
         await db.refresh(attr_value)
-        logger.debug(f"Created attribute value: {value} for attribute {attribute_id}")
+        logger.info(f"Created attribute value: {value} for attribute {attribute_id}")
         return attr_value
     except Exception as e:
         logger.error(f"Error in get_or_create_attribute_value: {e}", exc_info=True)
@@ -239,10 +239,10 @@ async def ensure_product_attribute_link(
         db.add(link)
         try:
             await db.flush()  
-            logger.debug(f"Linked product {product_id} to attribute {attribute_id}")
+            logger.info(f"Linked product {product_id} to attribute {attribute_id}")
         except Exception as e:
             await db.rollback()
-            logger.debug(f"Link already exists for product {product_id} and attribute {attribute_id}")
+            logger.info(f"Link already exists for product {product_id} and attribute {attribute_id}")
     except Exception as e:
         logger.error(f"Error linking product {product_id} to attribute {attribute_id}: {e}")
 async def ensure_category_attribute_link(
@@ -269,10 +269,10 @@ async def ensure_category_attribute_link(
         
         try:
             await db.flush()
-            logger.debug(f"Linked category {category_id} to attribute {attribute_id}")
+            logger.info(f"Linked category {category_id} to attribute {attribute_id}")
         except Exception as e:
             await db.rollback()
-            logger.debug(f"Link already exists for category {category_id} and attribute {attribute_id}")
+            logger.info(f"Link already exists for category {category_id} and attribute {attribute_id}")
             
     except Exception as e:
         logger.error(f"Error linking category {category_id} to attribute {attribute_id}: {e}")
@@ -300,10 +300,10 @@ async def ensure_product_attribute_value_link(
         
         try:
             await db.flush()
-            logger.debug(f"Linked product {product_id} to attribute value {attribute_value_id}")
+            logger.info(f"Linked product {product_id} to attribute value {attribute_value_id}")
         except Exception as e:
             await db.rollback()
-            logger.debug(f"Link already exists for product {product_id} and value {attribute_value_id}")
+            logger.info(f"Link already exists for product {product_id} and value {attribute_value_id}")
             
     except Exception as e:
         logger.error(f"Error linking product {product_id} to value {attribute_value_id}: {e}")

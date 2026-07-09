@@ -19,7 +19,18 @@ class ExtractionResponse(BaseModel):
     description: Optional[str] = None 
     long_description: Optional[str] = None
     features: Optional[List[str]] = None
-
+class CanonicalMatchItem(BaseModel):
+    raw_name: str = Field(..., description="The newly scraped attribute name being evaluated")
+    matched_canonical: Optional[str] = Field(
+        None,
+        description="Exact name of the matching DB canonical attribute, or null if no match"
+    )
+    confidence: float = Field(..., ge=0.0, le=1.0)
+ 
+ 
+class BatchCanonicalMatchResponse(BaseModel):
+    matches: List[CanonicalMatchItem] = Field(default_factory=list)
+ 
 
 
 class CleanedAttribute(BaseModel):

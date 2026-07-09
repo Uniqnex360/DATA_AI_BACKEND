@@ -176,9 +176,9 @@ async def search_pdfs_url(mpn: str, brand: str) -> List[str]:
                         pdf_urls.append(url)
                         logger.info(f"PDF found: {url}")
                     else:
-                        logger.debug(f"Skipped non-PDF: {url[:80]}...")
+                        logger.info(f"Skipped non-PDF: {url[:80]}...")
             except Exception as e:
-                logger.debug(f"Search failed for {query}: {e}")
+                logger.info(f"Search failed for {query}: {e}")
         return list(set(pdf_urls))[:5]
     except Exception as e:
         logger.error(f"Failed to search pdf urls: {e}")

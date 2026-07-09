@@ -111,7 +111,7 @@ class AggregationPipeline:
                         break
                     await asyncio.sleep(0.1)
                 except Exception as e:
-                    logger.debug(f"[{request_id}] Image search query failed: {e}")
+                    logger.info(f"[{request_id}] Image search query failed: {e}")
             
             
             if image_urls:

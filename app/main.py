@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 from app.core.config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,6 +7,8 @@ import logging
 from pathlib import Path
 import os
 import warnings
+
+from app.workers.canonical_worker import start_canonical_worker
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -62,6 +65,7 @@ warnings.filterwarnings(
 @app.on_event("startup")
 async def on_startup():
     await init_db()
+    asyncio.create_task(start_canonical_worker(llm_provider="openai"))
 @app.get('/health')
 def health():
     return {'status': 'healthy'}

@@ -403,7 +403,7 @@ class ProductDiscoveryService:
 
             score = max(0, min(score, 100))
             is_valid = score >= 60
-            logger.debug(
+            logger.info(
                 f"Verification for {url}: brand={has_brand}, mpn={has_mpn}, upc={has_upc}, score={score}"
             )
             return {

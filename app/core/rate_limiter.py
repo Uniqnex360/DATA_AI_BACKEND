@@ -87,7 +87,7 @@ class OpenAIRateLimiter:
             # Reserve tokens for this request
             self.tokens_used_this_minute += estimated_tokens
             
-            logger.debug(f"Rate limit status: {self.tokens_used_this_minute}/{self.tpm_limit} tokens, "
+            logger.info(f"Rate limit status: {self.tokens_used_this_minute}/{self.tpm_limit} tokens, "
                         f"{len(self.request_timestamps)}/{self.rpm_limit} requests")
 
 # Global rate limiter instance

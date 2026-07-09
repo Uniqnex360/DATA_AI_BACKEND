@@ -12,9 +12,10 @@ from openai import AsyncOpenAI
 import random
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from app.core.config import settings
-from app.aggregation.response_schemas import AggregationResponse, CleaningResponse, EnrichmentResponse, ExtractionResponse, StandardizationResponse, UnificationResponse, ValidationResponse
+from app.aggregation.response_schemas import AggregationResponse, BatchCanonicalMatchResponse, CleaningResponse, EnrichmentResponse, ExtractionResponse, StandardizationResponse, UnificationResponse, ValidationResponse
 from app.aggregation.services.cleaning_service import LLMCleaningResponse
 from app.schemas.aggregation import UnifiedStandardizedResponse
+from app.schemas.canonical import CanonicalAliasResponse
 from app.schemas.pdf_extraction import AttributeMappingResponse, PDFExtractionResponse, ProductIdentificationResponse, SingleProductExtraction
 client = OpenAI(api_key=settings.openai_api_key, timeout=60.0)
 genai.configure(api_key=settings.gemini_api_key)
@@ -96,12 +97,14 @@ SCHEMA_MAP = {
     "ManufacturerWebsiteResponse": ManufacturerWebsiteResponse,
     "ProductPageResponse": ProductPageResponse,
     "ManufacturerScoringResponse": ManufacturerScoringResponse,
+    "CanonicalAliasResponse":CanonicalAliasResponse,
     "PageMatchScore": PageMatchScore,
     "SimpleText": SimpleText,
     "NavigationResponse": NavigationResponse,
     "ProductPageResponse": ProductPageResponse,
     "LinkJudgeResponse": LinkJudgeResponse,
     "ManufacturerUrlResponse": ManufacturerUrlResponse,
+    "BatchCanonicalMatchResponse":BatchCanonicalMatchResponse,
     'URLSelectionResponse': URLSelectionResponse,
     "IdentityVerificationResponse": IdentityVerificationResponse
 

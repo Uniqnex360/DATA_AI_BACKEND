@@ -1,5 +1,5 @@
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional,List,Dict
 from datetime import datetime
 class ProjectStats(BaseModel):
@@ -55,11 +55,12 @@ class FinalAttribute(BaseModel):
     name: str
     value: str
     unit: Optional[str] = None
-    confidence: float = 0.9
+    confidence: float = Field(..., validation_alias="confidence_score") 
     sources: List[str] = []     
     source_ids: List[str] = []         
     original_values: List[str] = []    
     extraction_algorithm: Optional[str] = None
+    merged_from: List[str] = []
     extraction_source: Optional[str] = None   
 
 class UnifiedStandardizedResponse(BaseModel):

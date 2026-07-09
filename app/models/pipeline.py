@@ -115,6 +115,7 @@ class PublishTarget(UUIDModel, table=True):
     connection_config: Dict = Field(default={}, sa_column=Column(JSON))
     field_mapping: Dict = Field(default={}, sa_column=Column(JSON))
     active: bool = Field(default=True)
+
 class AggregationJob(UUIDModel, table=True):
     __tablename__ = 'aggregation_jobs'
     project_id: str = Field(index=True)

@@ -34,12 +34,15 @@ class AutoMigration:
         from app.models.product import Product
         from app.models.project import Project
         from app.models.user import User
+        
         from app.models.pipeline import (
             AuditTrail, CleansingIssue, StandardizedAttribute, Source, ReviewItem, SourcePriority,
             Enrichment, RawExtraction, PublishTarget,
             AggregationJob
         )
         from app.models.business_rule import BusinessRule
+        from app.models.category_attribute_alias import CategoryAttributeAlias
+        from app.models.category_canonical_state import CategoryCanonicalState
         logger.info(f" Loaded {len(self.metadata.tables)} table definitions")
 
     async def _safe_migration(self):
@@ -107,10 +110,6 @@ class AutoMigration:
             if table_name not in self.metadata.tables:
                 continue
 
-            async with engine.connect() as conn:
-                existing_columns = await conn.run_sync(
-                    lambda sync_conn: get_columns(sync_conn, table_name)
-                )
             async with engine.connect() as conn:
                 existing_columns = await conn.run_sync(
                     lambda sync_conn: get_columns(sync_conn, table_name)
@@ -192,7 +191,7 @@ class AutoMigration:
                     logger.info(f"   Created index {index_name}")
 
                 except Exception as e:
-                    logger.debug(
+                    logger.info(
                         f"    Index {index_name} might already exist: {e}")
 
 

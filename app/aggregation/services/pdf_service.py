@@ -110,7 +110,7 @@ class PDFExtractionService:
             return "\n\n".join(text_pages) if text_pages else None
             
         except Exception as e:
-            logger.debug(f"PyPDF2 extraction failed: {e}")
+            logger.info(f"PyPDF2 extraction failed: {e}")
             return None
     
     async def _extract_with_pdfplumber(self, pdf_bytes: bytes) -> Optional[str]:
@@ -139,7 +139,7 @@ class PDFExtractionService:
             return "\n\n".join(text_pages) if text_pages else None
             
         except Exception as e:
-            logger.debug(f"pdfplumber extraction failed: {e}")
+            logger.info(f"pdfplumber extraction failed: {e}")
             return None
     
     def extract_specs_from_text(self, text: str) -> Dict[str, str]:

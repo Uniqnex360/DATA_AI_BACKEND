@@ -81,7 +81,7 @@ class TaxonomyFallbackService:
             List of URLs found from taxonomy peer domains
         """
         if not taxonomy or not self.db:
-            logger.debug(
+            logger.info(
                 "No taxonomy or DB session provided, skipping taxonomy fallback")
             return []
 
@@ -243,7 +243,7 @@ class TaxonomyFallbackService:
         domain = source.domain
         found_urls = []
 
-        logger.debug(
+        logger.info(
             f"Searching taxonomy domain: {domain} (historical score: {source.avg_completeness:.2f})")
 
         try:
@@ -342,7 +342,7 @@ class TaxonomyFallbackService:
             variant in url_lower or variant in snippet_lower for variant in brand_variants)
 
         if not has_brand:
-            logger.debug(f"Rejecting {url}: Brand '{brand}' not found")
+            logger.info(f"Rejecting {url}: Brand '{brand}' not found")
             return False
 
         

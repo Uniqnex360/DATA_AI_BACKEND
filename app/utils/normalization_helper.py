@@ -124,6 +124,12 @@ def _standardize_single_uom(unit_str: str) -> str:
         return 'deg C'
     if cleaned.lower() in ['degrees fahrenheit', 'fahrenheit', '°f', 'deg f', 'degrees f', 'deg. f']:
         return 'deg F'
+    if cleaned.lower() in ['deg', 'degree', 'degrees', '°', 'deg.']:
+        return 'deg'
+
+    # Count / Pack
+    if cleaned.lower() in ['pk', 'pack', 'packs', 'pkg', 'pcs', 'pc', 'ea', 'each', 'unit', 'units']:
+        return 'pc'
     
     # Special (preserve original casing if already correct)
     if cleaned.lower() == 'tpi':

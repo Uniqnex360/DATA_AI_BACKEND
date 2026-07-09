@@ -31,6 +31,8 @@ import asyncio
 from app.aggregation.services.image_service import extract_best_image, extract_best_image_fallback
 import logging
 from app.rules.rule_engine import RuleEngine
+from app.services.canonical_alias_service import enqueue_category_alias_job
+from app.services.category_canonical_resolver import load_category_canonical_winners
 from app.services.product_discovery_service import ProductDiscoveryService
 from app.utils.image_validator import validate_image_url
 from app.utils.normalization_helper import _standardize_uom_in_attrs, normalize_concatenated_uom
@@ -224,7 +226,7 @@ async def discover_manufacturer_urls(
                     continue
                 results = response.json().get("results", [])
                 if not results:
-                    logger.debug(f"No results for: {query}")
+                    logger.info(f"No results for: {query}")
                     continue
                 logger.info(f"Found {len(results)} results")
                 for result in results:
@@ -249,7 +251,7 @@ async def discover_manufacturer_urls(
                 if manufacturer_urls:
                     break
             except Exception as e:
-                logger.debug(f"Query failed: {e}")
+                logger.info(f"Query failed: {e}")
                 continue
         if not manufacturer_urls:
             logger.warning(f"No manufacturer URLs found for {brand}")
@@ -283,7 +285,7 @@ async def discover_manufacturer_urls(
                             homepage_urls.append(url)
                             logger.info(f"✓ VERIFIED homepage: {url}")
             except Exception as e:
-                logger.debug(f"Verification failed: {e}")
+                logger.info(f"Verification failed: {e}")
                 continue
         final_urls = []
         for url in product_urls:
@@ -387,7 +389,7 @@ async def find_product_page_with_llm(
                     continue
                 results = response.json().get("results", [])
                 if not results:
-                    logger.debug(f"No results for: {query}")
+                    logger.info(f"No results for: {query}")
                     continue
                 logger.info(f"Found {len(results)} general results")
                 product_urls = []
@@ -412,7 +414,7 @@ async def find_product_page_with_llm(
                         continue
                     product_urls.append(url)
                 if not product_urls:
-                    logger.debug(f"No product URLs for query: {query}")
+                    logger.info(f"No product URLs for query: {query}")
                     continue
                 logger.info(
                     f"Found {len(product_urls)} candidate product URLs")
@@ -500,7 +502,7 @@ async def find_product_page_with_llm(
                                         f"✓ VERIFIED via brand + indicators: {url}")
                                     return url
                     except Exception as e:
-                        logger.debug(f"Verification failed: {e}")
+                        logger.info(f"Verification failed: {e}")
                         continue
                 if priority_urls:
                     logger.info(
@@ -511,7 +513,7 @@ async def find_product_page_with_llm(
                         f"✓ Using first matching URL (unverified): {product_urls[0]}")
                     return product_urls[0]
             except Exception as e:
-                logger.debug(f"Query failed: {e}")
+                logger.info(f"Query failed: {e}")
                 continue
         logger.info(
             f"SearXNG search failed, trying domain-specific fallback for {domain}")
@@ -577,7 +579,7 @@ async def find_product_page_with_llm(
                                         f"✓ VERIFIED fallback product page: {candidate_url}")
                                     return candidate_url
                         except Exception as e:
-                            logger.debug(f"Fallback verification failed: {e}")
+                            logger.info(f"Fallback verification failed: {e}")
                             continue
                     if product_candidates:
                         final_url = product_candidates[0]
@@ -587,7 +589,7 @@ async def find_product_page_with_llm(
                             f"✓ Using fallback URL (unverified): {final_url}")
                         return final_url
             except Exception as e:
-                logger.debug(f"Domain fallback search failed: {e}")
+                logger.info(f"Domain fallback search failed: {e}")
         logger.warning(f"Could not find product page on {domain} for {mpn}")
         return None
     except Exception as e:
@@ -756,7 +758,18 @@ async def verify_page_identity_with_llm(url: str, html: str, brand: str, title: 
     except Exception as e:
         logger.error(f"LLM Identity Verification failed for {url}: {e}")
         return False
-    
+async def _enqueue_alias_job_isolated(category_id):
+    from app.core.database import async_session_factory
+
+    """Runs the alias-job enqueue on its own DB session so it never
+    races the main pipeline's session (which caused InterfaceError:
+    'another operation is in progress')."""
+    try:
+        async with async_session_factory() as new_db:
+            await enqueue_category_alias_job(category_id, new_db)
+    except Exception as e:
+        logger.warning(f"[Stage3Canonicals] isolated alias job failed: {e}")    
+        
 async def aggregate_product(
     mpn: str,
     title: str,
@@ -899,9 +912,9 @@ async def aggregate_product(
                         key=lambda c: len(c.full_path or ""),
                         reverse=True
                     )
-                    for category in categories:
+                    for cat in categories:
                         prompt_stmt = select(CategoryPrompt).where(
-                            CategoryPrompt.category_id == category.id,
+                            CategoryPrompt.category_id == cat.id,
                             CategoryPrompt.status == RuleStatus.ACTIVE,
                             CategoryPrompt.selected_taxonomy.is_(None)
                         ).limit(1)
@@ -909,9 +922,9 @@ async def aggregate_product(
                         cat_prompt = prompt_result.scalars().first()
                         if cat_prompt:
                             category_prompt_text = cat_prompt.prompt_text
-                            matched_category_id = category.id
+                            matched_category_id = cat.id
                             logger.info(
-                                f"✓ Category prompt matched: '{category.name}'")
+                                f"✓ Category prompt matched: '{cat.name}'")
                             break
                 if not category_prompt_text:
                     logger.info(
@@ -1561,10 +1574,22 @@ async def aggregate_product(
                     'extraction_source': source_type
                 })
         raw_attrs_for_combine = normalize_concatenated_uom(raw_attrs_for_combine)
+        # if category and db:
+        #     try:
+        #         _, alias_name_map = await load_category_canonical_winners(category.id, db)
+        #         if alias_name_map:
+        #             for a in raw_attrs_for_combine:
+        #                 n = a.get("name")
+        #                 if n in alias_name_map:
+        #                     a["name"] = alias_name_map[n]
+        #     except Exception as e:
+        #         logger.warning(f"[Stage3Canonicals] Failed applying alias_name_map to raw attrs: {e}")
         canonical_names = []
         canonical_units = {}
+        alias_name_map = {}
+        category = None
         if db and taxonomy:
-            tax_parts = [p.strip() for p in taxonomy.split(">")]
+            tax_parts = [p.strip() for p in taxonomy.split(" > ") if p.strip()]
             cat_stmt = select(Category).where(
                 or_(
                     Category.full_path == taxonomy,
@@ -1573,33 +1598,94 @@ async def aggregate_product(
             )
             cat_result = await db.execute(cat_stmt)
             category = cat_result.scalars().first()
+            # if category:
+                
+            #     attr_stmt = (
+            #         select(Attribute.attribute_name, Attribute.unit)
+            #         .distinct()
+            #         .join(CategoryAttribute, CategoryAttribute.attribute_id == Attribute.id)
+            #         .where(CategoryAttribute.category_id == category.id)
+            #     )
+            #     attr_result = await db.execute(attr_stmt)
+            #     rows = attr_result.all()
+            #     all_db_names = [r[0] for r in rows if r and r[0]]
+            #     logger.info(
+            #         f"[Stage3Canonicals] category_id={category.id} taxonomy='{taxonomy}' db_rows={len(all_db_names)}"
+            #     )
+            #     logger.info(f"[Stage3Canonicals] db_names={sorted(all_db_names)}")
+            #     logger.info(f"[Stage3Canonicals] db_name_unit_pairs={[(r[0], r[1]) for r in rows if r and r[0]][:120]}")
+            #     raw_names = {a['name'].lower() for a in raw_attrs_for_combine}
+            #     # canonical_names = [
+            #     #     row[0] for row in rows
+            #     #     if row[0] and (row[0].lower() in raw_names or "amp" in row[0].lower() or "speed" in row[0].lower())
+            #     # ]
+            #     canonical_names = [row[0] for row in rows if row[0]]
+
+            #     used = canonical_names or []
+            #     excluded = sorted(set(all_db_names) - set(used))
+
+            #     logger.info(
+            #         f"[Stage3Canonicals] canonical_names_used={len(used)} excluded={len(excluded)}"
+            #     )
+            #     logger.info(f"[Stage3Canonicals] used={sorted(used)}")
+            #     logger.info(f"[Stage3Canonicals] excluded={excluded}")
+            #     logger.info(f"[Stage3Canonicals] canonical_names_used={len(canonical_names)}")
+            #     logger.info(f"[Stage3Canonicals] canonical_names_used_list={canonical_names}")
+            #     canonical_units = {
+            #         row[0]: row[1]
+            #         for row in rows
+            #         if row[0] and row[1]
+            #     }
             if category:
-                attr_stmt = (
-                    select(Attribute.attribute_name, Attribute.unit)
-                    .distinct()
-                    .join(CategoryAttribute, CategoryAttribute.attribute_id == Attribute.id)
-                    .where(CategoryAttribute.category_id == category.id)
-                )
-                attr_result = await db.execute(attr_stmt)
-                rows = attr_result.all()
-                raw_names = {a['name'].lower() for a in raw_attrs_for_combine}
-                canonical_names = [
-                    row[0] for row in rows
-                    if row[0] and (row[0].lower() in raw_names or "amp" in row[0].lower() or "speed" in row[0].lower())
-                ]
-                canonical_units = {
-                    row[0]: row[1]
-                    for row in rows
-                    if row[0] and row[1]
-                }
+                try:
+                    asyncio.create_task(_enqueue_alias_job_isolated(category.id))
+                except Exception as e:
+                    logger.warning(f"[Stage3Canonicals] Failed to enqueue alias job: {e}")
+
+                try:
+                    winner_attrs, alias_name_map = await load_category_canonical_winners(category.id, db)
+                except Exception as e:
+                    logger.warning(f"[Stage3Canonicals] resolver failed for category_id={category.id}: {e}")
+                    winner_attrs, alias_name_map = [], {}
+
+                canonical_names = [a.attribute_name for a in winner_attrs if a.attribute_name]
+                canonical_units = {a.attribute_name: a.unit for a in winner_attrs if a.attribute_name and a.unit}
+                alias_lc = {k.lower(): v for k, v in alias_name_map.items()}
+                for a in raw_attrs_for_combine:
+                    n = a.get("name") or ""
+                    mapped = alias_lc.get(n.lower())
+                    if mapped:
+                        a["name"] = mapped
+
                 logger.info(
-                    f"Loaded {len(canonical_names)} canonical names, {len(canonical_units)} units for: {taxonomy}")
+                    f"[Stage3Canonicals] category_id={category.id} taxonomy='{taxonomy}' "
+                    f"winners={len(canonical_names)} aliases={len(alias_name_map)} units={len(canonical_units)}"
+                )
+                logger.info(f"[Stage3Canonicals] winners_sample={canonical_names[:80]}")
+                if alias_name_map:
+                    # log a small sample only (avoid huge logs)
+                    items = list(alias_name_map.items())
+                    logger.info(f"[Stage3Canonicals] alias_sample={items[:40]}")
+                logger.info(f"[Stage3Canonicals] canonical_units_count={len(canonical_units)}")
+                logger.info(f"[Stage3Canonicals] canonical_units_sample={dict(list(canonical_units.items())[:80])}")
+                logger.info(f"Loaded {len(canonical_names)} canonical names, {len(canonical_units)} units for: {taxonomy}")
+               
         logger.info("Stage 2.5: Semantic Attribute Clustering")
+        logger.info(f"category_id passed: {category.id if category else None}") 
         raw_attrs_for_combine = await cluster_attributes_by_meaning(
             raw_attrs_for_combine,
+            category_id=category.id if category else None,  
+            db=db,
             canonical_names=canonical_names,
-            threshold=0.75
+            threshold=0.85
         )
+        if category and alias_name_map:
+            alias_lc = {k.lower(): v for k, v in alias_name_map.items()}
+            for a in raw_attrs_for_combine:
+                n = (a.get("name") or "").lower()
+                mapped = alias_lc.get(n)
+                if mapped:
+                    a["name"] = mapped
         logger.info(
             f"After clustering: {len(set(a['name'] for a in raw_attrs_for_combine))} unique names")
         project = await db.get(Project, project_id) if db and project_id else None
@@ -1615,9 +1701,22 @@ async def aggregate_product(
                     response_model="UnifiedStandardizedResponse",
                     llm_provider=llm_provider,
                     estimated_tokens=3000 + len(raw_attrs_for_combine) * 200,
-                    max_tokens=4000
+                    max_tokens=min(3000 + len(raw_attrs_for_combine) * 200, 16000)
                 )
         golden_attributes = combined_result.attributes
+        forbidden_names = {
+            'brand', 'sku', 'mpn', 'part number', 'manufacturer part number',
+            'model number', 'item number', 'upc', 'gtin', 'manufacturer part id'
+        }
+        
+        filtered_attributes = []
+        for attr in golden_attributes:
+            attr_name_lower = attr.name.lower()
+            if any(forbidden in attr_name_lower for forbidden in forbidden_names):
+                logger.info(f"🛡️  Filtered forbidden attribute: {attr.name}")
+                continue
+            filtered_attributes.append(attr)
+        golden_attributes = filtered_attributes
         golden_attr_dicts_temp = [
             {'name': a.name, 'value': a.value, 'unit': a.unit}
             for a in golden_attributes
@@ -1632,14 +1731,23 @@ async def aggregate_product(
                     f"for '{attr.name}'"
                 )
                 attr.unit = standardized['unit']
-        input_names = set(a['name'] for a in raw_attrs_for_combine)
-        output_names = set(a.name for a in golden_attributes)
-        missing = input_names - output_names
+        input_names = { (a['name'] or "").strip().lower() for a in raw_attrs_for_combine }
+        output_names = { (a.name or "").strip().lower() for a in golden_attributes }
+        merged_names = {
+            (m or "").strip().lower()
+            for a in golden_attributes
+            for m in (a.merged_from or [])
+        }
+        accounted_for = output_names | merged_names
+        missing = input_names - accounted_for   
         extra = output_names - input_names
         logger.info(f"LLM input attribute count: {len(input_names)}")
         logger.info(f"LLM output attribute count: {len(output_names)}")
+        if merged_names:
+            logger.info(f"LLM merged (visible) attribute count: {len(merged_names)}")
         if missing:
-            logger.warning(f"⚠ LLM DROPPED attributes: {missing}")
+            dropped_with_values = {a['name']: a['value'] for a in raw_attrs_for_combine if (a['name'] or "").strip().lower() in missing}
+            logger.warning(f"⚠ LLM SILENTLY DROPPED attributes (not merged, not output): {dropped_with_values}")
         if extra:
             logger.warning(f"⚠ LLM CREATED new attributes: {extra}")
         valid_source_urls = {source['url'] for source in all_extractions}
@@ -1933,6 +2041,25 @@ STRICT DATA RETENTION MANDATE:
     EXCEPTION: identifiers that restate the product's own MPN/SKU/Brand
     (see RULE 15 below) are not technical data — they are metadata already
     known from context, and dropping them is required, not a failure.
+================================================================
+RULE 0 — FORBIDDEN ATTRIBUTES (HIGHEST PRIORITY)
+================================================================
+You MUST NOT output any of the following as attributes. These are already known from product context:
+
+- Brand
+- SKU
+- MPN
+- Part Number
+- Manufacturer Part Number
+- Model Number
+- Item Number
+- UPC
+- GTIN
+- Any attribute name containing "Part Number", "Model Number", "Manufacturer Part", "SKU", "MPN", or "Brand"
+
+If any raw attribute matches the above names, **drop it completely**. Do not include it in the final attributes list.
+
+================================================================
 PRODUCT CONTEXT:
   MPN: {mpn}
   Brand: {brand}
@@ -1958,6 +2085,27 @@ RULE 17 — NAME COLLISION
   share the same short name, give them distinct, more specific names
   instead of reusing the same name, e.g. "Capacity (Volume)" vs
   "Capacity (Can Count)" rather than two attributes both named "Capacity".
+RULE 18 — MERGE SAFETY CHECK  ★ APPLIES BEFORE RULE 16 ★
+  Before merging any two attributes under Rule 16, verify ALL of these:
+  a) They measure the exact same underlying quantity, not merely a related
+     or nearby one. Shared vocabulary or overlapping topic is not sufficient.
+  b) They represent the same shape of data — a range, a single value, a
+     count, and a rate are all different shapes; do not collapse one into
+     another even if they describe the same general property.
+  c) No information would be lost. If the two values are not fully
+     recoverable from a single merged result, they are not the same fact.
+  If any of a/b/c fails, keep both attributes separate with distinct names,
+  even if Rule 16's general similarity logic would otherwise suggest merging.
+  When uncertain, do not merge — keeping two similar attributes separate is
+  always safer than incorrectly discarding real data.
+RULE 19 — MERGE TRANSPARENCY  ★ MANDATORY ★
+  If this output attribute absorbed one or more OTHER differently-named raw
+  attributes (per Rule 16), list every absorbed raw name in "merged_from".
+  If no merge occurred (this attribute maps 1:1 from a single raw name),
+  set "merged_from" to an empty list [].
+  This field must account for every raw attribute name that does not appear
+  as its own output attribute — if a raw name is missing from BOTH the
+  output attributes AND every merged_from list, that is a bug you must avoid.
   ═══════════════════════════════════════════════════════
   ═══════════════════════════════════════════════════════
 CONFLICT RESOLUTION RULES
@@ -2266,7 +2414,9 @@ Return a JSON object:
       "unit": "unit string or null",
       "confidence": 0.95,
       "sources": ["https://source1.com"],
-      "original_values": ["original raw value"]
+      "original_values": ["original raw value"],
+       "original_values": ["original raw value"],
+      "merged_from": ["Other Raw Attribute Name That Was Folded In"]
     }}
   ],
   "summary": "Brief explanation of major changes and grouping decisions."
