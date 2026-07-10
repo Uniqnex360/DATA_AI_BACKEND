@@ -297,7 +297,52 @@ Return strict JSON:
             else:
                 mapping[m.raw_name] = None
     return mapping
+async def _value_collision_check(
+    raw_attrs: List[Dict],
+    canonical_map: Dict[str, str],
+    llm_provider: str = "openai",
+) -> Dict[str, str]:
+    from collections import defaultdict
 
+    groups = defaultdict(set)
+    for a in raw_attrs:
+        mapped_name = canonical_map.get(a['name'], a['name'])
+        val = str(a.get('value', '')).strip().lower()
+        unit = str(a.get('unit') or '').strip().lower()
+        if not val or not unit:   # skip empty unit — too coincidence-prone
+            continue
+        groups[(val, unit)].add(mapped_name)
+
+    collision_batch = []
+    for (val, unit), names in groups.items():
+        if len(names) > 1:
+            names_list = sorted(names)
+            logger.warning(f"[ValueCollision] value='{val}' unit='{unit}' names={names_list}")
+            collision_batch.append({
+                "raw_name": names_list[0],
+                "raw_value": val,
+                "raw_unit": unit,
+                "candidates": [
+                    {"name": n, "unit": unit, "sample_values": [val]}
+                    for n in names_list[1:]
+                ],
+            })
+
+    if not collision_batch:
+        return canonical_map
+
+    llm_results = await _llm_confirm_batch(collision_batch, llm_provider)
+    logger.info(f"[ValueCollision] llm_results={llm_results}")
+
+    for raw_name, matched in llm_results.items():
+        if matched:
+            for k, v in list(canonical_map.items()):
+                if v == raw_name:
+                    canonical_map[k] = matched
+            canonical_map[raw_name] = matched
+            logger.info(f"[ValueCollision] merged '{raw_name}' -> '{matched}'")
+
+    return canonical_map
 
 async def cluster_attributes_by_meaning(
     raw_attrs: List[Dict],
@@ -406,7 +451,7 @@ async def cluster_attributes_by_meaning(
     else:
         for name in unresolved:
             canonical_map[name] = name
-
+    canonical_map = await _value_collision_check(raw_attrs, canonical_map, 'gemini')
     remapped = []
     for attr in raw_attrs:
         remapped_attr = attr.copy()
