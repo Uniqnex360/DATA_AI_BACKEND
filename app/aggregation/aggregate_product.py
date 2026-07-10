@@ -1498,7 +1498,8 @@ async def aggregate_product(
                                                 "image_url": None,
                                                 "source_type": "pdf",
                                                 "short_description": None,
-                                                "long_description": None
+                                                "long_description": None,
+                                                "features": []  
                                             })
                                             logger.info(
                                                 f"✓ PDF extraction: {len(pdf_attrs)} attributes from {pdf_url}")
@@ -1833,14 +1834,18 @@ async def aggregate_product(
         ]
         best_short_description = None
         best_long_description = None
-        best_features=None
+        all_features = []
+        seen_features = set()
         for source in all_extractions:
             if source.get('short_description') and not best_short_description:
                 best_short_description = source['short_description']
             if source.get('long_description') and not best_long_description:
                 best_long_description = source['long_description']
-            if source.get('features') and not best_features:
-                best_features=source['features']
+            source_features = source.get('features') or []
+            for feat in source_features:
+                if feat and feat.strip() and feat not in seen_features:
+                    all_features.append(feat)
+                    seen_features.add(feat)
             if best_short_description and best_long_description:
                 break
         logger.info("Stage 6: Marketing Enrichment")
@@ -1851,7 +1856,7 @@ async def aggregate_product(
             taxonomy=taxonomy or "",
             existing_short_description=best_short_description,
             existing_long_description=best_long_description,
-            existing_features=best_features
+            existing_features=all_features
         )
         if is_algo2_run:
             logger.info(f"Algo2 :Skipping enrichment (router will do it )")
@@ -1879,13 +1884,24 @@ async def aggregate_product(
                     break
         if 'download_service' in locals():
             download_service._cache.clear()
+        final_features = []
+        if hasattr(enrichment_result, 'features') and enrichment_result.features:
+            final_features = list(enrichment_result.features)
+        elif all_features:
+            final_features = all_features
+        seen_final = set()
+        deduped_features = []
+        for f in final_features:
+            if f and f.strip() and f not in seen_final:
+                deduped_features.append(f)
+                seen_final.add(f)
         return {
             'status': 'success',
             'golden_record': {
                 'attributes': {attr['name']: attr for attr in golden_attr_dicts},
                 'short_description': enrichment_result.short_description or "",
                 'long_description': enrichment_result.long_description,
-                'features': enrichment_result.features,
+                'features': deduped_features,
                 'sources_consulted': list({s['url'] for s in all_extractions}),
                 'confidence': avg_conf
             },

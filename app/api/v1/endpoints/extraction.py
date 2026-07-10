@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status, Form, UploadFile, File, Request, Query
 from fastapi.responses import StreamingResponse
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from sqlalchemy import func
@@ -12,7 +13,7 @@ from app.models.product import Product
 from typing import List, Optional
 import logging
 from sqlalchemy.orm.attributes import flag_modified
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
 from app.models.project_product_link import ProjectProductLink
 from app.models.user import User
@@ -75,7 +76,67 @@ async def getAllSources(db: AsyncSession = Depends(get_session)):
         logger.error(f"Failed to fetch sources: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Could not retrieve import history")
-
+@router.get("/proxy-download")
+async def proxy_download(
+    url: str = Query(..., description="URL to download"),
+):
+    """
+    Proxy download endpoint - downloads a file from a URL and streams it to the client.
+    This avoids CORS issues and forces download instead of opening in browser.
+    """
+    try:
+        # Validate URL
+        parsed = urlparse(url)
+        if not parsed.scheme or not parsed.netloc:
+            raise HTTPException(status_code=400, detail="Invalid URL")
+        
+        # Extract filename from URL
+        filename = parsed.path.split("/")[-1] or "download"
+        
+        # If no extension, try to guess from content type later
+        if "." not in filename:
+            filename = "download"
+        
+        # Fetch the file
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            
+            # Determine content type
+            content_type = response.headers.get("content-type", "application/octet-stream")
+            
+            # Fix filename extension based on content type
+            if not filename.endswith((".pdf", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".webm")):
+                ext_map = {
+                    "application/pdf": ".pdf",
+                    "image/jpeg": ".jpg",
+                    "image/png": ".png",
+                    "image/gif": ".gif",
+                    "image/webp": ".webp",
+                    "video/mp4": ".mp4",
+                    "video/webm": ".webm",
+                }
+                for mime, ext in ext_map.items():
+                    if mime in content_type:
+                        filename += ext
+                        break
+            
+            encoded_filename = quote(filename)
+            
+            return StreamingResponse(
+                response.iter_bytes(),
+                media_type=content_type,
+                headers={
+                    "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+                    "Content-Length": str(response.headers.get("content-length", 0)),
+                }
+            )
+    except httpx.HTTPError as e:
+        logger.error(f"Download proxy error: {e}")
+        raise HTTPException(status_code=502, detail="Failed to fetch the file")
+    except Exception as e:
+        logger.error(f"Download proxy error: {e}")
+        raise HTTPException(status_code=500, detail="Download failed")
 
 @router.post("/", status_code=status.HTTP_202_ACCEPTED)
 async def extract_from_source(

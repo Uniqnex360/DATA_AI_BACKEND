@@ -2,74 +2,14 @@ from bs4 import BeautifulSoup
 import logging
 from typing import Optional, List
 logger = logging.getLogger('extraction_prompts')
-
-
-# def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
-#     soup = BeautifulSoup(html_content, "html.parser")
-#     json_data = []
-#     for script in soup.find_all("script"):
-#         if script.get("type") in ["application/ld+json", "application/json"] or script.get("id") == "__NEXT_DATA__":
-#             content = script.string
-#             if content and len(content) > 100:  # Only grab substantial JSON blocks
-#                 json_data.append(content)
-#     # -------------------------------------------------------------
-
-#     for tag in soup(["script", "style", "noscript", "svg"]):
-#         tag.decompose()
-
-#     sections = []
-
-#     # --- NEW: ADD EXTRACTED JSON AS A SECTION ---
-#     if json_data:
-#         json_content = "\n\n".join(json_data)
-#         if len(json_content) < 50000:  # Don't overwhelm the prompt
-#             sections.append(json_content)
-#     for tag in soup(["script", "style", "noscript", "svg"]):
-#         tag.decompose()
-#     sections = []
-#     for table in soup.find_all("table"):
-#         rows = table.find_all("tr")
-#         if len(rows) >= 3:
-#             sections.append(str(table))
-#     for dl in soup.find_all("dl"):
-#         if len(dl.find_all("dt")) >= 2:
-#             sections.append(str(dl))
-#     for div in soup.find_all("div"):
-#         children = div.find_all(["div", "span", "p"], recursive=False)
-#         if len(children) >= 4:
-#             texts = [c.get_text(strip=True)
-#                      for c in children if c.get_text(strip=True)]
-#             if len(texts) >= 4 and len(" ".join(texts)) < 6000:
-#                 sections.append(str(div))
-#     for section in soup.find_all("section"):
-#         header = section.find(["h1", "h2", "h3", "h4"])
-#         if header:
-#             header_text = header.get_text().lower()
-#             if any(k in header_text for k in [
-#                 "spec", "technical", "dimension",
-#                 "performance", "details", "data",
-#                 "ingredient", "material", "composition",
-#                 "direction", "how to use", "what's in",
-#                 "formulation", "feature", "benefit",
-#                 "included", "excluded", "allergen", "warning"
-#             ]):
-#                 if len(section.get_text()) < 15000:
-#                     sections.append(str(section))
-#     unique_sections = list(dict.fromkeys(sections))
-#     content = "\n\n".join(unique_sections[:max_sections])
-#     MAX_CHARS = 120000
-#     return content[:MAX_CHARS]
 def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
     soup = BeautifulSoup(html_content, "html.parser")
-
-    # 1. EXTRACT JSON FROM SCRIPT TAGS BEFORE DELETING THEM
     json_data = []
     for script in soup.find_all("script"):
         if script.get("type") in ["application/ld+json", "application/json"] or script.get("id") == "__NEXT_DATA__":
             content = script.string
-            if content and len(content) > 100:  # Only grab substantial JSON blocks
+            if content and len(content) > 100:  
                 json_data.append(content)
-    
     import json as _json
     for jd in json_data[:]:
         try:
@@ -86,26 +26,14 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
                     json_data.append('\n'.join(lines))
         except:
             pass
-
-    # 2. DELETE UNWANTED TAGS
     for tag in soup(["script", "style", "noscript", "svg"]):
         tag.decompose()
-
     sections = []
-
-    # 3. ADD EXTRACTED JSON AS A SECTION
-    # if json_data:
-    #     json_content = "\n\n".join(json_data)
-    #     if len(json_content) < 50000:  # Don't overwhelm the prompt
-    #         sections.append(json_content)
     if json_data:
-        # Sort: smaller JSON blocks first (they're usually product specs, not navigation)
         json_data_sorted = sorted(json_data, key=len)
         for jd in json_data_sorted:
-            if len(jd) < 50000:  # Only add reasonably sized JSON
+            if len(jd) < 50000:  
                 sections.append(jd)
-
-    # 4. PARSE REMAINING HTML SECTIONS
     for table in soup.find_all("table"):
         rows = table.find_all("tr")
         if len(rows) >= 3:
@@ -120,25 +48,19 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
                      for c in children if c.get_text(strip=True)]
             if len(texts) >= 4 and len(" ".join(texts)) < 6000:
                 sections.append(str(div))
-    for section in soup.find_all("section"):
-        header = section.find(["h1", "h2", "h3", "h4"])
-        if header:
-            header_text = header.get_text().lower()
-            if any(k in header_text for k in [
-                "spec", "technical", "dimension",
-                "performance", "details", "data",
-                "ingredient", "material", "composition",
-                "direction", "how to use", "what's in",
-                "formulation", "feature", "benefit",
-                "included", "excluded", "allergen", "warning"
-            ]):
-                if len(section.get_text()) < 15000:
-                    sections.append(str(section))
-    
+    feature_keywords = ["feature", "highlight", "benefit", "selling-point", "key-point"]
+    for section in soup.find_all(['section', 'div']):
+        elem_id = (section.get('id') or '').lower()
+        elem_class = ' '.join(section.get('class') or []).lower()
+        combined = f"{elem_id} {elem_class}"
+        if any(k in combined for k in feature_keywords):
+            text = section.get_text(separator='\n', strip=True)
+            if 100 < len(text) < 15000:
+                sections.append(str(section))
+                logger.info(f"Captured features section: id='{elem_id}' class='{elem_class}' len={len(text)}")
     unique_sections = list(dict.fromkeys(sections))
     content = "\n\n".join(unique_sections[:max_sections])
     non_json_content = "\n\n".join(s for s in unique_sections[:max_sections] if not s.strip().startswith('{'))
-    
     if len(non_json_content.strip()) < 5000 and len(html_content) > 100000:
         raw_text = soup.get_text(separator="\n", strip=True)
         if len(raw_text) > 100:
@@ -146,7 +68,6 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
             logger.info(f"Using raw text fallback: {len(raw_text[:50000])} chars")
     MAX_CHARS = 120000
     return content[:MAX_CHARS]
-
 def extract_product_descriptions(html_content: str) -> str:
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html_content, "html.parser")
@@ -159,11 +80,16 @@ def extract_product_descriptions(html_content: str) -> str:
         if meta_desc:
             text_parts.append(meta_desc)
     description_selectors = [
-        {'class': lambda x: x and any(k in x.lower() for k in [
-                                      'description', 'overview', 'details', 'about', 'product-info', 'specs', 'specification'])},
-        {'id': lambda x: x and any(k in x.lower() for k in [
-                                   'description', 'overview', 'details', 'specs'])},
-    ]
+    {'class': lambda x: x and any(k in x.lower() for k in [
+        'description', 'overview', 'details', 'about',
+        'product-info', 'specs', 'specification',
+        'feature', 'highlight', 'benefit'  
+    ])},
+    {'id': lambda x: x and any(k in x.lower() for k in [
+        'description', 'overview', 'details', 'specs',
+        'feature', 'highlight', 'benefit'  
+    ])},
+]
     seen_texts = set()
     for selector in description_selectors:
         for tag in soup.find_all(['div', 'section', 'article'], attrs=selector):
@@ -179,7 +105,7 @@ def extract_product_descriptions(html_content: str) -> str:
         if main_content:
             for tag in main_content.find_all(['p', 'li', 'dd']):
                 text = tag.get_text(strip=True)
-                if (text and len(text) > 20
+                if (text and len(text) > 10
                     and not any(skip in text.lower() for skip in ['cookie', 'subscribe', 'newsletter', 'contact us', 'privacy', 'terms'])
                         and text[:150] not in seen_texts):
                     text_parts.append(text)
@@ -190,8 +116,6 @@ def extract_product_descriptions(html_content: str) -> str:
         if len(raw_text) > 100:
             desc_text = raw_text
     return desc_text[:10000]
-
-
 def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: str,
                             primary_attributes: list, html_content: str,
                             candidate_images: Optional[List[str]] = None, source_url: str = "") -> dict:
@@ -448,13 +372,66 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         - Detailed product information paragraphs (NOT feature bullet lists)
         - Can be longer (3-5 sentences)
         - DO NOT include feature bullet point lists here
-
         FEATURES (features):
-        - Look for: "Features", "Key Features", "Benefits" sections on the page
-        - Extract the actual marketing feature bullet points from the page
-        - Return as a list: ["feature 1", "feature 2", ...]
-        - If no separate Features section exists, leave empty
 
+        A "feature" is a SHORT, BENEFIT-ORIENTED statement about the product that 
+        would appear on a buyer's product page, packaging, or marketing material.
+
+        STEP 1 — DETECT A FEATURES SECTION ON THE PAGE:
+        Look for any of these structural patterns:
+          a) A container (div, section, ul, article) with class/id/aria-label 
+            containing words like: feature, highlight, benefit, key-point, 
+            selling-point, why-choose, at-a-glance
+          b) A heading (h2/h3/h4) with text like: "Features", "Key Features", 
+            "Highlights", "Benefits", "Why Choose", "At a Glance", "What Makes 
+            This Special", "Product Features"
+          c) A bulleted list (<ul><li>) that appears AFTER a "Features" or 
+            similar heading
+          d) Labeled paragraphs: <p><strong>LABEL:</strong> description</p> 
+            repeated 3+ times in sequence (e.g., TYPE:/APPLICATION:/LENGTH:)
+          e) Tabbed/accordion content where one tab is labeled "Features" or 
+            "Highlights"
+
+        If you detect any of these patterns, this is the features source.
+        Do NOT use these as features:
+          - The product spec table (key-value specs like "Diameter: 0.131")
+          - The main product description paragraph
+          - Customer reviews or Q&A
+          - Shipping/availability/pricing info
+
+        STEP 2 — EXTRACT EACH FEATURE AS A SEPARATE STRING:
+        For each feature found:
+          - Preserve the ORIGINAL WORDING as much as possible (do NOT paraphrase)
+          - Keep the label if present (e.g., "TYPE: 21 Degree..." or "APPLICATION: ...")
+          - One feature = one logical statement
+          - If a bullet is very long (>25 words), keep it as ONE feature 
+            (do not artificially split)
+          - Strip HTML tags, but keep the textual content intact
+
+        STEP 3 — DECISION TREE (apply in order):
+          1. If a dedicated Features section exists → extract all items from it
+          2. Else if labeled paragraphs (LABEL: value pattern) appear 3+ times → 
+            extract those as features
+          3. Else if a bulleted list exists with product benefits (not specs, not 
+            navigation) → extract those
+          4. Else → return empty array []
+
+        QUALITY RULES:
+          - Each feature: 4-30 words
+          - Include 3-8 features when available
+          - If only 1-2 features exist, return what you find
+          - If 10+ features exist, include ALL of them (no artificial cap)
+          - DO NOT invent features not on the page
+          - DO NOT duplicate the same feature with slight wording changes
+
+        EDGE CASES:
+          - If the page has "Features:" followed by repeating the spec table in 
+            narrative form → those narrative statements ARE features, extract them
+          - If "Features" section just lists navigation links (e.g., "Warranty > 
+            Register > Support") → that's NOT features, return empty
+          - If the only "feature" is the product name or brand → return empty
+          - If features contain the MPN repeated → still include if it's the page's 
+            actual feature text
         RULES:
         - ONLY extract descriptions that exist on the page
         - Do NOT generate or create descriptions from attributes
@@ -511,16 +488,24 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         {confidence_instruction}
         ═══════════════════════════════════════════════════════════════════
         ═══════════════════════════════════════════════════════════════════
-        OUTPUT
+        OUTPUT SCHEMA — REQUIRED FIELDS
         ═══════════════════════════════════════════════════════════════════
-        Return JSON following ExtractionResponse schema:
-        - attributes: list of extracted specifications
-        - product_detected: true/false
-        - product_type: category if detected
-        - image_url: product image URL or null
-        "short_description": "Short product description (1-2 sentences) or null",
-          "long_description": "Detailed product description (3-5 sentences or bullet points) or null"
-          "features": ["feature 1", "feature 2", ...]
+        Return JSON in this EXACT structure. ALL fields are REQUIRED:
+
+        {{
+  "product_detected": true/false,
+  "product_type": "category or null",
+  "image_url": "URL or null",
+  "short_description": "1-2 sentences or null",
+  "long_description": "3-5 sentences or null",
+  "features": ["feature 1", ...],
+  "attributes": [
+    {{"name": "Attribute Name", "value": "value", "unit": "unit or null", "confidence": 0.95}}
+  ]
+}}
+
+        CRITICAL: The `features` field MUST be present in your JSON output, even if it's an empty array [].
+        Do NOT omit it. Do NOT return null. Always return an array.
         """
         return {
             'prompt': prompt,
@@ -530,48 +515,6 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
     except Exception as e:
         logger.error(f"Build_extraction_prompt failed: {e}")
         return None
-
-
-# def build_pdf_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: str, pdf_text: str, primary_attributes: list) -> dict:
-#     try:
-#         primary_list = primary_attributes if primary_attributes else []
-#         prompt = f"""
-#         You are extracting specifications from an official product datasheet.
-#         PRODUCT:
-#         -MPN :{mpn}
-#         -Brand :{brand}
-#         -Name:{product_name}
-#         CRITICAL ATTRIBUTES (required):
-#         {chr(10).join([f"  {i+1}. {attr}" for i, attr in enumerate(primary_list)])}
-#         DATASHEET_CONTENT:
-#         {pdf_text[:10000]}
-#         EXTRACTION_RULES:
-#         1. PDFs are official sources - extract everything you find
-#         2. Look for specification tables, technical sections
-#         3. Extract values with units exactly as shown
-#         4. If a spec has multiple values (min/max), extract the typical/nominal
-#         5. Extract ALL additional specifications you find (no maximum)
-#         IGNORE:
-#         - Copyright notices
-#         - Company addresses
-#         - Ordering information
-#         - Marketing sections
-#         Return JSON following ExtractionResponse schema.
-#         IMAGE EXTRACTION:
-# - Some PDFs contain embedded images or reference image URLs in text.
-# - If you find a URL that clearly points to a product image (e.g., ends with .jpg/.png and contains product keywords), extract it.
-# - Otherwise, set `image_url` to `null`.
-#         Confidence  should be 0.95+ for PDF sources
-#         """
-#         return {
-#             'prompt': prompt,
-#             'response_schema': 'ExtractionResponse',
-#             'max_tokens': 16000,
-#             'source_type': 'pdf'
-#         }
-#     except Exception as e:
-#         logger.error(f"pdf extraction prompt  failed str{e}")
-#         return
 def build_pdf_extraction_prompt(
     product_name: str,
     mpn: str,
@@ -584,19 +527,15 @@ def build_pdf_extraction_prompt(
         primary_list = primary_attributes if primary_attributes else []
         prompt = f"""
 You are a senior product data engineer extracting specifications from an official product document.
-
 PRODUCT CONTEXT:
 - MPN: {mpn}
 - Brand: {brand}
 - Name: {product_name}
 - Category: {taxonomy}
-
 PRIORITY ATTRIBUTES (extract these first if found):
 {chr(10).join([f"  {i+1}. {attr}" for i, attr in enumerate(primary_list)])}
-
 DOCUMENT CONTENT:
 {pdf_text[:10000]}
-
 ═══════════════════════════════════════════════════════
 RULE 1: STRICT EXTRACTION — NO HALLUCINATION
 ═══════════════════════════════════════════════════════
@@ -605,14 +544,12 @@ RULE 1: STRICT EXTRACTION — NO HALLUCINATION
 - Do NOT guess, infer, estimate, or complete partial values.
 - If a value is ambiguous or unclear, skip it entirely.
 - Empty output is always better than wrong output.
-
 SKIP any row or value that contains:
 - "NPD" (No Performance Determined)
 - "NF" (No Failure — this is a test result category, not a value)
 - "NR" (Not Required)
 - "Not relevant"
 - Blank/empty cells
-
 ═══════════════════════════════════════════════════════
 RULE 2: INTELLIGENT DOCUMENT STRUCTURE UNDERSTANDING
 ═══════════════════════════════════════════════════════
@@ -622,9 +559,7 @@ PDF documents can have many different structures:
 - Performance tables organized by standard/certification
 - Material safety data organized by chemical component
 - Technical data sheets with sections for different applications
-
 YOUR JOB: Understand the structure first, then extract intelligently.
-
 STEP 1 — UNDERSTAND THE DOCUMENT TYPE:
 Before extracting, identify what kind of document this is:
 - Is it a simple spec sheet? → Extract all specs directly.
@@ -632,30 +567,25 @@ Before extracting, identify what kind of document this is:
 - Does it have sections organized by USE CASE or APPLICATION? → Read context.
 - Does it have sections organized by CHEMICAL COMPONENT? → Each component is separate.
 - Does it have a PERFORMANCE DECLARATION with multiple standards? → Read which standard each value belongs to.
-
 STEP 2 — UNDERSTAND CONTEXT FOR EACH VALUE:
 When you find an attribute value, ask yourself:
 1. Is this value the SAME as another value I already found with the same meaning?
 2. Is this value DIFFERENT from another value I found with the same attribute name?
 3. Does this attribute belong to a SPECIFIC CONTEXT (use case, environment, component)?
-
 STEP 3 — APPLY THE DEDUPLICATION PRINCIPLE:
 The core principle is simple:
 - SAME attribute name + SAME value = DUPLICATE → Keep only ONE
 - SAME attribute name + DIFFERENT values = DIFFERENT CONTEXTS → Keep BOTH with context added to the name
 - DIFFERENT attribute name + SAME meaning = SYNONYMS → Merge into ONE canonical name
-
 ═══════════════════════════════════════════════════════
 RULE 3: HOW TO HANDLE REPEATED ATTRIBUTES
 ═══════════════════════════════════════════════════════
 When the same attribute appears multiple times in the document:
-
 CASE A — Identical Values (True Duplicates):
 The document shows "Reaction to Fire: Class E" in three different sections.
 All three are identical.
 → ACTION: Extract it ONCE with the most general name.
 → OUTPUT: "Reaction to Fire: Class E"
-
 CASE B — Different Values (Different Contexts):
 The document shows:
 - Section 1: "Loss of Volume: ≤ 45%"
@@ -665,17 +595,14 @@ These are DIFFERENT values, so they represent DIFFERENT things.
 → Add that context to the attribute name to distinguish them.
 → OUTPUT: "Loss of Volume (Context A): ≤ 45%"
 → OUTPUT: "Loss of Volume (Context B): ≤ 55%"
-
 The "context" you add should come from the document itself — 
 it might be an application type, a standard number, an environment, 
 a material, a temperature range, or anything else that explains 
 why the values are different.
-
 CASE C — Range or Variation (Same Attribute, Multiple Valid Values):
 The document shows a range or options: "Operating Temperature: -20°C to +80°C"
 → ACTION: Extract it as a single range value.
 → OUTPUT: "Operating Temperature: -20 to 80" with unit "deg C"
-
 ═══════════════════════════════════════════════════════
 RULE 4: ATTRIBUTE NAMING
 ═══════════════════════════════════════════════════════
@@ -715,7 +642,6 @@ EXTRACT:
 - Cable length, Cable diameter, Cable colour
 - Protection class, Energy efficiency class
 - Minimum distance from lit surface
-
 ★★★ CRITICAL VOLUME MANDATE ★★★
 PDF datasheets are the MOST AUTHORITATIVE source for product data.
 You MUST extract EVERY single specification you find.
@@ -738,7 +664,6 @@ RULE 6: IMAGE EXTRACTION
 - If the document text contains a URL ending in .jpg, .jpeg, .png, or .webp
   that clearly refers to a product image, extract it as image_url.
 - Otherwise set image_url to null.
-
 ═══════════════════════════════════════════════════════
 CONFIDENCE SCORING
 ═══════════════════════════════════════════════════════
@@ -746,9 +671,29 @@ CONFIDENCE SCORING
 - Set confidence = 0.95 for all clearly stated values.
 - Set confidence = 0.90 if the value required interpretation of context.
 - Never set confidence above 0.99.
-
-Return JSON following the ExtractionResponse schema.
-        """
+═══════════════════════════════════════════════════════════════════
+FEATURES (features) — for PDFs:
+═══════════════════════════════════════════════════════════════════
+- Look in the first 2-3 pages for marketing/feature sections
+- Extract bullet-point features if present
+- Same decision tree as HTML: dedicated section → labeled paragraphs → bullets
+- Return as JSON array of strings
+- Empty array [] if no features found
+- DO NOT fabricate features
+═══════════════════════════════════════════════════════════════════
+OUTPUT JSON SCHEMA:
+{{
+  "product_detected": true/false,
+  "product_type": "category name or null",
+  "image_url": "absolute URL or null",
+  "short_description": "1-2 sentence summary or null",
+  "long_description": "3-5 sentence description or null",
+  "features": ["feature 1", "feature 2", ...],
+  "attributes": [
+    {{"name": "Attribute Name", "value": "value", "unit": "unit or null", "confidence": 0.95}}
+  ]
+}}
+The `features` field is REQUIRED. Return [] if no features found.        """
         return {
             'prompt': prompt,
             'response_schema': 'ExtractionResponse',
