@@ -1,16 +1,31 @@
 from typing import Dict, List, Optional, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Dict, List, Optional, Literal
-
 
 class ExtractedAttribute(BaseModel):
     name: str = Field(description="Attribute name in Title Case")
     value: Optional[str] = Field(default=None, description="Extracted value")  
     unit: Optional[str] = Field(default=None, description="Unit of measurement")
-    confidence: float = Field(ge=0.0, le=1.0, description="Extraction confidence")
+    confidence: float = Field(default=0.9, ge=0.0, le=1.0, description="Extraction confidence")
+    confidence_score: Optional[float] = Field(default=None, ge=0.0, le=1.0, description="Alias for confidence")
     source_section: Optional[str] = Field(default=None, description="Which part of document")
-
-
+    extraction_algorithm: Optional[str] = Field(default="Algo 1", description="Which algorithm extracted this")
+    extraction_source: Optional[str] = Field(default="html", description="html or pdf")
+    sources: List[str] = Field(default_factory=list, description="Source URLs")
+    
+    @model_validator(mode='before')
+    @classmethod
+    def normalize_confidence(cls, data):
+        if isinstance(data, dict):
+            if 'confidence_score' in data and 'confidence' not in data:
+                data['confidence'] = data['confidence_score']
+            elif 'confidence' in data and 'confidence_score' not in data:
+                data['confidence_score'] = data['confidence']
+        return data
+    
+    class Config:
+        extra = "ignore"  # Ignore unknown fields like 'merged_from'
+        populate_by_name = True
 class ExtractionResponse(BaseModel):
     attributes: List[ExtractedAttribute]
     product_detected: bool = Field(description="Is this actually the right product?")

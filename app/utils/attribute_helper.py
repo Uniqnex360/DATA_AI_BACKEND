@@ -103,12 +103,19 @@ async def save_attributes_normalized(
                     logger.error(f"Failed to link category {category_id} to attribute {attribute.id}: {e}")
             if attr_value is not None and str(attr_value).strip():
                 try:
-                    attr_val = await get_or_create_attribute_value(
-                        db, attribute.id, str(attr_value).strip(), str(attr_uom) if attr_uom else None
-                    )
-                    await ensure_product_attribute_value_link(db, product.id, attr_val.id)
+                    # ✅ Use a savepoint so failure here doesn't affect other attributes
+                    async with db.begin_nested() as savepoint:
+                        attr_val = await get_or_create_attribute_value(
+                            db, attribute.id, str(attr_value).strip(), str(attr_uom) if attr_uom else None
+                        )
+                        await ensure_product_attribute_value_link(db, product.id, attr_val.id)
                 except Exception as e:
                     logger.error(f"Failed to save attribute value '{attr_value}' for '{attr_name}': {e}")
+                    # ✅ savepoint auto-rolls back on exception, rest of transaction continues
+                    try:
+                        await savepoint.rollback()
+                    except:
+                        pass
             saved_count += 1
         except Exception as e:
             logger.error(f"Unexpected error processing attribute {attr.get('name', 'unknown')}: {e}", exc_info=True)
@@ -174,7 +181,7 @@ async def get_or_create_attribute(db: AsyncSession, name: str) -> Attribute:
             logger.info(f"Created new attribute: {name} (id: {attribute.id})")
             return attribute
         except Exception as flush_error:
-            await db.rollback()
+            db.expunge_all()
             logger.warning(f"Race condition for '{name}', trying lookup again: {flush_error}")
             all_attrs_stmt = select(Attribute)
             result = await db.execute(all_attrs_stmt)
@@ -241,7 +248,7 @@ async def ensure_product_attribute_link(
             await db.flush()  
             logger.info(f"Linked product {product_id} to attribute {attribute_id}")
         except Exception as e:
-            await db.rollback()
+            db.expunge_all()
             logger.info(f"Link already exists for product {product_id} and attribute {attribute_id}")
     except Exception as e:
         logger.error(f"Error linking product {product_id} to attribute {attribute_id}: {e}")
@@ -271,7 +278,7 @@ async def ensure_category_attribute_link(
             await db.flush()
             logger.info(f"Linked category {category_id} to attribute {attribute_id}")
         except Exception as e:
-            await db.rollback()
+            db.expunge_all()
             logger.info(f"Link already exists for category {category_id} and attribute {attribute_id}")
             
     except Exception as e:
@@ -302,7 +309,7 @@ async def ensure_product_attribute_value_link(
             await db.flush()
             logger.info(f"Linked product {product_id} to attribute value {attribute_value_id}")
         except Exception as e:
-            await db.rollback()
+            db.expunge_all()
             logger.info(f"Link already exists for product {product_id} and value {attribute_value_id}")
             
     except Exception as e:
