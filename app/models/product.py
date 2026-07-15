@@ -1,6 +1,7 @@
 from app.models.base import UUIDModel
-from typing import Optional,Dict,List,Any, Text
-from sqlmodel import Field,Column,JSON,Index
+from typing import Optional,Dict,List,Any
+from sqlalchemy import Text
+from sqlmodel import Field, Column, JSON, Index
 from datetime import datetime
 from typing import List
 from uuid import UUID, uuid4
