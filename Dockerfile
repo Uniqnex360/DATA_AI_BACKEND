@@ -1,6 +1,14 @@
 FROM python:3.12-slim
 
 WORKDIR /app
+ENV HF_HUB_OFFLINE=1
+ENV TRANSFORMERS_OFFLINE=1
+ENV HF_DATASETS_OFFLINE=1
+ENV TRANSFORMERS_CACHE=/app/hf_cache
+ENV HF_HOME=/app/hf_cache
+ENV TOKENIZERS_PARALLELISM=false
+ENV OMP_NUM_THREADS=1
+ENV MKL_NUM_THREADS=1
 
 RUN apt-get update && apt-get install -y \
     wget \
@@ -30,8 +38,6 @@ RUN apt-get update && apt-get install -y \
     libvulkan1 \
     && rm -rf /var/lib/apt/lists/*
 ENV PIP_DEFAULT_TIMEOUT=200
-ENV TRANSFORMERS_CACHE=/app/hf_cache
-ENV HF_HOME=/app/hf_cache
 COPY requirements.txt .
 COPY constraints.txt .
 
@@ -43,7 +49,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --retries 10 --timeout 200 \
       --extra-index-url https://download.pytorch.org/whl/cpu \
       -r requirements.txt -c constraints.txt
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+RUN HF_HUB_OFFLINE=0 TRANSFORMERS_OFFLINE=0 \
+    python -c "from sentence_transformers import SentenceTransformer; model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu'); print(' Model cached at /app/hf_cache')"
 
 COPY alembic.ini .
 COPY alembic ./alembic
