@@ -1,5 +1,5 @@
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from typing import Optional,List,Dict
 from datetime import datetime
 class ProjectStats(BaseModel):
@@ -50,18 +50,34 @@ class ProductAggregationResponse(BaseModel):
     attributes_count: int
     confidence: float
     message: str
-
 class FinalAttribute(BaseModel):
     name: str
     value: str
     unit: Optional[str] = None
-    confidence: float = Field(..., validation_alias="confidence_score") 
-    sources: List[str] = []     
-    source_ids: List[str] = []         
-    original_values: List[str] = []    
+    confidence: float = Field(default=0.9, ge=0.0, le=1.0)
+    confidence_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    sources: List[str] = Field(default_factory=list)
+    source_ids: List[str] = Field(default_factory=list)
+    original_values: List[str] = Field(default_factory=list)
     extraction_algorithm: Optional[str] = None
-    merged_from: List[str] = []
-    extraction_source: Optional[str] = None   
+    merged_from: List[str] = Field(default_factory=list)
+    extraction_source: Optional[str] = None
+    
+    @model_validator(mode='before')
+    @classmethod
+    def normalize_confidence(cls, data):
+        if isinstance(data, dict):
+            if 'confidence_score' in data and data['confidence_score'] is not None:
+                if 'confidence' not in data or data['confidence'] is None:
+                    data['confidence'] = data['confidence_score']
+            elif 'confidence' in data and data['confidence'] is not None:
+                if 'confidence_score' not in data or data['confidence_score'] is None:
+                    data['confidence_score'] = data['confidence']
+        return data
+    
+    class Config:
+        extra = "ignore"
+        populate_by_name = True
 
 class UnifiedStandardizedResponse(BaseModel):
     attributes: List[FinalAttribute]
