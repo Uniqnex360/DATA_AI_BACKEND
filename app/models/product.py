@@ -1,5 +1,5 @@
 from app.models.base import UUIDModel
-from typing import Optional,Dict,List,Any
+from typing import Optional,Dict,List,Any, Text
 from sqlmodel import Field,Column,JSON,Index
 from datetime import datetime
 from typing import List
@@ -29,6 +29,8 @@ class Product(UUIDModel,table=True):
     industry_id: Optional[UUID] = Field(foreign_key="industry_master.id", default=None, index=True)
     industry_name: Optional[str] = Field(default=None) 
     industry_code: Optional[str] = Field(default=None)
+    failure_reason: Optional[str] = Field(default=None, sa_column=Column(Text))
+    failed_at: Optional[datetime] = Field(default=None)
     taxonomy: Optional[str] = Field(default=None, index=True) 
     category_1:Optional[str]=None
     category_2: Optional[str] = Field(default=None)
