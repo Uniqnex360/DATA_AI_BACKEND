@@ -1826,6 +1826,82 @@ async def serialize_products_with_attributes(db: AsyncSession, product: Product)
     return product_dict
 
 
+# @router.get("/project/{project_id}/products-with-movement")
+# async def get_products_with_movement(
+#     project_id: str,
+#     db: AsyncSession = Depends(get_session)
+# ) -> Dict[str, Any]:
+#     try:
+#         stmt = (
+#             select(Product, ProjectProductLink)
+#             .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+#             .where(ProjectProductLink.project_id == project_id)
+#         )
+#         result = await db.execute(stmt)
+#         rows = result.all()
+#         aggregation_products = []
+#         enrichment_products = []
+#         completed_products = []
+#         for product, link in rows:
+#             product_dict = await serialize_products_with_attributes(db, product)
+#             product_dict["enrichment_status"] = link.enrichment_status
+#             if link.enrichment_status == "pending":
+#                 product_dict["attributes"] = {}
+#                 product_dict["completeness_score"] = 0.0
+#                 product_dict["data_quality_score"] = 0.0
+#             product_dict['failure_reason']=product.failure_reason
+#             product_dict["failed_at"] = product.failed_at.isoformat() if product.failed_at else None
+#             if product_dict.get("attributes"):
+#                 product_dict["attributes"] = deduplicate_product_attributes(
+#                     product_dict["attributes"]
+#                 )
+#             if product.workflow_stage == "aggregation":
+#                 aggregation_products.append(product_dict)
+#             elif product.workflow_stage == "enrichment":
+#                 enrichment_products.append(product_dict)
+#             if link.enrichment_status == "completed":
+#                 completed_products.append({
+#                     "id": str(product.id),
+#                     "product_code": product.product_code,
+#                     "product_name": product.product_name,
+#                     "completeness_score": product.completeness_score,
+#                     "workflow_stage": product.workflow_stage,
+#                     "moved_to": 'aggregation' if product.completeness_score >= 90 else 'enrichment'
+#                 })
+#             elif link.enrichment_status == "failed":
+#                 completed_products.append({
+#                     "id": str(product.id),
+#                     "product_code": product.product_code,
+#                     "product_name": product.product_name,
+#                     "completeness_score": product.completeness_score,
+#                     "workflow_stage": product.workflow_stage,
+#                     "moved_to": "failed",
+#                     "failure_reason": product.failure_reason,
+#                     "failed_at": product.failed_at.isoformat() if product.failed_at else None
+#                 })
+#         latest_product_time = None
+#         all_products = aggregation_products + enrichment_products
+#         if all_products:
+#             latest_product_time = max(
+#                 (p.get("updated_at")
+#                  for p in all_products if p.get("updated_at")),
+#                 default=None
+#             )
+        
+#         return {
+#             "products": aggregation_products + enrichment_products, 
+#             "completed": completed_products, 
+#             "summary": {
+#                 "total_aggregation": len(aggregation_products),
+#                 "total_enrichment": len(enrichment_products),
+#                 "total_completed": len([c for c in completed_products if c.get("moved_to") != "failed"]),
+#                 "total_failed": len([c for c in completed_products if c.get("moved_to") == "failed"]),
+#             },
+#             "last_updated": latest_product_time.isoformat() if latest_product_time else now_ist().isoformat()
+#         }
+#     except Exception as e:
+#         logger.error(f"Failed to get products with movement: {e}")
+#         raise HTTPException(status_code=500, detail=str(e))
 @router.get("/project/{project_id}/products-with-movement")
 async def get_products_with_movement(
     project_id: str,
@@ -1839,26 +1915,39 @@ async def get_products_with_movement(
         )
         result = await db.execute(stmt)
         rows = result.all()
+
         aggregation_products = []
         enrichment_products = []
         completed_products = []
+
         for product, link in rows:
+            # 1. Serialize the basic product data
             product_dict = await serialize_products_with_attributes(db, product)
+            
+            # 2. Add the specific status and failure info you need
             product_dict["enrichment_status"] = link.enrichment_status
+            product_dict["failure_reason"] = product.failure_reason # Added this
+            product_dict["failed_at"] = product.failed_at.isoformat() if product.failed_at else None # Added this
+            
+            # 3. Handle pending state cleanup
             if link.enrichment_status == "pending":
                 product_dict["attributes"] = {}
                 product_dict["completeness_score"] = 0.0
                 product_dict["data_quality_score"] = 0.0
-            product_dict['failure_reason']=product.failure_reason
-            product_dict["failed_at"] = product.failed_at.isoformat() if product.failed_at else None
+            
+            # 4. Apply deduplication
             if product_dict.get("attributes"):
                 product_dict["attributes"] = deduplicate_product_attributes(
                     product_dict["attributes"]
                 )
+
+            # 5. SPLIT into the specific lists the frontend expects
             if product.workflow_stage == "aggregation":
                 aggregation_products.append(product_dict)
             elif product.workflow_stage == "enrichment":
                 enrichment_products.append(product_dict)
+
+            # 6. Populate the summary for 'completed' or 'failed' tracking
             if link.enrichment_status == "completed":
                 completed_products.append({
                     "id": str(product.id),
@@ -1873,23 +1962,24 @@ async def get_products_with_movement(
                     "id": str(product.id),
                     "product_code": product.product_code,
                     "product_name": product.product_name,
-                    "completeness_score": product.completeness_score,
-                    "workflow_stage": product.workflow_stage,
                     "moved_to": "failed",
                     "failure_reason": product.failure_reason,
                     "failed_at": product.failed_at.isoformat() if product.failed_at else None
                 })
+
+        # Calculate latest update time
         latest_product_time = None
-        all_products = aggregation_products + enrichment_products
-        if all_products:
+        all_processed = aggregation_products + enrichment_products
+        if all_processed:
             latest_product_time = max(
-                (p.get("updated_at")
-                 for p in all_products if p.get("updated_at")),
+                (p.get("updated_at") for p in all_processed if p.get("updated_at")),
                 default=None
             )
-        
+
+        # RETURN WITH THE KEYS THE FRONTEND EXPECTS
         return {
-            "products": aggregation_products + enrichment_products, 
+            "aggregation_products": aggregation_products, # Used by setAggregationProducts
+            "enrichment_products": enrichment_products,   # Used by setEnrichmentProducts
             "completed": completed_products, 
             "summary": {
                 "total_aggregation": len(aggregation_products),
@@ -1902,7 +1992,6 @@ async def get_products_with_movement(
     except Exception as e:
         logger.error(f"Failed to get products with movement: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/project/{project_id}/status")
 async def get_project_aggregation_status(
