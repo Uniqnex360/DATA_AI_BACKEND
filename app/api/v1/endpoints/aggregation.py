@@ -598,8 +598,17 @@ async def merge_dynamic_attributes(
                     ProductAttributeLinkModel.attribute_id == attribute.id,
                 )
                 if not (await db.execute(link_stmt)).scalars().first():
-                    db.add(ProductAttributeLinkModel(
-                        product_id=product.id, attribute_id=attribute.id))
+                    # ✅ Check pending objects too
+                    already_pending = False
+                    for obj in db.new:
+                        if isinstance(obj, ProductAttributeLinkModel):
+                            if (obj.product_id == product.id and 
+                                obj.attribute_id == attribute.id):
+                                already_pending = True
+                                break
+                    if not already_pending:
+                        db.add(ProductAttributeLinkModel(
+                            product_id=product.id, attribute_id=attribute.id))
                 seen_attr_pairs.add(attr_pair)
             val_stmt = select(AttributeValue).where(
                 AttributeValue.attribute_id == attribute.id,
@@ -630,10 +639,19 @@ async def merge_dynamic_attributes(
                     ProductAttributeValueLinkModel.attribute_value_id == attr_val.id,
                 )
                 if not (await db.execute(pv_stmt)).scalars().first():
-                    db.add(ProductAttributeValueLinkModel(
-                        product_id=product.id,
-                        attribute_value_id=attr_val.id,
-                    ))
+                    # ✅ Check pending objects too (prevents in-batch duplicates)
+                    already_pending = False
+                    for obj in db.new:
+                        if isinstance(obj, ProductAttributeValueLinkModel):
+                            if (obj.product_id == product.id and 
+                                obj.attribute_value_id == attr_val.id):
+                                already_pending = True
+                                break
+                    if not already_pending:
+                        db.add(ProductAttributeValueLinkModel(
+                            product_id=product.id,
+                            attribute_value_id=attr_val.id,
+                        ))
                 seen_value_pairs.add(val_pair)
             if product.category_id:
                 cat_attr_pair = (product.category_id, attribute.id)
@@ -643,10 +661,19 @@ async def merge_dynamic_attributes(
                         CategoryAttribute.attribute_id == attribute.id,
                     )
                     if not (await db.execute(ca_stmt)).scalars().first():
-                        db.add(CategoryAttribute(
-                            category_id=product.category_id,
-                            attribute_id=attribute.id,
-                        ))
+                        # ✅ Check pending objects too
+                        already_pending = False
+                        for obj in db.new:
+                            if isinstance(obj, CategoryAttribute):
+                                if (obj.category_id == product.category_id and 
+                                    obj.attribute_id == attribute.id):
+                                    already_pending = True
+                                    break
+                        if not already_pending:
+                            db.add(CategoryAttribute(
+                                category_id=product.category_id,
+                                attribute_id=attribute.id,
+                            ))
                     seen_cat_attr_pairs.add(cat_attr_pair)
         except Exception as e:
             logger.error(
@@ -917,11 +944,12 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             new_attrs = [attr for attr in ai_attributes if attr not in set(
                                 primary_attrs or [])]
                             has_gaps = bool(missing_attrs or new_attrs)
-                            if has_gaps and missing_llm_provider and missing_llm_provider != llm_provider:
+                            should_run_algo2 = bool(missing_attrs) and missing_llm_provider and missing_llm_provider != llm_provider
+                            if should_run_algo2:
                                 logger.info(
                                     f"Algo 2 triggered for {product.product_code}: missing={missing_attrs}, new={new_attrs}")
-                                algo2_primary = list(
-                                    set(missing_attrs + new_attrs))
+                                algo2_primary = list(set(missing_attrs))
+
                                 algo2_result = await aggregate_with_retry(
                                     db_session=db_session,
                                     mpn=product.product_code,
@@ -1020,11 +1048,11 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             new_attrs = [attr for attr in ai_attributes if attr not in set(
                                 primary_attrs or [])]
                             has_gaps = bool(missing_attrs or new_attrs)
-                            if has_gaps and missing_llm_provider and missing_llm_provider != llm_provider:
+                            should_run_algo2 = bool(missing_attrs) and missing_llm_provider and missing_llm_provider != llm_provider
+                            if should_run_algo2:
                                 logger.info(
                                     f"Algo 2 triggered for {product.product_code}: missing={missing_attrs}, new={new_attrs}")
-                                algo2_primary = list(
-                                    set(missing_attrs + new_attrs))
+                                algo2_primary = list(set(missing_attrs))
                                 algo2_result = await aggregate_with_retry(
                                     db_session=db_session,
                                     mpn=product.product_code,
@@ -1391,10 +1419,12 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     new_attrs = [attr for attr in ai_data if attr not in set(
                         primary_attrs or [])]
                     has_gaps = bool(missing_attrs or new_attrs)
-                    if has_gaps and missing_llm_provider and missing_llm_provider != llm_provider:
+                    should_run_algo2 = bool(missing_attrs) and missing_llm_provider and missing_llm_provider != llm_provider
+
+                    if should_run_algo2:
                         logger.info(
                             f"Algo 2 triggered for {product.product_code}: missing={missing_attrs}, new={new_attrs}")
-                        algo2_primary = list(set(missing_attrs + new_attrs))
+                        algo2_primary = list(set(missing_attrs))
                         algo2_result = await aggregate_with_retry(
                             db_session=db_session,
                             mpn=product.product_code,
@@ -1478,10 +1508,12 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     new_attrs = [attr for attr in ai_data if attr not in set(
                         primary_attrs or [])]
                     has_gaps = bool(missing_attrs or new_attrs)
-                    if has_gaps and missing_llm_provider and missing_llm_provider != llm_provider:
+                    should_run_algo2 = bool(missing_attrs) and missing_llm_provider and missing_llm_provider != llm_provider
+
+                    if should_run_algo2:
                         logger.info(
                             f"Algo 2 triggered for {product.product_code}: missing={missing_attrs}, new={new_attrs}")
-                        algo2_primary = list(set(missing_attrs + new_attrs))
+                        algo2_primary = list(set(missing_attrs))
                         algo2_result = await aggregate_with_retry(
                             db_session=db_session,
                             mpn=product.product_code,
