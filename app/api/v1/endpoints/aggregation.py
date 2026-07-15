@@ -552,6 +552,9 @@ async def merge_dynamic_attributes(
 ) -> None:
     from app.models.attribute import Attribute, AttributeValue
     from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
+    seen_attr_pairs = set()      # (product_id, attribute_id)
+    seen_value_pairs = set()     # (product_id, attr_value_id)
+    seen_cat_attr_pairs = set() 
     for attr_name, ai_val in ai_data.items():
         try:
             if isinstance(ai_val, dict):
@@ -588,13 +591,16 @@ async def merge_dynamic_attributes(
                 )
                 db.add(attribute)
                 await db.flush()
-            link_stmt = select(ProductAttributeLinkModel).where(
-                ProductAttributeLinkModel.product_id == product.id,
-                ProductAttributeLinkModel.attribute_id == attribute.id,
-            )
-            if not (await db.execute(link_stmt)).scalars().first():
-                db.add(ProductAttributeLinkModel(
-                    product_id=product.id, attribute_id=attribute.id))
+            attr_pair = (product.id, attribute.id)
+            if attr_pair not in seen_attr_pairs:
+                link_stmt = select(ProductAttributeLinkModel).where(
+                    ProductAttributeLinkModel.product_id == product.id,
+                    ProductAttributeLinkModel.attribute_id == attribute.id,
+                )
+                if not (await db.execute(link_stmt)).scalars().first():
+                    db.add(ProductAttributeLinkModel(
+                        product_id=product.id, attribute_id=attribute.id))
+                seen_attr_pairs.add(attr_pair)
             val_stmt = select(AttributeValue).where(
                 AttributeValue.attribute_id == attribute.id,
                 AttributeValue.value == str(value),
@@ -617,25 +623,31 @@ async def merge_dynamic_attributes(
                 attr_val.validation_value = str(value)
                 attr_val.validation_uom = str(uom) if uom else None
                 db.add(attr_val)
-            pv_stmt = select(ProductAttributeValueLinkModel).where(
-                ProductAttributeValueLinkModel.product_id == product.id,
-                ProductAttributeValueLinkModel.attribute_value_id == attr_val.id,
-            )
-            if not (await db.execute(pv_stmt)).scalars().first():
-                db.add(ProductAttributeValueLinkModel(
-                    product_id=product.id,
-                    attribute_value_id=attr_val.id,
-                ))
-            if product.category_id:
-                ca_stmt = select(CategoryAttribute).where(
-                    CategoryAttribute.category_id == product.category_id,
-                    CategoryAttribute.attribute_id == attribute.id,
+            val_pair = (product.id, attr_val.id)
+            if val_pair not in seen_value_pairs:
+                pv_stmt = select(ProductAttributeValueLinkModel).where(
+                    ProductAttributeValueLinkModel.product_id == product.id,
+                    ProductAttributeValueLinkModel.attribute_value_id == attr_val.id,
                 )
-                if not (await db.execute(ca_stmt)).scalars().first():
-                    db.add(CategoryAttribute(
-                        category_id=product.category_id,
-                        attribute_id=attribute.id,
+                if not (await db.execute(pv_stmt)).scalars().first():
+                    db.add(ProductAttributeValueLinkModel(
+                        product_id=product.id,
+                        attribute_value_id=attr_val.id,
                     ))
+                seen_value_pairs.add(val_pair)
+            if product.category_id:
+                cat_attr_pair = (product.category_id, attribute.id)
+                if cat_attr_pair not in seen_cat_attr_pairs:
+                    ca_stmt = select(CategoryAttribute).where(
+                        CategoryAttribute.category_id == product.category_id,
+                        CategoryAttribute.attribute_id == attribute.id,
+                    )
+                    if not (await db.execute(ca_stmt)).scalars().first():
+                        db.add(CategoryAttribute(
+                            category_id=product.category_id,
+                            attribute_id=attribute.id,
+                        ))
+                    seen_cat_attr_pairs.add(cat_attr_pair)
         except Exception as e:
             logger.error(
                 f"Failed to save attribute {attr_name} to normalized tables: {e}")
