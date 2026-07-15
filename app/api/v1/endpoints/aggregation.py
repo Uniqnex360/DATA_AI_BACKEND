@@ -1097,8 +1097,8 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                         error_type = aggregation_result.get(
                             'error_type', 'AggregationError')
                         product.enrichment_status = 'failed'
-                        product.failure_reason = f"{error_type}: {error_msg}"[
-                            :1000]
+                        product.failure_reason = f"{error_type}: {error_msg}"[:1000]
+                        product.failed_at=now_ist()
                         link.enrichment_status = 'failed'
                         db_session.add(link)
                         db_session.add(product)
