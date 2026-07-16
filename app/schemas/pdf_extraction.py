@@ -31,5 +31,12 @@ class ProductIdentificationItem(BaseModel):
 
 class ProductIdentificationResponse(BaseModel):
     products: List[ProductIdentificationItem]
+class MappingPair(BaseModel):
+    variant: str
+    canonical: str
+
 class AttributeMappingResponse(BaseModel):
-    mapping: Dict[str, str] = Field(..., description="Mapping from variant to canonical attribute names")
+    mapping: Dict[str, str] = Field(
+        ..., 
+        description="Dictionary mapping from variant attribute names (keys) to canonical names (values)"
+    )

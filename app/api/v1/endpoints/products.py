@@ -647,3 +647,54 @@ async def get_all_taxonomies(db: AsyncSession = Depends(get_session)):
             status_code=500,
             detail="Failed to fetch taxonomies"
         )
+@router.get("/{product_id}", response_model=Dict[str, Any])
+async def get_product_by_id(
+    product_id: UUID,
+    db: AsyncSession = Depends(get_session)
+):
+    try:
+        # Fetch the product
+        product = await db.get(Product, product_id)
+        if not product:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Product not found"
+            )
+        
+        # Convert to dict
+        p_dict = product.dict() if hasattr(product, 'dict') else product.__dict__
+        
+        # Build attributes from normalized tables
+        attributes_dict = {}
+        try:
+            val_stmt = (
+                select(Attribute.attribute_name,
+                       AttributeValue.value, AttributeValue.uom)
+                .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
+                .join(ProductAttributeValueLinkModel,
+                      ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+                .where(ProductAttributeValueLinkModel.product_id == product_id)
+            )
+            val_result = await db.execute(val_stmt)
+            for attr_name, value, uom in val_result.all():
+                attributes_dict[attr_name] = {
+                    'name': attr_name,
+                    'value': value or '',
+                    'unit': uom or '',
+                    'sources': []
+                }
+        except Exception as e:
+            logger.error(f"Failed to fetch attributes: {e}")
+        
+        p_dict['attributes'] = attributes_dict
+        
+        return p_dict
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to fetch product {product_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch product details"
+        )

@@ -2,7 +2,7 @@ import asyncio
 import logging
 from re import S
 from typing import List, Optional, Dict
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 from app import llm
 from app.core.rate_limiter import openai_limiter
 from app.rules.rule_engine import RuleEngine
@@ -27,26 +27,24 @@ class ProductContext(BaseModel):
 
 
 class CleanedAttribute(BaseModel):
-    id: str
+    id: Optional[str] = None
     name: str
-    original_value: str
+    original_value: str = ""
     cleaned_value: str
     unit: Optional[str] = None
-    cleaning_reason: str
+    cleaning_reason: str = ""
     issue_detected: bool = False
-
-
 class LLMCleaningResponse(BaseModel):
     cleaned_attributes: List[CleanedAttribute]
     summary: str = Field(description="Brief summary of cleaning actions taken")
 
 
 class LLMCleaningService:
-    # def __init__(self,llm_provider:str, model: str = "gpt-4o-mini-mini", max_retries: int = 3, concurrency_limit: int = 10):
-    #     self.llm_provider=llm_provider
-    #     self.model = model
-    #     self.max_retries = max_retries
-    #     self._semaphore = asyncio.Semaphore(concurrency_limit)
+    
+    
+    
+    
+    
     def __init__(
         self,
         llm_provider: str,
@@ -107,7 +105,7 @@ class LLMCleaningService:
                 summary="No attributes to clean"
             )
         async with self._semaphore:
-            # prompt = self._build_prompt(attributes, context)
+            
             prompt = await self._get_dynamic_prompt(attributes, context)
             if not prompt:
                 logger.warning(
@@ -126,7 +124,7 @@ class LLMCleaningService:
                         llm_provider=self.llm_provider,
                         model=self.model,
                         estimated_tokens=estimated_tokens,
-                        max_tokens=2000
+                        max_tokens=min(4000 + len(attributes) * 100, 8000)  
                     )
                     logger.info(
                         f"LLM response received, cleaned {len(response.cleaned_attributes)} attributes")
@@ -166,7 +164,7 @@ class LLMCleaningService:
             return None
 
         try:
-            # Try dynamic prompt first
+            
             context = {
                 "attribute_names": attribute_names,
                 "name_list": "\n".join([f"- {name}" for name in sorted(attribute_names)]),
@@ -197,9 +195,29 @@ class LLMCleaningService:
             )
 
             if response and hasattr(response, 'mapping'):
-                return response.mapping
-            elif isinstance(response, dict):
-                return response.get('mapping', {})
+                # Handle Dictionary format: {"Color": "Color"}
+                if isinstance(response.mapping, dict):
+                    return response.mapping
+                
+                # Handle List of objects format: [{"variant": "...", "canonical": "..."}]
+                elif isinstance(response.mapping, list):
+                    # We use getattr or dict check to be safe with different object types
+                    mapping_dict = {}
+                    for p in response.mapping:
+                        if hasattr(p, 'variant'): # It's a Pydantic object
+                            mapping_dict[p.variant] = p.canonical
+                        elif isinstance(p, dict): # It's a raw dict
+                            mapping_dict[p.get('variant')] = p.get('canonical')
+                    return mapping_dict
+
+            # Fallback for raw dictionary responses
+            if isinstance(response, dict):
+                raw = response.get('mapping', {})
+                if isinstance(raw, dict):
+                    return raw
+                if isinstance(raw, list):
+                    return {p.get('variant', ''): p.get('canonical', '') for p in raw if isinstance(p, dict)}
+            # --- UPDATED LOGIC END ---
 
             return None
 
@@ -241,11 +259,10 @@ RULES:
 
 Return a JSON object with mapping from original to canonical:
 {{
-  "mapping": {{
-    "COLOUR": "Color",
-    "VOLTAGE": "Voltage",
-    ...
-  }}
+  "mapping": [
+    {{"variant": "COLOUR", "canonical": "Color"}},
+    {{"variant": "VOLTAGE", "canonical": "Voltage"}}
+  ]
 }}
 
 IMPORTANT: Include EVERY attribute name from the input list in the mapping.

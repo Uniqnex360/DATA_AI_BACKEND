@@ -365,6 +365,19 @@ async def get_task_status(task_id: str, db: AsyncSession = Depends(get_session))
             f"Error getting task status for {task_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Failed to fetch task status")
+import re
+def _normalize_attr_name_for_comparison(name: str) -> str:
+    """Remove units in parentheses for comparison.
+    
+    'Tank Capacity (gal)' -> 'Tank Capacity'
+    'Dimensions (LxWxH)' -> 'Dimensions'
+    'Weight (lbs)' -> 'Weight'
+    """
+    if not name:
+        return ""
+    # Remove parenthetical content at end of string (units like (gal), (LxWxH))
+    normalized = re.sub(r'\s*\([^)]+\)\s*$', '', name).strip()
+    return normalized.lower()        
 async def save_cleaned_attributes(
     db_session: AsyncSession,
     product_id: str,
@@ -377,10 +390,44 @@ async def save_cleaned_attributes(
             return False
         updated = False
         for ca in cleaning_response.cleaned_attributes:
+            if not ca.id:
+                logger.warning(f"Skipping '{ca.name}' — Gemini response missing id, cannot match to DB row")
+                continue
+            if not ca.cleaned_value or not ca.cleaned_value.strip():
+                logger.warning(
+                    f"Skipping update for '{ca.name}' (id={ca.id}) — LLM returned empty value "
+                    f"(issue_detected={ca.issue_detected}). Original value preserved."
+                )
+                continue
             av_id = str(ca.id)
             attr_val = await db_session.get(AttributeValue, av_id)
             if not attr_val:
+                logger.warning(f"AttributeValue not found for id={ca.id} ('{ca.name}'), skipping")
                 continue
+
+            # ✅ now safe to use attr_val below
+            attr_check_stmt = select(Attribute).where(Attribute.id == attr_val.attribute_id)
+            attr_check_result = await db_session.execute(attr_check_stmt)
+            actual_attribute = attr_check_result.scalars().first()
+            if actual_attribute and ca.name:
+                actual_base = _normalize_attr_name_for_comparison(actual_attribute.attribute_name)
+                claimed_base = _normalize_attr_name_for_comparison(ca.name)
+                
+                if actual_base != claimed_base:
+                    # Real name mismatch - check if it's just a case difference
+                    if actual_attribute.attribute_name.strip().lower() != ca.name.strip().lower():
+                        logger.error(
+                            f"ID/name mismatch: id={ca.id} belongs to '{actual_attribute.attribute_name}' "
+                            f"but LLM labeled it '{ca.name}'. Skipping to prevent cross-attribute corruption."
+                        )
+                        continue
+                    else:
+                        # Just a case difference - this is OK
+                        logger.info(f"Case difference accepted for '{ca.name}'")
+            
+            # Use the original canonical name from DB
+            ca.name = actual_attribute.attribute_name
+
             old_value = str(attr_val.value or "")
             old_uom = attr_val.uom or ""
             final_val = str(ca.cleaned_value)
@@ -627,8 +674,13 @@ async def update_product_attributes(
                     )
                     if cleaning_result.cleaned_attributes:
                         cleaned = cleaning_result.cleaned_attributes[0]
-                        attr_val.value = cleaned.cleaned_value
-                        attr_val.uom = cleaned.unit or incoming.uom or ""
+                        if cleaned.cleaned_value and cleaned.cleaned_value.strip():
+                            attr_val.value = cleaned.cleaned_value
+                            attr_val.uom = cleaned.unit or incoming.uom or ""
+                        else:
+                            logger.warning(f"LLM returned empty for '{attr_name}', keeping user's input instead")
+                            attr_val.value = incoming.value
+                            attr_val.uom = incoming.uom or ""
                     else:
                         attr_val.value = incoming.value
                         attr_val.uom = incoming.uom or ""
@@ -800,8 +852,12 @@ async def bulk_update_product_attributes(
                     )
                     if cleaning_result.cleaned_attributes:
                         cleaned = cleaning_result.cleaned_attributes[0]
-                        attr_val.value = cleaned.cleaned_value
-                        attr_val.uom = cleaned.unit or ""
+                        if cleaned.cleaned_value and cleaned.cleaned_value.strip():
+                            attr_val.value = cleaned.cleaned_value
+                            attr_val.uom = cleaned.unit or ""
+                        else:
+                            logger.warning(f"LLM returned empty for '{attr_name}', keeping raw input instead")
+                            attr_val.value = raw_value
                     else:
                         attr_val.value = raw_value
                 except Exception as e:

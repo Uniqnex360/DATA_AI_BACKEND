@@ -7,6 +7,7 @@ from sqlalchemy import func
 from io import BytesIO
 from app.auth.dependencies import get_current_user
 from app.models.attribute import Attribute, AttributeValue
+from app.models.industry import Industry
 from app.models.pipeline import AuditTrail, RawExtraction, Source, SourcePriority
 from app.core.database import get_session, async_session_factory
 from app.models.product import Product
@@ -38,6 +39,7 @@ from app.utils.parsers import infer_taxonomy_for_row, parse_import_file
 from app.utils.matching import get_or_create_brand, get_or_create_vendor, get_or_create_industry
 from app.utils.sanitize import sanitize_ai_data
 from app.api.v1.endpoints.aggregation import extract_ai_value_text
+from app.sacred import fallback_extraction
 
 logger = logging.getLogger("extraction_router")
 router = APIRouter()
@@ -85,27 +87,27 @@ async def proxy_download(
     This avoids CORS issues and forces download instead of opening in browser.
     """
     try:
-        # Validate URL
+        
         parsed = urlparse(url)
         if not parsed.scheme or not parsed.netloc:
             raise HTTPException(status_code=400, detail="Invalid URL")
         
-        # Extract filename from URL
+        
         filename = parsed.path.split("/")[-1] or "download"
         
-        # If no extension, try to guess from content type later
+        
         if "." not in filename:
             filename = "download"
         
-        # Fetch the file
+        
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             response = await client.get(url)
             response.raise_for_status()
             
-            # Determine content type
+            
             content_type = response.headers.get("content-type", "application/octet-stream")
             
-            # Fix filename extension based on content type
+            
             if not filename.endswith((".pdf", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".webm")):
                 ext_map = {
                     "application/pdf": ".pdf",
@@ -427,8 +429,8 @@ def clean_numeric_string(value):
     return s
 
 
-@router.post("/batch-aggregate", status_code=status.HTTP_202_ACCEPTED)
-async def batch_aggregate(
+@router.post("/upload", status_code=status.HTTP_202_ACCEPTED)
+async def upload_file(
     request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
@@ -566,11 +568,13 @@ async def batch_aggregate(
             val_sku = clean_numeric_string(row.get("sku")) or None
             code = val_mpn or val_sku
             product = None
+            industry = None
+            target_industry_id = None
             is_reused = False
             try:
                 savepoint = await db.begin_nested()
                 if code:
-                    # Look for COMPLETED product globally
+                    
                     stmt = select(Product).where(
                         Product.product_code == str(code),
                         Product.enrichment_status == "completed"
@@ -579,7 +583,7 @@ async def batch_aggregate(
                     product = result.scalars().first()
 
                     if product:
-                        # Check if already linked to this project
+                        
                         link_stmt = select(ProjectProductLink).where(
                             ProjectProductLink.product_id == product.id,
                             ProjectProductLink.project_id == projectId
@@ -587,7 +591,7 @@ async def batch_aggregate(
                         link_result = await db.execute(link_stmt)
 
                         if not link_result.scalars().first():
-                            # Link existing product to this project
+                            
                             db.add(ProjectProductLink(
                                 project_id=projectId,
                                 product_id=product.id,
@@ -599,13 +603,13 @@ async def batch_aggregate(
                         updated_count += 1
 
                 if not is_reused:
-                    # ✅ Create product with ALL required fields in constructor
+                    
                     product = Product(
                         product_code=str(code),
                         workflow_stage=default_workflow_stage,
                         created_at=now_ist(),
                         enrichment_status="pending",
-                        # ✅ ADD ALL REQUIRED FIELDS HERE:
+                        
                         product_name=row.get("product_name") or row.get(
                             "name") or str(code) or "Unknown Product",
                         mpn=val_mpn,
@@ -634,7 +638,7 @@ async def batch_aggregate(
                         currency=row.get("currency", "USD"),
                     )
 
-                    # ✅ Handle numeric fields with error handling
+                    
                     try:
                         if row.get('weight'):
                             product.weight = str(row['weight']).replace(',', '')
@@ -649,7 +653,7 @@ async def batch_aggregate(
                     except ValueError as e:
                         logger.warning(f"Error parsing numeric field for {code}: {e}")
 
-                    # ✅ Set brand/vendor/industry relationships BEFORE flush
+                    
                     brand = await get_or_create_brand(db, row.get("brand"))
                     if brand:
                         product.brand_id = brand.id
@@ -669,11 +673,11 @@ async def batch_aggregate(
                         product.industry_id = industry.id
                         product.industry_name = industry.name
 
-                    # ✅ NOW add and flush to get product.id
+                    
                     db.add(product)
-                    await db.flush()  # Product now has an ID
+                    await db.flush()  
 
-                    # ✅ Create link AFTER product has an ID
+                    
                     db.add(ProjectProductLink(
                         project_id=projectId,
                         product_id=product.id,
@@ -683,13 +687,15 @@ async def batch_aggregate(
                     created_count += 1
 
                 else:
-                    # Reused product - just increment counter
+                    
                     updated_count += 1
+                    if product and product.industry_id:
+                        target_industry_id = product.industry_id
 
-                # ✅ Continue with attribute processing (this part is fine)
+                
                 dynamic_attrs = row.get('attributes', [])
 
-                # Also try attribute_name1..40 columns (fallback)
+                
                 if not dynamic_attrs:
                     for i in range(1, 41):
                         attr_name = row.get(f'attribute_name{i}')
@@ -702,7 +708,7 @@ async def batch_aggregate(
                                 'validation_uom': str(row.get(f'validation_uom{i}', '')).strip()
                             })
 
-                # Ensure category exists and link product
+                
                 path_parts = []
                 for i in range(1, 9):
                     cat = getattr(product, f'category_{i}', None)
@@ -711,12 +717,23 @@ async def batch_aggregate(
 
                 category_id = None
                 if path_parts:
-                    category_id = await ensure_category_from_path(db, path_parts)
-                    if category_id:
-                        product.category_id = category_id
-                        db.add(product)
+                    if not target_industry_id:
+                        target_industry_id = industry.id if (industry and hasattr(industry, 'id')) else None
+                    if not target_industry_id:   # ← separate check, only run fallback if STILL empty
+                        res = await db.execute(select(Industry).limit(1))
+                        fallback_industry = res.scalars().first()
+                        if fallback_industry:
+                            target_industry_id = fallback_industry.id
+                    try:
+                        
+                        category_id = await ensure_category_from_path(db, path_parts,industry_id=target_industry_id)
+                        if category_id:
+                            product.category_id = category_id
+                            db.add(product)
+                    except Exception as e:
+                         logger.error(f"Category creation failed for path {path_parts}: {e}")
 
-                # Save attributes to normalized tables
+                
                 if dynamic_attrs:
                     try:
                         await save_attributes_normalized(db, product, dynamic_attrs, category_id)
@@ -734,7 +751,7 @@ async def batch_aggregate(
                 logger.error(f"Failed to process product {code}: {e}", exc_info=True)
                 continue
         
-        # ✅ NEW: Update source status based on actual results
+        
         total_processed = created_count + updated_count
         if failed_count == 0 and total_processed == total_rows:
             new_source.status = "completed"
@@ -911,10 +928,10 @@ async def run_extraction_task(source_id: str, content: str):
                     if not product:
                         product = Product(
                             product_code=sku,
-                            # product_name=title or sku,
+                            
                             brand_name=brand,
                             mpn=sku,
-                            # project_id=source.project_id,
+                            
                             source_url=source.source_url,
                             attributes=raw_attributes,
                             enrichment_status='pending',
@@ -923,7 +940,7 @@ async def run_extraction_task(source_id: str, content: str):
                         db_session.add(product)
                         await db_session.flush()
 
-                        # Link product to project
+                        
                         db_session.add(ProjectProductLink(
                             project_id=source.project_id,
                             product_id=product.id
@@ -1050,10 +1067,10 @@ async def run_aggregation_task(source_id: str):
                     f"Project or use_case not found for source {source_id}")
                 return
             logger.info(f"Project use case {project.use_case}")
-            # stmt = select(Product).where(
-            #     ProjectProductLink.project_id,  == source.project_id,
-            #     Product.enrichment_status == 'pending'
-            # )
+            
+            
+            
+            
             stmt = select(Product).join(ProjectProductLink).where(
                 ProjectProductLink.project_id == source.project_id,
                 Product.enrichment_status == 'pending'
@@ -1072,65 +1089,65 @@ async def run_aggregation_task(source_id: str):
 
                     logger.info(f"Aggregating {idx+1}/{total}: {display_id}")
 
-                    # if product.dynamic_attributes:
-                    #     primary_attr_names = [
-                    #         attr['name'] for attr in product.dynamic_attributes
-                    #         if isinstance(attr, dict) and attr.get('name')]
-                    # if product.dynamic_attributes:
-                    #     for attr in product.dynamic_attributes:
-                    #         if isinstance(attr, dict) and attr.get('name'):
-                    #             existing_data[attr['name']] = {
-                    #                 'value': attr.get('value'),
-                    #                 'uom': attr.get('uom') or attr.get('unit')
-                    #             }
-                    # logger.info(
-                    #     f" EXISTING DATA BUILT for {product.product_code}:")
-                    # logger.info(
-                    #     f"   dynamic_attributes count: {len(product.dynamic_attributes) if product.dynamic_attributes else 0}")
-                    # logger.info(
-                    #     f"   existing_data keys: {list(existing_data.keys())}")
-                    # logger.info(
-                    #     f"   existing_data sample: {dict(list(existing_data.items())[:2])}")
-                    # for k, v in existing_data.items():
-                    #     logger.info(
-                    #         f"  {k}: value='{v.get('value')}', uom='{v.get('uom')}'")
-                    # if existing_data:
-                    #     logger.info(
-                    #         f" Excel attributes: {list(existing_data.keys())[:5]}")
-                    # logger.info(
-                    #     f"Primary attributes found in DB: {primary_attr_names}")
-                    # primary_attr_names = []
-                    # existing_data = {}
-                    # try:
-                    #     stmt = (
-                    #         select(AttributeValue)
-                    #         .join(ProductAttributeValueLinkModel,
-                    #               ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
-                    #         .where(ProductAttributeValueLinkModel.product_id == product.id)
-                    #     )
-                    #     result=await db_session.execute(stmt)
-                    #     attr_values=result.scalars().all()
-                    #     for av in attr_values:
-                    #         attr_stmt=select(Attribute).where(Attribute.id==av.attribute_id)
-                    #         attr_result=await db_session.execute(attr_stmt)
-                    #         attribute = attr_result.scalars().first()
-                    #         if attribute:
-                    #             attr_name=attribute.attribute_name
-                    #             primary_attr_names.append(attr_name)
-                    #             existing_data[attr_name] = {
-                    #                 'value': av.value,
-                    #                 'uom': av.uom or ''
-                    #             }
-                    # except Exception as e:
-                    #     logger.warning(f"Failed to read normalized attributes for {product.product_code}: {e}")
-                    # Get category expected attributes
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     category_attrs = []
                     if product.category_id:
                         category_attrs = await get_category_expected_attributes(
                             db_session, product.category_id
                         )
 
-                    # Get product's existing attributes
+                    
                     existing_data = {}
                     try:
                         stmt = (
@@ -1156,10 +1173,10 @@ async def run_aggregation_task(source_id: str):
                         logger.warning(
                             f"Failed to read existing attributes for {product.product_code}: {e}")
 
-                    # Merge: category attrs + existing attrs (deduplicated, category first)
+                    
                     existing_names = set(existing_data.keys())
                     primary_attr_names = list(
-                        category_attrs)  # Start with category
+                        category_attrs)  
                     for name in existing_names:
                         if name not in primary_attr_names:
                             primary_attr_names.append(name)
@@ -1270,20 +1287,20 @@ async def run_aggregation_task(source_id: str):
                                         "web_value") if isinstance(ai_val, dict) else ai_val
                                 else:
                                     ai_data_for_merge[ai_key] = ai_val
-                            # if product.dynamic_attributes and "validation" in use_case:
-                            #     for attr in product.dynamic_attributes:
-                            #         if isinstance(attr, dict) and attr.get('name'):
-                            #             attr_name = attr['name']
-                            #             if attr_name in ai_data_for_merge:
-                            #                 ai_val = ai_data_for_merge[attr_name]
-                            #                 if isinstance(ai_val, dict):
-                            #                     attr['validation_value'] = ai_val.get(
-                            #                         'value', '')
-                            #                     attr['validation_uom'] = ai_val.get(
-                            #                         'unit', '') or ai_val.get('uom', '')
-                            #                 else:
-                            #                     attr['validation_value'] = str(
-                            #                         ai_val) if ai_val else ''
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
+                            
                             if existing_data and "validation" in use_case:
                                 for attr_name, attr_data in existing_data.items():
                                     if attr_name in ai_data_for_merge:
@@ -1298,7 +1315,7 @@ async def run_aggregation_task(source_id: str):
                                                 ai_val) if ai_val else ''
                                             validation_uom = ''
 
-                                        # Update validation values in attribute_value table
+                                        
                                         try:
                                             val_stmt = select(AttributeValue).join(
                                                 ProductAttributeValueLinkModel,
@@ -1387,7 +1404,7 @@ async def run_aggregation_task(source_id: str):
                                     db_session.add(attr_value_obj)
                                     await db_session.flush()
 
-                                # Link Product → AttributeValue (always run)
+                                
                                 pv_stmt = select(ProductAttributeValueLinkModel).where(
                                     ProductAttributeValueLinkModel.product_id == product.id,
                                     ProductAttributeValueLinkModel.attribute_value_id == attr_value_obj.id,
@@ -1398,7 +1415,7 @@ async def run_aggregation_task(source_id: str):
                                         attribute_value_id=attr_value_obj.id
                                     ))
 
-                                # Link new attribute to the product's category (always run)
+                                
                                 if product.category_id:
                                     from app.models.attribute import CategoryAttribute
                                     ca_stmt = select(CategoryAttribute).where(

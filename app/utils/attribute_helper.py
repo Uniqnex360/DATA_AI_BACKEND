@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from uuid import uuid4
+from app.models import industry
 from app.models.product import Product
 from app.models.attribute import Attribute, AttributeValue
 from app.models.category import Category
@@ -26,7 +27,7 @@ async def get_category_expected_attributes(db: AsyncSession, category_id: UUID) 
     except Exception as e:
         logger.warning(f"Failed to get category attributes for {category_id}: {e}")
         return []
-async def ensure_category_from_path(db: AsyncSession, path_parts: list):
+async def ensure_category_from_path(db: AsyncSession, path_parts: list,industry_id:Optional[UUID]=None):
     try:
         if not path_parts:
             return None
@@ -42,9 +43,14 @@ async def ensure_category_from_path(db: AsyncSession, path_parts: list):
                 stmt = select(Category).where(Category.full_path == current_path)
                 result = await db.execute(stmt)
                 existing = result.scalars().first()
+                if industry_id is None:
+                    logger.warning(f"No industry_id for category path {path_parts}, category creation may fail")
                 if existing:
                     parent_id = existing.id
                     leaf_id = existing.id
+                    if industry_id and existing.industry_id:
+                        existing.industry_id = industry_id
+                        db.add(existing)
                     continue
                 is_leaf = (idx == len(path_parts) - 1)
                 category = Category(
@@ -52,12 +58,13 @@ async def ensure_category_from_path(db: AsyncSession, path_parts: list):
                     full_path=current_path,
                     level=level,
                     parent_category_id=parent_id,
-                    industry_id=None,  
+                    industry_id=industry_id,  
                     is_leaf=is_leaf,
                     is_active=True,
                 )
                 db.add(category)
-                await db.flush()
+                async with db.begin_nested():
+                    await db.flush()
                 parent_id = category.id
                 leaf_id = category.id
             except Exception as e:
@@ -176,12 +183,12 @@ async def get_or_create_attribute(db: AsyncSession, name: str) -> Attribute:
         )
         db.add(attribute)
         try:
-            await db.flush()
+            async with db.begin_nested():
+                await db.flush()
             await db.refresh(attribute)
             logger.info(f"Created new attribute: {name} (id: {attribute.id})")
             return attribute
         except Exception as flush_error:
-            db.expunge_all()
             logger.warning(f"Race condition for '{name}', trying lookup again: {flush_error}")
             all_attrs_stmt = select(Attribute)
             result = await db.execute(all_attrs_stmt)
@@ -210,15 +217,16 @@ async def get_or_create_attribute_value(
             if uom and not existing.uom:
                 existing.uom = uom
                 db.add(existing)
-                await db.flush()
+                try:
+                    async with db.begin_nested():
+                        await db.flush()
+                except Exception as e:
+                    logger.warning(f"Failed to update uom for value {existing.id}: {e}")
             return existing
-        attr_value = AttributeValue(
-            attribute_id=attribute_id,
-            value=value,
-            uom=uom if uom else None,
-        )
+        attr_value = AttributeValue(attribute_id=attribute_id, value=value, uom=uom if uom else None)
         db.add(attr_value)
-        await db.flush()
+        async with db.begin_nested():
+            await db.flush()
         await db.refresh(attr_value)
         logger.info(f"Created attribute value: {value} for attribute {attribute_id}")
         return attr_value
@@ -245,7 +253,8 @@ async def ensure_product_attribute_link(
         )
         db.add(link)
         try:
-            await db.flush()  
+            async with db.begin_nested():
+                await db.flush()
             logger.info(f"Linked product {product_id} to attribute {attribute_id}")
         except Exception as e:
             db.expunge_all()
@@ -275,10 +284,10 @@ async def ensure_category_attribute_link(
         db.add(link)
         
         try:
-            await db.flush()
+            async with db.begin_nested():
+                await db.flush()
             logger.info(f"Linked category {category_id} to attribute {attribute_id}")
         except Exception as e:
-            db.expunge_all()
             logger.info(f"Link already exists for category {category_id} and attribute {attribute_id}")
             
     except Exception as e:
@@ -306,10 +315,10 @@ async def ensure_product_attribute_value_link(
         db.add(link)
         
         try:
-            await db.flush()
+            async with db.begin_nested():
+                await db.flush()
             logger.info(f"Linked product {product_id} to attribute value {attribute_value_id}")
         except Exception as e:
-            db.expunge_all()
             logger.info(f"Link already exists for product {product_id} and value {attribute_value_id}")
             
     except Exception as e:
