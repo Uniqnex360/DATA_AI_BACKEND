@@ -23,6 +23,7 @@ services:
       - db
     volumes:
       - ./storage:/app/storage
+      - ./logs:/app/logs
     shm_size: '2gb'         
     mem_limit: 8g 
     extra_hosts:

@@ -1601,6 +1601,9 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                 product.enrichment_status = 'failed'
                 product.failure_reason = f"{error_type}: {error_msg}"[:1000]
                 product.failed_at = now_ist()
+                if link:
+                    link.enrichment_status = 'failed'
+                    db_session.add(link)
                 failure_reason = result.get('reason', 'Unknown Error')
                 db_session.add(product)
                 logger.error(
@@ -1624,6 +1627,9 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                     product.enrichment_status = 'failed'
                     product.failure_reason = error_msg
                     product.failed_at = now_ist()
+                    if link:
+                        link.enrichment_status = 'failed'
+                        db_session.add(link)
                     db_session.add(product)
                     await db_session.commit()
                     if link:

@@ -8,6 +8,7 @@ from pathlib import Path
 import os
 import warnings
 
+from app.core.internal_logger import setup_internal_logging
 from app.workers.canonical_worker import start_canonical_worker
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
@@ -21,6 +22,8 @@ from app.api.v1.endpoints import auth,audit, pdf_extraction,users,golden_records
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api_main")
 logger.info("MASTER PROCESS: Pre-loading SentenceTransformer (Shared Memory)...")
+setup_internal_logging()
+
 try:
     _global_embedding_model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
     logger.info("✓ Shared model weights loaded into RAM")
