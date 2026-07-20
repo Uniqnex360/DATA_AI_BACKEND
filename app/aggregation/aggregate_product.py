@@ -39,8 +39,6 @@ from app.utils.normalization_helper import _standardize_uom_in_attrs, normalize_
 from app.utils.pdf_utils import is_parts_list_pdf
 from app.utils.remapping import cluster_attributes_by_meaning
 logger = logging.getLogger("aggregate_product")
-
-
 def build_pipeline() -> AggregationPipeline:
     return AggregationPipeline(
         search_service=SerpApiSearchService(max_results=5),
@@ -51,15 +49,9 @@ def build_pipeline() -> AggregationPipeline:
             PdfExtractor(),
         ]),
     )
-
-
 def chunk_attributes(attributes: List[str], chunk_size: int = 10) -> List[List[str]]:
     return [attributes[i:i + chunk_size] for i in range(0, len(attributes), chunk_size)]
-
-
 logger = logging.getLogger("aggregate_product")
-
-
 async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
     from bs4 import BeautifulSoup
     from urllib.parse import urljoin
@@ -70,7 +62,6 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
         'pixel', 'tracking', 'social', 'share', 'facebook', 'twitter', 'instagram',
         'og-image', 'social-share', 'carton', 'box', 'camozzi', 'default', 'nophoto'
     ]
-
     def is_junk(url_str: str) -> bool:
         u = url_str.lower()
         return any(k in u for k in HARD_BLOCK_KEYWORDS)
@@ -113,8 +104,6 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
             logger.info(f" Fallback selected image with score {score}: {url}")
             return url
     return None
-
-
 def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
     mapping = {}
     for group in groups:
@@ -146,8 +135,6 @@ def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
             'attributes': unified_attrs
         })
     return unified_sources
-
-
 def extract_domains_and_generate_urls(prompt_text: str) -> List[str]:
     if not prompt_text:
         return []
@@ -158,15 +145,11 @@ def extract_domains_and_generate_urls(prompt_text: str) -> List[str]:
     for domain in domains:
         urls.append(f"https://{domain}/")
     return urls
-
-
 def extract_urls_from_prompt(prompt_text: str) -> List[str]:
     if not prompt_text:
         return []
     url_pattern = r'https?://[^\s\)\"]+'
     return re.findall(url_pattern, prompt_text)
-
-
 async def discover_manufacturer_urls(
     brand: str,
     taxonomy: str,
@@ -333,8 +316,6 @@ async def discover_manufacturer_urls(
     except Exception as e:
         logger.error(f"Manufacturer URL discovery failed: {e}")
         return []
-
-
 async def find_product_page_with_llm(
     domain_url: str,
     mpn: str,
@@ -595,8 +576,6 @@ async def find_product_page_with_llm(
     except Exception as e:
         logger.warning(f"Product discovery failed: {e}")
         return None
-
-
 def _url_contains_product_identifier(url: str, mpn: str, title: str) -> bool:
     if not url:
         return False
@@ -614,8 +593,6 @@ def _url_contains_product_identifier(url: str, mpn: str, title: str) -> bool:
         if len(words) >= 2 and hits >= 2:
             return True
     return False
-
-
 def is_result_actually_product(result: dict, brand: str, title: str) -> bool:
     url = result.get("url", "").lower()
     content_to_check = (result.get('title', '')+" " +
@@ -646,23 +623,18 @@ def _base_model_tokens_match(mpn: str, url: str) -> bool:
         return False
     mpn_upper = re.sub(r'[^A-Z0-9]', '', mpn.upper())
     url_slug = re.sub(r'[^A-Z0-9]', '', urlparse(url).path.upper())
-
     m = re.match(r'^([A-Z]+\d+)([A-Z]?)([A-Z]+)(\d{3})([A-Z]*)$', mpn_upper)
     if not m:
         return mpn_upper in url_slug or url_slug in mpn_upper
-    
     base, variant_letter, style, finish, suffix = m.groups()
-    base_style = base + style          # FE595 + CAM = FE595CAM
-    
+    base_style = base + style          
     prefix_ok = base_style in url_slug
     suffix_ok = (not suffix) or (suffix in url_slug)
     return prefix_ok and suffix_ok
 async def verify_page_identity_with_llm(url: str, html: str, brand: str, title: str, mpn: str, llm_provider: str,manufacturer_domain:str) -> bool:
-    
     from bs4 import BeautifulSoup
     from app.core.config import settings
     import logging
-
     logger = logging.getLogger("aggregate_product")
     is_mfr_url = (
         manufacturer_domain and 
@@ -671,96 +643,66 @@ async def verify_page_identity_with_llm(url: str, html: str, brand: str, title: 
     if is_mfr_url and _base_model_tokens_match(mpn, url):
         logger.info(f"✓ Base token match on mfr domain, skip LLM: {url}")
         return True
-
-    # 1. Clean the HTML to extract only relevant visible text
     soup = BeautifulSoup(html, 'html.parser')
-    
-    # Remove heavy junk that confuses the LLM and wastes tokens
     for junk in soup(["script", "style", "nav", "footer", "header", "aside"]):
         junk.decompose()
-        
     page_text = soup.get_text(separator=' ', strip=True)
-
-    # 2. SPA Detection: If the text is very thin, the scraper likely got an empty JS shell
     if len(page_text) < 500:
         logger.info(f"Verification text for {url} is too thin. Attempting Firecrawl rendering...")
         try:
             from firecrawl import Firecrawl
             fc_client = Firecrawl(api_key=settings.FIRECRAWL_API_KEY)
             fc_result = fc_client.scrape_url(url)
-            
-            # ✅ FIX: Handle both object and dictionary return types safely
             rendered_text = ""
             if isinstance(fc_result, dict):
                 rendered_text = fc_result.get('markdown') or fc_result.get('content') or ""
             else:
-                # Access attributes directly from the Document object
                 rendered_text = getattr(fc_result, 'markdown', '') or getattr(fc_result, 'content', '') or ""
-            
             if rendered_text:
                 page_text = rendered_text
         except Exception as e:
             logger.warning(f"Firecrawl fallback failed: {e}")
-
-    # 3. Limit snippet to 6000 characters to stay within context limits
     snippet = page_text[:6000]
-
-    # 4. Construct the prompt with industry-specific matching logic
     prompt = f"""
     You are a Senior Product Data Matcher. Verify if the following web page is the official Product Detail Page (PDP) for the requested item.
-
     TARGET PRODUCT:
     - Brand: {brand}
     - Title: {title}
     - Target MPN/ID: {mpn}
-
     CANDIDATE PAGE TO EVALUATE:
     - URL: {url}
     - Page Content Snippet: {snippet}
-
     VERIFICATION RULES:
     1. MATCH if the Brand '{brand}' is the primary subject of the page.
     2. MATCH if the base model string appears in the URL, even if finish/variant suffix differs.
-       
        HOW TO CHECK:
        - Extract the alphabetic+numeric base from the MPN (ignore single letters, ignore 3-digit finish codes like 716, 619, 619ACC)
        - Check if that base appears anywhere in the candidate URL
-       
        EXAMPLES (all should be MATCH):
        - MPN: BE365VCAM716     → base: BE365CAM  → URL has BE365CAMFFF     ✓ MATCH
        - MPN: FE595VCAM716ACC  → base: FE595CAM  → URL has FE595CAMFFFACC  ✓ MATCH  
        - MPN: FE595VCAM619ACC  → base: FE595CAM  → URL has FE595CAMFFFACC  ✓ MATCH
        - MPN: ND80PD-RH-619    → base: ND80PD    → URL has ND80PD-RH       ✓ MATCH
-       
        RULE: If ≥60% of the MPN base characters appear in sequence in the URL slug → MATCH.
        Do NOT reject just because the finish code (3 digits) or variant prefix (single letter V/B/F) is missing.
     3. MATCH if the product name describes the exact same physical item (Example: 'GTPOBUS1225' matches 'Gozney Tread Oven').
     4. REJECT (False) if it is a Category or Search Results page showing multiple different products.
     5. REJECT (False) if it is an Installation Manual, Support PDF, News Article, or Store Locator.
     6. REJECT (False) if the page says "Product Not Found" or is a 404 error.
-
     Return your decision in strict JSON format.
     """
-
     try:
         from app.llm import call_llm_with_schema
-        # Note: Ensure IdentityVerificationResponse schema includes 'confidence' field
         res = await call_llm_with_schema(prompt, "IdentityVerificationResponse", llm_provider)
-        
         if res:
             logger.info(f"AI Verification Result for {url}: {res.is_match} (Confidence: {res.confidence}) - Reasoning: {res.reasoning}")
-            
-            # Logic: Accept if AI says it's a match and is confident (> 0.7)
-            # This prevents accepting "uncertain" pages.
             return res.is_match if res.confidence > 0.7 else False
-            
         return False
     except Exception as e:
         logger.error(f"LLM Identity Verification failed for {url}: {e}")
         return False
 async def _enqueue_alias_job_isolated(category_id):
     from app.core.database import async_session_factory
-
     """Runs the alias-job enqueue on its own DB session so it never
     races the main pipeline's session (which caused InterfaceError:
     'another operation is in progress')."""
@@ -769,7 +711,6 @@ async def _enqueue_alias_job_isolated(category_id):
             await enqueue_category_alias_job(category_id, new_db)
     except Exception as e:
         logger.warning(f"[Stage3Canonicals] isolated alias job failed: {e}")    
-        
 async def aggregate_product(
     mpn: str,
     title: str,
@@ -977,11 +918,9 @@ async def aggregate_product(
                         direct_urls.append(product_url)
                     else:
                         logger.info(f"Strict match failed for {product_url}. Verifying semantically...")
-                        
                         content = await download_service.download(product_url)
                         if content and content.get("type") == "html":
                             html_text = content["raw_bytes"].decode("utf-8", errors="ignore")
-                            
                             is_match = await verify_page_identity_with_llm(
                                 url=product_url, 
                                 html=html_text, 
@@ -991,13 +930,11 @@ async def aggregate_product(
                                 llm_provider=llm_provider,
                                 manufacturer_domain=manufacturer_domain
                             )
-                            
                             if is_match:
                                 logger.info(f"✓ AI confirmed this is the correct product line: {product_url}")
                                 direct_urls.append(product_url)
                             else:
                                 logger.warning(f"⛔ AI rejected this page: {product_url}")
-                    # direct_urls.append(product_url)
             seen = set()
             direct_urls = [u for u in direct_urls if not (
                 u in seen or seen.add(u))]
@@ -1114,11 +1051,9 @@ async def aggregate_product(
                 }
             logger.info(
                 f"Stage 2: Download & Extraction from {len(urls)} sources")
-            
             all_extractions = []
             _url_semaphore = asyncio.Semaphore(1)
             found_image_global = None
-
             async def process_url(url):
                 extractions = []
                 nonlocal found_image_global
@@ -1128,7 +1063,6 @@ async def aggregate_product(
                 short_description = None
                 long_description = None
                 features = None
-
                 async with _url_semaphore:
                     try:
                         content = None
@@ -1148,7 +1082,6 @@ async def aggregate_product(
                                 pdf_service = PDFExtractionService(
                                     max_pages=10)
                                 pdf_text = await pdf_service.extract_text(content["raw_bytes"])
-                                
                                 if pdf_text and len(pdf_text.strip()) > 100:
                                     pdf_lower=pdf_text.lower()
                                     if is_parts_list_pdf(pdf_text):
@@ -1175,25 +1108,6 @@ async def aggregate_product(
                                         llm_provider=llm_provider,
                                         estimated_tokens=4000
                                     )
-                                    # if extraction_result and extraction_result.product_detected:
-                                    #     attr_dicts = []
-                                    #     image_url = None
-                                    #     if hasattr(extraction_result, "image_url"):
-                                    #         image_url = extraction_result.image_url
-                                    #     for attr in extraction_result.attributes:
-                                    #         attr_dicts.append({
-                                    #             "name": attr.name,
-                                    #             "value": attr.value,
-                                    #             "unit": getattr(attr, "unit", None),
-                                    #             "confidence": getattr(attr, "confidence", 0.95),
-                                    #         })
-                                    #     extractions.append({
-                                    #         "url": url,
-                                    #         "domain": urlparse(url).netloc,
-                                    #         "attributes": attr_dicts,
-                                    #         "image_url": image_url,
-                                    #         "source_type": "pdf",
-                                    #     })
                                     if extraction_result and extraction_result.product_detected:
                                         attr_dicts = []
                                         image_url = None
@@ -1592,21 +1506,10 @@ async def aggregate_product(
                     'unit': attr.get('unit'),
                     'source_url': source['url'],
                     'confidence': attr.get('confidence', 0.9),
-                    # 'extraction_algorithm': 'Algo 2' if is_algo2_run else 'Algo 1',
                     'extraction_algorithm': current_algo_name,
                     'extraction_source': source_type
                 })
         raw_attrs_for_combine = normalize_concatenated_uom(raw_attrs_for_combine)
-        # if category and db:
-        #     try:
-        #         _, alias_name_map = await load_category_canonical_winners(category.id, db)
-        #         if alias_name_map:
-        #             for a in raw_attrs_for_combine:
-        #                 n = a.get("name")
-        #                 if n in alias_name_map:
-        #                     a["name"] = alias_name_map[n]
-        #     except Exception as e:
-        #         logger.warning(f"[Stage3Canonicals] Failed applying alias_name_map to raw attrs: {e}")
         canonical_names = []
         canonical_units = {}
         alias_name_map = {}
@@ -1621,56 +1524,16 @@ async def aggregate_product(
             )
             cat_result = await db.execute(cat_stmt)
             category = cat_result.scalars().first()
-            # if category:
-                
-            #     attr_stmt = (
-            #         select(Attribute.attribute_name, Attribute.unit)
-            #         .distinct()
-            #         .join(CategoryAttribute, CategoryAttribute.attribute_id == Attribute.id)
-            #         .where(CategoryAttribute.category_id == category.id)
-            #     )
-            #     attr_result = await db.execute(attr_stmt)
-            #     rows = attr_result.all()
-            #     all_db_names = [r[0] for r in rows if r and r[0]]
-            #     logger.info(
-            #         f"[Stage3Canonicals] category_id={category.id} taxonomy='{taxonomy}' db_rows={len(all_db_names)}"
-            #     )
-            #     logger.info(f"[Stage3Canonicals] db_names={sorted(all_db_names)}")
-            #     logger.info(f"[Stage3Canonicals] db_name_unit_pairs={[(r[0], r[1]) for r in rows if r and r[0]][:120]}")
-            #     raw_names = {a['name'].lower() for a in raw_attrs_for_combine}
-            #     # canonical_names = [
-            #     #     row[0] for row in rows
-            #     #     if row[0] and (row[0].lower() in raw_names or "amp" in row[0].lower() or "speed" in row[0].lower())
-            #     # ]
-            #     canonical_names = [row[0] for row in rows if row[0]]
-
-            #     used = canonical_names or []
-            #     excluded = sorted(set(all_db_names) - set(used))
-
-            #     logger.info(
-            #         f"[Stage3Canonicals] canonical_names_used={len(used)} excluded={len(excluded)}"
-            #     )
-            #     logger.info(f"[Stage3Canonicals] used={sorted(used)}")
-            #     logger.info(f"[Stage3Canonicals] excluded={excluded}")
-            #     logger.info(f"[Stage3Canonicals] canonical_names_used={len(canonical_names)}")
-            #     logger.info(f"[Stage3Canonicals] canonical_names_used_list={canonical_names}")
-            #     canonical_units = {
-            #         row[0]: row[1]
-            #         for row in rows
-            #         if row[0] and row[1]
-            #     }
             if category:
                 try:
                     asyncio.create_task(_enqueue_alias_job_isolated(category.id))
                 except Exception as e:
                     logger.warning(f"[Stage3Canonicals] Failed to enqueue alias job: {e}")
-
                 try:
                     winner_attrs, alias_name_map = await load_category_canonical_winners(category.id, db)
                 except Exception as e:
                     logger.warning(f"[Stage3Canonicals] resolver failed for category_id={category.id}: {e}")
                     winner_attrs, alias_name_map = [], {}
-
                 canonical_names = [a.attribute_name for a in winner_attrs if a.attribute_name]
                 canonical_units = {a.attribute_name: a.unit for a in winner_attrs if a.attribute_name and a.unit}
                 alias_lc = {k.lower(): v for k, v in alias_name_map.items()}
@@ -1679,20 +1542,17 @@ async def aggregate_product(
                     mapped = alias_lc.get(n.lower())
                     if mapped:
                         a["name"] = mapped
-
                 logger.info(
                     f"[Stage3Canonicals] category_id={category.id} taxonomy='{taxonomy}' "
                     f"winners={len(canonical_names)} aliases={len(alias_name_map)} units={len(canonical_units)}"
                 )
                 logger.info(f"[Stage3Canonicals] winners_sample={canonical_names[:80]}")
                 if alias_name_map:
-                    # log a small sample only (avoid huge logs)
                     items = list(alias_name_map.items())
                     logger.info(f"[Stage3Canonicals] alias_sample={items[:40]}")
                 logger.info(f"[Stage3Canonicals] canonical_units_count={len(canonical_units)}")
                 logger.info(f"[Stage3Canonicals] canonical_units_sample={dict(list(canonical_units.items())[:80])}")
                 logger.info(f"Loaded {len(canonical_names)} canonical names, {len(canonical_units)} units for: {taxonomy}")
-               
         logger.info("Stage 2.5: Semantic Attribute Clustering")
         logger.info(f"category_id passed: {category.id if category else None}") 
         raw_attrs_for_combine = await cluster_attributes_by_meaning(
@@ -1731,7 +1591,6 @@ async def aggregate_product(
             'brand', 'sku', 'mpn', 'part number', 'manufacturer part number',
             'model number', 'item number', 'upc', 'gtin', 'manufacturer part id'
         }
-        
         filtered_attributes = []
         for attr in golden_attributes:
             attr_name_lower = attr.name.lower()
@@ -1745,8 +1604,6 @@ async def aggregate_product(
             for a in golden_attributes
         ]
         golden_attr_dicts_temp = _standardize_uom_in_attrs(golden_attr_dicts_temp)
-
-        # Apply back
         for attr, standardized in zip(golden_attributes, golden_attr_dicts_temp):
             if attr.unit != standardized['unit']:
                 logger.info(
@@ -1848,7 +1705,6 @@ async def aggregate_product(
                 'unit': a.unit,
                 'confidence': a.confidence,
                 'sources': a.sources,
-                # 'extraction_algorithm': getattr(a, 'extraction_algorithm', 'Algo 1'),
                 'extraction_algorithm': getattr(a, 'extraction_algorithm', current_algo_name),
                 'extraction_source': getattr(a, 'extraction_source', 'html')
             }
@@ -1939,8 +1795,6 @@ async def aggregate_product(
             'reason': str(e),
             'golden_record': {'attributes': {}}
         }
-
-
 def _build_combined_prompt(
     raw_attrs: List[Dict],
     brand: str,
@@ -2083,7 +1937,6 @@ STRICT DATA RETENTION MANDATE:
 RULE 0 — FORBIDDEN ATTRIBUTES (HIGHEST PRIORITY)
 ================================================================
 You MUST NOT output any of the following as attributes. These are already known from product context:
-
 - Brand
 - SKU
 - MPN
@@ -2094,9 +1947,7 @@ You MUST NOT output any of the following as attributes. These are already known 
 - UPC
 - GTIN
 - Any attribute name containing "Part Number", "Model Number", "Manufacturer Part", "SKU", "MPN", or "Brand"
-
 If any raw attribute matches the above names, **drop it completely**. Do not include it in the final attributes list.
-
 ================================================================
 PRODUCT CONTEXT:
   MPN: {mpn}
@@ -2284,7 +2135,6 @@ RULE 12 — UNIT SYMBOL EXPANSION
   ft x ft → "ft x ft"
 RULE 12.1 — UOM STANDARDIZATION  ★ APPLY TO `unit` FIELD ONLY ★
   After extracting the unit, standardize it using these EXACT mappings:
-  
   ┌─────────────────────────────────────────────────────────────┐
   │ INPUT VARIATIONS              →  STANDARDIZED OUTPUT       │
   ├─────────────────────────────────────────────────────────────┤
@@ -2304,7 +2154,6 @@ RULE 12.1 — UOM STANDARDIZATION  ★ APPLY TO `unit` FIELD ONLY ★
   │ deg c, celsius, °c            →  deg C                      │
   │ deg f, fahrenheit, °f         →  deg F                      │
   └─────────────────────────────────────────────────────────────┘
-  
   CRITICAL:
   - Apply this to the `unit` field, NEVER to the `value` field
   - Preserve compound units: "ft, in", "in x ft", "ft x in"
@@ -2374,8 +2223,6 @@ RULE 14 — UNIFICATION
 ✓ If one has a unit and the other doesn't, keep the one WITH the unit (more complete)
 ✓ COMPOUND vs SINGLE: If one attribute has "x" values (e.g., "0.375 x 15") and another has just a number that matches part of it (e.g., "15"), keep the compound one, drop the single
   ✓ Are VDC/VAC casing normalized to standard form (not flattened to V)?
-  
-
 ═══════════════════════════════════════════════════════
 CONCRETE FEW-SHOT EXAMPLES  (exact JSON output required for these inputs)
 ═══════════════════════════════════════════════════════
@@ -2442,7 +2289,6 @@ Output: name="Hose", value="0.375 x 15", unit="in x ft"
 ═══════════════════════════════════════════════════════
 OUTPUT FORMAT
 ═══════════════════════════════════════════════════════
-
 Return a JSON object:
 {{
   "attributes": [
@@ -2501,7 +2347,6 @@ INPUT ATTRIBUTES
     Example:
     Input: "Voltage" (Algo 1, html) + "Voltage Rating" (Algo 2, html)
     Output: "Voltage Rating" (Algo 2, html)
-    
     Input: "Voltage" (Algo 1, html) + "Voltage Rating" (Algo 3, pdf)
     Output: "Voltage Rating" (Algo 3, pdf)
 """

@@ -2,13 +2,15 @@ from bs4 import BeautifulSoup
 import logging
 from typing import Optional, List
 logger = logging.getLogger('extraction_prompts')
+
+
 def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
     soup = BeautifulSoup(html_content, "html.parser")
     json_data = []
     for script in soup.find_all("script"):
         if script.get("type") in ["application/ld+json", "application/json"] or script.get("id") == "__NEXT_DATA__":
             content = script.string
-            if content and len(content) > 100:  
+            if content and len(content) > 100:
                 json_data.append(content)
     import json as _json
     for jd in json_data[:]:
@@ -32,7 +34,7 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
     if json_data:
         json_data_sorted = sorted(json_data, key=len)
         for jd in json_data_sorted:
-            if len(jd) < 50000:  
+            if len(jd) < 50000:
                 sections.append(jd)
     for table in soup.find_all("table"):
         rows = table.find_all("tr")
@@ -48,7 +50,8 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
                      for c in children if c.get_text(strip=True)]
             if len(texts) >= 4 and len(" ".join(texts)) < 6000:
                 sections.append(str(div))
-    feature_keywords = ["feature", "highlight", "benefit", "selling-point", "key-point"]
+    feature_keywords = ["feature", "highlight",
+                        "benefit", "selling-point", "key-point"]
     for section in soup.find_all(['section', 'div']):
         elem_id = (section.get('id') or '').lower()
         elem_class = ' '.join(section.get('class') or []).lower()
@@ -57,17 +60,22 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
             text = section.get_text(separator='\n', strip=True)
             if 100 < len(text) < 15000:
                 sections.append(str(section))
-                logger.info(f"Captured features section: id='{elem_id}' class='{elem_class}' len={len(text)}")
+                logger.info(
+                    f"Captured features section: id='{elem_id}' class='{elem_class}' len={len(text)}")
     unique_sections = list(dict.fromkeys(sections))
     content = "\n\n".join(unique_sections[:max_sections])
-    non_json_content = "\n\n".join(s for s in unique_sections[:max_sections] if not s.strip().startswith('{'))
+    non_json_content = "\n\n".join(
+        s for s in unique_sections[:max_sections] if not s.strip().startswith('{'))
     if len(non_json_content.strip()) < 5000 and len(html_content) > 100000:
         raw_text = soup.get_text(separator="\n", strip=True)
         if len(raw_text) > 100:
             content = f"RAW PAGE TEXT (Fallback):\n{raw_text[:50000]}"
-            logger.info(f"Using raw text fallback: {len(raw_text[:50000])} chars")
+            logger.info(
+                f"Using raw text fallback: {len(raw_text[:50000])} chars")
     MAX_CHARS = 120000
     return content[:MAX_CHARS]
+
+
 def extract_product_descriptions(html_content: str) -> str:
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html_content, "html.parser")
@@ -80,16 +88,16 @@ def extract_product_descriptions(html_content: str) -> str:
         if meta_desc:
             text_parts.append(meta_desc)
     description_selectors = [
-    {'class': lambda x: x and any(k in x.lower() for k in [
-        'description', 'overview', 'details', 'about',
-        'product-info', 'specs', 'specification',
-        'feature', 'highlight', 'benefit'  
-    ])},
-    {'id': lambda x: x and any(k in x.lower() for k in [
-        'description', 'overview', 'details', 'specs',
-        'feature', 'highlight', 'benefit'  
-    ])},
-]
+        {'class': lambda x: x and any(k in x.lower() for k in [
+            'description', 'overview', 'details', 'about',
+            'product-info', 'specs', 'specification',
+            'feature', 'highlight', 'benefit'
+        ])},
+        {'id': lambda x: x and any(k in x.lower() for k in [
+            'description', 'overview', 'details', 'specs',
+            'feature', 'highlight', 'benefit'
+        ])},
+    ]
     seen_texts = set()
     for selector in description_selectors:
         for tag in soup.find_all(['div', 'section', 'article'], attrs=selector):
@@ -116,6 +124,197 @@ def extract_product_descriptions(html_content: str) -> str:
         if len(raw_text) > 100:
             desc_text = raw_text
     return desc_text[:10000]
+
+
+def extract_features_section(html_content: str, max_features: int = 20, max_li_search: int = 1000) -> List[str]:
+    if not html_content:
+        logger.warning("extract_features_section: Empty html_content provided")
+        return []
+    if len(html_content) < 500:
+        logger.debug(
+            "extract_features_section: HTML too small (<500 chars), skipping feature extraction")
+        return []
+    try:
+        soup = BeautifulSoup(html_content, "html.parser")
+    except Exception as e:
+        logger.error(
+            f"extract_features_section: BeautifulSoup parse failed: {e}")
+        return []
+    features = []
+    seen = set()
+    try:
+        logger.debug("Strategy 1: Searching for feature headings...")
+        strategy1_found = False
+        try:
+            headings = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5'])
+            if not headings:
+                logger.debug("Strategy 1: No headings found")
+            for heading in headings:
+                try:
+                    heading_text = (heading.get_text(strip=True) or '').lower()
+                    if 'feature' in heading_text or 'benefit' in heading_text or 'highlight' in heading_text:
+                        logger.info(
+                            f"Strategy 1: Found feature heading: '{heading_text}'")
+                        strategy1_found = True
+                        ul = heading.find_next(['ul', 'ol'])
+                        if ul:
+                            lis = ul.find_all('li', recursive=False)[
+                                :max_li_search]
+                            for li in lis:
+                                try:
+                                    feature_text = li.get_text(
+                                        separator=' ', strip=True)
+                                    if (feature_text and
+                                        len(feature_text) > 10 and
+                                        len(feature_text) < 500 and
+                                            feature_text not in seen):
+                                        features.append(feature_text)
+                                        seen.add(feature_text)
+                                        logger.debug(
+                                            f"  ✓ Added feature: {feature_text[:60]}...")
+                                except Exception as li_err:
+                                    logger.debug(
+                                        f"Strategy 1: Failed to extract <li>: {li_err}")
+                                    continue
+                            if features:
+                                logger.info(
+                                    f"Strategy 1: Extracted {len(features)} features from heading '{heading_text}'")
+                        else:
+                            logger.debug(
+                                f"Strategy 1: No <ul>/<ol> found after heading '{heading_text}'")
+                except Exception as heading_err:
+                    logger.debug(
+                        f"Strategy 1: Error processing heading: {heading_err}")
+                    continue
+            if strategy1_found and features:
+                logger.info(
+                    f"Strategy 1 SUCCESS: {len(features)} features extracted")
+                return features
+        except Exception as strategy1_err:
+            logger.warning(f"Strategy 1 failed: {strategy1_err}")
+        logger.debug(
+            "Strategy 2: Searching for feature sections by class/id...")
+        strategy2_found = False
+        try:
+            feature_sections = soup.find_all(['section', 'div'],
+                                             attrs={'class': lambda x: x and 'feature' in x.lower()})
+            if not feature_sections:
+                feature_sections.extend(soup.find_all(['section', 'div'],
+                                                      attrs={'id': lambda x: x and 'feature' in x.lower()}))
+            if not feature_sections:
+                logger.debug(
+                    "Strategy 2: No feature sections found by class/id")
+            for feature_section in feature_sections:
+                try:
+                    section_id = feature_section.get('id', '')
+                    section_class = ' '.join(feature_section.get('class', []))
+                    logger.debug(
+                        f"Strategy 2: Found feature section - id='{section_id}' class='{section_class}'")
+                    lis = feature_section.find_all('li')[:max_li_search]
+                    for li in lis:
+                        try:
+                            feature_text = li.get_text(
+                                separator=' ', strip=True)
+                            if (feature_text and
+                                len(feature_text) > 10 and
+                                len(feature_text) < 500 and
+                                    feature_text not in seen):
+                                features.append(feature_text)
+                                seen.add(feature_text)
+                                strategy2_found = True
+                                logger.debug(
+                                    f"  ✓ Added feature: {feature_text[:60]}...")
+                        except Exception as li_err:
+                            logger.debug(
+                                f"Strategy 2: Failed to extract <li>: {li_err}")
+                            continue
+                except Exception as section_err:
+                    logger.debug(
+                        f"Strategy 2: Error processing section: {section_err}")
+                    continue
+            if strategy2_found:
+                logger.info(
+                    f"Strategy 2 SUCCESS: {len(features)} features extracted")
+                return features
+        except Exception as strategy2_err:
+            logger.warning(f"Strategy 2 failed: {strategy2_err}")
+        logger.debug(
+            "Strategy 3: Searching for lists with feature context in parents...")
+        strategy3_found = False
+        try:
+            all_lists = soup.find_all(['ul', 'ol'])
+            logger.debug(f"Strategy 3: Found {len(all_lists)} ul/ol elements")
+            for ul_idx, ul in enumerate(all_lists[:100]):
+                try:
+                    parent = ul.find_parent()
+                    parent_text = ""
+                    levels = 0
+                    while parent and levels < 3:
+                        try:
+                            parent_text += (parent.get_text(strip=True)
+                                            or '').lower() + " "
+                            parent = parent.find_parent()
+                            levels += 1
+                        except Exception as parent_err:
+                            logger.debug(
+                                f"Strategy 3: Error traversing parent hierarchy: {parent_err}")
+                            break
+                    feature_keywords = [
+                        'feature', 'benefit', 'highlight', 'why choose', 'key point', 'selling point']
+                    has_feature_context = any(
+                        k in parent_text for k in feature_keywords)
+                    if has_feature_context:
+                        logger.debug(
+                            f"Strategy 3: Found ul/ol with feature context at list index {ul_idx}")
+                        lis = ul.find_all('li', recursive=False)[
+                            :max_li_search]
+                        for li in lis:
+                            try:
+                                feature_text = li.get_text(
+                                    separator=' ', strip=True)
+                                if (feature_text and
+                                    len(feature_text) > 10 and
+                                    len(feature_text) < 500 and
+                                        feature_text not in seen):
+                                    features.append(feature_text)
+                                    seen.add(feature_text)
+                                    strategy3_found = True
+                                    logger.debug(
+                                        f"  ✓ Added feature: {feature_text[:60]}...")
+                            except Exception as li_err:
+                                logger.debug(
+                                    f"Strategy 3: Failed to extract <li>: {li_err}")
+                                continue
+                        if features:
+                            logger.info(
+                                f"Strategy 3 SUCCESS: {len(features)} features extracted")
+                            return features
+                except Exception as ul_err:
+                    logger.debug(
+                        f"Strategy 3: Error processing ul/ol: {ul_err}")
+                    continue
+            if not strategy3_found:
+                logger.debug(
+                    "Strategy 3: No features found via parent context")
+        except Exception as strategy3_err:
+            logger.warning(f"Strategy 3 failed: {strategy3_err}")
+        if not features:
+            logger.info(
+                "⚠️  extract_features_section: No features extracted from any strategy")
+            return []
+        if len(features) > max_features:
+            logger.warning(
+                f"Feature extraction exceeded max ({len(features)} > {max_features}). Truncating to {max_features}.")
+            features = features[:max_features]
+        logger.info(
+            f"✓ extract_features_section: Successfully extracted {len(features)} features")
+        return features
+    except Exception as e:
+        logger.error(
+            f"extract_features_section: Unexpected error: {e}", exc_info=True)
+        return []
+
+
 def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: str,
                             primary_attributes: list, html_content: str,
                             candidate_images: Optional[List[str]] = None, source_url: str = "") -> dict:
@@ -156,6 +355,13 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
             [f"  {i+1}. {attr}" for i, attr in enumerate(primary_list)])
         spec_content = extract_high_signal_specs(html_content)
         desc_text = extract_product_descriptions(html_content)
+        features_list = extract_features_section(html_content)
+        features_section = ""
+        if features_list:
+            features_section = "\n\nPRE-EXTRACTED FEATURES FROM PAGE:\n"
+            for feat in features_list:
+                features_section += f"  • {feat}\n"
+            logger.info(f"Pre-extracted {len(features_list)} features for LLM")
         logger.info(
             f"[Extraction Debug] Spec content length: {len(spec_content)}, Desc content length: {len(desc_text)}")
         prompt = f"""
@@ -356,6 +562,7 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         - ONLY extract technical product specifications
         ═══════════════════════════════════════════════════════════════════
        CONTENT FOR EXTRACTION:
+       {features_section} 
         {spec_content}
         {candidate_section}
         ═══════════════════════════════════════════════════════════════════
@@ -373,10 +580,8 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         - Can be longer (3-5 sentences)
         - DO NOT include feature bullet point lists here
         FEATURES (features):
-
         A "feature" is a SHORT, BENEFIT-ORIENTED statement about the product that 
         would appear on a buyer's product page, packaging, or marketing material.
-
         STEP 1 — DETECT A FEATURES SECTION ON THE PAGE:
         Look for any of these structural patterns:
           a) A container (div, section, ul, article) with class/id/aria-label 
@@ -391,14 +596,12 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
             repeated 3+ times in sequence (e.g., TYPE:/APPLICATION:/LENGTH:)
           e) Tabbed/accordion content where one tab is labeled "Features" or 
             "Highlights"
-
         If you detect any of these patterns, this is the features source.
         Do NOT use these as features:
           - The product spec table (key-value specs like "Diameter: 0.131")
           - The main product description paragraph
           - Customer reviews or Q&A
           - Shipping/availability/pricing info
-
         STEP 2 — EXTRACT EACH FEATURE AS A SEPARATE STRING:
         For each feature found:
           - Preserve the ORIGINAL WORDING as much as possible (do NOT paraphrase)
@@ -407,7 +610,6 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
           - If a bullet is very long (>25 words), keep it as ONE feature 
             (do not artificially split)
           - Strip HTML tags, but keep the textual content intact
-
         STEP 3 — DECISION TREE (apply in order):
           1. If a dedicated Features section exists → extract all items from it
           2. Else if labeled paragraphs (LABEL: value pattern) appear 3+ times → 
@@ -415,7 +617,6 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
           3. Else if a bulleted list exists with product benefits (not specs, not 
             navigation) → extract those
           4. Else → return empty array []
-
         QUALITY RULES:
           - Each feature: 4-30 words
           - Include 3-8 features when available
@@ -423,7 +624,6 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
           - If 10+ features exist, include ALL of them (no artificial cap)
           - DO NOT invent features not on the page
           - DO NOT duplicate the same feature with slight wording changes
-
         EDGE CASES:
           - If the page has "Features:" followed by repeating the spec table in 
             narrative form → those narrative statements ARE features, extract them
@@ -491,7 +691,6 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         OUTPUT SCHEMA — REQUIRED FIELDS
         ═══════════════════════════════════════════════════════════════════
         Return JSON in this EXACT structure. ALL fields are REQUIRED:
-
         {{
   "product_detected": true/false,
   "product_type": "category or null",
@@ -503,7 +702,9 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
     {{"name": "Attribute Name", "value": "value", "unit": "unit or null", "confidence": 0.95}}
   ]
 }}
-
+        IMPORTANT: If PRE-EXTRACTED FEATURES are provided above, your output 
+        MUST include ALL of them in the "features" array. Do NOT omit, reformat, 
+        or drop any of them. They are authoritative.
         CRITICAL: The `features` field MUST be present in your JSON output, even if it's an empty array [].
         Do NOT omit it. Do NOT return null. Always return an array.
         """
@@ -515,6 +716,8 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
     except Exception as e:
         logger.error(f"Build_extraction_prompt failed: {e}")
         return None
+
+
 def build_pdf_extraction_prompt(
     product_name: str,
     mpn: str,
