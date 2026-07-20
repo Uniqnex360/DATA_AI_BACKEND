@@ -386,7 +386,8 @@ async def list_projects(
                 .where(
                     ProjectProductLink.project_id == Project.id,
                     Product.workflow_stage == "enrichment",
-                    ProjectProductLink.enrichment_status.in_(["pending", "failed"])
+                   ProjectProductLink.enrichment_status.in_(["pending", "failed", "completed", "processing"])  
+
                 )   
                 .correlate(Project)
                 .scalar_subquery()

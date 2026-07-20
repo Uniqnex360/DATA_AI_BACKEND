@@ -1175,6 +1175,25 @@ async def aggregate_product(
                                         llm_provider=llm_provider,
                                         estimated_tokens=4000
                                     )
+                                    # if extraction_result and extraction_result.product_detected:
+                                    #     attr_dicts = []
+                                    #     image_url = None
+                                    #     if hasattr(extraction_result, "image_url"):
+                                    #         image_url = extraction_result.image_url
+                                    #     for attr in extraction_result.attributes:
+                                    #         attr_dicts.append({
+                                    #             "name": attr.name,
+                                    #             "value": attr.value,
+                                    #             "unit": getattr(attr, "unit", None),
+                                    #             "confidence": getattr(attr, "confidence", 0.95),
+                                    #         })
+                                    #     extractions.append({
+                                    #         "url": url,
+                                    #         "domain": urlparse(url).netloc,
+                                    #         "attributes": attr_dicts,
+                                    #         "image_url": image_url,
+                                    #         "source_type": "pdf",
+                                    #     })
                                     if extraction_result and extraction_result.product_detected:
                                         attr_dicts = []
                                         image_url = None
@@ -1193,6 +1212,9 @@ async def aggregate_product(
                                             "attributes": attr_dicts,
                                             "image_url": image_url,
                                             "source_type": "pdf",
+                                            "short_description": getattr(extraction_result, "short_description", None),
+                                            "long_description": getattr(extraction_result, "long_description", None),
+                                            "features": getattr(extraction_result, "features", None) or [],
                                         })
                                 return extractions
                             if content_type == "html":
@@ -1497,9 +1519,9 @@ async def aggregate_product(
                                                 "attributes": pdf_attrs,
                                                 "image_url": None,
                                                 "source_type": "pdf",
-                                                "short_description": None,
-                                                "long_description": None,
-                                                "features": []  
+                                                "short_description": getattr(pdf_result, "short_description", None),
+                                                "long_description": getattr(pdf_result, "long_description", None),
+                                                "features": getattr(pdf_result, "features", None) or []
                                             })
                                             logger.info(
                                                 f"✓ PDF extraction: {len(pdf_attrs)} attributes from {pdf_url}")
