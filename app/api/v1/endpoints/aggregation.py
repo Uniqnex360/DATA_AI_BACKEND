@@ -1923,9 +1923,13 @@ async def get_products_with_movement(
         for product, link in rows:
             # 1. Serialize the basic product data
             product_dict = await serialize_products_with_attributes(db, product)
-            
+            effective_status = link.enrichment_status
+            if product.enrichment_status == 'failed':
+                effective_status = 'failed'
+            elif product.enrichment_status == 'completed' and effective_status == 'processing':
+                effective_status = 'completed'
             # 2. Add the specific status and failure info you need
-            product_dict["enrichment_status"] = link.enrichment_status
+            product_dict["enrichment_status"] = effective_status
             product_dict["failure_reason"] = product.failure_reason # Added this
             product_dict["failed_at"] = product.failed_at.isoformat() if product.failed_at else None # Added this
             
