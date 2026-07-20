@@ -1,14 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status,Request
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 from sqlalchemy.exc import IntegrityError  
-
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.core.database import get_session
 from app.models.user import User
 from app.auth.security import verify_password, create_access_token, get_password_hash
 from app.auth.dependencies import get_current_user
 from app.schemas.auth import RegisterRequest, UserResponse, TokenResponse  
+limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter()
 
@@ -19,7 +22,7 @@ async def register(
     db: AsyncSession = Depends(get_session),
 ):
     
-    stmt = select(User).where(User.email == payload.email)
+    stmt = select(User).where(func.lower(User.email) == payload.email.lower())
     result = await db.execute(stmt)
     if result.scalar_one_or_none():
         raise HTTPException(
@@ -48,9 +51,10 @@ async def register(
             detail="User already exists (Database constraint)."
         )
 
-
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit('5/minute')
 async def login(
+    request: Request,  
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_session),
 ):
@@ -76,7 +80,13 @@ async def login(
     return {
         "access_token": token,
         "token_type": "bearer",
-        "user": user,
+        "expires_in":3600,
+       "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "full_name": user.full_name,
+            "role": user.role,
+        },
     }
 
 

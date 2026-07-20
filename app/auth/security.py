@@ -7,7 +7,7 @@ from app.utils.timezone import now_ist
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def create_access_token(subject:Union[str,any],expires_delta:timedelta=None)->str:
+def create_access_token(subject:Union[str,Any],expires_delta:timedelta=None)->str:
     if expires_delta:
         expire=now_ist()+expires_delta
     else:
@@ -19,5 +19,5 @@ def create_access_token(subject:Union[str,any],expires_delta:timedelta=None)->st
 def verify_password(plain_password:str,hashed_password:str)-> bool:
     return pwd_context.verify(plain_password,hashed_password)
 
-def get_password_hash(plain_password)->str:
+def get_password_hash(plain_password: str) -> str:
     return pwd_context.hash(plain_password)

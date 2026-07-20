@@ -603,7 +603,11 @@ async def upload_file(
                         updated_count += 1
 
                 if not is_reused:
-                    
+                    features_list = []
+                    for i in range(1, 10):
+                        feature_val = row.get(f'features_{i}')
+                        if feature_val and str(feature_val).strip() and str(feature_val).strip().lower() not in ['nan', 'none', 'null', 'n/a']:
+                            features_list.append(str(feature_val).strip())
                     product = Product(
                         product_code=str(code),
                         workflow_stage=default_workflow_stage,
@@ -624,6 +628,9 @@ async def upload_file(
                         category_6=row.get('category_6'),
                         category_7=row.get('category_7'),
                         category_8=row.get('category_8'),
+                        long_description=row.get('long_description') or None,
+                        short_description=row.get('short_description') or None,
+                        features=features_list if features_list else None,
                         gtin=row.get('gtin'),
                         ean=row.get('ean'),
                         upc=row.get('upc'),
@@ -1267,6 +1274,9 @@ async def run_aggregation_task(source_id: str):
                             golden.get('long_description')) or product.long_description
                         product.features = sanitize_ai_data(
                             golden.get('features')) or product.features
+                        flag_modified(product, "short_description")
+                        flag_modified(product, "long_description")
+                        flag_modified(product, "features")
                         use_case = project.use_case.lower() if project and project.use_case else ""
                         if "back filling" in use_case or "validation" in use_case:
                             conflicts = {}
