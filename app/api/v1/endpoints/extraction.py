@@ -40,14 +40,11 @@ from app.utils.matching import get_or_create_brand, get_or_create_vendor, get_or
 from app.utils.sanitize import sanitize_ai_data
 from app.api.v1.endpoints.aggregation import extract_ai_value_text
 from app.sacred import fallback_extraction
-
 logger = logging.getLogger("extraction_router")
 router = APIRouter()
 ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
 MAX_FILE_SIZE = 10 * 1024 * 1024
 MAX_ROWS = 1000
-
-
 def merge_attributes_preserving_order(
     primary_attributes: List[str],
     existing_attrs: dict,
@@ -65,8 +62,6 @@ def merge_attributes_preserving_order(
         if attr_name not in merged:
             merged[attr_name] = ai_val
     return merged
-
-
 @router.get("/", response_model=List[SourceResponse])
 async def getAllSources(db: AsyncSession = Depends(get_session)):
     try:
@@ -82,32 +77,17 @@ async def getAllSources(db: AsyncSession = Depends(get_session)):
 async def proxy_download(
     url: str = Query(..., description="URL to download"),
 ):
-    """
-    Proxy download endpoint - downloads a file from a URL and streams it to the client.
-    This avoids CORS issues and forces download instead of opening in browser.
-    """
     try:
-        
         parsed = urlparse(url)
         if not parsed.scheme or not parsed.netloc:
             raise HTTPException(status_code=400, detail="Invalid URL")
-        
-        
         filename = parsed.path.split("/")[-1] or "download"
-        
-        
         if "." not in filename:
             filename = "download"
-        
-        
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             response = await client.get(url)
             response.raise_for_status()
-            
-            
             content_type = response.headers.get("content-type", "application/octet-stream")
-            
-            
             if not filename.endswith((".pdf", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".webm")):
                 ext_map = {
                     "application/pdf": ".pdf",
@@ -122,9 +102,7 @@ async def proxy_download(
                     if mime in content_type:
                         filename += ext
                         break
-            
             encoded_filename = quote(filename)
-            
             return StreamingResponse(
                 response.iter_bytes(),
                 media_type=content_type,
@@ -139,7 +117,6 @@ async def proxy_download(
     except Exception as e:
         logger.error(f"Download proxy error: {e}")
         raise HTTPException(status_code=500, detail="Download failed")
-
 @router.post("/", status_code=status.HTTP_202_ACCEPTED)
 async def extract_from_source(
     payload: ExtractionRequest,
@@ -181,8 +158,6 @@ async def extract_from_source(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="System failed to initialize the extraction pipeline"
         )
-
-
 @router.get("/priorities/{project_id}", response_model=List[SourcePriorityResponse], status_code=status.HTTP_200_OK)
 async def get_project_priorities(project_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -202,8 +177,6 @@ async def get_project_priorities(project_id: str, db: AsyncSession = Depends(get
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal system error while retrieving source rankings"
         )
-
-
 @router.get('/project/{project_id}', response_model=List[SourceResponse])
 async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -218,14 +191,10 @@ async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get
     except Exception as e:
         logger.error(f"Failed to fetch project sources:{e}")
         return []
-
-
 def sanitize_for_excel(val):
     if not isinstance(val, str):
         return val
     return re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', val)
-
-
 def clean_for_excel(val, attr_name=None):
     if val is None or val == "":
         return ""
@@ -250,8 +219,6 @@ def clean_for_excel(val, attr_name=None):
     if val_str.lower() in ["n/a", "none", "null", "nan", "not available", "increase", "*"]:
         return ""
     return sanitize_for_excel(val_str)
-
-
 @router.get("/{source_id}/download")
 async def download_file(
     source_id: str,
@@ -290,7 +257,6 @@ async def download_file(
                                     zip_file.writestr(
                                         pdf_doc['filename'], pdf_doc['content'])
                             zip_buffer.seek(0)
-
                             zip_filename = f"multi_pdf_batch_{str(source.id)[:8]}.zip"
                             encoded_filename = quote(zip_filename)
                             return StreamingResponse(
@@ -366,7 +332,6 @@ async def download_file(
                 pdf_files = source.source_metadata.get('pdf_files', [])
                 filenames = [f.get('filename')
                              for f in pdf_files if f.get('filename')]
-
                 if filenames:
                     stmt = select(Product).join(ProjectProductLink).where(
                         ProjectProductLink.project_id == source.project_id,
@@ -377,12 +342,10 @@ async def download_file(
             if not products:
                 raise HTTPException(
                     status_code=404, detail="No enriched data found")
-
             project = await db.get(Project, source.project_id) if products else None
             project_name = project.name if project else None
             use_case_lower = (
                 project.use_case or "").lower() if project else ""
-
             if source.source_url and source.source_url.endswith('.pdf'):
                 output_filename = source.source_url.rsplit('.', 1)[0] + '.xlsx'
             elif source.source_type == "pdf_multi_pending":
@@ -412,8 +375,6 @@ async def download_file(
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Error generating download")
-
-
 def clean_numeric_string(value):
     if value is None or value == '':
         return ''
@@ -427,8 +388,6 @@ def clean_numeric_string(value):
     except (ValueError, OverflowError):
         pass
     return s
-
-
 @router.post("/upload", status_code=status.HTTP_202_ACCEPTED)
 async def upload_file(
     request: Request,
@@ -574,34 +533,27 @@ async def upload_file(
             try:
                 savepoint = await db.begin_nested()
                 if code:
-                    
                     stmt = select(Product).where(
                         Product.product_code == str(code),
                         Product.enrichment_status == "completed"
                     ).order_by(Product.updated_at.desc())
                     result = await db.execute(stmt)
                     product = result.scalars().first()
-
                     if product:
-                        
                         link_stmt = select(ProjectProductLink).where(
                             ProjectProductLink.product_id == product.id,
                             ProjectProductLink.project_id == projectId
                         )
                         link_result = await db.execute(link_stmt)
-
                         if not link_result.scalars().first():
-                            
                             db.add(ProjectProductLink(
                                 project_id=projectId,
                                 product_id=product.id,
                                 enrichment_status="pending"
                             ))
                             await db.flush()
-
                         is_reused = True
                         updated_count += 1
-
                 if not is_reused:
                     features_list = []
                     for i in range(1, 10):
@@ -613,7 +565,6 @@ async def upload_file(
                         workflow_stage=default_workflow_stage,
                         created_at=now_ist(),
                         enrichment_status="pending",
-                        
                         product_name=row.get("product_name") or row.get(
                             "name") or str(code) or "Unknown Product",
                         mpn=val_mpn,
@@ -644,8 +595,6 @@ async def upload_file(
                         dimension_unit=row.get('dimension_unit'),
                         currency=row.get("currency", "USD"),
                     )
-
-                    
                     try:
                         if row.get('weight'):
                             product.weight = str(row['weight']).replace(',', '')
@@ -659,8 +608,6 @@ async def upload_file(
                             product.base_price = float(str(row["base_price"]).replace(',', ''))
                     except ValueError as e:
                         logger.warning(f"Error parsing numeric field for {code}: {e}")
-
-                    
                     brand = await get_or_create_brand(db, row.get("brand"))
                     if brand:
                         product.brand_id = brand.id
@@ -669,40 +616,27 @@ async def upload_file(
                         if row.get('country_of_origin'):
                             brand.country_of_origin = row.get('country_of_origin')
                             db.add(brand)
-
                     vendor = await get_or_create_vendor(db, row.get("vendor"))
                     if vendor:
                         product.vendor_id = vendor.id
                         product.vendor_name = vendor.name
-
                     industry = await get_or_create_industry(db, row.get("industry_name"))
                     if industry:
                         product.industry_id = industry.id
                         product.industry_name = industry.name
-
-                    
                     db.add(product)
                     await db.flush()  
-
-                    
                     db.add(ProjectProductLink(
                         project_id=projectId,
                         product_id=product.id,
                         enrichment_status="pending"
                     ))
-
                     created_count += 1
-
                 else:
-                    
                     updated_count += 1
                     if product and product.industry_id:
                         target_industry_id = product.industry_id
-
-                
                 dynamic_attrs = row.get('attributes', [])
-
-                
                 if not dynamic_attrs:
                     for i in range(1, 41):
                         attr_name = row.get(f'attribute_name{i}')
@@ -714,33 +648,27 @@ async def upload_file(
                                 'validation_value': str(row.get(f'validation_value{i}', '')).strip(),
                                 'validation_uom': str(row.get(f'validation_uom{i}', '')).strip()
                             })
-
-                
                 path_parts = []
                 for i in range(1, 9):
                     cat = getattr(product, f'category_{i}', None)
                     if cat and str(cat).strip():
                         path_parts.append(str(cat).strip())
-
                 category_id = None
                 if path_parts:
                     if not target_industry_id:
                         target_industry_id = industry.id if (industry and hasattr(industry, 'id')) else None
-                    if not target_industry_id:   # ← separate check, only run fallback if STILL empty
+                    if not target_industry_id:   
                         res = await db.execute(select(Industry).limit(1))
                         fallback_industry = res.scalars().first()
                         if fallback_industry:
                             target_industry_id = fallback_industry.id
                     try:
-                        
                         category_id = await ensure_category_from_path(db, path_parts,industry_id=target_industry_id)
                         if category_id:
                             product.category_id = category_id
                             db.add(product)
                     except Exception as e:
                          logger.error(f"Category creation failed for path {path_parts}: {e}")
-
-                
                 if dynamic_attrs:
                     try:
                         await save_attributes_normalized(db, product, dynamic_attrs, category_id)
@@ -757,8 +685,6 @@ async def upload_file(
                 })
                 logger.error(f"Failed to process product {code}: {e}", exc_info=True)
                 continue
-        
-        
         total_processed = created_count + updated_count
         if failed_count == 0 and total_processed == total_rows:
             new_source.status = "completed"
@@ -793,14 +719,11 @@ async def upload_file(
             }
             logger.error(
                 f"Batch import FAILED: All {failed_count} products failed")
-        
         db.add(new_source)
         await db.commit()  
         await db.refresh(new_source)
-        
         logger.info(
             f"Batch import saved: {created_count} new, {updated_count} updated. Waiting for manual aggregation.")
-        
         return {
             "status": "accepted",
             "batch_id": str(new_source.id),
@@ -825,8 +748,6 @@ async def upload_file(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Batch processing failed: {str(e)}"
         )
-
-
 @router.get("/batch-status/{batch_id}")
 async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -845,8 +766,6 @@ async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_session
         logger.error(f"Error fetching batch status: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Failed to fetch batch status")
-
-
 @router.get("/{source_id}/metrics", response_model=SourceMetricsResponse)
 async def get_source_metrics(source_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -891,8 +810,6 @@ async def get_source_metrics(source_id: str, db: AsyncSession = Depends(get_sess
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Analytics engine failed to calculate metrics"
         )
-
-
 async def run_extraction_task(source_id: str, content: str):
     async with async_session_factory() as db_session:
         try:
@@ -935,10 +852,8 @@ async def run_extraction_task(source_id: str, content: str):
                     if not product:
                         product = Product(
                             product_code=sku,
-                            
                             brand_name=brand,
                             mpn=sku,
-                            
                             source_url=source.source_url,
                             attributes=raw_attributes,
                             enrichment_status='pending',
@@ -946,8 +861,6 @@ async def run_extraction_task(source_id: str, content: str):
                         )
                         db_session.add(product)
                         await db_session.flush()
-
-                        
                         db_session.add(ProjectProductLink(
                             project_id=source.project_id,
                             product_id=product.id
@@ -1014,8 +927,6 @@ async def run_extraction_task(source_id: str, content: str):
                         await error_session.commit()
             except:
                 pass
-
-
 @router.post('/aggregate/{source_id}', status_code=status.HTTP_202_ACCEPTED)
 async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
     try:
@@ -1037,7 +948,6 @@ async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks,
             'status': 'accepted',
             'message': "Aggregation started in the background",
             'source_id': source.id,
-
         }
     except HTTPException:
         raise
@@ -1045,12 +955,8 @@ async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks,
         logger.error(f"Failed to trigger aggregation:{str(e)}")
         raise HTTPException(
             status_code=500, detail="Failed to start aggregation")
-
-
 def normalize_key(key: str) -> str:
     return str(key).lower().replace("_", "").replace(" ", "").strip()
-
-
 def fuzzy_match_key(key: str, key_list: List[str]) -> Optional[str]:
     def normalize(s):
         s = re.sub(r'\(.*?\)', '', s)
@@ -1060,8 +966,6 @@ def fuzzy_match_key(key: str, key_list: List[str]) -> Optional[str]:
         if normalize(k) == target:
             return k
     return None
-
-
 async def run_aggregation_task(source_id: str):
     async with async_session_factory() as db_session:
         try:
@@ -1074,10 +978,6 @@ async def run_aggregation_task(source_id: str):
                     f"Project or use_case not found for source {source_id}")
                 return
             logger.info(f"Project use case {project.use_case}")
-            
-            
-            
-            
             stmt = select(Product).join(ProjectProductLink).where(
                 ProjectProductLink.project_id == source.project_id,
                 Product.enrichment_status == 'pending'
@@ -1093,68 +993,12 @@ async def run_aggregation_task(source_id: str):
                 try:
                     display_id = product.product_code if (
                         product.mpn or product.sku) else product.product_name
-
                     logger.info(f"Aggregating {idx+1}/{total}: {display_id}")
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
                     category_attrs = []
                     if product.category_id:
                         category_attrs = await get_category_expected_attributes(
                             db_session, product.category_id
                         )
-
-                    
                     existing_data = {}
                     try:
                         stmt = (
@@ -1179,18 +1023,14 @@ async def run_aggregation_task(source_id: str):
                     except Exception as e:
                         logger.warning(
                             f"Failed to read existing attributes for {product.product_code}: {e}")
-
-                    
                     existing_names = set(existing_data.keys())
                     primary_attr_names = list(
                         category_attrs)  
                     for name in existing_names:
                         if name not in primary_attr_names:
                             primary_attr_names.append(name)
-
                     if not primary_attr_names:
                         primary_attr_names = list(existing_names)
-
                     logger.info(f"  Category attrs: {category_attrs}")
                     logger.info(f"  Existing attrs: {list(existing_names)}")
                     logger.info(
@@ -1267,7 +1107,6 @@ async def run_aggregation_task(source_id: str):
                         ai_attributes = golden.get('attributes', {})
                         product.enrichment_status = 'completed'
                         product.data_quality_score = 100.0
-
                         product.short_description = sanitize_ai_data(
                             golden.get('short_description')) or product.short_description
                         product.long_description = sanitize_ai_data(
@@ -1297,20 +1136,6 @@ async def run_aggregation_task(source_id: str):
                                         "web_value") if isinstance(ai_val, dict) else ai_val
                                 else:
                                     ai_data_for_merge[ai_key] = ai_val
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
-                            
                             if existing_data and "validation" in use_case:
                                 for attr_name, attr_data in existing_data.items():
                                     if attr_name in ai_data_for_merge:
@@ -1324,8 +1149,6 @@ async def run_aggregation_task(source_id: str):
                                             validation_value = str(
                                                 ai_val) if ai_val else ''
                                             validation_uom = ''
-
-                                        
                                         try:
                                             val_stmt = select(AttributeValue).join(
                                                 ProductAttributeValueLinkModel,
@@ -1338,7 +1161,6 @@ async def run_aggregation_task(source_id: str):
                                             )
                                             val_result = await db_session.execute(val_stmt)
                                             attr_val = val_result.scalars().first()
-
                                             if attr_val:
                                                 attr_val.validation_value = validation_value
                                                 attr_val.validation_uom = validation_uom
@@ -1413,8 +1235,6 @@ async def run_aggregation_task(source_id: str):
                                     )
                                     db_session.add(attr_value_obj)
                                     await db_session.flush()
-
-                                
                                 pv_stmt = select(ProductAttributeValueLinkModel).where(
                                     ProductAttributeValueLinkModel.product_id == product.id,
                                     ProductAttributeValueLinkModel.attribute_value_id == attr_value_obj.id,
@@ -1424,8 +1244,6 @@ async def run_aggregation_task(source_id: str):
                                         product_id=product.id,
                                         attribute_value_id=attr_value_obj.id
                                     ))
-
-                                
                                 if product.category_id:
                                     from app.models.attribute import CategoryAttribute
                                     ca_stmt = select(CategoryAttribute).where(
@@ -1437,11 +1255,9 @@ async def run_aggregation_task(source_id: str):
                                             category_id=product.category_id,
                                             attribute_id=attribute.id,
                                         ))
-
                         except Exception as e:
                             logger.error(
                                 f"Failed to sync AI attributes to normalized tables: {e}")
-
                         successful += 1
                     else:
                         failed += 1
