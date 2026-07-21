@@ -125,7 +125,38 @@ def extract_product_descriptions(html_content: str) -> str:
             desc_text = raw_text
     return desc_text[:10000]
 
-
+def try_paired_feature_benefit_lists(soup) -> List[str]:
+    headings = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'p', 'strong', 'b'])
+    features_list, benefits_list = None, None
+    for h in headings:
+        text = (h.get_text(strip=True) or '').lower().rstrip(':').strip()
+        if text in ('feature', 'features'):
+            candidate = h.find_next(['ul', 'ol'])
+            if candidate:
+                features_list = [
+                    li.get_text(separator=' ', strip=True)          # fixed: 'separator' not 'seperator'
+                    for li in candidate.find_all('li', recursive=False)  # fixed: recursive=False
+                ]
+        elif text in ('benefit', 'benefits'):
+            candidate = h.find_next(['ul', 'ol'])
+            if candidate:
+                benefits_list = [
+                    li.get_text(separator=' ', strip=True)
+                    for li in candidate.find_all('li', recursive=False)
+                ]
+    if features_list is not None:
+        features_list = [f for f in features_list if f and f.strip()]
+    if benefits_list is not None:
+        benefits_list = [b for b in benefits_list if b and b.strip()]
+    if features_list and benefits_list and len(features_list) == len(benefits_list):
+        logger.info(f"Paired feature/benefit lists detected: {len(features_list)} pairs")
+        return [f"{f} — {b}" for f, b in zip(features_list, benefits_list)]   # fixed: real f-string
+    logger.debug(
+        f"Feature/Benefit pairing skipped: "
+        f"feature_list={len(features_list or [])}, benefit_list={len(benefits_list or [])} (count mismatch or missing)"
+    )
+    return []
+    
 def extract_features_section(html_content: str, max_features: int = 20, max_li_search: int = 1000) -> List[str]:
     if not html_content:
         logger.warning("extract_features_section: Empty html_content provided")
@@ -143,6 +174,10 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
     features = []
     seen = set()
     try:
+        paired=try_paired_feature_benefit_lists(soup)
+        if paired:
+            logger.info(f"Strategy 0 success:{len(paired)} feature/benefit strings")
+            return paired
         logger.debug("Strategy 1: Searching for feature headings...")
         strategy1_found = False
         try:
@@ -596,6 +631,17 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
             repeated 3+ times in sequence (e.g., TYPE:/APPLICATION:/LENGTH:)
           e) Tabbed/accordion content where one tab is labeled "Features" or 
             "Highlights"
+          f) TWO SEPARATE LABELED LISTS — one under a "Features:" (or "Features")
+        heading, another under a "Benefit:" (or "Benefits") heading — where
+        both lists have the SAME number of items, listed in the SAME order.
+        This means item 1 of Features pairs with item 1 of Benefits, item 2
+        with item 2, etc. Combine each pair into ONE feature string:
+        "Designed and wired to dissipate electrostatic discharge away from
+            the operator, directly to an earth ground — Prevents high-current shock"
+        Do NOT output the Features list and Benefits list as separate,
+        unrelated entries. If item counts don't match, treat only the
+        Features list as the features (ignore the mismatched Benefits list
+        rather than guessing pairing).
         If you detect any of these patterns, this is the features source.
         Do NOT use these as features:
           - The product spec table (key-value specs like "Diameter: 0.131")
