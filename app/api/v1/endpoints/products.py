@@ -127,16 +127,16 @@ async def read_products(
 
         if product_ids_page:
             cleaned_stmt = (
-                select(
-                    AttributeEditLog.product_id,
-                    func.count(func.distinct(AttributeEditLog.attribute_name)).label("cleaned_cnt")
-                )
-                .where(
-                    AttributeEditLog.product_id.in_(product_ids_page),
-                    AttributeEditLog.edit_source == "ai_cleaning",
-                )
-                .group_by(AttributeEditLog.product_id)
-            )
+    select(
+        AttributeEditLog.product_id,
+        func.count(func.distinct(AttributeEditLog.attribute_name)).label("cleaned_cnt")
+    )
+    .where(
+        AttributeEditLog.product_id.in_(product_ids_page),
+        AttributeEditLog.edit_source.in_(["ai_cleaning", "manual"]), 
+    )
+    .group_by(AttributeEditLog.product_id)
+)
 
             # IMPORTANT: filter by project_id so reused products don't show old project cleaning
             if project_id:
