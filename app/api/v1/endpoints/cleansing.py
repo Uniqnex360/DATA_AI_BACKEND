@@ -1,5 +1,4 @@
 from typing import Dict, List
-from datetime import datetime, timedelta, timezone
 from openai import project
 from sqlalchemy import or_
 from app.models.attribute import Attribute, AttributeValue
@@ -24,7 +23,6 @@ import pandas as pd
 import io
 from app.models.project_product_link import ProjectProductLink
 from app.schemas.aggregation import AggregateLLMRequest, UpdateAttributesRequest
-from app.schemas.enrichment import AggregatedAttribute
 from app.schemas.cleaning import BulkUpdateAttributesRequest, ExportSelectedCleaningRequest, RunCleaningRequest
 from app.utils.aggregate_download import generate_products_excel
 from app.utils.cleaning_helper import append_cleaning_task_log, create_cleaning_task, get_cleaning_task_or_404, update_cleaning_task_status
@@ -214,8 +212,8 @@ async def run_cleaning_task(
                     )
                     cleaning_result = await service.clean_attributes(attributes, context)
                     updated = await save_cleaned_attributes(
-                        db, product.id, cleaning_result, llm_provider
-                    )
+    db, product.id, cleaning_result, llm_provider, project_id=project_id
+)
                     product.enrichment_status = "completed"
                     product.data_quality_score = 100.0
                     product.last_algorithm_used = llm_provider
@@ -367,15 +365,10 @@ async def get_task_status(task_id: str, db: AsyncSession = Depends(get_session))
             status_code=500, detail="Failed to fetch task status")
 import re
 def _normalize_attr_name_for_comparison(name: str) -> str:
-    """Remove units in parentheses for comparison.
-    
-    'Tank Capacity (gal)' -> 'Tank Capacity'
-    'Dimensions (LxWxH)' -> 'Dimensions'
-    'Weight (lbs)' -> 'Weight'
-    """
+  
     if not name:
         return ""
-    # Remove parenthetical content at end of string (units like (gal), (LxWxH))
+    
     normalized = re.sub(r'\s*\([^)]+\)\s*$', '', name).strip()
     return normalized.lower()        
 async def save_cleaned_attributes(
@@ -383,6 +376,7 @@ async def save_cleaned_attributes(
     product_id: str,
     cleaning_response: LLMCleaningResponse,
     llm_provider: str = "openai",
+     project_id: str | None = None,  
 ) -> bool:
     try:
         product = await db_session.get(Product, product_id)
@@ -405,7 +399,7 @@ async def save_cleaned_attributes(
                 logger.warning(f"AttributeValue not found for id={ca.id} ('{ca.name}'), skipping")
                 continue
 
-            # ✅ now safe to use attr_val below
+            
             attr_check_stmt = select(Attribute).where(Attribute.id == attr_val.attribute_id)
             attr_check_result = await db_session.execute(attr_check_stmt)
             actual_attribute = attr_check_result.scalars().first()
@@ -414,7 +408,7 @@ async def save_cleaned_attributes(
                 claimed_base = _normalize_attr_name_for_comparison(ca.name)
                 
                 if actual_base != claimed_base:
-                    # Real name mismatch - check if it's just a case difference
+                    
                     if actual_attribute.attribute_name.strip().lower() != ca.name.strip().lower():
                         logger.error(
                             f"ID/name mismatch: id={ca.id} belongs to '{actual_attribute.attribute_name}' "
@@ -422,10 +416,10 @@ async def save_cleaned_attributes(
                         )
                         continue
                     else:
-                        # Just a case difference - this is OK
+                        
                         logger.info(f"Case difference accepted for '{ca.name}'")
             
-            # Use the original canonical name from DB
+            
             ca.name = actual_attribute.attribute_name
 
             old_value = str(attr_val.value or "")
@@ -437,16 +431,27 @@ async def save_cleaned_attributes(
             name_changed = ca.name != ""
             val_changed = final_val != str(attr_val.value or "")
             unit_changed = final_unit != (attr_val.uom or "")
-            link_stmt = select(ProjectProductLink).where(
-                ProjectProductLink.product_id == product_id
-            )
-            link_result = await db_session.execute(link_stmt)
-            link = link_result.scalars().first()
-            project = await db_session.get(Project, link.project_id) if link else None
+            # link_stmt = select(ProjectProductLink).where(
+            #     ProjectProductLink.product_id == product_id
+            # )
+            # link_result = await db_session.execute(link_stmt)
+            # link = link_result.scalars().first()
+            # project = await db_session.get(Project, link.project_id) if link else None
+            link_stmt = select(ProjectProductLink).where(ProjectProductLink.product_id == product_id)
+
+            if project_id:
+                link_stmt = link_stmt.where(ProjectProductLink.project_id == project_id)
+            else:
+                link_stmt = link_stmt.order_by(ProjectProductLink.linked_at.desc())  # fallback
+
+            link = (await db_session.execute(link_stmt)).scalars().first()
+
+            effective_project_id = str(link.project_id) if link else project_id
+            project = await db_session.get(Project, effective_project_id) if effective_project_id else None
             if val_changed or unit_changed:
                 edit_log = AttributeEditLog(
                     product_id=product_id,
-                    project_id=link.project_id if link else None, 
+                    project_id=effective_project_id,
                     catalog_project_name=project.name if project else None,
                     category_name=product.category_1 or product.taxonomy,
                     brand_name=product.brand_name,
@@ -626,11 +631,12 @@ async def update_product_attributes(
         product = await db.get(Product, product_id)
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
-        link_stmt = select(ProjectProductLink).where(
-            ProjectProductLink.product_id == product.id
-        )
-        link_result = await db.execute(link_stmt)
-        link = link_result.scalars().first()
+        link_stmt = (
+    select(ProjectProductLink)
+    .where(ProjectProductLink.product_id == product.id)
+    .order_by(ProjectProductLink.linked_at.desc())
+)
+        link = (await db.execute(link_stmt)).scalars().first()
         project_id = str(link.project_id) if link else None
         algorithm = (
             product.last_algorithm_used or product.used_llms[-1] if product.used_llms else 'Unknown')

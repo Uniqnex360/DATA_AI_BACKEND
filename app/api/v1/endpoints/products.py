@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query, s
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from app.models.attribute import Attribute, AttributeValue
+from app.models.attribute_edit_log import AttributeEditLog
 from app.models.brand import Brand
 from app.models.project_product_link import ProjectProductLink
 from app.schemas.brand import BrandCreate
@@ -38,8 +39,13 @@ async def read_products(
     try:
         statement = select(Product, ProjectProductLink.enrichment_status.label('link_status'))
         if project_id:
-            statement = statement.join(ProjectProductLink,Product.id==ProjectProductLink.product_id).where(
-                ProjectProductLink.project_id == project_id)
+            statement = (
+                select(Product, ProjectProductLink.enrichment_status.label("link_status"))
+                .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+                .where(ProjectProductLink.project_id == project_id)
+            )
+        else:
+            statement = select(Product, Product.enrichment_status.label("link_status"))
         if workflow_stage and hasattr(Product, 'workflow_stage'):
             statement = statement.where(
                 Product.workflow_stage == workflow_stage)
@@ -71,7 +77,7 @@ async def read_products(
             statement = statement.where((Product.product_name.ilike(search_term)) |
                                         (Product.product_code.ilike(search_term)) |
                                         (Product.brand_name.ilike(search_term)))
-        # count_stmt = select(func.count()).select_from(statement.subquery())
+        
         if project_id:
             count_stmt = select(func.count(Product.id)).join(
                 ProjectProductLink, Product.id == ProjectProductLink.product_id
@@ -114,18 +120,41 @@ async def read_products(
         statement = statement.order_by(
             Product.created_at.desc()).offset(skip).limit(limit)
         result = await db.execute(statement)
-        # products = result.scalars().all()
+        
         rows = result.all()
+        product_ids_page = [row[0].id for row in rows]
+        cleansed_map: dict = {}
+
+        if product_ids_page:
+            cleaned_stmt = (
+                select(
+                    AttributeEditLog.product_id,
+                    func.count(func.distinct(AttributeEditLog.attribute_name)).label("cleaned_cnt")
+                )
+                .where(
+                    AttributeEditLog.product_id.in_(product_ids_page),
+                    AttributeEditLog.edit_source == "ai_cleaning",
+                )
+                .group_by(AttributeEditLog.product_id)
+            )
+
+            # IMPORTANT: filter by project_id so reused products don't show old project cleaning
+            if project_id:
+                cleaned_stmt = cleaned_stmt.where(AttributeEditLog.project_id == project_id)
+
+            cleaned_res = await db.execute(cleaned_stmt)
+            cleansed_map = {pid: cnt for pid, cnt in cleaned_res.all()}
         project_data = None
         if project_id:
             project_data = await db.get(Project, project_id)
         product_list = []
         for row in rows:
-            p = row[0]  # Product object
-            link_status = row[1]  # link enrichment_status
+            p = row[0]  
+            link_status = row[1]  
             p_dict = p.dict() if hasattr(p, 'dict') else p.__dict__
             p_dict['enrichment_status'] = link_status or p_dict.get('enrichment_status', 'pending')
-            # Build attributes_dict from normalized tables
+            p_dict["cleansed_attribute_count"] = cleansed_map.get(p.id, 0)
+
             attributes_dict = {}
             attribute_names = []
             try:
@@ -209,7 +238,7 @@ async def get_products_filters(
     db: AsyncSession = Depends(get_session),
 ):
     try:
-        # 1. Define it FIRST
+        
         last_cat_expr = get_last_category_expr()
 
         category_stmt = select(last_cat_expr).where(last_cat_expr.isnot(None))
@@ -259,22 +288,22 @@ async def get_project_attributes(
             default=None, description="Optional category filter"),
         db: AsyncSession = Depends(get_session),):
     try:
-        # stmt = select(Product.dynamic_attributes).where(
-        #     ProjectProductLink.project_id == project_id)
-        # if category:
-        #     stmt = stmt.where(Product.category_1 == category)
-        # result = await db.execute(stmt)
-        # rows = result.scalars().all()
-        # attribute_names = set()
-        # for dynamic_attributes in rows:
-        #     if not dynamic_attributes or not isinstance(dynamic_attributes, list):
-        #         continue
-        #     for attr in dynamic_attributes:
-        #         if isinstance(attr, dict):
-        #             name = attr.get('name')
-        #             if isinstance(name, str) and name.strip():
-        #
-        # attribute_names.add(name.strip())
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         stmt = (
             select(Attribute.attribute_name)
             .join(ProductAttributeLinkModel, ProductAttributeLinkModel.attribute_id == Attribute.id)
@@ -330,13 +359,13 @@ async def get_expected_attributes_async(product: Product, db: AsyncSession) -> L
             return []
         attribute_counts = {}
         for p in similar_products:
-            # attrs = set()
-            # if p.attributes:
-            #     attrs.update(p.attributes.keys())
-            # if p.dynamic_attributes:
-            #     for attr in p.dynamic_attributes:
-            #         if isinstance(attr, dict) and attr.get("name"):
-            #             attrs.add(attr["name"])
+            
+            
+            
+            
+            
+            
+            
             attrs = set()
             if p.attributes:
                 attrs.update(p.attributes.keys())
@@ -379,7 +408,7 @@ async def get_project_product_stats(
         if brand_name:
             stmt = stmt.where(Product.brand_name == brand_name)
         
-        # FIX: Check ALL category fields (category_1 through category_8 + taxonomy)
+        
         if category_1:
             stmt = stmt.where(
                 or_(
@@ -662,7 +691,7 @@ async def get_product_by_id(
 
         p_dict = product.dict()
 
-        # Build attributes from normalized tables (same as you already do)
+        
         attributes_dict = {}
         val_stmt = (
             select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom)
@@ -681,7 +710,7 @@ async def get_product_by_id(
 
         p_dict["attributes"] = attributes_dict
 
-        # NEW: provide export-like ordering (best effort)
+        
         if project_id and product.taxonomy:
             order, category_attrs = await build_attribute_order_for_project_taxonomy(
                 db=db,
