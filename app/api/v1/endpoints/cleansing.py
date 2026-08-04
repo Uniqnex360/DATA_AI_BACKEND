@@ -922,6 +922,7 @@ async def bulk_update_product_attributes(
             status_code=500,
             detail="Failed to bulk update attributes"
         )
+        
 @router.post("/download-selected")
 async def download_selected_cleaned_products(
     request: ExportSelectedCleaningRequest,
@@ -945,7 +946,15 @@ async def download_selected_cleaned_products(
         products = result.scalars().all()
         if not products:
             raise HTTPException(status_code=404, detail="No products found")
-        return await generate_products_excel(products, db)
+        export_project_id = None
+        if request.project_ids and len(request.project_ids) == 1:
+            export_project_id = request.project_ids[0]
+
+        return await generate_products_excel(
+            products,
+            db,
+            project_id=export_project_id
+        )
     except HTTPException:
         raise
     except Exception as e:

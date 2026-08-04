@@ -17,6 +17,8 @@ from app.models.product import Product
 from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
 from app.models.category import Category
 from datetime import datetime
+
+from app.utils.attribute_order import build_attribute_order_for_project_taxonomy
 logger = logging.getLogger('products')
 router = APIRouter()
 
@@ -650,51 +652,53 @@ async def get_all_taxonomies(db: AsyncSession = Depends(get_session)):
 @router.get("/{product_id}", response_model=Dict[str, Any])
 async def get_product_by_id(
     product_id: UUID,
+    project_id: Optional[UUID] = Query(default=None),
     db: AsyncSession = Depends(get_session)
 ):
     try:
-        # Fetch the product
         product = await db.get(Product, product_id)
         if not product:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Product not found"
-            )
-        
-        # Convert to dict
-        p_dict = product.dict() if hasattr(product, 'dict') else product.__dict__
-        
-        # Build attributes from normalized tables
+            raise HTTPException(status_code=404, detail="Product not found")
+
+        p_dict = product.dict()
+
+        # Build attributes from normalized tables (same as you already do)
         attributes_dict = {}
-        try:
-            val_stmt = (
-                select(Attribute.attribute_name,
-                       AttributeValue.value, AttributeValue.uom)
-                .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
-                .join(ProductAttributeValueLinkModel,
-                      ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
-                .where(ProductAttributeValueLinkModel.product_id == product_id)
+        val_stmt = (
+            select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom)
+            .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
+            .join(ProductAttributeValueLinkModel, ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+            .where(ProductAttributeValueLinkModel.product_id == product_id)
+        )
+        val_result = await db.execute(val_stmt)
+        for attr_name, value, uom in val_result.all():
+            attributes_dict[attr_name] = {
+                "name": attr_name,
+                "value": value or "",
+                "unit": uom or "",
+                "sources": []
+            }
+
+        p_dict["attributes"] = attributes_dict
+
+        # NEW: provide export-like ordering (best effort)
+        if project_id and product.taxonomy:
+            order, category_attrs = await build_attribute_order_for_project_taxonomy(
+                db=db,
+                project_id=project_id,
+                taxonomy=product.taxonomy,
+                max_attributes=100
             )
-            val_result = await db.execute(val_stmt)
-            for attr_name, value, uom in val_result.all():
-                attributes_dict[attr_name] = {
-                    'name': attr_name,
-                    'value': value or '',
-                    'unit': uom or '',
-                    'sources': []
-                }
-        except Exception as e:
-            logger.error(f"Failed to fetch attributes: {e}")
-        
-        p_dict['attributes'] = attributes_dict
-        
+            p_dict["attribute_order"] = order
+            p_dict["category_attribute_names"] = category_attrs
+        else:
+            p_dict["attribute_order"] = list(attributes_dict.keys())
+            p_dict["category_attribute_names"] = []
+
         return p_dict
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Failed to fetch product {product_id}: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to fetch product details"
-        )
+        raise HTTPException(status_code=500, detail="Failed to fetch product details")

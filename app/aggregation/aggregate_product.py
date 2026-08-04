@@ -703,14 +703,13 @@ async def verify_page_identity_with_llm(url: str, html: str, brand: str, title: 
         return False
 async def _enqueue_alias_job_isolated(category_id):
     from app.core.database import async_session_factory
-    """Runs the alias-job enqueue on its own DB session so it never
-    races the main pipeline's session (which caused InterfaceError:
-    'another operation is in progress')."""
+  
     try:
         async with async_session_factory() as new_db:
             await enqueue_category_alias_job(category_id, new_db)
     except Exception as e:
         logger.warning(f"[Stage3Canonicals] isolated alias job failed: {e}")    
+        
 async def aggregate_product(
     mpn: str,
     title: str,

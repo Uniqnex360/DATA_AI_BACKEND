@@ -10,21 +10,40 @@ from app.aggregation.prompt_builder import get_taxonomy_attribute_hints
 from app.models.product import Product
 from app.models.project import Project
 import json
+from datetime import datetime
 from app.models.project_product_link import ProjectProductLink
 async def generate_products_excel(
     products: List[Product],
     db: AsyncSession,
+    project_id: Optional[str] = None,   
     global_project_name: Optional[str] = None,
     filename: Optional[str] = None 
 ) -> StreamingResponse:
     if not products:
         raise HTTPException(status_code=404, detail="No products to export")
     use_case = None
-    first_link_result = await db.execute(select(ProjectProductLink).where(ProjectProductLink.product_id == products[0].id))
-    first_link = first_link_result.scalars().first()
-    first_project = await db.get(Project, first_link.project_id) if first_link else None
-    if first_project and first_project.use_case:
-        use_case = first_project.use_case.lower()
+    if project_id and not global_project_name:
+        export_project = await db.get(Project, project_id)
+        if export_project:
+            global_project_name = export_project.name or ""
+            use_case = (export_project.use_case or "").lower()
+    if not use_case:
+        first_link_result = await db.execute(
+            select(ProjectProductLink)
+            .where(ProjectProductLink.product_id == products[0].id)
+            .order_by(ProjectProductLink.linked_at.desc())  # deterministic fallback
+            .limit(1)
+        )
+        first_link = first_link_result.scalars().first()
+        first_project = await db.get(Project, first_link.project_id) if first_link else None
+        if first_project and first_project.use_case:
+            use_case = first_project.use_case.lower()
+    # first_link_result = await db.execute(select(ProjectProductLink).where(ProjectProductLink.product_id == products[0].id))
+    # first_link = first_link_result.scalars().first()
+    # first_project = await db.get(Project, first_link.project_id) if first_link else None
+    # if first_project and first_project.use_case:
+    #     use_case = first_project.use_case.lower()
+    use_case = use_case or ""
     if 'back filling' in use_case or 'validation' in use_case:
         MAX_ATTRIBUTES = 100
     else:
@@ -44,11 +63,24 @@ async def generate_products_excel(
         media_headers.extend([f"video_name_{i}", f"video_url_{i}"])
     for i in range(1, 6):
         media_headers.extend([f"document_name_{i}", f"document_url_{i}"])
-    content_headers = ["3D_Model_URL", "Short_Description", "Long_Description",
-                       "features_1", "features_2", "features_3", "features_4", "features_5",
-                       "features_6", "features_7", "features_8", "features_9", "features_10",
-                       "Meta_Title", "Meta_Description", "Search_Keywords",
-                       "Certification", "Safety_Standard", "Hazardous_Material", "Prop65_Warning"]
+    MAX_FEATURES=10
+    for _p in products:
+        _feats=_p.features or []
+        if isinstance(_feats,str):
+            try:
+                _feats=json.loads(_feats)
+            except Exception:
+                 _feats = []
+        if isinstance(_feats, list) and len(_feats) > MAX_FEATURES:
+            MAX_FEATURES = len(_feats)
+    MAX_FEATURES = min(MAX_FEATURES, 50)  
+    content_headers = ["3D_Model_URL", "Short_Description", "Long_Description"]
+    for i in range(1, MAX_FEATURES + 1):
+        content_headers.append(f"features_{i}")
+    content_headers += [
+        "Meta_Title", "Meta_Description", "Search_Keywords",
+        "Certification", "Safety_Standard", "Hazardous_Material", "Prop65_Warning"
+    ]
     attr_headers = []
     for i in range(1, MAX_ATTRIBUTES + 1):
         attr_headers.extend([
@@ -59,6 +91,7 @@ async def generate_products_excel(
     source_url_headers = [f"source_url_{i}" for i in range(1, 6)]
     all_headers = ["Project Name"] + core_headers + cat_headers + phys_headers + price_headers + \
                   media_headers + content_headers + attr_headers + source_url_headers
+    
     DEDICATED_COLUMN_MAPPING = {
         "name": "Product_Name",
         "product_name": "Product_Name",
@@ -240,19 +273,38 @@ async def generate_products_excel(
             add_if_unique(ai_attr)
         taxonomy_templates[tax] = final_template[:MAX_ATTRIBUTES]
     is_validation_mode = 'validation' in use_case if use_case else False
+    # project_name_cache = {}
+    # prod_to_proj = {}
+    # if not global_project_name:
+    #     link_stmt = select(ProjectProductLink).where(
+    #         ProjectProductLink.product_id.in_([p.id for p in products]))
+    #     links = (await db.execute(link_stmt)).scalars().all()
+    #     prod_to_proj = {link.product_id: link.project_id for link in links}
     project_name_cache = {}
     prod_to_proj = {}
+
     if not global_project_name:
         link_stmt = select(ProjectProductLink).where(
-            ProjectProductLink.product_id.in_([p.id for p in products]))
+            ProjectProductLink.product_id.in_([p.id for p in products])
+        )
+
+        # ✅ If exporting for a specific project, only use links from that project
+        if project_id:
+            link_stmt = link_stmt.where(ProjectProductLink.project_id == project_id)
+
         links = (await db.execute(link_stmt)).scalars().all()
-        prod_to_proj = {link.product_id: link.project_id for link in links}
+
+        # deterministic (if still multiple, keep newest)
+        links = sorted(links, key=lambda l: l.linked_at or datetime.min, reverse=True)
+        for link in links:
+            prod_to_proj.setdefault(link.product_id, link.project_id)
+
         project_ids = {link.project_id for link in links}
         if project_ids:
-            stmt = select(Project.id, Project.name).where(
-                Project.id.in_(list(project_ids)))
+            stmt = select(Project.id, Project.name).where(Project.id.in_(list(project_ids)))
             result = await db.execute(stmt)
             project_name_cache = {row[0]: row[1] for row in result.fetchall()}
+        
     export_rows = []
     for p in products:
         row = {h: "" for h in all_headers}
@@ -342,7 +394,7 @@ async def generate_products_excel(
             except:
                 features_data = [features_data]
         if isinstance(features_data, list):
-            for i, feat in enumerate(features_data[:10], 1):
+            for i, feat in enumerate(features_data[:MAX_FEATURES], 1):
                 row[f"features_{i}"] = clean_for_excel(feat)
         if not row.get("image_url_1") and hasattr(p, 'images') and p.images:
             images_list = list(p.images.values()) if isinstance(p.images, dict) else (p.images if isinstance(p.images, list) else [])

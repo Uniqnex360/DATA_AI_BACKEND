@@ -20,6 +20,7 @@ from app.models.project_product_link import ProjectProductLink
 from app.models.user import User
 from app.utils.aggregate_download import generate_products_excel
 from app.utils.attribute_helper import ensure_category_from_path, get_category_expected_attributes, save_attributes_normalized
+from app.utils.title_recommendation import generate_title_recommendation
 from app.utils.usecase_validator import validate_file_against_use_case
 import json
 import io
@@ -368,7 +369,13 @@ async def download_file(
                 MAX_ATTRIBUTES = 40
             logger.info(
                 f"Using {MAX_ATTRIBUTES} attribute columns for use case: {project.use_case if project else 'Unknown'}")
-            return await generate_products_excel(products, db, global_project_name=project_name, filename=output_filename)
+            return await generate_products_excel(
+    products,
+    db,
+    project_id=str(source.project_id),          
+    global_project_name=project_name,           
+    filename=output_filename
+)
     except HTTPException:
         raise
     except Exception as e:
@@ -1107,6 +1114,16 @@ async def run_aggregation_task(source_id: str):
                         ai_attributes = golden.get('attributes', {})
                         product.enrichment_status = 'completed'
                         product.data_quality_score = 100.0
+                        title_rec = await generate_title_recommendation(
+                            brand=product.brand_name,
+                            attributes=ai_attributes,
+                            taxonomy=product.taxonomy,
+                            llm_provider=llm_provider
+                        )
+                        
+                        product.title_recommendation = title_rec.get('recommended_title')
+                        product.title_confidence = title_rec.get('confidence', 0.0)
+                        product.title_generated_at = now_ist()
                         product.short_description = sanitize_ai_data(
                             golden.get('short_description')) or product.short_description
                         product.long_description = sanitize_ai_data(

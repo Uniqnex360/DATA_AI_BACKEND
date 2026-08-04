@@ -3,46 +3,28 @@ import logging
 import asyncio
 from typing import List, Dict, Tuple
 from uuid import UUID
-
 import numpy as np
 from app.utils.remapping import get_embedding_model
 from scipy.spatial.distance import cosine
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-
 from app.models.attribute import Attribute, CategoryAttribute
 from app.models.category_alias_job import CategoryAliasJob
 from app.models.category_attribute_alias import CategoryAttributeAlias
 from app.llm import call_llm_with_schema
 from app.schemas.canonical import CanonicalAliasResponse
-
 logger = logging.getLogger("canonical_alias_service")
-
-_CANDIDATE_SIM_THRESHOLD = 0.85   # was 0.90 / 0.80
-_LLM_CONFIDENCE_THRESHOLD = 0.70  # slightly lower so it can accept
-
-# ----------------------------------------------------------------------
-# 1) Fingerprint helper (pure function, no DB / no I/O)
-# ----------------------------------------------------------------------
+_CANDIDATE_SIM_THRESHOLD = 0.85   
+_LLM_CONFIDENCE_THRESHOLD = 0.70  
 def _compute_canonical_fingerprint(rows: List[Tuple[str, str]]) -> str:
     try:
         payload = ",".join([f"{name}|{unit or ''}" for name, unit in sorted(rows)])
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
     except Exception as e:
         logger.warning(f"[AliasService] fingerprint failed: {e}")
-        # Stable fallback so the job isn't constantly re-queued
         return hashlib.sha256(str(len(rows)).encode("utf-8")).hexdigest()
-
-
-# ----------------------------------------------------------------------
-# 2) Enqueue (non-blocking, idempotent, never raises)
-# ----------------------------------------------------------------------
 async def enqueue_category_alias_job(category_id: UUID, db: AsyncSession) -> None:
-    """If canonicals changed, queue a job to resolve alias conflicts.
-
-    Safe to call inline from aggregate_product. Never raises.
-    """
     try:
         stmt = (
             select(Attribute.attribute_name, Attribute.unit)
@@ -53,19 +35,15 @@ async def enqueue_category_alias_job(category_id: UUID, db: AsyncSession) -> Non
         rows = [(r[0], r[1]) for r in res.all() if r[0]]
         if not rows:
             return
-
         current_fp = _compute_canonical_fingerprint(rows)
-
         job_stmt = select(CategoryAliasJob).where(
             CategoryAttributeAlias.category_id == category_id
         ) if False else select(CategoryAliasJob).where(
             CategoryAliasJob.category_id == category_id
         )
         existing = (await db.execute(job_stmt)).scalars().first()
-
         if existing and existing.fingerprint == current_fp and existing.status in ("completed", "pending"):
-            return  # already up to date or already queued
-
+            return  
         if not existing:
             db.add(CategoryAliasJob(
                 category_id=category_id,
@@ -77,34 +55,21 @@ async def enqueue_category_alias_job(category_id: UUID, db: AsyncSession) -> Non
             existing.fingerprint = current_fp
             existing.attempts = 0
             existing.last_error = None
-
         await db.commit()
         logger.info(f"[AliasService] Enqueued alias resolution for category_id={category_id}")
-
     except Exception as e:
         try:
             await db.rollback()
         except Exception:
             pass
         logger.warning(f"[AliasService] enqueue failed for category_id={category_id}: {e}")
-
-
-# ----------------------------------------------------------------------
-# 3) Process (worker entry point, never raises)
-# ----------------------------------------------------------------------
 async def process_category_alias_resolution(
     category_id: UUID,
     db: AsyncSession,
     llm_provider: str,
 ) -> Dict[str, int]:
-    """Core resolver: embedding similarity + ONE LLM call + persist alias rows.
-
-    Returns a stats dict. Never raises — all failures are logged.
-    """
     stats = {"candidates": 0, "merged": 0, "skipped": 0}
-
     try:
-        # ---------- Load canonicals ----------
         try:
             stmt = (
                 select(Attribute)
@@ -116,25 +81,19 @@ async def process_category_alias_resolution(
         except Exception as e:
             logger.warning(f"[AliasService] load canonicals failed for {category_id}: {e}")
             return stats
-
         if len(attrs) < 2:
             return stats
-
         name_to_id = {a.attribute_name: a.id for a in attrs if a.attribute_name}
         name_to_unit = {a.attribute_name: a.unit for a in attrs if a.attribute_name}
         names = list(name_to_id.keys())
         if not names:
             return stats
-
-        # ---------- Embeddings ----------
         try:
             model = await get_embedding_model()
             embeddings = await asyncio.to_thread(model.encode, names)
         except Exception as e:
             logger.warning(f"[AliasService] embedding model unavailable for {category_id}: {e}")
             return stats
-
-        # ---------- Build candidate conflict clusters ----------
         try:
             candidates: List[List[str]] = []
             used = set()
@@ -156,11 +115,8 @@ async def process_category_alias_resolution(
         except Exception as e:
             logger.warning(f"[AliasService] clustering failed for {category_id}: {e}")
             return stats
-
         if not candidates:
             return stats
-
-        # ---------- Build prompt ----------
         try:
             groups_text = "\n".join(
                 f"Group {i+1}: {g}\n  Units: "
@@ -169,25 +125,19 @@ async def process_category_alias_resolution(
             )
             prompt = f"""
                 You are an expert taxonomist classifying product attribute names into semantic equivalence groups.
-
                 For each candidate group below, decide: do these names refer to the exact same
                 underlying measurable property, just phrased differently? Or are they distinct
                 properties that merely sound or look similar?
-
                 Reason from first principles about what each name actually measures or describes.
                 Two names are equivalent only if a domain expert would consider them interchangeable
                 labels for one spec field — not merely related, adjacent, or co-occurring.
-
                 Test: could you delete one name and lose zero information, because the other name
                 already captures it exactly? If deleting one loses information the other lacks,
                 they are NOT equivalent — reject, even if both relate to the same general topic.
-
                 "preferred" must be selected from the group's own names — you are choosing the best
                 existing label, not naming a new concept.
-
                 Candidate groups:
                 {groups_text}
-
                 Return strict JSON matching this exact shape, one object per group you accept:
                 {{
                 "decisions": [
@@ -199,7 +149,6 @@ async def process_category_alias_resolution(
                     }}
                 ]
                 }}
-
                 Field rules:
                 - "aliases": ALL names in the group being merged, including the preferred one.
                 - "preferred": must be one of the strings already in "aliases".
@@ -212,8 +161,6 @@ async def process_category_alias_resolution(
         except Exception as e:
             logger.warning(f"[AliasService] prompt build failed for {category_id}: {e}")
             return stats
-
-        # ---------- ONE LLM call ----------
         try:
             result = await call_llm_with_schema(
                 prompt=prompt,
@@ -224,41 +171,27 @@ async def process_category_alias_resolution(
         except Exception as e:
             logger.warning(f"[AliasService] LLM call failed for {category_id}: {e}")
             return stats
-
         if not result or not getattr(result, "decisions", None):
             return stats
-
-        # ---------- Persist alias rows ----------
         try:
-            # Build lookup: each canonical name -> its candidate group
             name_to_group: Dict[str, List[str]] = {}
             for g in candidates:
                 for n in g:
                     name_to_group[n] = g
-
             rows_to_upsert = []
             for d in result.decisions:
                 preferred = (d.preferred or "").strip()
-
-                # Hard validation #1: confidence threshold
                 if getattr(d, "confidence", 0) < _LLM_CONFIDENCE_THRESHOLD:
                     stats["skipped"] += 1
                     continue
-
-                # Hard validation #2: preferred must be a real canonical
                 if preferred not in name_to_id:
                     stats["skipped"] += 1
                     continue
-
-                # Hard validation #3: preferred must be in a candidate group (not invented)
                 if preferred not in name_to_group:
                     stats["skipped"] += 1
                     continue
-
                 canonical_id = name_to_id[preferred]
                 canonical_group = name_to_group[preferred]
-
-                # Each alias must be in the same group as preferred
                 for alias in (d.aliases or []):
                     if alias == preferred:
                         continue
@@ -266,7 +199,6 @@ async def process_category_alias_resolution(
                         continue
                     if name_to_group.get(alias) != canonical_group:
                         continue
-
                     rows_to_upsert.append({
                         "category_id": category_id,
                         "alias_attribute_id": name_to_id[alias],
@@ -275,11 +207,8 @@ async def process_category_alias_resolution(
                         "reason": d.reason or "LLM resolved",
                     })
                     stats["merged"] += 1
-
             if not rows_to_upsert:
                 return stats
-
-            # Clean slate for this category
             try:
                 delete_stmt = CategoryAttributeAlias.__table__.delete().where(
                     CategoryAttributeAlias.category_id == category_id
@@ -287,7 +216,6 @@ async def process_category_alias_resolution(
                 await db.execute(delete_stmt)
             except Exception as e:
                 logger.warning(f"[AliasService] delete old aliases failed for {category_id}: {e}")
-
             stmt = pg_insert(CategoryAttributeAlias).values(rows_to_upsert)
             stmt = stmt.on_conflict_do_update(
                 index_elements=["category_id", "alias_attribute_id"],
@@ -306,15 +234,11 @@ async def process_category_alias_resolution(
                 pass
             logger.warning(f"[AliasService] persist aliases failed for {category_id}: {e}")
             return stats
-
         logger.info(
             f"[AliasService] category_id={category_id} candidates={stats['candidates']} "
             f"merged={stats['merged']} skipped={stats['skipped']}"
         )
         return stats
-
     except Exception as e:
-        # Final outer catch — should be unreachable due to inner guards,
-        # but we keep it so a bug here never crashes the worker.
         logger.exception(f"[AliasService] process_category_alias_resolution crashed: {e}")
         return stats

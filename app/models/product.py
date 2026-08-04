@@ -30,6 +30,10 @@ class Product(UUIDModel,table=True):
     industry_id: Optional[UUID] = Field(foreign_key="industry_master.id", default=None, index=True)
     industry_name: Optional[str] = Field(default=None) 
     industry_code: Optional[str] = Field(default=None)
+
+    title_recommendation: Optional[str] = Field(default=None, sa_column=Column(Text))
+    title_confidence: Optional[float] = Field(default=None)
+    title_generated_at: Optional[datetime] = Field(default=None)
     failure_reason: Optional[str] = Field(default=None, sa_column=Column(Text))
     failed_at: Optional[datetime] = Field(default=None)
     taxonomy: Optional[str] = Field(default=None, index=True) 

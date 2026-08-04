@@ -4,16 +4,12 @@ import re
 from typing import Dict, Any
 
 def normalize_attr_name(name: str) -> str:
-    """Same normalization used in generate_products_excel"""
     if not name:
         return ""
     return re.sub(r'[^a-z0-9]', '', name.lower().strip())
 
 def deduplicate_product_attributes(attributes: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Deduplicate attributes using the same logic as generate_products_excel.
-    Groups by normalized name and keeps the best version.
-    """
+    
     if not attributes:
         return attributes
     
@@ -31,7 +27,6 @@ def deduplicate_product_attributes(attributes: Dict[str, Any]) -> Dict[str, Any]
             existing_key = normalized_map[norm_key]
             existing_val = deduped[existing_key]
             
-            # Prefer the one with confidence (like generate_products_excel does)
             if isinstance(value, dict) and isinstance(existing_val, dict):
                 new_conf = value.get('confidence', 0) or 0
                 existing_conf = existing_val.get('confidence', 0) or 0

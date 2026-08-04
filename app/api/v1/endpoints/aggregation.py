@@ -29,6 +29,7 @@ from app.schemas.aggregation import AggregateLLMRequest, AggregatedAttribute, Ag
 from app.utils import llm_usage
 from app.utils.aggregate_download import generate_products_excel
 from app.utils.llm_usage import track_llm_usage
+from app.utils.title_recommendation import generate_title_recommendation
 from app.utils.validators import is_invalid
 from app.utils.image_validator import validate_image_url
 from app.utils.sanitize import sanitize_ai_data
@@ -825,6 +826,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                     if aggregation_result.get('status') == 'success':
                         golden = aggregation_result.get('golden_record', {})
                         ai_attributes = golden.get('attributes', {})
+                        
                         if not product.sku:
                             product.sku = golden.get('sku')
                         if not product.product_code:
@@ -964,6 +966,19 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                         is_validation_mode=(
                                             'validation' in use_case)
                                     )
+                            try:
+                                final_attrs = product.attributes or ai_attributes
+                                title_rec = await generate_title_recommendation(
+                                    brand=product.brand_name,
+                                    attributes=final_attrs,
+                                    taxonomy=product.taxonomy,
+                                    llm_provider=llm_provider
+                                )
+                                product.title_recommendation = getattr(title_rec, "recommended_title", None)
+                                product.title_confidence = getattr(title_rec, "confidence", 0.0)
+                                product.title_generated_at = now_ist()
+                            except Exception as e:
+                                logger.warning(f"Title recommendation failed for {product.product_code}: {e}")
                             product.workflow_stage = 'aggregation'
                             product.needs_enrichment = False
                             product.ready_for_export = True
@@ -1068,6 +1083,19 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                         is_validation_mode=(
                                             'validation' in use_case)
                                     )
+                            try:
+                                final_attrs = product.attributes or ai_attributes
+                                title_rec = await generate_title_recommendation(
+                                    brand=product.brand_name,
+                                    attributes=final_attrs,
+                                    taxonomy=product.taxonomy,
+                                    llm_provider=llm_provider,   # or missing_llm_provider if you prefer
+                                )
+                                product.title_recommendation = getattr(title_rec, "recommended_title", None)
+                                product.title_confidence = getattr(title_rec, "confidence", 0.0)
+                                product.title_generated_at = now_ist()
+                            except Exception as e:
+                                logger.warning(f"Title recommendation failed for {product.product_code}: {e}")
                             product.workflow_stage = 'aggregation'
                             product.needs_enrichment = False
                             product.ready_for_export = True
@@ -1447,6 +1475,20 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                                 algo2_attrs,
                                 is_validation_mode=('validation' in use_case)
                             )
+                    try:
+                        final_attrs = product.attributes or ai_data
+
+                        title_rec = await generate_title_recommendation(
+                            brand=product.brand_name,
+                            attributes=final_attrs,
+                            taxonomy=product.taxonomy,
+                            llm_provider=llm_provider,   # or missing_llm_provider if you prefer
+                        )
+                        product.title_recommendation = getattr(title_rec, "recommended_title", None)
+                        product.title_confidence = getattr(title_rec, "confidence", 0.0)
+                        product.title_generated_at = now_ist()
+                    except Exception as e:
+                        logger.warning(f"Title recommendation failed for {product.product_code}: {e}")
                     product.workflow_stage = 'aggregation'
                     product.needs_enrichment = False
                     product.ready_for_export = True
@@ -1535,6 +1577,20 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                                 algo2_attrs,
                                 is_validation_mode=('validation' in use_case)
                             )
+                    try:
+                        final_attrs = product.attributes or ai_data
+
+                        title_rec = await generate_title_recommendation(
+                            brand=product.brand_name,
+                            attributes=final_attrs,
+                            taxonomy=product.taxonomy,
+                            llm_provider=llm_provider,   # or missing_llm_provider if you prefer
+                        )
+                        product.title_recommendation = getattr(title_rec, "recommended_title", None)
+                        product.title_confidence = getattr(title_rec, "confidence", 0.0)
+                        product.title_generated_at = now_ist()
+                    except Exception as e:
+                        logger.warning(f"Title recommendation failed for {product.product_code}: {e}")
                     product.workflow_stage = 'aggregation'
                     product.needs_enrichment = False
                     product.ready_for_export = True
@@ -1770,7 +1826,14 @@ async def batch_export_products(request: BatchExportRequest, db: AsyncSession = 
                     logger.info(
                         f"Single project export, filename from source: {filename}")
         logger.info(f"Final export filename: {filename}.xlsx")
-        return await generate_products_excel(products, db, filename=filename)
+        export_project_id = requested_project_ids[0] if len(requested_project_ids) == 1 else None
+
+        return await generate_products_excel(
+    products,
+    db,
+    project_id=export_project_id,
+    filename=filename
+)
     except HTTPException:
         raise
     except Exception as e:
