@@ -7,6 +7,7 @@ from app.models.attribute import Attribute, AttributeValue
 from app.models.attribute_edit_log import AttributeEditLog
 from app.models.cleaning import CleaningTask
 from app.models.product import Product
+from fastapi import Query
 from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
 from app.models.project import Project
 from app.api.v1.endpoints.aggregation import update_project_status
@@ -619,14 +620,19 @@ async def download_cleaned_project(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+    
 @router.put("/products/{product_id}/attributes")
 async def update_product_attributes(
     product_id: str,
     request: UpdateAttributesRequest,
+    project_id: UUID = Query(...),   
     db: AsyncSession = Depends(get_session)
 ):
     try:
-        product = await db.get(Product, product_id)
+        product_uuid = UUID(product_id)
+
+        product = await db.get(Product, product_uuid)
+
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
         link_stmt = (
@@ -705,8 +711,8 @@ async def update_product_attributes(
                 new_value = str(attr_val.value or "")
                 if old_value != new_value or old_uom != attr_val.uom:
                     edit_log = AttributeEditLog(
-                        product_id=product_id,
-                        project_id=link.project_id if link else None,
+                        product_id=product_uuid,                 
+    project_id=link.project_id if link else None,
                         catalog_project_name=project.name if project else None,
                         category_name=product.category_1 or product.taxonomy,
                         brand_name=product.brand_name,
