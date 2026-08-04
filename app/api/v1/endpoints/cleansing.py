@@ -1,6 +1,8 @@
 from typing import Dict, List
 from openai import project
 from sqlalchemy import or_
+from typing import Optional
+from uuid import UUID
 from app.models.attribute import Attribute, AttributeValue
 from app.models.attribute_edit_log import AttributeEditLog
 from app.models.cleaning import CleaningTask
@@ -65,6 +67,7 @@ async def run_cleaning_task(
             await update_project_status(db, project_id)
             await append_cleaning_task_log(db, task_id, "Project status updated to processing")
             await db.commit()
+            project_uuid = UUID(project_id)
             service = LLMCleaningService(
                 llm_provider=llm_provider,
                 db=db,
@@ -79,9 +82,8 @@ async def run_cleaning_task(
             else:
                 stmt = select(Product).join(
                     ProjectProductLink, Product.id == ProjectProductLink.product_id
-                ).where(
-                    ProjectProductLink.project_id == project_id
-                )
+                ).where(ProjectProductLink.project_id == project_uuid)
+
                 await append_cleaning_task_log(
                     db, task_id, "Cleaning all products in project"
                 )
@@ -96,10 +98,8 @@ async def run_cleaning_task(
             all_attribute_names = set()
             for product in products:
                 try:
-                    link = await db.get(ProjectProductLink, {
-                        "project_id": project_id,
-                        "product_id": product.id
-                    })
+                    link = await db.get(ProjectProductLink, {"project_id": project_uuid, "product_id": product.id})
+
 
                     if link:
                         link.enrichment_status = "processing"
@@ -148,10 +148,8 @@ async def run_cleaning_task(
             failed_count = 0
             for product in products:
                 try:
-                    link = await db.get(ProjectProductLink, {
-                        "project_id": project_id,
-                        "product_id": product.id
-                    })
+                    link = await db.get(ProjectProductLink, {"project_id": project_uuid, "product_id": product.id})
+
                     if link:
                         link.enrichment_status = "processing"
                         db.add(link)
@@ -212,7 +210,7 @@ async def run_cleaning_task(
                     )
                     cleaning_result = await service.clean_attributes(attributes, context)
                     updated = await save_cleaned_attributes(
-    db, product.id, cleaning_result, llm_provider, project_id=project_id
+    db, product.id, cleaning_result, llm_provider, project_id=project_uuid
 )
                     product.enrichment_status = "completed"
                     product.data_quality_score = 100.0
@@ -373,10 +371,10 @@ def _normalize_attr_name_for_comparison(name: str) -> str:
     return normalized.lower()        
 async def save_cleaned_attributes(
     db_session: AsyncSession,
-    product_id: str,
+    product_id: UUID,
     cleaning_response: LLMCleaningResponse,
     llm_provider: str = "openai",
-     project_id: str | None = None,  
+    project_id: Optional[UUID] = None,
 ) -> bool:
     try:
         product = await db_session.get(Product, product_id)
@@ -442,11 +440,11 @@ async def save_cleaned_attributes(
             if project_id:
                 link_stmt = link_stmt.where(ProjectProductLink.project_id == project_id)
             else:
-                link_stmt = link_stmt.order_by(ProjectProductLink.linked_at.desc())  # fallback
+                link_stmt = link_stmt.order_by(ProjectProductLink.linked_at.desc())
 
             link = (await db_session.execute(link_stmt)).scalars().first()
 
-            effective_project_id = str(link.project_id) if link else project_id
+            effective_project_id: Optional[UUID] = link.project_id if link else project_id
             project = await db_session.get(Project, effective_project_id) if effective_project_id else None
             if val_changed or unit_changed:
                 edit_log = AttributeEditLog(
