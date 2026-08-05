@@ -13,21 +13,55 @@ logger = logging.getLogger("download_service")
 playwright_lock = asyncio.Semaphore(3)
 
 class HttpDownloadService(IDownloadService):
+    _playwright = None
+    _browser = None
+    _browser_lock = asyncio.Lock()
     def __init__(self, timeout: int = 30, use_playwright_fallback: bool = True, proxy: Optional[str] = None):
         self.timeout = timeout
         self.use_playwright_fallback = use_playwright_fallback
         self.proxy = proxy
         self._cache = {}
+    async def _get_browser(self):
+        async with HttpDownloadService._browser_lock:
+            if HttpDownloadService._browser is None:
+                HttpDownloadService._playwright = await async_playwright().start()
 
+                launch_args = {
+                    "headless": True,
+                    "args": [
+                        "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                        "--disable-dev-shm-usage",
+                        "--disable-gpu",
+                        "--disable-blink-features=AutomationControlled",
+                    ],
+                }
+
+                if self.proxy:
+                    launch_args["proxy"] = {"server": self.proxy}
+
+                HttpDownloadService._browser = (
+                    await HttpDownloadService._playwright.chromium.launch(**launch_args)
+                )
+
+        return HttpDownloadService._browser
+    async def close_browser(self):
+        if HttpDownloadService._browser:
+            await HttpDownloadService._browser.close()
+            HttpDownloadService._browser = None
+
+        if HttpDownloadService._playwright:
+            await HttpDownloadService._playwright.stop()
+            HttpDownloadService._playwright = None
     async def download(self, url: str) -> Optional[Dict]:
         if url in self._cache:
             return self._cache[url]
         result = await self._download_curl(url)
-                # Check if HTML has actual product data or just a shell
+                
         needs_playwright = False
         if result and result.get('type') == 'html':
             html_text = result.get('raw_bytes', b'').decode('utf-8', errors='ignore')
-            # Check for common signs of empty JS shell
+            
             nav_count = html_text.count('mobile-nav') + html_text.count('data-testid="mobile-nav')
             import re
             has_spec_values = bool(
@@ -85,129 +119,146 @@ class HttpDownloadService(IDownloadService):
             gc.collect()
 
     async def _download_playwright(self, url: str) -> Optional[Dict]:
+        page = None
+        context = None
         is_pdf_url = url.lower().split('?')[0].endswith('.pdf')
         async with playwright_lock:
             try:
-                async with async_playwright() as p:
-                    launch_args = {
-                        "headless": True,
-                        "args": [
-                            "--no-sandbox",
-                            "--disable-setuid-sandbox",
-                            "--disable-dev-shm-usage", 
-                            "--disable-gpu",            
-                            "--disable-blink-features=AutomationControlled"
-                        ]
-                    }
-                    if self.proxy:
-                        launch_args["proxy"] = {"server": self.proxy}
+                # launch_args = {
+                #     "headless": True,
+                #     "args": [
+                #         "--no-sandbox",
+                #         "--disable-setuid-sandbox",
+                #         "--disable-dev-shm-usage", 
+                #         "--disable-gpu",            
+                #         "--disable-blink-features=AutomationControlled"
+                #     ]
+                # }
+                # if self.proxy:
+                #     launch_args["proxy"] = {"server": self.proxy}
 
-                    browser = await p.chromium.launch(**launch_args)
-                    context = await browser.new_context(
-                        user_agent=("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                                    "Chrome/120.0.0.0 Safari/537.36"),
-                        viewport={"width": 1920, "height": 1080},
-                        ignore_https_errors=True
-                    )
-                    page = await context.new_page()
+                # browser = await p.chromium.launch(**launch_args)
+                browser = await self._get_browser()
+                context = await browser.new_context(
+                    user_agent=("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                "Chrome/120.0.0.0 Safari/537.36"),
+                    viewport={"width": 1920, "height": 1080},
+                    ignore_https_errors=True
+                )
+                page = await context.new_page()
 
-                    
-                    response=await page.goto(url, timeout=self.timeout * 1000, wait_until="networkidle")
-                    await page.wait_for_timeout(1500)
+                
+                response=await page.goto(url, timeout=self.timeout * 1000, wait_until="networkidle")
+                await page.wait_for_timeout(1500)
 
-                    content_type = response.headers.get(
-                        "Content-Type", "").lower() if response else ""
-                    is_pdf = is_pdf_url or "pdf" in content_type
-                    if is_pdf:
-                        logger.info(
-                            f"Playwright detected PDF at {url}. Fetching raw bytes using authenticated context...")
-                        try:
-                            pdf_response = await context.request.get(url)
-                            if pdf_response.ok:
-                                raw_bytes = await pdf_response.body()
-                                await browser.close()
-                                logger.info(
-                                    f"✓ Playwright successfully downloaded PDF: {len(raw_bytes)} bytes from {url}")
-                                return {
-                                    "source_url": url,
-                                    "raw_bytes": raw_bytes,
-                                    "type": "pdf",
-                                }
-                            else:
-                                logger.warning(
-                                    f"Failed to fetch PDF bytes for {url} (Status: {pdf_response.status})")
-                                await browser.close()
-                                return None
-                        except Exception as pdf_e:
-                            logger.error(
-                                f"Error fetching PDF bytes for {url}: {pdf_e}")
-                            await browser.close()
-                            return None
-                    await page.evaluate("""
-                        async () => {
-                            await new Promise(resolve => {
-                                let totalHeight = 0;
-                                let distance = 500;
-                                let timer = setInterval(() => {
-                                    window.scrollBy(0, distance);
-                                    totalHeight += distance;
-                                    if(totalHeight >= document.body.scrollHeight || totalHeight > 10000){
-                                        clearInterval(timer);
-                                        resolve();
-                                    }
-                                }, 300);
-                            });
-                        }
-                    """)
-                    await page.wait_for_timeout(1500)
-
-                    
-                    expand_selectors = [
-                        "text=Specifications", "text=Specification", "text=Product Details",
-                        "text=View Specifications", "text=Show More", "text=View More",
-                        "button:has-text('Specifications')", "a:has-text('Specifications')"
-                    ]
-                    for selector in expand_selectors:
-                        try:
-                            elements = await page.query_selector_all(selector)
-                            for el in elements:
-                                try:
-                                    await el.click()
-                                    await page.wait_for_timeout(800)
-                                except: pass
-                        except: pass
-
-                    
+                content_type = response.headers.get(
+                    "Content-Type", "").lower() if response else ""
+                is_pdf = is_pdf_url or "pdf" in content_type
+                if is_pdf:
+                    logger.info(
+                        f"Playwright detected PDF at {url}. Fetching raw bytes using authenticated context...")
                     try:
-                        buttons = await page.query_selector_all("button")
-                        for btn in buttons:
+                        pdf_response = await context.request.get(url)
+                        if pdf_response.ok:
+                            raw_bytes = await pdf_response.body()
+                            
+                            # await browser.close()
+                            logger.info(
+                                f"✓ Playwright successfully downloaded PDF: {len(raw_bytes)} bytes from {url}")
+                            return {
+                                "source_url": url,
+                                "raw_bytes": raw_bytes,
+                                "type": "pdf",
+                            }
+                        else:
+                            logger.warning(
+                                f"Failed to fetch PDF bytes for {url} (Status: {pdf_response.status})")
+                            
+                            # await browser.close()
+                            return None
+                    except Exception as pdf_e:
+                        logger.error(
+                            f"Error fetching PDF bytes for {url}: {pdf_e}")
+                        
+                        # await browser.close()
+                        return None
+                await page.evaluate("""
+                    async () => {
+                        await new Promise(resolve => {
+                            let totalHeight = 0;
+                            let distance = 500;
+                            let timer = setInterval(() => {
+                                window.scrollBy(0, distance);
+                                totalHeight += distance;
+                                if(totalHeight >= document.body.scrollHeight || totalHeight > 10000){
+                                    clearInterval(timer);
+                                    resolve();
+                                }
+                            }, 300);
+                        });
+                    }
+                """)
+                await page.wait_for_timeout(1500)
+
+                
+                expand_selectors = [
+                    "text=Specifications", "text=Specification", "text=Product Details",
+                    "text=View Specifications", "text=Show More", "text=View More",
+                    "button:has-text('Specifications')", "a:has-text('Specifications')"
+                ]
+                for selector in expand_selectors:
+                    try:
+                        elements = await page.query_selector_all(selector)
+                        for el in elements:
                             try:
-                                text = await btn.inner_text()
-                                if any(keyword in text.lower() for keyword in ["spec", "expand", "more", "details"]):
-                                    await btn.click()
-                                    await page.wait_for_timeout(500)
+                                await el.click()
+                                await page.wait_for_timeout(800)
                             except: pass
                     except: pass
 
-                    await page.wait_for_timeout(2000)
-                    content = await page.content()
-                    
+                
+                try:
+                    buttons = await page.query_selector_all("button")
+                    for btn in buttons:
+                        try:
+                            text = await btn.inner_text()
+                            if any(keyword in text.lower() for keyword in ["spec", "expand", "more", "details"]):
+                                await btn.click()
+                                await page.wait_for_timeout(500)
+                        except: pass
+                except: pass
 
-                    await browser.close()
+                await page.wait_for_timeout(2000)
+                content = await page.content()
+                
+               
+                # await browser.close()
 
-                    if content and len(content) > 5000:
-                        logger.info(f"Playwright FULL HTML fetched: {len(content)} bytes from {url}")
-                        return {
-                            "source_url": url,
-                            "raw_bytes": content.encode("utf-8"),
-                            "type": "html",
-                        }
-                    logger.warning(f"⚠ Playwright returned small HTML ({len(content)}) for {url}")
-                    return None
+                if content and len(content) > 5000:
+                    logger.info(f"Playwright FULL HTML fetched: {len(content)} bytes from {url}")
+                    return {
+                        "source_url": url,
+                        "raw_bytes": content.encode("utf-8"),
+                        "type": "html",
+                    }
+                logger.warning(f"⚠ Playwright returned small HTML ({len(content)}) for {url}")
+                return None
 
             except Exception as e:
                 logger.error(f"Playwright download failed for {url}: {e}")
                 return None
             finally:
-                
+                if page:
+                    try:
+                        await page.close()
+                    except Exception:
+                        pass
+
+                if context:
+                    try:
+                        await context.close()
+                    except Exception:
+                        pass
+
                 gc.collect()
+download_service = HttpDownloadService(timeout=20)

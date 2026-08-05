@@ -395,6 +395,7 @@ def clean_numeric_string(value):
     except (ValueError, OverflowError):
         pass
     return s
+
 @router.post("/upload", status_code=status.HTTP_202_ACCEPTED)
 async def upload_file(
     request: Request,
@@ -531,8 +532,10 @@ async def upload_file(
         failed_products = []
         for idx, row in enumerate(rows):
             val_mpn = clean_numeric_string(row.get("mpn")) or None
+            logger.info(f"MPN from row: {row.get('mpn')} → cleaned: {val_mpn}") 
             val_sku = clean_numeric_string(row.get("sku")) or None
             code = val_mpn or val_sku
+            logger.info(f"Final product_code to save: {code}") 
             product = None
             industry = None
             target_industry_id = None

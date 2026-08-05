@@ -1,6 +1,7 @@
 import re
 from typing import Dict, List, Optional
 from sqlalchemy import func
+import time
 from app.core.config import settings
 from app.llm import call_llm_with_schema
 from bs4 import BeautifulSoup
@@ -38,7 +39,11 @@ from app.utils.image_validator import validate_image_url
 from app.utils.normalization_helper import _standardize_uom_in_attrs, normalize_concatenated_uom
 from app.utils.pdf_utils import is_parts_list_pdf
 from app.utils.remapping import cluster_attributes_by_meaning
+download_service = HttpDownloadService(timeout=20)
+
 logger = logging.getLogger("aggregate_product")
+
+
 def build_pipeline() -> AggregationPipeline:
     return AggregationPipeline(
         search_service=SerpApiSearchService(max_results=5),
@@ -49,9 +54,15 @@ def build_pipeline() -> AggregationPipeline:
             PdfExtractor(),
         ]),
     )
+
+
 def chunk_attributes(attributes: List[str], chunk_size: int = 10) -> List[List[str]]:
     return [attributes[i:i + chunk_size] for i in range(0, len(attributes), chunk_size)]
+
+
 logger = logging.getLogger("aggregate_product")
+
+
 async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
     from bs4 import BeautifulSoup
     from urllib.parse import urljoin
@@ -62,6 +73,7 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
         'pixel', 'tracking', 'social', 'share', 'facebook', 'twitter', 'instagram',
         'og-image', 'social-share', 'carton', 'box', 'camozzi', 'default', 'nophoto'
     ]
+
     def is_junk(url_str: str) -> bool:
         u = url_str.lower()
         return any(k in u for k in HARD_BLOCK_KEYWORDS)
@@ -104,6 +116,8 @@ async def extract_fallback_image(html: str, base_url: str) -> Optional[str]:
             logger.info(f" Fallback selected image with score {score}: {url}")
             return url
     return None
+
+
 def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
     mapping = {}
     for group in groups:
@@ -135,6 +149,8 @@ def apply_unification(sources: List[Dict], groups: List) -> List[Dict]:
             'attributes': unified_attrs
         })
     return unified_sources
+
+
 def extract_domains_and_generate_urls(prompt_text: str) -> List[str]:
     if not prompt_text:
         return []
@@ -145,11 +161,15 @@ def extract_domains_and_generate_urls(prompt_text: str) -> List[str]:
     for domain in domains:
         urls.append(f"https://{domain}/")
     return urls
+
+
 def extract_urls_from_prompt(prompt_text: str) -> List[str]:
     if not prompt_text:
         return []
     url_pattern = r'https?://[^\s\)\"]+'
     return re.findall(url_pattern, prompt_text)
+
+
 async def discover_manufacturer_urls(
     brand: str,
     taxonomy: str,
@@ -191,7 +211,7 @@ async def discover_manufacturer_urls(
         return urls
     try:
         from app.aggregation.services.download_service import HttpDownloadService
-        download_service = HttpDownloadService(timeout=20)
+        # download_service = HttpDownloadService(timeout=20)
         manufacturer_urls = []
         for query in search_queries:
             try:
@@ -316,6 +336,8 @@ async def discover_manufacturer_urls(
     except Exception as e:
         logger.error(f"Manufacturer URL discovery failed: {e}")
         return []
+
+
 async def find_product_page_with_llm(
     domain_url: str,
     mpn: str,
@@ -353,7 +375,7 @@ async def find_product_page_with_llm(
         logger.info(
             f"Searching {domain} for identifier: {mpn if is_mpn_valid else title}")
         from app.aggregation.services.download_service import HttpDownloadService
-        download_service = HttpDownloadService(timeout=20)
+        # download_service = HttpDownloadService(timeout=20)
         for query in search_queries:
             try:
                 logger.info(f"Query: {query}")
@@ -576,6 +598,8 @@ async def find_product_page_with_llm(
     except Exception as e:
         logger.warning(f"Product discovery failed: {e}")
         return None
+
+
 def _url_contains_product_identifier(url: str, mpn: str, title: str) -> bool:
     if not url:
         return False
@@ -593,6 +617,8 @@ def _url_contains_product_identifier(url: str, mpn: str, title: str) -> bool:
         if len(words) >= 2 and hits >= 2:
             return True
     return False
+
+
 def is_result_actually_product(result: dict, brand: str, title: str) -> bool:
     url = result.get("url", "").lower()
     content_to_check = (result.get('title', '')+" " +
@@ -618,6 +644,8 @@ def is_result_actually_product(result: dict, brand: str, title: str) -> bool:
     if match_ratio >= 0.5:
         return True
     return False
+
+
 def _base_model_tokens_match(mpn: str, url: str) -> bool:
     if not mpn or not url:
         return False
@@ -627,17 +655,19 @@ def _base_model_tokens_match(mpn: str, url: str) -> bool:
     if not m:
         return mpn_upper in url_slug or url_slug in mpn_upper
     base, variant_letter, style, finish, suffix = m.groups()
-    base_style = base + style          
+    base_style = base + style
     prefix_ok = base_style in url_slug
     suffix_ok = (not suffix) or (suffix in url_slug)
     return prefix_ok and suffix_ok
-async def verify_page_identity_with_llm(url: str, html: str, brand: str, title: str, mpn: str, llm_provider: str,manufacturer_domain:str) -> bool:
+
+
+async def verify_page_identity_with_llm(url: str, html: str, brand: str, title: str, mpn: str, llm_provider: str, manufacturer_domain: str) -> bool:
     from bs4 import BeautifulSoup
     from app.core.config import settings
     import logging
     logger = logging.getLogger("aggregate_product")
     is_mfr_url = (
-        manufacturer_domain and 
+        manufacturer_domain and
         manufacturer_domain.replace("https://", "").replace("www.", "") in url
     )
     if is_mfr_url and _base_model_tokens_match(mpn, url):
@@ -648,16 +678,19 @@ async def verify_page_identity_with_llm(url: str, html: str, brand: str, title: 
         junk.decompose()
     page_text = soup.get_text(separator=' ', strip=True)
     if len(page_text) < 500:
-        logger.info(f"Verification text for {url} is too thin. Attempting Firecrawl rendering...")
+        logger.info(
+            f"Verification text for {url} is too thin. Attempting Firecrawl rendering...")
         try:
             from firecrawl import Firecrawl
             fc_client = Firecrawl(api_key=settings.FIRECRAWL_API_KEY)
             fc_result = fc_client.scrape_url(url)
             rendered_text = ""
             if isinstance(fc_result, dict):
-                rendered_text = fc_result.get('markdown') or fc_result.get('content') or ""
+                rendered_text = fc_result.get(
+                    'markdown') or fc_result.get('content') or ""
             else:
-                rendered_text = getattr(fc_result, 'markdown', '') or getattr(fc_result, 'content', '') or ""
+                rendered_text = getattr(fc_result, 'markdown', '') or getattr(
+                    fc_result, 'content', '') or ""
             if rendered_text:
                 page_text = rendered_text
         except Exception as e:
@@ -695,21 +728,25 @@ async def verify_page_identity_with_llm(url: str, html: str, brand: str, title: 
         from app.llm import call_llm_with_schema
         res = await call_llm_with_schema(prompt, "IdentityVerificationResponse", llm_provider)
         if res:
-            logger.info(f"AI Verification Result for {url}: {res.is_match} (Confidence: {res.confidence}) - Reasoning: {res.reasoning}")
+            logger.info(
+                f"AI Verification Result for {url}: {res.is_match} (Confidence: {res.confidence}) - Reasoning: {res.reasoning}")
             return res.is_match if res.confidence > 0.7 else False
         return False
     except Exception as e:
         logger.error(f"LLM Identity Verification failed for {url}: {e}")
         return False
+
+
 async def _enqueue_alias_job_isolated(category_id):
     from app.core.database import async_session_factory
-  
+
     try:
         async with async_session_factory() as new_db:
             await enqueue_category_alias_job(category_id, new_db)
     except Exception as e:
-        logger.warning(f"[Stage3Canonicals] isolated alias job failed: {e}")    
-        
+        logger.warning(f"[Stage3Canonicals] isolated alias job failed: {e}")
+
+
 async def aggregate_product(
     mpn: str,
     title: str,
@@ -729,6 +766,7 @@ async def aggregate_product(
     cached_urls: Optional[List[str]] = None,
 ) -> Dict:
     try:
+        pipeline_start = time.perf_counter()
         if missing_llm_provider is None:
             missing_llm_provider = llm_provider
         candidate_images = []
@@ -760,11 +798,18 @@ async def aggregate_product(
                     candidate_images=[],
                     source_url=url
                 )
+                llm_start = time.perf_counter()
+
                 extraction_result = await call_llm_with_schema(
                     prompt=prompt_config['prompt'],
                     response_model="ExtractionResponse",
                     llm_provider=llm_provider,
                     estimated_tokens=3000
+                )
+                logger.info(
+                    "HTML extraction LLM for %s took %.2fs",
+                    url,
+                    time.perf_counter() - llm_start,
                 )
                 attr_dicts = []
                 if extraction_result and extraction_result.product_detected:
@@ -793,11 +838,12 @@ async def aggregate_product(
                     'golden_record': {'attributes': {}}
                 }
         else:
+            stage1_start = time.perf_counter()
+
             logger.info("Stage 1: URL Discovery")
+
             logger.info(f"Starting aggregation for {mpn}")
-            download_service = HttpDownloadService(
-                timeout=30
-            )
+            # download_service = HttpDownloadService(timeout=30)
             brand_prompt_text = None
             if brand and db:
                 brand_stmt = select(BrandPrompt.prompt_text).join(
@@ -878,11 +924,17 @@ async def aggregate_product(
             direct_urls = []
             discovery_service = ProductDiscoveryService(max_results=5)
             if brand:
+                manufacturer_start = time.perf_counter()
+
                 manufacturer_domain = await discovery_service.discover_manufacturer_domain(
                     brand=brand,
                     category=taxonomy,
                     db=db,
                     title=title
+                )
+                logger.info(
+                    "[TIMING] Manufacturer discovery: %.2fs",
+                    time.perf_counter() - manufacturer_start,
                 )
                 if manufacturer_domain:
                     logger.info(
@@ -904,6 +956,8 @@ async def aggregate_product(
                     direct_domains.add(urlparse(url).netloc)
             for domain in direct_domains:
                 logger.info(f"Searching product page on domain: {domain}")
+                find_page_start = time.perf_counter()
+
                 product_url = await discovery_service.find_product_page(
                     domain=f"https://{domain}",
                     brand=brand,
@@ -911,29 +965,45 @@ async def aggregate_product(
                     title=title,
                     taxonomy=taxonomy
                 )
+                logger.info(
+                    "[TIMING] find_product_page (%s): %.2fs",
+                    domain,
+                    time.perf_counter() - find_page_start,
+                )
                 if product_url:
                     if _url_contains_product_identifier(product_url, mpn, title):
-                        logger.info(f"✓ Found product page via strict match: {product_url}")
+                        logger.info(
+                            f"✓ Found product page via strict match: {product_url}")
                         direct_urls.append(product_url)
                     else:
-                        logger.info(f"Strict match failed for {product_url}. Verifying semantically...")
+                        logger.info(
+                            f"Strict match failed for {product_url}. Verifying semantically...")
                         content = await download_service.download(product_url)
                         if content and content.get("type") == "html":
-                            html_text = content["raw_bytes"].decode("utf-8", errors="ignore")
+                            html_text = content["raw_bytes"].decode(
+                                "utf-8", errors="ignore")
+                            verify_start = time.perf_counter()
+
                             is_match = await verify_page_identity_with_llm(
-                                url=product_url, 
-                                html=html_text, 
-                                brand=brand, 
-                                title=title, 
-                                mpn=mpn, 
+                                url=product_url,
+                                html=html_text,
+                                brand=brand,
+                                title=title,
+                                mpn=mpn,
                                 llm_provider=llm_provider,
                                 manufacturer_domain=manufacturer_domain
                             )
+                            logger.info(
+                                "[TIMING] LLM page verification: %.2fs",
+                                time.perf_counter() - verify_start,
+                            )
                             if is_match:
-                                logger.info(f"✓ AI confirmed this is the correct product line: {product_url}")
+                                logger.info(
+                                    f"✓ AI confirmed this is the correct product line: {product_url}")
                                 direct_urls.append(product_url)
                             else:
-                                logger.warning(f"⛔ AI rejected this page: {product_url}")
+                                logger.warning(
+                                    f"⛔ AI rejected this page: {product_url}")
             seen = set()
             direct_urls = [u for u in direct_urls if not (
                 u in seen or seen.add(u))]
@@ -956,11 +1026,17 @@ async def aggregate_product(
                 urls = list(cached_urls)
                 candidate_images = []
             else:
+                smart_search_start = time.perf_counter()
+
                 urls, candidate_images = await search_service.get_urls(
                     query, mpn=mpn if is_mpn_valid else "", brand=brand, sku=sku,
                     brand_prompt_text=brand_prompt_text,
                     category_prompt_text=category_prompt_text,
                     taxonomy=taxonomy, direct_urls=direct_urls, selected_taxonomy=selected_taxonomy, title=title
+                )
+                logger.info(
+                    "[TIMING] Smart search: %.2fs",
+                    time.perf_counter() - smart_search_start,
                 )
             manufacturer_has_product = len(direct_urls) > 0
             if not urls:
@@ -1049,11 +1125,20 @@ async def aggregate_product(
                     'golden_record': {'attributes': {}}
                 }
             logger.info(
+                "Stage 1 completed in %.2f seconds",
+                time.perf_counter() - stage1_start,
+            )
+            logger.info(
                 f"Stage 2: Download & Extraction from {len(urls)} sources")
+            stage2_start = time.perf_counter()
+
             all_extractions = []
-            _url_semaphore = asyncio.Semaphore(1)
+            _url_semaphore = asyncio.Semaphore(3)
             found_image_global = None
+
             async def process_url(url):
+                url_start = time.perf_counter()
+
                 extractions = []
                 nonlocal found_image_global
                 if found_image_global:
@@ -1074,6 +1159,11 @@ async def aggregate_product(
                                 f"Algo 2: Using cached HTML for {url} - size: {len(html_text)} bytes")
                         else:
                             content = await download_service.download(url)
+                            logger.info(
+                                "Download for %s took %.2fs",
+                                url,
+                                time.perf_counter() - url_start,
+                            )
                             if content is None:
                                 return []
                             content_type = content.get("type")
@@ -1082,10 +1172,11 @@ async def aggregate_product(
                                     max_pages=10)
                                 pdf_text = await pdf_service.extract_text(content["raw_bytes"])
                                 if pdf_text and len(pdf_text.strip()) > 100:
-                                    pdf_lower=pdf_text.lower()
+                                    pdf_lower = pdf_text.lower()
                                     if is_parts_list_pdf(pdf_text):
-                                        logger.warning(f"Skipping PDF {url if 'pdf_url' not in dir() else pdf_url} — parts list/exploded view")
-                                        return extractions 
+                                        logger.warning(
+                                            f"Skipping PDF {url if 'pdf_url' not in dir() else pdf_url} — parts list/exploded view")
+                                        return extractions
                                     logger.info(
                                         f"Extracted {len(pdf_text)} chars from PDF")
                                     attrs_to_use = primary_attributes or []
@@ -1101,11 +1192,18 @@ async def aggregate_product(
                                         primary_attributes=attrs_to_use,
                                         pdf_text=pdf_text
                                     )
+                                    html_llm_start = time.perf_counter()
+
                                     extraction_result = await call_llm_with_schema(
                                         prompt=prompt_config["prompt"],
                                         response_model="ExtractionResponse",
                                         llm_provider=llm_provider,
                                         estimated_tokens=4000
+                                    )
+                                    logger.info(
+                                        "[TIMING] HTML LLM (%s): %.2fs",
+                                        url,
+                                        time.perf_counter() - html_llm_start,
                                     )
                                     if extraction_result and extraction_result.product_detected:
                                         attr_dicts = []
@@ -1161,8 +1259,17 @@ async def aggregate_product(
                                             from app.core.config import settings
                                             fc_client = Firecrawl(
                                                 api_key=settings.FIRECRAWL_API_KEY)
-                                            fc_result = fc_client.scrape_url(
-                                                url)
+                                            fc_start = time.perf_counter()
+
+                                            fc_result = await asyncio.to_thread(
+                                                fc_client.scrape_url,
+                                                url,
+                                            )
+                                            logger.info(
+                                                "[TIMING] Firecrawl (%s): %.2fs",
+                                                url,
+                                                time.perf_counter() - fc_start,
+                                            )
                                             fc_html = None
                                             if fc_result:
                                                 if isinstance(fc_result, dict):
@@ -1272,11 +1379,27 @@ async def aggregate_product(
                             candidate_images=[] if found_image_global else candidate_images,
                             source_url=url
                         )
+                        logger.info(
+                            "[PROMPT] HTML size: %d bytes",
+                            len(html_text.encode("utf-8"))
+                        )
+
+                        logger.info(
+                            "[PROMPT] Extraction prompt size: %d chars",
+                            len(prompt_config["prompt"])
+                        )
+                        html_llm_start = time.perf_counter()
+
                         extraction_result = await call_llm_with_schema(
                             prompt=prompt_config["prompt"],
                             response_model="ExtractionResponse",
                             llm_provider=llm_provider,
                             estimated_tokens=3000
+                        )
+                        logger.info(
+                            "[TIMING] HTML LLM (%s): %.2fs",
+                            url,
+                            time.perf_counter() - html_llm_start,
                         )
                         logger.info(f"=== EXTRACTION RESULTS FROM {url} ===")
                         if extraction_result and extraction_result.product_detected:
@@ -1308,8 +1431,8 @@ async def aggregate_product(
                                     found_image_global = image_url
                             else:
                                 image_url = None
-                            if hasattr(extraction_result,'features'):
-                                features=extraction_result.features
+                            if hasattr(extraction_result, 'features'):
+                                features = extraction_result.features
                             if hasattr(extraction_result, "short_description"):
                                 short_description = extraction_result.short_description
                             if hasattr(extraction_result, "long_description"):
@@ -1365,7 +1488,14 @@ async def aggregate_product(
                         for pdf_url in pdf_links or []:
                             try:
                                 logger.info(f"Downloading PDF: {pdf_url}")
+                                pdf_download_start = time.perf_counter()
+
                                 pdf_content = await download_service.download(pdf_url)
+                                logger.info(
+                                    "[TIMING] PDF Download (%s): %.2fs",
+                                    pdf_url,
+                                    time.perf_counter() - pdf_download_start,
+                                )
                                 if pdf_content and pdf_content["type"] == "pdf":
                                     pdf_service = PDFExtractionService(
                                         max_pages=10)
@@ -1411,11 +1541,27 @@ async def aggregate_product(
                                             primary_attributes=attrs_to_use,
                                             pdf_text=pdf_text
                                         )
+                                        logger.info(
+                                            "[PROMPT] PDF text size: %d chars",
+                                            len(pdf_text)
+                                        )
+
+                                        logger.info(
+                                            "[PROMPT] PDF prompt size: %d chars",
+                                            len(pdf_prompt["prompt"])
+                                        )
+                                        pdf_llm_start = time.perf_counter()
+
                                         pdf_result = await call_llm_with_schema(
                                             prompt=pdf_prompt["prompt"],
                                             response_model="ExtractionResponse",
                                             llm_provider=llm_provider,
                                             estimated_tokens=4000
+                                        )
+                                        logger.info(
+                                            "[TIMING] PDF LLM (%s): %.2fs",
+                                            pdf_url,
+                                            time.perf_counter() - pdf_llm_start,
                                         )
                                         if pdf_result and pdf_result.product_detected:
                                             pdf_attrs = []
@@ -1453,7 +1599,7 @@ async def aggregate_product(
                             "source_type": "html",
                             "short_description": short_description,
                             "long_description": long_description,
-                            "features": features  
+                            "features": features
                         })
                         return extractions
                     except Exception as e:
@@ -1487,7 +1633,13 @@ async def aggregate_product(
                 'reason': 'Product not found or no attributes could be extracted.',
                 'golden_record': {'attributes': {}}
             }
+        logger.info(
+            "Stage 2 completed in %.2f seconds",
+            time.perf_counter() - stage2_start,
+        )
         logger.info("Stage 3: Combined Cleaning, Unification & Standardization")
+        stage3_start = time.perf_counter()
+
         algo_name_map = {
             'openai': 'Algo 1',
             'gemini': 'Algo 2',
@@ -1508,7 +1660,8 @@ async def aggregate_product(
                     'extraction_algorithm': current_algo_name,
                     'extraction_source': source_type
                 })
-        raw_attrs_for_combine = normalize_concatenated_uom(raw_attrs_for_combine)
+        raw_attrs_for_combine = normalize_concatenated_uom(
+            raw_attrs_for_combine)
         canonical_names = []
         canonical_units = {}
         alias_name_map = {}
@@ -1525,16 +1678,21 @@ async def aggregate_product(
             category = cat_result.scalars().first()
             if category:
                 try:
-                    asyncio.create_task(_enqueue_alias_job_isolated(category.id))
+                    asyncio.create_task(
+                        _enqueue_alias_job_isolated(category.id))
                 except Exception as e:
-                    logger.warning(f"[Stage3Canonicals] Failed to enqueue alias job: {e}")
+                    logger.warning(
+                        f"[Stage3Canonicals] Failed to enqueue alias job: {e}")
                 try:
                     winner_attrs, alias_name_map = await load_category_canonical_winners(category.id, db)
                 except Exception as e:
-                    logger.warning(f"[Stage3Canonicals] resolver failed for category_id={category.id}: {e}")
+                    logger.warning(
+                        f"[Stage3Canonicals] resolver failed for category_id={category.id}: {e}")
                     winner_attrs, alias_name_map = [], {}
-                canonical_names = [a.attribute_name for a in winner_attrs if a.attribute_name]
-                canonical_units = {a.attribute_name: a.unit for a in winner_attrs if a.attribute_name and a.unit}
+                canonical_names = [
+                    a.attribute_name for a in winner_attrs if a.attribute_name]
+                canonical_units = {
+                    a.attribute_name: a.unit for a in winner_attrs if a.attribute_name and a.unit}
                 alias_lc = {k.lower(): v for k, v in alias_name_map.items()}
                 for a in raw_attrs_for_combine:
                     n = a.get("name") or ""
@@ -1545,21 +1703,31 @@ async def aggregate_product(
                     f"[Stage3Canonicals] category_id={category.id} taxonomy='{taxonomy}' "
                     f"winners={len(canonical_names)} aliases={len(alias_name_map)} units={len(canonical_units)}"
                 )
-                logger.info(f"[Stage3Canonicals] winners_sample={canonical_names[:80]}")
+                logger.info(
+                    f"[Stage3Canonicals] winners_sample={canonical_names[:80]}")
                 if alias_name_map:
                     items = list(alias_name_map.items())
-                    logger.info(f"[Stage3Canonicals] alias_sample={items[:40]}")
-                logger.info(f"[Stage3Canonicals] canonical_units_count={len(canonical_units)}")
-                logger.info(f"[Stage3Canonicals] canonical_units_sample={dict(list(canonical_units.items())[:80])}")
-                logger.info(f"Loaded {len(canonical_names)} canonical names, {len(canonical_units)} units for: {taxonomy}")
+                    logger.info(
+                        f"[Stage3Canonicals] alias_sample={items[:40]}")
+                logger.info(
+                    f"[Stage3Canonicals] canonical_units_count={len(canonical_units)}")
+                logger.info(
+                    f"[Stage3Canonicals] canonical_units_sample={dict(list(canonical_units.items())[:80])}")
+                logger.info(
+                    f"Loaded {len(canonical_names)} canonical names, {len(canonical_units)} units for: {taxonomy}")
         logger.info("Stage 2.5: Semantic Attribute Clustering")
-        logger.info(f"category_id passed: {category.id if category else None}") 
+        logger.info(f"category_id passed: {category.id if category else None}")
+        cluster_start = time.perf_counter()
         raw_attrs_for_combine = await cluster_attributes_by_meaning(
             raw_attrs_for_combine,
-            category_id=category.id if category else None,  
+            category_id=category.id if category else None,
             db=db,
             canonical_names=canonical_names,
             threshold=0.85
+        )
+        logger.info(
+            "Semantic clustering took %.2fs",
+            time.perf_counter() - cluster_start,
         )
         if category and alias_name_map:
             alias_lc = {k.lower(): v for k, v in alias_name_map.items()}
@@ -1576,14 +1744,25 @@ async def aggregate_product(
             raw_attrs_for_combine, brand, mpn, title, taxonomy,
             existing_excel_attrs=existing_excel_attrs, use_case=use_case,
             canonical_names=canonical_names, canonical_units=canonical_units)
+        logger.info(
+            "[PROMPT] Combine prompt size: %d chars",
+            len(combine_prompt)
+        )
         async for attempt in AsyncRetrying(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10)):
             with attempt:
+                combine_start = time.perf_counter()
+
                 combined_result = await call_llm_with_schema(
                     prompt=combine_prompt,
                     response_model="UnifiedStandardizedResponse",
                     llm_provider=llm_provider,
                     estimated_tokens=3000 + len(raw_attrs_for_combine) * 200,
-                    max_tokens=min(3000 + len(raw_attrs_for_combine) * 200, 16000)
+                    max_tokens=min(
+                        3000 + len(raw_attrs_for_combine) * 200, 16000)
+                )
+                logger.info(
+                    "[TIMING] Combine LLM: %.2fs",
+                    time.perf_counter() - combine_start,
                 )
         golden_attributes = combined_result.attributes
         forbidden_names = {
@@ -1602,7 +1781,8 @@ async def aggregate_product(
             {'name': a.name, 'value': a.value, 'unit': a.unit}
             for a in golden_attributes
         ]
-        golden_attr_dicts_temp = _standardize_uom_in_attrs(golden_attr_dicts_temp)
+        golden_attr_dicts_temp = _standardize_uom_in_attrs(
+            golden_attr_dicts_temp)
         for attr, standardized in zip(golden_attributes, golden_attr_dicts_temp):
             if attr.unit != standardized['unit']:
                 logger.info(
@@ -1610,23 +1790,28 @@ async def aggregate_product(
                     f"for '{attr.name}'"
                 )
                 attr.unit = standardized['unit']
-        input_names = { (a['name'] or "").strip().lower() for a in raw_attrs_for_combine }
-        output_names = { (a.name or "").strip().lower() for a in golden_attributes }
+        input_names = {(a['name'] or "").strip().lower()
+                       for a in raw_attrs_for_combine}
+        output_names = {(a.name or "").strip().lower()
+                        for a in golden_attributes}
         merged_names = {
             (m or "").strip().lower()
             for a in golden_attributes
             for m in (a.merged_from or [])
         }
         accounted_for = output_names | merged_names
-        missing = input_names - accounted_for   
+        missing = input_names - accounted_for
         extra = output_names - input_names
         logger.info(f"LLM input attribute count: {len(input_names)}")
         logger.info(f"LLM output attribute count: {len(output_names)}")
         if merged_names:
-            logger.info(f"LLM merged (visible) attribute count: {len(merged_names)}")
+            logger.info(
+                f"LLM merged (visible) attribute count: {len(merged_names)}")
         if missing:
-            dropped_with_values = {a['name']: a['value'] for a in raw_attrs_for_combine if (a['name'] or "").strip().lower() in missing}
-            logger.warning(f"⚠ LLM SILENTLY DROPPED attributes (not merged, not output): {dropped_with_values}")
+            dropped_with_values = {a['name']: a['value'] for a in raw_attrs_for_combine if (
+                a['name'] or "").strip().lower() in missing}
+            logger.warning(
+                f"⚠ LLM SILENTLY DROPPED attributes (not merged, not output): {dropped_with_values}")
         if extra:
             logger.warning(f"⚠ LLM CREATED new attributes: {extra}")
         valid_source_urls = {source['url'] for source in all_extractions}
@@ -1661,11 +1846,17 @@ async def aggregate_product(
                 mpn=mpn,
                 taxonomy=taxonomy or ""
             )
+            validation_start = time.perf_counter()
+
             validation_result = await call_llm_with_schema(
                 prompt=validation_config['prompt'],
                 response_model="ValidationResponse",
                 llm_provider=missing_llm_provider,
                 estimated_tokens=1500
+            )
+            logger.info(
+                "[TIMING] Validation LLM: %.2fs",
+                time.perf_counter() - validation_start,
             )
             if "back filling" in use_case and "validation" not in use_case:
                 for val in validation_result.validations:
@@ -1691,6 +1882,10 @@ async def aggregate_product(
                 for val in validation_result.validations:
                     if not val.matches and val.recommendation == "use_web":
                         validation_conflicts[val.attribute_name] = val.web_value
+        logger.info("Stage 3 completed in %.2f seconds",
+                    time.perf_counter() - stage3_start,)
+        stage5_start = time.perf_counter()
+
         logger.info("Stage 5: Multi-source Aggregation")
         if golden_attributes:
             avg_conf = sum(a.confidence for a in golden_attributes) / \
@@ -1735,6 +1930,10 @@ async def aggregate_product(
             existing_long_description=best_long_description,
             existing_features=all_features
         )
+        logger.info(
+            "[PROMPT] Enrichment prompt size: %d chars",
+            len(enrichment_config["prompt"])
+        )
         if is_algo2_run:
             logger.info(f"Algo2 :Skipping enrichment (router will do it )")
             enrichment_result = type('obj', (object,), {
@@ -1743,12 +1942,18 @@ async def aggregate_product(
                 'features': []
             })()
         else:
+            enrichment_start = time.perf_counter()
+
             enrichment_result = await call_llm_with_schema(
                 prompt=enrichment_config['prompt'],
                 response_model="EnrichmentResponse",
                 llm_provider=missing_llm_provider,
                 estimated_tokens=2000,
                 max_tokens=4000
+            )
+            logger.info(
+                "[TIMING] Marketing Enrichment: %.2fs",
+                time.perf_counter() - enrichment_start,
             )
         best_image = found_image_global or extract_best_image_fallback(
             all_extractions)
@@ -1772,6 +1977,15 @@ async def aggregate_product(
             if f and f.strip() and f not in seen_final:
                 deduped_features.append(f)
                 seen_final.add(f)
+        logger.info(
+            "Stage 5+6 completed in %.2f seconds",
+            time.perf_counter() - stage5_start,
+        )
+
+        logger.info(
+            "TOTAL aggregation time: %.2f seconds",
+            time.perf_counter() - pipeline_start,
+        )
         return {
             'status': 'success',
             'golden_record': {
@@ -1794,6 +2008,8 @@ async def aggregate_product(
             'reason': str(e),
             'golden_record': {'attributes': {}}
         }
+
+
 def _build_combined_prompt(
     raw_attrs: List[Dict],
     brand: str,

@@ -6,14 +6,21 @@ from sqlalchemy import func
 from sqlmodel import select
 from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
 from app.aggregation.services.search_service import SerpApiSearchService
-from app.aggregation.services.download_service import HttpDownloadService
+from app.aggregation.services.download_service import (
+    HttpDownloadService,
+    download_service as shared_download_service,
+)
 from app.models.brand import Brand
 import re
 logger = logging.getLogger("product_discovery")
 class ProductDiscoveryService:
-    def __init__(self, max_results: int = 5):
+    def __init__(
+        self,
+        max_results: int = 5,
+        download_service: HttpDownloadService | None = None,
+    ):
         self.search_service = SerpApiSearchService(max_results=max_results)
-        self.download_service = HttpDownloadService(timeout=20)
+        self.download_service = download_service or shared_download_service
     @staticmethod
     def _clean_url(url: str) -> str:
         from urllib.parse import urlsplit, urlunsplit

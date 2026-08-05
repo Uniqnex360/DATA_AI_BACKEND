@@ -52,7 +52,7 @@ class ProductAggregationResponse(BaseModel):
     message: str
 class FinalAttribute(BaseModel):
     name: str
-    value: str
+    value: Optional[str] = None
     unit: Optional[str] = None
     confidence: float = Field(default=0.9, ge=0.0, le=1.0)
     confidence_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)

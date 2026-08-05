@@ -1151,7 +1151,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                         })
                         logger.warning(
                             f" Aggregation failed for {product.product_code}")
-                    await asyncio.sleep(5)
+                    # await asyncio.sleep(5)
                 except Exception as e:
                     error_msg = f"{type(e).__name__}: {str(e)[:500]}"
                     logger.error(
@@ -1301,8 +1301,8 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                         project_id=project_id,
                         llm_provider=llm_provider
                     )
-                    if idx < len(attr_chunks):
-                        await asyncio.sleep(5)
+                    # if idx < len(attr_chunks):
+                    #     await asyncio.sleep(5)
                     if chunk_result.get('status') == 'success':
                         golden = chunk_result.get('golden_record', {})
                         chunk_attrs = golden.get('attributes', {})
