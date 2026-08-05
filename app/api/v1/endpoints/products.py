@@ -154,6 +154,7 @@ async def read_products(
             p_dict = p.dict() if hasattr(p, 'dict') else p.__dict__
             p_dict['enrichment_status'] = link_status or p_dict.get('enrichment_status', 'pending')
             p_dict["cleansed_attribute_count"] = cleansed_map.get(p.id, 0)
+            p_dict["title_recommendation"] = p.title_recommendation
 
             attributes_dict = {}
             attribute_names = []

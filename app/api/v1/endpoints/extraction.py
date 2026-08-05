@@ -1120,10 +1120,10 @@ async def run_aggregation_task(source_id: str):
                             taxonomy=product.taxonomy,
                             llm_provider=llm_provider
                         )
-                        
-                        product.title_recommendation = title_rec.get('recommended_title')
-                        product.title_confidence = title_rec.get('confidence', 0.0)
-                        product.title_generated_at = now_ist()
+                        if not product.title_recommendation:
+                            product.title_recommendation = title_rec.get('recommended_title')
+                            product.title_confidence = title_rec.get('confidence', 0.0)
+                            product.title_generated_at = now_ist()
                         product.short_description = sanitize_ai_data(
                             golden.get('short_description')) or product.short_description
                         product.long_description = sanitize_ai_data(

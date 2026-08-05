@@ -12,7 +12,7 @@ from openai import AsyncOpenAI
 import random
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from app.core.config import settings
-from app.aggregation.response_schemas import AggregationResponse, BatchCanonicalMatchResponse, CleaningResponse, EnrichmentResponse, ExtractionResponse, StandardizationResponse, UnificationResponse, ValidationResponse
+from app.aggregation.response_schemas import AggregationResponse, BatchCanonicalMatchResponse, CleaningResponse, EnrichmentResponse, ExtractionResponse, StandardizationResponse, TitleRecommendationResponse, UnificationResponse, ValidationResponse
 from app.aggregation.services.cleaning_service import LLMCleaningResponse
 from app.schemas.aggregation import UnifiedStandardizedResponse
 from app.schemas.canonical import CanonicalAliasResponse
@@ -87,6 +87,7 @@ SCHEMA_MAP = {
     "UrlFilterResponse": UrlFilterResponse,
     "SmartSearchResponse": SmartSearchResponse,
     "LLMCleaningResponse": LLMCleaningResponse,
+    "TitleRecommendationResponse":TitleRecommendationResponse,
     "StandardizationResponse": StandardizationResponse,
     "UnifiedStandardizedResponse": UnifiedStandardizedResponse,
     "TargetedQueryResponse": TargetedQueryResponse,

@@ -974,9 +974,10 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                     taxonomy=product.taxonomy,
                                     llm_provider=llm_provider
                                 )
-                                product.title_recommendation = getattr(title_rec, "recommended_title", None)
-                                product.title_confidence = getattr(title_rec, "confidence", 0.0)
-                                product.title_generated_at = now_ist()
+                                if not product.title_recommendation:
+                                    product.title_recommendation = getattr(title_rec, "recommended_title", None)
+                                    product.title_confidence = getattr(title_rec, "confidence", 0.0)
+                                    product.title_generated_at = now_ist()
                             except Exception as e:
                                 logger.warning(f"Title recommendation failed for {product.product_code}: {e}")
                             product.workflow_stage = 'aggregation'
@@ -1091,9 +1092,10 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                     taxonomy=product.taxonomy,
                                     llm_provider=llm_provider,   # or missing_llm_provider if you prefer
                                 )
-                                product.title_recommendation = getattr(title_rec, "recommended_title", None)
-                                product.title_confidence = getattr(title_rec, "confidence", 0.0)
-                                product.title_generated_at = now_ist()
+                                if not product.title_recommendation:
+                                    product.title_recommendation = getattr(title_rec, "recommended_title", None)
+                                    product.title_confidence = getattr(title_rec, "confidence", 0.0)
+                                    product.title_generated_at = now_ist()
                             except Exception as e:
                                 logger.warning(f"Title recommendation failed for {product.product_code}: {e}")
                             product.workflow_stage = 'aggregation'
@@ -1484,9 +1486,10 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                             taxonomy=product.taxonomy,
                             llm_provider=llm_provider,   # or missing_llm_provider if you prefer
                         )
-                        product.title_recommendation = getattr(title_rec, "recommended_title", None)
-                        product.title_confidence = getattr(title_rec, "confidence", 0.0)
-                        product.title_generated_at = now_ist()
+                        if not product.title_recommendation:
+                            product.title_recommendation = getattr(title_rec, "recommended_title", None)
+                            product.title_confidence = getattr(title_rec, "confidence", 0.0)
+                            product.title_generated_at = now_ist()
                     except Exception as e:
                         logger.warning(f"Title recommendation failed for {product.product_code}: {e}")
                     product.workflow_stage = 'aggregation'
@@ -1586,9 +1589,10 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                             taxonomy=product.taxonomy,
                             llm_provider=llm_provider,   # or missing_llm_provider if you prefer
                         )
-                        product.title_recommendation = getattr(title_rec, "recommended_title", None)
-                        product.title_confidence = getattr(title_rec, "confidence", 0.0)
-                        product.title_generated_at = now_ist()
+                        if not product.title_recommendation:
+                            product.title_recommendation = getattr(title_rec, "recommended_title", None)
+                            product.title_confidence = getattr(title_rec, "confidence", 0.0)
+                            product.title_generated_at = now_ist()
                     except Exception as e:
                         logger.warning(f"Title recommendation failed for {product.product_code}: {e}")
                     product.workflow_stage = 'aggregation'

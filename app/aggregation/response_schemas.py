@@ -46,7 +46,10 @@ class CanonicalMatchItem(BaseModel):
 class BatchCanonicalMatchResponse(BaseModel):
     matches: List[CanonicalMatchItem] = Field(default_factory=list)
  
-
+class TitleRecommendationResponse(BaseModel):
+    recommended_title: str
+    confidence: float  
+    reasoning: Optional[str] = None
 
 class CleanedAttribute(BaseModel):
     name: str
