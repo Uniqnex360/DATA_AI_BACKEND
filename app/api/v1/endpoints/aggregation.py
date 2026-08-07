@@ -1,4 +1,3 @@
-from alembic.command import current
 from app.auth.dependencies import get_current_user
 from app.models.project_product_link import ProjectProductLink
 from app.models.user import User
@@ -8,28 +7,23 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select, func, and_, case
 from typing import Optional, List, Dict, Any
-from datetime import datetime, timedelta, timezone
 import logging
 from sqlalchemy.orm.attributes import flag_modified
-from fastapi.responses import StreamingResponse
 import asyncio
 import traceback
 from sqlmodel import update
-import io
-import pandas as pd
 from app.core.config import settings
 from app.core.database import get_session, async_session_factory
 from app.models.attribute import Attribute, AttributeValue, CategoryAttribute
 from app.models.pipeline import AggregationJob, AuditTrail, CleansingIssue, RawExtraction, Source
 from app.models.product import Product
-from app.models.product_attribute_link import ProductAttributeLinkModel, ProductAttributeValueLinkModel
+from app.models.product_attribute_link import ProductAttributeValueLinkModel
 from app.models.project import Project
 from app.aggregation.aggregate_product import aggregate_product, chunk_attributes
 from app.schemas.aggregation import AggregateLLMRequest, AggregatedAttribute, AggregatedAttributeValue, AggregationTriggerResponse, BatchExportRequest, ProductAggregationResponse, ProjectStats
-from app.utils import llm_usage
 from app.utils.aggregate_download import generate_products_excel
 from app.utils.llm_usage import track_llm_usage
-from app.utils.title_recommendation import generate_title_recommendation
+from app.utils.title_helper import apply_title_recommendation
 from app.utils.validators import is_invalid
 from app.utils.image_validator import validate_image_url
 from app.utils.sanitize import sanitize_ai_data
@@ -966,20 +960,8 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                         is_validation_mode=(
                                             'validation' in use_case)
                                     )
-                            try:
-                                final_attrs = product.attributes or ai_attributes
-                                title_rec = await generate_title_recommendation(
-                                    brand=product.brand_name,
-                                    attributes=final_attrs,
-                                    taxonomy=product.taxonomy,
-                                    llm_provider=llm_provider
-                                )
-                                if not product.title_recommendation:
-                                    product.title_recommendation = getattr(title_rec, "recommended_title", None)
-                                    product.title_confidence = getattr(title_rec, "confidence", 0.0)
-                                    product.title_generated_at = now_ist()
-                            except Exception as e:
-                                logger.warning(f"Title recommendation failed for {product.product_code}: {e}")
+                            await apply_title_recommendation(product, product.attributes, llm_provider)
+
                             product.workflow_stage = 'aggregation'
                             product.needs_enrichment = False
                             product.ready_for_export = True
@@ -1084,20 +1066,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                         is_validation_mode=(
                                             'validation' in use_case)
                                     )
-                            try:
-                                final_attrs = product.attributes or ai_attributes
-                                title_rec = await generate_title_recommendation(
-                                    brand=product.brand_name,
-                                    attributes=final_attrs,
-                                    taxonomy=product.taxonomy,
-                                    llm_provider=llm_provider,   # or missing_llm_provider if you prefer
-                                )
-                                if not product.title_recommendation:
-                                    product.title_recommendation = getattr(title_rec, "recommended_title", None)
-                                    product.title_confidence = getattr(title_rec, "confidence", 0.0)
-                                    product.title_generated_at = now_ist()
-                            except Exception as e:
-                                logger.warning(f"Title recommendation failed for {product.product_code}: {e}")
+                            await apply_title_recommendation(product, product.attributes, llm_provider)
                             product.workflow_stage = 'aggregation'
                             product.needs_enrichment = False
                             product.ready_for_export = True
@@ -1477,21 +1446,8 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                                 algo2_attrs,
                                 is_validation_mode=('validation' in use_case)
                             )
-                    try:
-                        final_attrs = product.attributes or ai_data
+                    await apply_title_recommendation(product, product.attributes or ai_data, llm_provider)
 
-                        title_rec = await generate_title_recommendation(
-                            brand=product.brand_name,
-                            attributes=final_attrs,
-                            taxonomy=product.taxonomy,
-                            llm_provider=llm_provider,   # or missing_llm_provider if you prefer
-                        )
-                        if not product.title_recommendation:
-                            product.title_recommendation = getattr(title_rec, "recommended_title", None)
-                            product.title_confidence = getattr(title_rec, "confidence", 0.0)
-                            product.title_generated_at = now_ist()
-                    except Exception as e:
-                        logger.warning(f"Title recommendation failed for {product.product_code}: {e}")
                     product.workflow_stage = 'aggregation'
                     product.needs_enrichment = False
                     product.ready_for_export = True
@@ -1580,22 +1536,8 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                                 algo2_attrs,
                                 is_validation_mode=('validation' in use_case)
                             )
-                    try:
-                        final_attrs = product.attributes or ai_data
+                    await apply_title_recommendation(product, product.attributes or ai_data, llm_provider)
 
-                        title_rec = await generate_title_recommendation(
-                            brand=product.brand_name,
-                            attributes=final_attrs,
-                            taxonomy=product.taxonomy,
-                            llm_provider=llm_provider,   # or missing_llm_provider if you prefer
-                        )
-                        if not product.title_recommendation:
-                            product.title_recommendation = getattr(title_rec, "recommended_title", None)
-                            product.title_confidence = getattr(title_rec, "confidence", 0.0)
-                            product.title_generated_at = now_ist()
-                    except Exception as e:
-                        logger.warning(f"Title recommendation failed for {product.product_code}: {e}")
-                    product.workflow_stage = 'aggregation'
                     product.needs_enrichment = False
                     product.ready_for_export = True
                     product.enrichment_status = 'completed'

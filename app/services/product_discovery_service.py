@@ -161,14 +161,43 @@ class ProductDiscoveryService:
                 logger.info(f"Skipping search/pagination URL: {url}")
                 continue
             path = urlparse(url).path.lower()
+            # if target_type and exclusion_str:
+            #     is_target_in_url = target_type.lower() in path
+            #     has_sibling_in_url = any(excl.replace(
+            #         "-", "") in path for excl in exclusion_str.split())
+            #     if has_sibling_in_url and not is_target_in_url:
+            #         logger.info(f"Skipping sibling variant URL: {url}")
+            #         continue
             if target_type and exclusion_str:
-                is_target_in_url = target_type.lower() in path
-                has_sibling_in_url = any(excl.replace(
-                    "-", "") in path for excl in exclusion_str.split())
+                def _normalize(text: str) -> str:
+                    return text.lower().replace("-", "").replace("_", "").replace(" ", "").rstrip("s")
+
+                is_target_in_url = _normalize(target_type) in _normalize(path)
+
+                exclusion_phrases = [
+                    phrase.strip().lstrip("-").strip()
+                    for phrase in exclusion_str.split(" -")
+                    if phrase.strip()
+                ]
+
+                has_sibling_in_url = False
+                for phrase in exclusion_phrases:
+                    phrase_normalized = _normalize(phrase)
+                    path_normalized = _normalize(path)
+
+                    if len(phrase_normalized) < 4:
+                        continue
+
+                    if _normalize(target_type) in phrase_normalized or phrase_normalized in _normalize(target_type):
+                        continue
+
+                    if phrase_normalized in path_normalized:
+                        has_sibling_in_url = True
+                        break
+
                 if has_sibling_in_url and not is_target_in_url:
                     logger.info(f"Skipping sibling variant URL: {url}")
                     continue
-
             url_lower = url.lower()
             if self._exact_mpn_match(path, mpn):
                 mpm_matching_urls.append(url)

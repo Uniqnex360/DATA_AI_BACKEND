@@ -2,6 +2,20 @@ import json
 from typing import Dict, Any
 
 from app.llm import call_llm_with_schema
+MEASUREMENT_ABBREVIATIONS = {
+    "length": "L",
+    "width": "W",
+    "depth": "D",
+    "height": "H",
+    "diameter": "Dia",
+}
+
+
+def abbreviate_measurement(attr_name: str) -> str:
+    name_lower = attr_name.strip().lower()
+    if name_lower in MEASUREMENT_ABBREVIATIONS:
+        return MEASUREMENT_ABBREVIATIONS[name_lower]
+    return attr_name
 
 async def generate_title_recommendation(
     brand: str,
@@ -20,8 +34,8 @@ async def generate_title_recommendation(
 
         if value is None or str(value).strip() == "":
             continue
-
-        line = f"- {name}: {value}" + (f" {unit}" if unit else "")
+        display_name=abbreviate_measurement(name)
+        line = f"- {display_name}: {value}" + (f" {unit}" if unit else "")
         if conf is not None:
             line += f" (confidence={conf})"
         spec_lines.append(line)

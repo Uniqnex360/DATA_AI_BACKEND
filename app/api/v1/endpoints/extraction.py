@@ -20,7 +20,7 @@ from app.models.project_product_link import ProjectProductLink
 from app.models.user import User
 from app.utils.aggregate_download import generate_products_excel
 from app.utils.attribute_helper import ensure_category_from_path, get_category_expected_attributes, save_attributes_normalized
-from app.utils.title_recommendation import generate_title_recommendation
+from app.utils.title_helper import apply_title_recommendation
 from app.utils.usecase_validator import validate_file_against_use_case
 import json
 import io
@@ -28,7 +28,7 @@ import hashlib
 from app.utils.timezone import now_ist
 import asyncio
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import  timedelta
 from app.aggregation.aggregate_product import aggregate_product
 from app.schemas.extraction import ExtractionRequest, SourceMetricsResponse, SourceResponse
 from app.schemas.pipeline import SourcePriorityResponse
@@ -46,6 +46,8 @@ router = APIRouter()
 ALLOWED_EXTENSIONS = {'.csv', '.xlsx', '.xls'}
 MAX_FILE_SIZE = 10 * 1024 * 1024
 MAX_ROWS = 1000
+
+
 def merge_attributes_preserving_order(
     primary_attributes: List[str],
     existing_attrs: dict,
@@ -63,6 +65,8 @@ def merge_attributes_preserving_order(
         if attr_name not in merged:
             merged[attr_name] = ai_val
     return merged
+
+
 @router.get("/", response_model=List[SourceResponse])
 async def getAllSources(db: AsyncSession = Depends(get_session)):
     try:
@@ -74,6 +78,8 @@ async def getAllSources(db: AsyncSession = Depends(get_session)):
         logger.error(f"Failed to fetch sources: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Could not retrieve import history")
+
+
 @router.get("/proxy-download")
 async def proxy_download(
     url: str = Query(..., description="URL to download"),
@@ -88,7 +94,8 @@ async def proxy_download(
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
             response = await client.get(url)
             response.raise_for_status()
-            content_type = response.headers.get("content-type", "application/octet-stream")
+            content_type = response.headers.get(
+                "content-type", "application/octet-stream")
             if not filename.endswith((".pdf", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".webm")):
                 ext_map = {
                     "application/pdf": ".pdf",
@@ -118,6 +125,8 @@ async def proxy_download(
     except Exception as e:
         logger.error(f"Download proxy error: {e}")
         raise HTTPException(status_code=500, detail="Download failed")
+
+
 @router.post("/", status_code=status.HTTP_202_ACCEPTED)
 async def extract_from_source(
     payload: ExtractionRequest,
@@ -159,6 +168,8 @@ async def extract_from_source(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="System failed to initialize the extraction pipeline"
         )
+
+
 @router.get("/priorities/{project_id}", response_model=List[SourcePriorityResponse], status_code=status.HTTP_200_OK)
 async def get_project_priorities(project_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -178,6 +189,8 @@ async def get_project_priorities(project_id: str, db: AsyncSession = Depends(get
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal system error while retrieving source rankings"
         )
+
+
 @router.get('/project/{project_id}', response_model=List[SourceResponse])
 async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -192,10 +205,14 @@ async def get_sources_by_project(project_id: str, db: AsyncSession = Depends(get
     except Exception as e:
         logger.error(f"Failed to fetch project sources:{e}")
         return []
+
+
 def sanitize_for_excel(val):
     if not isinstance(val, str):
         return val
     return re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', val)
+
+
 def clean_for_excel(val, attr_name=None):
     if val is None or val == "":
         return ""
@@ -220,6 +237,8 @@ def clean_for_excel(val, attr_name=None):
     if val_str.lower() in ["n/a", "none", "null", "nan", "not available", "increase", "*"]:
         return ""
     return sanitize_for_excel(val_str)
+
+
 @router.get("/{source_id}/download")
 async def download_file(
     source_id: str,
@@ -370,18 +389,20 @@ async def download_file(
             logger.info(
                 f"Using {MAX_ATTRIBUTES} attribute columns for use case: {project.use_case if project else 'Unknown'}")
             return await generate_products_excel(
-    products,
-    db,
-    project_id=str(source.project_id),          
-    global_project_name=project_name,           
-    filename=output_filename
-)
+                products,
+                db,
+                project_id=str(source.project_id),
+                global_project_name=project_name,
+                filename=output_filename
+            )
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Download Error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail="Error generating download")
+
+
 def clean_numeric_string(value):
     if value is None or value == '':
         return ''
@@ -395,6 +416,7 @@ def clean_numeric_string(value):
     except (ValueError, OverflowError):
         pass
     return s
+
 
 @router.post("/upload", status_code=status.HTTP_202_ACCEPTED)
 async def upload_file(
@@ -532,10 +554,10 @@ async def upload_file(
         failed_products = []
         for idx, row in enumerate(rows):
             val_mpn = clean_numeric_string(row.get("mpn")) or None
-            logger.info(f"MPN from row: {row.get('mpn')} → cleaned: {val_mpn}") 
+            logger.info(f"MPN from row: {row.get('mpn')} → cleaned: {val_mpn}")
             val_sku = clean_numeric_string(row.get("sku")) or None
             code = val_mpn or val_sku
-            logger.info(f"Final product_code to save: {code}") 
+            logger.info(f"Final product_code to save: {code}")
             product = None
             industry = None
             target_industry_id = None
@@ -607,24 +629,30 @@ async def upload_file(
                     )
                     try:
                         if row.get('weight'):
-                            product.weight = str(row['weight']).replace(',', '')
+                            product.weight = str(
+                                row['weight']).replace(',', '')
                         if row.get('length'):
-                            product.length = str(row['length']).replace(',', '')
+                            product.length = str(
+                                row['length']).replace(',', '')
                         if row.get('width'):
                             product.width = str(row['width']).replace(',', '')
                         if row.get('height'):
-                            product.height = str(row['height']).replace(',', '')
+                            product.height = str(
+                                row['height']).replace(',', '')
                         if row.get("base_price"):
-                            product.base_price = float(str(row["base_price"]).replace(',', ''))
+                            product.base_price = float(
+                                str(row["base_price"]).replace(',', ''))
                     except ValueError as e:
-                        logger.warning(f"Error parsing numeric field for {code}: {e}")
+                        logger.warning(
+                            f"Error parsing numeric field for {code}: {e}")
                     brand = await get_or_create_brand(db, row.get("brand"))
                     if brand:
                         product.brand_id = brand.id
                         product.brand_name = brand.name
                         brand.product_count = (brand.product_count or 0) + 1
                         if row.get('country_of_origin'):
-                            brand.country_of_origin = row.get('country_of_origin')
+                            brand.country_of_origin = row.get(
+                                'country_of_origin')
                             db.add(brand)
                     vendor = await get_or_create_vendor(db, row.get("vendor"))
                     if vendor:
@@ -635,7 +663,7 @@ async def upload_file(
                         product.industry_id = industry.id
                         product.industry_name = industry.name
                     db.add(product)
-                    await db.flush()  
+                    await db.flush()
                     db.add(ProjectProductLink(
                         project_id=projectId,
                         product_id=product.id,
@@ -666,19 +694,21 @@ async def upload_file(
                 category_id = None
                 if path_parts:
                     if not target_industry_id:
-                        target_industry_id = industry.id if (industry and hasattr(industry, 'id')) else None
-                    if not target_industry_id:   
+                        target_industry_id = industry.id if (
+                            industry and hasattr(industry, 'id')) else None
+                    if not target_industry_id:
                         res = await db.execute(select(Industry).limit(1))
                         fallback_industry = res.scalars().first()
                         if fallback_industry:
                             target_industry_id = fallback_industry.id
                     try:
-                        category_id = await ensure_category_from_path(db, path_parts,industry_id=target_industry_id)
+                        category_id = await ensure_category_from_path(db, path_parts, industry_id=target_industry_id)
                         if category_id:
                             product.category_id = category_id
                             db.add(product)
                     except Exception as e:
-                         logger.error(f"Category creation failed for path {path_parts}: {e}")
+                        logger.error(
+                            f"Category creation failed for path {path_parts}: {e}")
                 if dynamic_attrs:
                     try:
                         await save_attributes_normalized(db, product, dynamic_attrs, category_id)
@@ -693,7 +723,8 @@ async def upload_file(
                     'code': str(code),
                     'error': str(e)
                 })
-                logger.error(f"Failed to process product {code}: {e}", exc_info=True)
+                logger.error(
+                    f"Failed to process product {code}: {e}", exc_info=True)
                 continue
         total_processed = created_count + updated_count
         if failed_count == 0 and total_processed == total_rows:
@@ -730,14 +761,14 @@ async def upload_file(
             logger.error(
                 f"Batch import FAILED: All {failed_count} products failed")
         db.add(new_source)
-        await db.commit()  
+        await db.commit()
         await db.refresh(new_source)
         logger.info(
             f"Batch import saved: {created_count} new, {updated_count} updated. Waiting for manual aggregation.")
         return {
             "status": "accepted",
             "batch_id": str(new_source.id),
-             "message": f"Imported {total_processed} of {total_rows} products. {failed_count} failed.",
+            "message": f"Imported {total_processed} of {total_rows} products. {failed_count} failed.",
             "summary": {
                 "total_rows": total_rows,
                 "valid_rows": len(valid_rows),
@@ -758,6 +789,8 @@ async def upload_file(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Batch processing failed: {str(e)}"
         )
+
+
 @router.get("/batch-status/{batch_id}")
 async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -776,6 +809,8 @@ async def get_batch_status(batch_id: str, db: AsyncSession = Depends(get_session
         logger.error(f"Error fetching batch status: {str(e)}")
         raise HTTPException(
             status_code=500, detail="Failed to fetch batch status")
+
+
 @router.get("/{source_id}/metrics", response_model=SourceMetricsResponse)
 async def get_source_metrics(source_id: str, db: AsyncSession = Depends(get_session)):
     try:
@@ -820,6 +855,8 @@ async def get_source_metrics(source_id: str, db: AsyncSession = Depends(get_sess
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Analytics engine failed to calculate metrics"
         )
+
+
 async def run_extraction_task(source_id: str, content: str):
     async with async_session_factory() as db_session:
         try:
@@ -937,8 +974,10 @@ async def run_extraction_task(source_id: str, content: str):
                         await error_session.commit()
             except:
                 pass
+
+
 @router.post('/aggregate/{source_id}', status_code=status.HTTP_202_ACCEPTED)
-async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user)):
+async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_session), current_user: User = Depends(get_current_user),llm_provider: str = "openai"):
     try:
         source = await db.get(Source, source_id)
         if not source:
@@ -952,8 +991,8 @@ async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks,
         }
         db.add(source)
         await db.commit()
-        background_tasks.add_task(run_aggregation_task, str(
-            source.id), user_id=current_user.id)
+        background_tasks.add_task(run_aggregation_task, str(source.id), llm_provider)
+
         return {
             'status': 'accepted',
             'message': "Aggregation started in the background",
@@ -965,8 +1004,12 @@ async def trigger_aggregation(source_id: str, background_tasks: BackgroundTasks,
         logger.error(f"Failed to trigger aggregation:{str(e)}")
         raise HTTPException(
             status_code=500, detail="Failed to start aggregation")
+
+
 def normalize_key(key: str) -> str:
     return str(key).lower().replace("_", "").replace(" ", "").strip()
+
+
 def fuzzy_match_key(key: str, key_list: List[str]) -> Optional[str]:
     def normalize(s):
         s = re.sub(r'\(.*?\)', '', s)
@@ -976,7 +1019,9 @@ def fuzzy_match_key(key: str, key_list: List[str]) -> Optional[str]:
         if normalize(k) == target:
             return k
     return None
-async def run_aggregation_task(source_id: str):
+
+
+async def run_aggregation_task(source_id: str, llm_provider: str = "openai"):
     async with async_session_factory() as db_session:
         try:
             source = await db_session.get(Source, source_id)
@@ -1035,7 +1080,7 @@ async def run_aggregation_task(source_id: str):
                             f"Failed to read existing attributes for {product.product_code}: {e}")
                     existing_names = set(existing_data.keys())
                     primary_attr_names = list(
-                        category_attrs)  
+                        category_attrs)
                     for name in existing_names:
                         if name not in primary_attr_names:
                             primary_attr_names.append(name)
@@ -1117,16 +1162,9 @@ async def run_aggregation_task(source_id: str):
                         ai_attributes = golden.get('attributes', {})
                         product.enrichment_status = 'completed'
                         product.data_quality_score = 100.0
-                        title_rec = await generate_title_recommendation(
-                            brand=product.brand_name,
-                            attributes=ai_attributes,
-                            taxonomy=product.taxonomy,
-                            llm_provider=llm_provider
-                        )
-                        if not product.title_recommendation:
-                            product.title_recommendation = title_rec.get('recommended_title')
-                            product.title_confidence = title_rec.get('confidence', 0.0)
-                            product.title_generated_at = now_ist()
+                        await apply_title_recommendation(product, ai_attributes, llm_provider)
+
+                        
                         product.short_description = sanitize_ai_data(
                             golden.get('short_description')) or product.short_description
                         product.long_description = sanitize_ai_data(
