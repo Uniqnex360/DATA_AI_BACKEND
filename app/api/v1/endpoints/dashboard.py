@@ -174,7 +174,7 @@ async def calculate_metrics(
             enrichment_stmt = select(func.count(Product.id)).where(
                 *filters,
                 (
-                    (Product.workflow_stage == "enrichment")
+                    (ProjectProductLink.workflow_stage == "enrichment")
                     | (Product.needs_enrichment == True)
                 )
             )
@@ -193,7 +193,7 @@ async def calculate_metrics(
             enrichment_workflow_stmt = select(func.count(Product.id)).where(
                 *filters,
                 (
-                    (Product.workflow_stage == "enrichment")
+                    (ProjectProductLink.workflow_stage == "enrichment")
                     | (Product.needs_enrichment == True)
                 )
             )
@@ -332,7 +332,7 @@ async def get_dashboard_timeline(
         func.count(Product.id).label("total_products"),
             func.sum(case((ProjectProductLink.enrichment_status ==
                      "completed", 1), else_=0)).label("aggregated_products"),
-        func.sum(case(((Product.workflow_stage == "enrichment") | (Product.needs_enrichment == True), 1), else_=0)).label("moved_to_enrichment")
+        func.sum(case(((ProjectProductLink.workflow_stage == "enrichment") | (Product.needs_enrichment == True), 1), else_=0)).label("moved_to_enrichment")
         ).join(
             ProjectProductLink, Product.id == ProjectProductLink.product_id
         ).join(
@@ -464,7 +464,7 @@ async def get_brand_attributes(
             current_user, user_id, project_id, start_dt, end_dt, date_field)
         stmt = select(
             Product.brand_name,
-            Product.workflow_stage,
+            ProjectProductLink.workflow_stage,
             Product.enrichment_status,
             Product.attributes,  
             select(func.count(ProductAttributeLinkModel.attribute_id))
@@ -722,7 +722,7 @@ async def get_projects_overview(
                      "completed", 1), else_=0)).label("enrichment"),
             func.sum(case((ProjectProductLink.enrichment_status ==
                      "failed", 1), else_=0)).label("enrichment_failed"),    
-            func.sum(case((Product.workflow_stage == "cleaning", 1), else_=0)).label(
+            func.sum(case((ProjectProductLink.workflow_stage == "cleaning", 1), else_=0)).label(
                 "cleaning"),  
         ).outerjoin(
             ProjectProductLink, Project.id == ProjectProductLink.project_id

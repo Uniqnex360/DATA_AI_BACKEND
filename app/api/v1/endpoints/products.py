@@ -48,7 +48,7 @@ async def read_products(
             statement = select(Product, Product.enrichment_status.label("link_status"))
         if workflow_stage and hasattr(Product, 'workflow_stage'):
             statement = statement.where(
-                Product.workflow_stage == workflow_stage)
+                ProjectProductLink.workflow_stage == workflow_stage)
         if enrichment_status and enrichment_status != 'all':
             if project_id:
                 statement = statement.where(
@@ -255,9 +255,9 @@ async def get_products_filters(
             ).where(ProjectProductLink.project_id == project_id)
         if workflow_stage:
             category_stmt = category_stmt.where(
-                Product.workflow_stage == workflow_stage)
+                ProjectProductLink.workflow_stage == workflow_stage)
             brand_stmt = brand_stmt.where(
-                Product.workflow_stage == workflow_stage)
+                ProjectProductLink.workflow_stage == workflow_stage)
         if brand_name:
             category_stmt = category_stmt.where(
                 Product.brand_name == brand_name)
@@ -527,7 +527,7 @@ async def get_enrichment_counts(
             func.count(Product.id).label('count')
         ).join(Product,Product.id==ProjectProductLink.project_id).where(
             and_(
-                Product.workflow_stage == 'enrichment',
+                ProjectProductLink.workflow_stage == 'enrichment',
                 Product.enrichment_status == 'pending'
             )
         ).group_by(ProjectProductLink.project_id, )

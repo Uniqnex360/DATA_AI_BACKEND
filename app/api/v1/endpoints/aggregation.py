@@ -56,7 +56,7 @@ async def update_project_status(db_session: AsyncSession, project_id: str) -> No
         .where(
             and_(
                 ProjectProductLink.project_id == project_id,
-                Product.workflow_stage == 'enrichment'
+                ProjectProductLink.workflow_stage == 'enrichment'
             )
         )
     )
@@ -901,7 +901,8 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                     f"⚠ No image found during aggregation of {product.product_code}")
                             product.completeness_score = min(
                                 len(ai_attributes) * 5, 100)
-                            is_enrichment_attempt = product.workflow_stage == 'enrichment'
+                            is_enrichment_attempt = link.workflow_stage == "enrichment"
+
                             product.sources_consulted = golden.get(
                                 'sources_consulted', [])
                             missing_attrs = [attr for attr in (
@@ -962,7 +963,6 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                     )
                             await apply_title_recommendation(product, product.attributes, llm_provider)
 
-                            product.workflow_stage = 'aggregation'
                             product.needs_enrichment = False
                             product.ready_for_export = True
                             product.enrichment_status = 'completed'
@@ -1009,7 +1009,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                 len(ai_attributes) * 5, 100)
                             product.sources_consulted = golden.get(
                                 'sources_consulted', [])
-                            is_enrichment_attempt = product.workflow_stage == 'enrichment'
+                            is_enrichment_attempt = link.workflow_stage == 'enrichment'
                             missing_attrs = [attr for attr in (
                                 primary_attrs or []) if attr not in ai_attributes]
                             new_attrs = [attr for attr in ai_attributes if attr not in set(
@@ -1067,7 +1067,6 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                                             'validation' in use_case)
                                     )
                             await apply_title_recommendation(product, product.attributes, llm_provider)
-                            product.workflow_stage = 'aggregation'
                             product.needs_enrichment = False
                             product.ready_for_export = True
                             product.enrichment_status = 'completed'
@@ -1111,7 +1110,6 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             )
                             .values(enrichment_status='failed')
                         )
-                        failed += 1
                         failed_products.append({
                             'sku': product.product_code,
                             'error': error_msg,
@@ -1207,6 +1205,7 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
 
 
 async def run_single_product_aggregation(product_id: str, llm_provider: str = 'openai', missing_llm_provider: str = None, user_role: str = 'user') -> None:
+    link = None
     async with async_session_factory() as db_session:
         try:
             product = await db_session.get(Product, product_id)
@@ -1215,9 +1214,7 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                 return
             logger.info(
                 f"Starting single product aggregation: {product.product_code}")
-            is_enrichment_attempt = product.workflow_stage == 'enrichment'
-            logger.info(
-                f"Product {product.product_code} - workflow_stage: {product.workflow_stage}, is_enrichment_attempt: {is_enrichment_attempt}")
+            
             primary_attrs, _ = await get_product_attributes_for_aggregation(
                 db_session, product
             )
@@ -1228,6 +1225,15 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
             )
             link_result = await db_session.execute(link_stmt)
             link = link_result.scalars().first()
+            is_enrichment_attempt = bool(
+                link and link.workflow_stage == "enrichment"
+            )
+
+            logger.info(
+                f"Product {product.product_code} - "
+                f"link workflow_stage: {link.workflow_stage if link else None}, "
+                f"is_enrichment_attempt: {is_enrichment_attempt}"
+            )
             if user_role == 'user' and product.enrichment_status == 'completed':
                 logger.info(
                     f"Product {product.product_code} already completed globally. Reusing data.")
@@ -1448,7 +1454,6 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                             )
                     await apply_title_recommendation(product, product.attributes or ai_data, llm_provider)
 
-                    product.workflow_stage = 'aggregation'
                     product.needs_enrichment = False
                     product.ready_for_export = True
                     product.enrichment_status = 'completed'
@@ -1961,9 +1966,9 @@ async def get_products_with_movement(
                 )
 
             # 5. SPLIT into the specific lists the frontend expects
-            if product.workflow_stage == "aggregation":
+            if link.workflow_stage == "aggregation":
                 aggregation_products.append(product_dict)
-            elif product.workflow_stage == "enrichment":
+            elif link.workflow_stage == "enrichment":
                 enrichment_products.append(product_dict)
 
             # 6. Populate the summary for 'completed' or 'failed' tracking
@@ -1973,7 +1978,8 @@ async def get_products_with_movement(
                     "product_code": product.product_code,
                     "product_name": product.product_name,
                     "completeness_score": product.completeness_score,
-                    "workflow_stage": product.workflow_stage,
+                    "workflow_stage": link.workflow_stage,
+
                     "moved_to": 'aggregation' if product.completeness_score >= 90 else 'enrichment'
                 })
             elif link.enrichment_status == "failed":

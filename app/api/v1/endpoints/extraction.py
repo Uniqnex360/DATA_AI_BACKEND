@@ -581,6 +581,7 @@ async def upload_file(
                             db.add(ProjectProductLink(
                                 project_id=projectId,
                                 product_id=product.id,
+                                workflow_stage=default_workflow_stage, 
                                 enrichment_status="pending"
                             ))
                             await db.flush()
@@ -667,6 +668,7 @@ async def upload_file(
                     db.add(ProjectProductLink(
                         project_id=projectId,
                         product_id=product.id,
+                        workflow_stage=default_workflow_stage, 
                         enrichment_status="pending"
                     ))
                     created_count += 1
@@ -867,6 +869,13 @@ async def run_extraction_task(source_id: str, content: str):
                 logger.error(
                     f"Source {source_id} has NO project_id! Aborting.")
                 return
+            project = await db_session.get(Project, source.project_id)
+            if project and project.operation_mode == "enrichment":
+                default_workflow_stage = "enrichment"
+            elif project and project.operation_mode == "cleaning":
+                default_workflow_stage = "cleaning"
+            else:
+                default_workflow_stage = "aggregation"
             items_to_process = []
             try:
                 items_to_process = json.loads(content)
@@ -910,7 +919,9 @@ async def run_extraction_task(source_id: str, content: str):
                         await db_session.flush()
                         db_session.add(ProjectProductLink(
                             project_id=source.project_id,
-                            product_id=product.id
+                            product_id=product.id,
+                            workflow_stage=default_workflow_stage,
+                            enrichment_status="pending"
                         ))
                         logger.info(f"Created product: {sku}")
                     else:
@@ -922,7 +933,9 @@ async def run_extraction_task(source_id: str, content: str):
                         if not link_result.scalars().first():
                             db_session.add(ProjectProductLink(
                                 project_id=source.project_id,
-                                product_id=product.id
+                                workflow_stage=default_workflow_stage,
+                                product_id=product.id,
+                                enrichment_status="pending"
                             ))
                         product.source_url = source.source_url
                         product.attributes = {
@@ -1035,7 +1048,7 @@ async def run_aggregation_task(source_id: str, llm_provider: str = "openai"):
             logger.info(f"Project use case {project.use_case}")
             stmt = select(Product).join(ProjectProductLink).where(
                 ProjectProductLink.project_id == source.project_id,
-                Product.enrichment_status == 'pending'
+                ProjectProductLink.enrichment_status == 'pending'
             )
             result = await db_session.execute(stmt)
             products = result.scalars().all()
@@ -1049,6 +1062,13 @@ async def run_aggregation_task(source_id: str, llm_provider: str = "openai"):
                     display_id = product.product_code if (
                         product.mpn or product.sku) else product.product_name
                     logger.info(f"Aggregating {idx+1}/{total}: {display_id}")
+                    link_result = await db_session.execute(
+                        select(ProjectProductLink).where(
+                            ProjectProductLink.project_id == source.project_id,
+                            ProjectProductLink.product_id == product.id
+                        )
+                    )
+                    link = link_result.scalars().first()
                     category_attrs = []
                     if product.category_id:
                         category_attrs = await get_category_expected_attributes(
@@ -1162,6 +1182,9 @@ async def run_aggregation_task(source_id: str, llm_provider: str = "openai"):
                         ai_attributes = golden.get('attributes', {})
                         product.enrichment_status = 'completed'
                         product.data_quality_score = 100.0
+                        if link:
+                            link.enrichment_status = 'completed'
+                            db_session.add(link)
                         await apply_title_recommendation(product, ai_attributes, llm_provider)
 
                         
@@ -1320,7 +1343,11 @@ async def run_aggregation_task(source_id: str, llm_provider: str = "openai"):
                     else:
                         failed += 1
                         product.enrichment_status = 'failed'
+                        if link:
+                            link.enrichment_status = 'failed'
+                            db_session.add(link)
                         db_session.add(product)
+                        await db_session.commit()
                 except Exception as e:
                     logger.error(
                         f"Aggregation loop error for {product.product_code}: {e}")

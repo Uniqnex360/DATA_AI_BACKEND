@@ -194,8 +194,8 @@ async def call_llm_with_schema(
             """
 
             response_text = await call_gemini_safely(settings.gemini_model, gemini_prompt)
-            logger.info(f"Gemini raw response length: {len(response_text)}")
-            logger.info(f"Gemini raw response FULL: {response_text}")
+            logger.info("Gemini raw response: %d chars", len(response_text))
+            logger.debug("Gemini raw response head: %r", response_text[:2000])
 
             parsed = parse_response(response_text)
             return schema_class.model_validate(parsed)
