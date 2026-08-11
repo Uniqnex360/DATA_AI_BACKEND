@@ -360,7 +360,6 @@ async def list_projects(
         ).where(
             ProjectProductLink.project_id == Project.id,
             Product.workflow_stage == 'aggregation',
-            # CHANGE THIS LINE:
             ProjectProductLink.enrichment_status == 'completed'
         ).correlate(Project).scalar_subquery().label('aggregated_count')
 

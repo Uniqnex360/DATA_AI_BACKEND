@@ -10,6 +10,10 @@ class ProjectProductLink(SQLModel, table=True):
         foreign_key="catalog_projects.id",
         primary_key=True
     )
+    workflow_stage: str = Field(
+        default="aggregation",
+        index=True,
+    )
     enrichment_status: str = Field(default="pending", index=True)
     product_id: UUID = Field(
         foreign_key="product_master.id",
