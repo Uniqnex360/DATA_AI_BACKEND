@@ -132,4 +132,4 @@ def setup_internal_logging(
         
         logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
-        root.getLogger(__name__).info("Internal logging initialized. File=%s", log_path)
+        logging.getLogger(__name__).info("Internal logging initialized. File=%s", log_path)
