@@ -544,7 +544,7 @@ This exclusion overrides instructions to extract all attributes.
           Textiles: "Thread Count" = "Fabric Density"
           Cosmetics: "Active Ingredient" = "Formula"
           Food: "Net Weight" = "Weight"
-        ═══════════════════════════════════════════════════════════════════
+        
         EXAMPLES OF SEMANTIC MATCHING (ACROSS ANY CATEGORY)
         ═══════════════════════════════════════════════════════════════════
         Scenario 1: EXACT MATCH
@@ -595,6 +595,29 @@ This exclusion overrides instructions to extract all attributes.
         ══════════════════════════════════════════════════════════════════
           ═══════════════════════════════════════════════════════════════════
         EXTRACTION RULES
+        ═══════════════════════════════════════════════════════════════════
+                CRITICAL RULE — FEATURES vs SPECS:
+
+A value is a SPEC if any of these are true:
+- It is a Yes/No/True/False boolean
+- It is a number with a unit (8.0 kg, 62 dB, 220-240 V)
+- It is a single word or short phrase (Right, White, Front Load, Heat Pump)
+- It is a code (D, B, A++)
+
+A value is a FEATURE (not a spec) if:
+- It is a full sentence (more than 12 words)
+- It explains a benefit, not a measurement
+- It contains words like "automatically", "thanks to", "designed for", 
+  "extremely", "for gentle", "without wrinkles"
+
+Place FEATURES into the `features` array.
+Place only SPECS into the `attributes` array.
+
+Example:
+- "AutoDry: Yes" → attributes[] (spec, boolean)
+- "AutoDry: automatically dries to the exact degree of dryness you want" → features[] (not a spec)
+- "Heat Pump: Yes" → attributes[] (spec)
+- "Heat Pump: works by..." → features[] (not a spec)
         ═══════════════════════════════════════════════════════════════════
         ✓ DO EXTRACT:
           - ALL technical specifications with values (NO MAXIMUM)
@@ -866,6 +889,36 @@ SKIP any row or value that contains:
 - "NR" (Not Required)
 - "Not relevant"
 - Blank/empty cells
+═══════════════════════════════════════════════════════
+RULE 1.5: FEATURES vs SPECS (CRITICAL FOR PDF HIGHLIGHTS)
+═══════════════════════════════════════════════════════
+Official product datasheets often contain a "highlights" or "selling points"
+section near the top. Each highlight is formatted as:
+    <Feature Name>: <long marketing description>
+
+A value is a SPEC if any of these are true:
+- It is a Yes/No/True/False boolean
+- It is a number with a unit (8.0 kg, 62 dB, 220-240 V)
+- It is a single word or short phrase (Right, White, Front Load, Heat Pump)
+- It is a code (D, B, A++)
+
+A value is a FEATURE (not a spec) if:
+- It is a full sentence (more than 12 words)
+- It explains a benefit, not a measurement
+- It contains words like "automatically", "thanks to", "designed for",
+  "extremely", "for gentle", "without wrinkles"
+
+EXAMPLES:
+- "AutoDry: Yes" → attributes[] (spec, boolean)
+- "AutoDry: automatically dries to the exact degree of dryness you want" → features[] (not a spec)
+- "Heat Pump: Yes" → attributes[] (spec)
+- "Heat Pump: works by..." → features[] (not a spec)
+
+For the highlights/selling-points section, place ALL entries in `features[]`.
+For the specification tables, place values in `attributes[]`.
+
+This rule OVERRIDES the volume mandate above. Do NOT pad attributes[]
+with marketing sentences just to hit a count. Quality > Quantity.
 ═══════════════════════════════════════════════════════
 RULE 2: INTELLIGENT DOCUMENT STRUCTURE UNDERSTANDING
 ═══════════════════════════════════════════════════════
