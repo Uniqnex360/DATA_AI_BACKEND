@@ -4,7 +4,6 @@ from sqlalchemy import func
 import time
 from app.core.config import settings
 from app.llm import call_llm_with_schema
-from bs4 import BeautifulSoup
 from typing import Dict, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.aggregation.pipeline import AggregationPipeline
@@ -29,6 +28,7 @@ from app.aggregation.services.extraction_service import (
 from app.models.product import Product
 from app.models.project import Project
 import asyncio
+from firecrawl import Firecrawl
 from app.aggregation.services.image_service import extract_best_image, extract_best_image_fallback
 import logging
 from app.rules.rule_engine import RuleEngine
@@ -681,7 +681,6 @@ async def verify_page_identity_with_llm(url: str, html: str, brand: str, title: 
         logger.info(
             f"Verification text for {url} is too thin. Attempting Firecrawl rendering...")
         try:
-            from firecrawl import Firecrawl
             fc_client = Firecrawl(api_key=settings.FIRECRAWL_API_KEY)
             fc_result = fc_client.scrape_url(url)
             rendered_text = ""
@@ -1255,7 +1254,6 @@ async def aggregate_product(
                                         logger.info(
                                             f"[SPA Detection] Large HTML ({len(html_text)}b) but almost no visible text ({len(visible_text)}b). Trying Firecrawl...")
                                         try:
-                                            from firecrawl import Firecrawl
                                             from app.core.config import settings
                                             fc_client = Firecrawl(
                                                 api_key=settings.FIRECRAWL_API_KEY)

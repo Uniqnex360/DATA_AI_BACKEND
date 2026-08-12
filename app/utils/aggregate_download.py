@@ -31,18 +31,13 @@ async def generate_products_excel(
         first_link_result = await db.execute(
             select(ProjectProductLink)
             .where(ProjectProductLink.product_id == products[0].id)
-            .order_by(ProjectProductLink.linked_at.desc())  # deterministic fallback
+            .order_by(ProjectProductLink.linked_at.desc())  
             .limit(1)
         )
         first_link = first_link_result.scalars().first()
         first_project = await db.get(Project, first_link.project_id) if first_link else None
         if first_project and first_project.use_case:
             use_case = first_project.use_case.lower()
-    # first_link_result = await db.execute(select(ProjectProductLink).where(ProjectProductLink.product_id == products[0].id))
-    # first_link = first_link_result.scalars().first()
-    # first_project = await db.get(Project, first_link.project_id) if first_link else None
-    # if first_project and first_project.use_case:
-    #     use_case = first_project.use_case.lower()
     use_case = use_case or ""
     if 'back filling' in use_case or 'validation' in use_case:
         MAX_ATTRIBUTES = 100
@@ -91,7 +86,6 @@ async def generate_products_excel(
     source_url_headers = [f"source_url_{i}" for i in range(1, 6)]
     all_headers = ["Project Name"] + core_headers + cat_headers + phys_headers + price_headers + \
                   media_headers + content_headers + attr_headers + source_url_headers
-    
     DEDICATED_COLUMN_MAPPING = {
         "name": "Product_Name",
         "product_name": "Product_Name",
@@ -128,6 +122,7 @@ async def generate_products_excel(
         "weight": "Weight",
         "weight_unit": "Weight_Unit",
         "length": "Length",
+        "overall_length": "Length",  
         "width": "Width",
         "height": "Height",
         "dimension_unit": "Dimension_Unit",
@@ -273,38 +268,23 @@ async def generate_products_excel(
             add_if_unique(ai_attr)
         taxonomy_templates[tax] = final_template[:MAX_ATTRIBUTES]
     is_validation_mode = 'validation' in use_case if use_case else False
-    # project_name_cache = {}
-    # prod_to_proj = {}
-    # if not global_project_name:
-    #     link_stmt = select(ProjectProductLink).where(
-    #         ProjectProductLink.product_id.in_([p.id for p in products]))
-    #     links = (await db.execute(link_stmt)).scalars().all()
-    #     prod_to_proj = {link.product_id: link.project_id for link in links}
     project_name_cache = {}
     prod_to_proj = {}
-
     if not global_project_name:
         link_stmt = select(ProjectProductLink).where(
             ProjectProductLink.product_id.in_([p.id for p in products])
         )
-
-        # ✅ If exporting for a specific project, only use links from that project
         if project_id:
             link_stmt = link_stmt.where(ProjectProductLink.project_id == project_id)
-
         links = (await db.execute(link_stmt)).scalars().all()
-
-        # deterministic (if still multiple, keep newest)
         links = sorted(links, key=lambda l: l.linked_at or datetime.min, reverse=True)
         for link in links:
             prod_to_proj.setdefault(link.product_id, link.project_id)
-
         project_ids = {link.project_id for link in links}
         if project_ids:
             stmt = select(Project.id, Project.name).where(Project.id.in_(list(project_ids)))
             result = await db.execute(stmt)
             project_name_cache = {row[0]: row[1] for row in result.fetchall()}
-        
     export_rows = []
     for p in products:
         row = {h: "" for h in all_headers}
@@ -330,20 +310,85 @@ async def generate_products_excel(
         if not row.get("image_url_1") and p.image_url_1:
             row["image_url_1"] = p.image_url_1
         NORM_DEDICATED_MAP = {normalize_attr_name(k): target for k, target in DEDICATED_COLUMN_MAPPING.items()}
+        # dedicated_values = []
+
+        # for ai_key in list(ai_data.keys()):
+        #     ai_key_norm = normalize_attr_name(ai_key)
+        #     if ai_key_norm in NORM_DEDICATED_MAP:
+        #         target_col = NORM_DEDICATED_MAP[ai_key_norm]
+        #         if not target_col:
+        #             continue
+        #         priority = (
+        #             0
+        #             if ai_key_norm == normalize_attr_name(target_col)
+        #             else 1
+        #         )
+        #         value = ai_data.pop(ai_key) 
+        #         row[target_col] = clean_for_excel(value)
+        #         if isinstance(value, dict):
+        #             uom = value.get('uom') or value.get('unit')
+        #             if uom:
+        #                 uom_clean = clean_for_excel(uom)
+        #                 if target_col == 'Weight' and not row['Weight_Unit']:
+        #                     row['Weight_Unit'] = uom_clean
+        #                 elif target_col in ['Length', 'Width', 'Height'] and not row['Dimension_Unit']:
+        #                     row['Dimension_Unit'] = uom_clean
+        dedicated_values = []
+
         for ai_key in list(ai_data.keys()):
             ai_key_norm = normalize_attr_name(ai_key)
-            if ai_key_norm in NORM_DEDICATED_MAP:
-                target_col = NORM_DEDICATED_MAP[ai_key_norm]
-                value = ai_data.pop(ai_key) 
-                row[target_col] = clean_for_excel(value)
-                if isinstance(value, dict):
-                    uom = value.get('uom') or value.get('unit')
-                    if uom:
-                        uom_clean = clean_for_excel(uom)
-                        if target_col == 'Weight' and not row['Weight_Unit']:
-                            row['Weight_Unit'] = uom_clean
-                        elif target_col in ['Length', 'Width', 'Height'] and not row['Dimension_Unit']:
-                            row['Dimension_Unit'] = uom_clean
+            target_col = NORM_DEDICATED_MAP.get(ai_key_norm)
+
+            if not target_col:
+                continue
+
+            # An exact dedicated field takes priority over aliases.
+            # Example: "Length" takes priority over "Overall Length".
+            priority = (
+                0
+                if ai_key_norm == normalize_attr_name(target_col)
+                else 1
+            )
+
+            dedicated_values.append(
+                (priority, ai_key, target_col)
+            )
+
+        for _, ai_key, target_col in sorted(
+            dedicated_values,
+            key=lambda item: item[0]
+        ):
+            value = ai_data.pop(ai_key)
+            cleaned_value = clean_for_excel(value)
+
+            # Do not allow an alias to overwrite an already populated value.
+            field_selected = (
+                row.get(target_col) in ("", None)
+                and cleaned_value not in ("", None)
+            )
+
+            if not field_selected:
+                continue
+
+            row[target_col] = cleaned_value
+
+            if isinstance(value, dict):
+                uom = value.get("uom") or value.get("unit")
+
+                if uom:
+                    uom_clean = clean_for_excel(uom)
+
+                    if target_col == "Weight" and not row["Weight_Unit"]:
+                        row["Weight_Unit"] = uom_clean
+
+                    elif (
+                        target_col in {"Length", "Width", "Height"}
+                        and not row["Dimension_Unit"]
+                    ):
+                        row["Dimension_Unit"] = uom_clean
+        model_length=getattr(p,'length',None)
+        if model_length in ('',None):
+            model_length=getattr(p,'overall_length',None)
         row.update({
              "Sequence": p.aggregation_index or "", 
             "Prod ID": str(p.id) if p.id else "",
@@ -375,7 +420,9 @@ async def generate_products_excel(
             "Warranty": row.get("Warranty") or p.warranty or "",
             "Weight": row.get("Weight") or (str(p.weight) if p.weight else ""),
             "Weight_Unit": row.get("Weight_Unit") or p.weight_unit or "",
-            "Length": row.get("Length") or (str(getattr(p, 'length', '')) if getattr(p, 'length', None) else ""),
+            "Length": row.get("Length") or (
+    str(model_length) if model_length not in ("", None) else ""
+),
             "Width": row.get("Width") or (str(getattr(p, 'width', '')) if getattr(p, 'width', None) else ""),
             "Height": row.get("Height") or (str(getattr(p, 'height', '')) if getattr(p, 'height', None) else ""),
             "Currency": row.get("Currency") or p.currency or "",
@@ -405,6 +452,8 @@ async def generate_products_excel(
                 else:
                     row[f"image_url_{i}"] = str(img) if img else ""
         original_attrs_by_norm = {}
+        linked_length_candidates = []
+
         try:
             from app.models.attribute import Attribute, AttributeValue
             val_stmt = (
@@ -427,6 +476,36 @@ async def generate_products_excel(
                     'validation_value': validation_value,
                     'validation_uom': validation_uom
                 })
+                target_col = NORM_DEDICATED_MAP.get(k_norm)
+
+                if target_col == "Length":
+                    priority = (
+                        0
+                        if k_norm == normalize_attr_name("Length")
+                        else 1
+                    )
+
+                    linked_length_candidates.append(
+                        (priority, value, uom)
+                    )
+
+            for _, value, uom in sorted(
+                linked_length_candidates,
+                key=lambda item: item[0]
+            ):
+                if row.get("Length") not in ("", None):
+                    break
+
+                cleaned_value = clean_for_excel(value)
+
+                if cleaned_value in ("", None):
+                    continue
+
+                row["Length"] = cleaned_value
+
+                if uom and not row.get("Dimension_Unit"):
+                    row["Dimension_Unit"] = clean_for_excel(uom)
+
         except Exception:
             pass
         used_ai_keys = set()
@@ -444,9 +523,7 @@ async def generate_products_excel(
                 ai_norm = normalize_attr_name(ai_key)
                 if ai_key in used_ai_keys or ai_norm in NORMALIZED_IGNORED_KEYS:
                     continue
-                # if template_norm == ai_norm or (template_norm in ai_norm and len(template_norm) > 3):
                 if template_norm == ai_norm:
-
                     ai_match_key = ai_key
                     break
             ai_val_str = ""
@@ -528,7 +605,6 @@ async def generate_products_excel(
             row[f"attribute_name{current_slot}"] = ai_key.replace('_', ' ').title()
             row[f"attribute_value{current_slot}"] = clean_for_excel(ai_data[ai_key], ai_key)
             if isinstance(ai_data[ai_key], dict):
-                # uom = ai_data[ai_key].get("uom", "")
                 uom = ai_data[ai_key].get("uom") or ai_data[ai_key].get("unit", "")
                 if uom and uom.lower() not in ["n/a", "na", "none", "null"]:
                     row[f"attribute_uom{current_slot}"] = clean_for_excel(uom)
