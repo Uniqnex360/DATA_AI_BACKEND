@@ -1882,3 +1882,33 @@ Statistics:
 [2026-08-12 15:08:40,622] [INFO] [8] [aggregation_router] Single project export, filename from source: 490-100-F084_11-Aug-2026_
 [2026-08-12 15:08:40,622] [INFO] [8] [aggregation_router] Final export filename: 490-100-F084_11-Aug-2026_.xlsx
 [2026-08-12 15:08:40,634] [ERROR] [8] [prompt_builder] Error in get_taxonomy_attribute_hints: display_name
+[2026-08-12 16:31:35,901] [ERROR] [7] [STDERR] sys:1: SAWarning: SELECT statement has a cartesian product between FROM element(s) "project_product_links" and FROM element "product_master".  Apply join condition(s) between each element to resolve.
+[2026-08-12 16:31:35,911] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :13 products
+[2026-08-12 16:31:35,918] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :13 products
+[2026-08-12 16:31:35,957] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :13 products
+[2026-08-12 16:31:35,957] [ERROR] [8] [STDERR] sys:1: SAWarning: SELECT statement has a cartesian product between FROM element(s) "product_master" and FROM element "project_product_links".  Apply join condition(s) between each element to resolve.
+[2026-08-12 16:31:35,964] [INFO] [8] [dashboard_metrics] Global dashboard metrics loaded :13 products
+[2026-08-12 16:31:36,011] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :3 products
+[2026-08-12 16:31:36,012] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :13 products
+[2026-08-12 16:31:36,013] [INFO] [8] [dashboard_metrics] Global dashboard metrics loaded :4 products
+[2026-08-12 16:31:36,042] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :4 products
+[2026-08-12 16:31:36,058] [INFO] [8] [dashboard_metrics] Global dashboard metrics loaded :13 products
+[2026-08-12 16:31:36,064] [INFO] [8] [dashboard_metrics] Global dashboard metrics loaded :3 products
+[2026-08-12 16:31:36,110] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :3 products
+[2026-08-12 16:31:36,132] [INFO] [8] [dashboard_metrics] Global dashboard metrics loaded :3 products
+[2026-08-12 16:35:13,541] [INFO] [8] [dashboard_metrics] Global dashboard metrics loaded :13 products
+[2026-08-12 16:35:13,543] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :13 products
+[2026-08-12 16:35:13,578] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :13 products
+[2026-08-12 16:35:13,581] [INFO] [8] [dashboard_metrics] Global dashboard metrics loaded :13 products
+[2026-08-12 16:35:13,604] [INFO] [8] [dashboard_metrics] Global dashboard metrics loaded :13 products
+[2026-08-12 16:35:13,604] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :4 products
+[2026-08-12 16:35:13,607] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :3 products
+[2026-08-12 16:35:13,628] [INFO] [8] [dashboard_metrics] Global dashboard metrics loaded :4 products
+[2026-08-12 16:35:13,631] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :13 products
+[2026-08-12 16:35:13,638] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :3 products
+[2026-08-12 16:35:13,666] [INFO] [7] [dashboard_metrics] Global dashboard metrics loaded :3 products
+[2026-08-12 16:35:13,687] [INFO] [8] [dashboard_metrics] Global dashboard metrics loaded :3 products
+[2026-08-12 16:35:19,975] [INFO] [8] [aggregation_router] Export request: frontend sent [], deduced project_ids=['1559e209-898c-45fc-b77a-ff179cd053e4'], products_count=1
+[2026-08-12 16:35:19,976] [INFO] [8] [aggregation_router] Single project export, filename from source: WFC3C33PFXUK_11-Aug-2026_
+[2026-08-12 16:35:19,976] [INFO] [8] [aggregation_router] Final export filename: WFC3C33PFXUK_11-Aug-2026_.xlsx
+[2026-08-12 16:35:19,987] [ERROR] [8] [prompt_builder] Error in get_taxonomy_attribute_hints: display_name
