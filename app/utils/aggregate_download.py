@@ -39,10 +39,7 @@ async def generate_products_excel(
         if first_project and first_project.use_case:
             use_case = first_project.use_case.lower()
     use_case = use_case or ""
-    if 'back filling' in use_case or 'validation' in use_case:
-        MAX_ATTRIBUTES = 100
-    else:
-        MAX_ATTRIBUTES = 100
+    MAX_ATTRIBUTES = 100
     core_headers = ["Sequence","Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name", "Brand", "GTIN",
                     "ean", "upc", "unspc", "MPN", "Status", "Lifecycle_Stage", "Launch_Date", "Discontinue_Status"]
     cat_headers = ["industry_name", "category 1", "category 2", "category 3",

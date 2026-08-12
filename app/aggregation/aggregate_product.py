@@ -28,6 +28,7 @@ from app.aggregation.services.extraction_service import (
 from app.models.product import Product
 from app.models.project import Project
 import asyncio
+from app.utils.attribute_filters import is_distributor_metadata
 from firecrawl import Firecrawl
 from app.aggregation.services.image_service import extract_best_image, extract_best_image_fallback
 import logging
@@ -619,11 +620,14 @@ def _url_contains_product_identifier(url: str, mpn: str, title: str) -> bool:
     return False
 
 
-def is_result_actually_product(result: dict, brand: str, title: str) -> bool:
+def is_result_actually_product(result: dict, brand: str, title: str, mpn: str = None) -> bool:
     url = result.get("url", "").lower()
+    if mpn and mpn.lower() in url:
+        return True
     content_to_check = (result.get('title', '')+" " +
                         result.get('snippet', "")).lower()
     brand_lower = brand.lower()
+    
     if brand_lower not in content_to_check and brand_lower not in url:
         return False
     snippet = (result.get("title", "") + " " +
@@ -765,6 +769,25 @@ async def aggregate_product(
     cached_urls: Optional[List[str]] = None,
 ) -> Dict:
     try:
+        primary_attributes = [
+            name
+            for name in (primary_attributes or [])
+            if not is_distributor_metadata(name)
+        ]
+
+        if attribute_chunk:
+            attribute_chunk = [
+                name
+                for name in attribute_chunk
+                if not is_distributor_metadata(name)
+            ]
+
+        if existing_excel_attrs:
+            existing_excel_attrs = {
+                name: value
+                for name, value in existing_excel_attrs.items()
+                if not is_distributor_metadata(name)
+            }
         pipeline_start = time.perf_counter()
         if missing_llm_provider is None:
             missing_llm_provider = llm_provider
@@ -811,10 +834,24 @@ async def aggregate_product(
                     time.perf_counter() - llm_start,
                 )
                 attr_dicts = []
+                extracted_upc = None
+                extracted_ean = None
+                extracted_gtin = None
+
                 if extraction_result and extraction_result.product_detected:
                     if hasattr(extraction_result, "image_url") and extraction_result.image_url:
                         found_image_global = extraction_result.image_url
+                    extracted_upc = getattr(extraction_result, "upc", None)
+                    extracted_ean = getattr(extraction_result, "ean", None)
+                    extracted_gtin = getattr(extraction_result, "gtin", None)
                     for attr in extraction_result.attributes:
+                        if is_distributor_metadata(attr.name):
+                            logger.info(
+                                "Skipped distributor metadata during cached extraction: %s=%s",
+                                attr.name,
+                                attr.value,
+                            )
+                            continue
                         attr_dicts.append({
                             'name': attr.name,
                             'value': attr.value,
@@ -825,7 +862,10 @@ async def aggregate_product(
                     'url': url,
                     'domain': urlparse(url).netloc,
                     'attributes': attr_dicts,
-                    'source_type': 'html'
+                    'source_type': 'html',
+                    'upc': extracted_upc,
+                    'ean': extracted_ean,
+                    'gtin': extracted_gtin,
                 })
             logger.info(
                 f"Algo 2: Extracted {len(all_extractions)} sources from cached HTML"
@@ -1095,7 +1135,7 @@ async def aggregate_product(
                             fb_results = response.json().get("results", [])
                             for r in fb_results:
                                 url = r.get("url", "")
-                                if not is_result_actually_product(r, brand, title):
+                                if not is_result_actually_product(r, brand, title, mpn=mpn if is_mpn_valid else None):
                                     logger.info(
                                         f"Skipping irrelevant result: {url}")
                                     continue
@@ -1146,6 +1186,9 @@ async def aggregate_product(
                 short_description = None
                 long_description = None
                 features = None
+                page_upc = None
+                page_ean = None
+                page_gtin = None
                 async with _url_semaphore:
                     try:
                         content = None
@@ -1210,6 +1253,13 @@ async def aggregate_product(
                                         if hasattr(extraction_result, "image_url"):
                                             image_url = extraction_result.image_url
                                         for attr in extraction_result.attributes:
+                                            if is_distributor_metadata(attr.name):
+                                                logger.info(
+                                                    "Skipped distributor metadata during cached extraction: %s=%s",
+                                                    attr.name,
+                                                    attr.value,
+                                                )
+                                                continue
                                             attr_dicts.append({
                                                 "name": attr.name,
                                                 "value": attr.value,
@@ -1225,6 +1275,9 @@ async def aggregate_product(
                                             "short_description": getattr(extraction_result, "short_description", None),
                                             "long_description": getattr(extraction_result, "long_description", None),
                                             "features": getattr(extraction_result, "features", None) or [],
+                                            "upc": getattr(extraction_result, "upc", None),
+                                            "ean": getattr(extraction_result, "ean", None),
+                                            "gtin": getattr(extraction_result, "gtin", None),
                                         })
                                 return extractions
                             if content_type == "html":
@@ -1435,7 +1488,20 @@ async def aggregate_product(
                                 short_description = extraction_result.short_description
                             if hasattr(extraction_result, "long_description"):
                                 long_description = extraction_result.long_description
+                            if hasattr(extraction_result, "upc"):
+                                page_upc = extraction_result.upc
+                            if hasattr(extraction_result, "ean"):
+                                page_ean = extraction_result.ean
+                            if hasattr(extraction_result, "gtin"):
+                                page_gtin = extraction_result.gtin
                             for attr in extraction_result.attributes:
+                                if is_distributor_metadata(attr.name):
+                                    logger.info(
+                                        "Skipped distributor metadata during cached extraction: %s=%s",
+                                        attr.name,
+                                        attr.value,
+                                    )
+                                    continue
                                 attr_dicts.append({
                                     "name": attr.name,
                                     "value": attr.value,
@@ -1564,6 +1630,13 @@ async def aggregate_product(
                                         if pdf_result and pdf_result.product_detected:
                                             pdf_attrs = []
                                             for attr in pdf_result.attributes:
+                                                if is_distributor_metadata(attr.name):
+                                                    logger.info(
+                                                        "Skipped distributor metadata during PDF extraction: %s=%s",
+                                                        attr.name,
+                                                        attr.value,
+                                                    )
+                                                    continue
                                                 pdf_attrs.append({
                                                     "name": attr.name,
                                                     "value": attr.value,
@@ -1578,7 +1651,10 @@ async def aggregate_product(
                                                 "source_type": "pdf",
                                                 "short_description": getattr(pdf_result, "short_description", None),
                                                 "long_description": getattr(pdf_result, "long_description", None),
-                                                "features": getattr(pdf_result, "features", None) or []
+                                                "features": getattr(pdf_result, "features", None) or [],
+                                                   "upc": getattr(pdf_result, "upc", None),
+                                                "ean": getattr(pdf_result, "ean", None),
+                                                "gtin": getattr(pdf_result, "gtin", None),
                                             })
                                             logger.info(
                                                 f"✓ PDF extraction: {len(pdf_attrs)} attributes from {pdf_url}")
@@ -1597,7 +1673,10 @@ async def aggregate_product(
                             "source_type": "html",
                             "short_description": short_description,
                             "long_description": long_description,
-                            "features": features
+                            "features": features,
+                             "upc": page_upc,
+                            "ean": page_ean,
+                            "gtin": page_gtin,
                         })
                         return extractions
                     except Exception as e:
@@ -1648,6 +1727,14 @@ async def aggregate_product(
         for src_idx, source in enumerate(all_extractions):
             source_type = source.get('source_type', 'html')
             for attr in source['attributes']:
+                attr_name = attr.get("name", "")
+                if is_distributor_metadata(attr_name):
+                    logger.info(
+                        "Filtered distributor metadata before aggregation: %s=%s",
+                        attr_name,
+                        attr.get("value"),
+                    )
+                    continue
                 raw_attrs_for_combine.append({
                     'temp_id': f"{src_idx}_{len(raw_attrs_for_combine)}",
                     'name': attr['name'],
@@ -1769,11 +1856,28 @@ async def aggregate_product(
         }
         filtered_attributes = []
         for attr in golden_attributes:
-            attr_name_lower = attr.name.lower()
-            if any(forbidden in attr_name_lower for forbidden in forbidden_names):
-                logger.info(f"🛡️  Filtered forbidden attribute: {attr.name}")
+            attr_name = (getattr(attr, "name", None) or "").strip()
+            attr_name_lower = attr_name.lower()
+
+            if is_distributor_metadata(attr_name):
+                logger.info(
+                    "Filtered distributor metadata after aggregation: %s",
+                    attr_name,
+                )
                 continue
+
+            if any(
+                forbidden in attr_name_lower
+                for forbidden in forbidden_names
+            ):
+                logger.info(
+                    "Filtered forbidden identifier attribute: %s",
+                    attr_name,
+                )
+                continue
+
             filtered_attributes.append(attr)
+
         golden_attributes = filtered_attributes
         golden_attr_dicts_temp = [
             {'name': a.name, 'value': a.value, 'unit': a.unit}
@@ -1904,6 +2008,9 @@ async def aggregate_product(
         ]
         best_short_description = None
         best_long_description = None
+        best_upc = None
+        best_ean = None
+        best_gtin = None
         all_features = []
         seen_features = set()
         for source in all_extractions:
@@ -1911,6 +2018,12 @@ async def aggregate_product(
                 best_short_description = source['short_description']
             if source.get('long_description') and not best_long_description:
                 best_long_description = source['long_description']
+            if source.get('upc') and not best_upc:
+                best_upc = source['upc']
+            if source.get('ean') and not best_ean:
+                best_ean = source['ean']
+            if source.get('gtin') and not best_gtin:
+                best_gtin = source['gtin']
             source_features = source.get('features') or []
             for feat in source_features:
                 if feat and feat.strip() and feat not in seen_features:
@@ -1919,6 +2032,7 @@ async def aggregate_product(
             if best_short_description and best_long_description:
                 break
         logger.info("Stage 6: Marketing Enrichment")
+        logger.info(f"[DEBUG FEATURES] all_features going into enrichment: {all_features}")
         enrichment_config = build_enrichment_prompt(
             golden_attributes=golden_attr_dicts,
             product_name=title,
@@ -1969,6 +2083,7 @@ async def aggregate_product(
             final_features = list(enrichment_result.features)
         elif all_features:
             final_features = all_features
+        logger.info(f"[DEBUG FEATURES] final_features after enrichment: {final_features}")
         seen_final = set()
         deduped_features = []
         for f in final_features:
@@ -1992,7 +2107,10 @@ async def aggregate_product(
                 'long_description': enrichment_result.long_description,
                 'features': deduped_features,
                 'sources_consulted': list({s['url'] for s in all_extractions}),
-                'confidence': avg_conf
+                'confidence': avg_conf,
+                 'upc': best_upc or "",
+                'ean': best_ean or "",
+                'gtin': best_gtin or "",
             },
             'validation_conflicts': validation_conflicts,
             'excel_overrides': excel_overrides,

@@ -1299,8 +1299,15 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                 ai_data = golden.get('attributes', {})
                 product.short_description = golden.get(
                     'short_description') or product.short_description
+                product.upc=golden.get('upc') or product.upc
+                product.ean=golden.get('ean') or product.ean 
+                product.gtin=golden.get('gtin') or product.gtin
                 product.long_description = golden.get(
                     'long_description') or product.long_description
+                product.features = golden.get('features') or product.features
+                product.upc = golden.get('upc') or product.upc
+                product.ean = golden.get('ean') or product.ean
+                product.gtin = golden.get('gtin') or product.gtin
                 product.features = golden.get('features') or product.features
                 link_stmt = select(ProjectProductLink).where(
                     ProjectProductLink.product_id == product.id
@@ -1750,7 +1757,7 @@ async def serialize_products_with_attributes(db: AsyncSession, product: Product)
     product_dict = product.dict()
     EXCLUDED_ATTRS = {
         'brand', 'manufacturer', 'manufacturer part number',
-        'model number', 'part number', 'mpn', 'upc', 'item',
+        'model number', 'part number', 'mpn', 'item',
         'model_numer', 'brand_name'
     }
     attr_stmt = (

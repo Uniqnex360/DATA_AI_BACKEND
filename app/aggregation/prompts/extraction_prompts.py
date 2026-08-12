@@ -454,6 +454,53 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         ═══════════════════════════════════════════════════════════════════
         CRITICAL INSTRUCTION: SEMANTIC ATTRIBUTE MAPPING
         ═══════════════════════════════════════════════════════════════════
+        ═══════════════════════════════════════════════════════
+CRITICAL: DISTRIBUTOR/RETAILER METADATA EXCLUSION
+═══════════════════════════════════════════════════════
+The following fields are distributor, retailer, customer-service, or
+website metadata. They are NOT product technical specifications.
+
+DO NOT extract:
+- Item #
+- Item No.
+- Item Number
+- Distributor Item Number
+- Retailer Item Number
+- Return Fee
+- Return Fees
+- Restocking Fee
+- Return Method
+- Return Policy
+- Returns Policy
+- Refund Policy
+- Rating when it means customer/review/store rating
+- Customer Rating
+- Average Rating
+- Star Rating
+- Review Rating
+- Seller Rating
+- Store Rating
+
+Examples:
+- "Item #: 5395850" → SKIP
+- "Return Fees: 15%" → SKIP
+- "Return Method: Mail" → SKIP
+- "Return Policy: 30 Days" → SKIP
+- "Rating: 4.8 out of 5" → SKIP
+- "Customer Rating: 4.5 Stars" → SKIP
+
+IMPORTANT:
+Do not confuse customer/store ratings with technical ratings.
+
+Technical product ratings must still be extracted:
+- "Voltage Rating: 600 V" → EXTRACT
+- "Pressure Rating: 150 psi" → EXTRACT
+- "IP Rating: IP65" → EXTRACT
+- "Fire Rating: Class A" → EXTRACT
+- "Power Rating: 100 W" → EXTRACT
+
+This exclusion overrides instructions to extract all attributes.
+═══════════════════════════════════════════════════════
         The HTML may use DIFFERENT words than the PRIMARY ATTRIBUTES list.
         Your job: understand the MEANING and map accordingly.
         MATCHING ALGORITHM:
@@ -569,7 +616,7 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         - Product category (already in context)
         - Internal SKUs/codes (unless in PRIMARY ATTRIBUTES)
         - Customer reviews or ratings
-        - UPC/EAN/Barcode numbers  
+        - Barcode numbers  
         - Division/Department codes  
         - Manufacturer/Company addresses, phone numbers, contact info
         VALUE RULES:
@@ -593,7 +640,7 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         PRODUCT VERIFICATION:
         - Verify content is about "{mpn}"
         - If dominated by OTHER product codes → set "product_detected": false
-        - DO NOT extract: Brand, MPN, Category, UPC, Division, Shipping info
+        - DO NOT extract: Brand, MPN, Category, Division, Shipping info
         - ONLY extract technical product specifications
         ═══════════════════════════════════════════════════════════════════
        CONTENT FOR EXTRACTION:
@@ -603,6 +650,23 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         ═══════════════════════════════════════════════════════════════════
         DESCRIPTION EXTRACTION
         ═══════════════════════════════════════════════════════════════════
+        ═══════════════════════════════════════════════════════════════════
+        IDENTIFIER EXTRACTION (UPC / EAN / GTIN)
+        ═══════════════════════════════════════════════════════════════════
+        Look for product identifier codes anywhere on the page: spec tables,
+        description text, meta tags, JSON-LD ("gtin", "gtin12", "gtin13").
+        - UPC is a 12-digit number, often labeled "UPC", "UPC Code", "GTIN-12"
+        - EAN is a 13-digit number, often labeled "EAN", "GTIN-13"
+        - GTIN may appear generically as "GTIN" without specifying 12 or 13 digits
+        RULES:
+        - Extract ONLY digits actually present on the page. Do not calculate,
+        derive, or pad one from another.
+        - If a code is embedded inside a longer text blob (e.g. "Unit: EA UPC:
+        077089017397 Model Number: HD 1521-0200"), pull out ONLY the digit
+        sequence for that field — do not copy the surrounding text.
+        - Do NOT include these codes in short_description or long_description.
+        Strip them out of any description text before writing it to those fields.
+        - If not found, set to null. Do not guess or hallucinate.
         Extract product descriptions from the page:
         SHORT DESCRIPTION (short_description):
         - Look for: <meta name="description"> tag content
@@ -743,6 +807,9 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
   "image_url": "URL or null",
   "short_description": "1-2 sentences or null",
   "long_description": "3-5 sentences or null",
+    "upc": "12-digit UPC code or null",
+  "ean": "13-digit EAN code or null",
+
   "features": ["feature 1", ...],
   "attributes": [
     {{"name": "Attribute Name", "value": "value", "unit": "unit or null", "confidence": 0.95}}
@@ -872,6 +939,9 @@ Before extracting ANY attribute, check its name:
 - Example: "Ship Weight: 13.6 lb" → SKIP, do not extract
 - Example: "Shipping Weight: 13.5 lb" → SKIP, do not extract
 - Example: "Product Weight: 11.5 lb" → EXTRACT (product spec, not shipping)
+- Distributor/retailer Item # or Item Number
+- Return fees, return methods, return policies, and refund policies
+- Customer ratings, review ratings, star ratings, and seller ratings
 ═══════════════════════════════════════════════════════
 ═══════════════════════════════════════════════════════
 RULE 5: WHAT TO EXTRACT

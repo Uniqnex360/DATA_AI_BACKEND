@@ -24,7 +24,7 @@ class ExtractedAttribute(BaseModel):
         return data
     
     class Config:
-        extra = "ignore"  # Ignore unknown fields like 'merged_from'
+        extra = "ignore"  
         populate_by_name = True
 class ExtractionResponse(BaseModel):
     attributes: List[ExtractedAttribute]
@@ -33,6 +33,9 @@ class ExtractionResponse(BaseModel):
     image_url: Optional[str] = None 
     description: Optional[str] = None 
     long_description: Optional[str] = None
+    upc: Optional[str] = None
+    ean: Optional[str] = None
+    gtin: Optional[str] = None
     features: Optional[List[str]] = None
 class CanonicalMatchItem(BaseModel):
     raw_name: str = Field(..., description="The newly scraped attribute name being evaluated")
