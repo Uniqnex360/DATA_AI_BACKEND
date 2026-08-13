@@ -36,7 +36,7 @@ from app.rules.rule_engine import RuleEngine
 from app.services.canonical_alias_service import enqueue_category_alias_job
 from app.services.category_canonical_resolver import load_category_canonical_winners
 from app.services.product_discovery_service import ProductDiscoveryService
-from app.utils.image_validator import validate_image_url
+from app.utils.image_validator import extract_mozu_preload_images, validate_image_url
 from app.utils.normalization_helper import _standardize_uom_in_attrs, normalize_concatenated_uom
 from app.utils.pdf_utils import is_parts_list_pdf
 from app.utils.remapping import cluster_attributes_by_meaning
@@ -792,7 +792,14 @@ async def aggregate_product(
         if missing_llm_provider is None:
             missing_llm_provider = llm_provider
         candidate_images = []
-        found_image_global = None
+        found_images_global = []
+        def _merge_images(urls: Optional[List[str]]):
+            if not urls:
+                return
+            for u in urls:
+                if u and u not in found_images_global:
+                    found_images_global.append(u)
+            del found_images_global[8:]
         all_extractions = []
         if is_algo2_run and cached_urls and cached_html:
             logger.info(
@@ -839,8 +846,7 @@ async def aggregate_product(
                 extracted_gtin = None
 
                 if extraction_result and extraction_result.product_detected:
-                    if hasattr(extraction_result, "image_url") and extraction_result.image_url:
-                        found_image_global = extraction_result.image_url
+                    _merge_images(getattr(extraction_result, "image_urls", None) or [])
                     extracted_upc = getattr(extraction_result, "upc", None)
                     extracted_ean = getattr(extraction_result, "ean", None)
                     extracted_gtin = getattr(extraction_result, "gtin", None)
@@ -1173,22 +1179,23 @@ async def aggregate_product(
 
             all_extractions = []
             _url_semaphore = asyncio.Semaphore(3)
-            found_image_global = None
+
 
             async def process_url(url):
                 url_start = time.perf_counter()
 
                 extractions = []
-                nonlocal found_image_global
-                if found_image_global:
-                    logger.info(
-                        f"Image already found; skipping image extraction for {url}")
+                # nonlocal found_image_global
+                # if found_image_global:
+                #     logger.info(
+                #         f"Image already found; skipping image extraction for {url}")
                 short_description = None
                 long_description = None
                 features = None
                 page_upc = None
                 page_ean = None
                 page_gtin = None
+                mozu_imgs = []
                 async with _url_semaphore:
                     try:
                         content = None
@@ -1249,9 +1256,11 @@ async def aggregate_product(
                                     )
                                     if extraction_result and extraction_result.product_detected:
                                         attr_dicts = []
-                                        image_url = None
-                                        if hasattr(extraction_result, "image_url"):
-                                            image_url = extraction_result.image_url
+                                        # image_url = None
+                                        # if hasattr(extraction_result, "image_urls") :
+                                        #     image_url = extraction_result.image_url
+                                        source_images = list(getattr(extraction_result, "image_urls", None) or [])
+                                        _merge_images(source_images)
                                         for attr in extraction_result.attributes:
                                             if is_distributor_metadata(attr.name):
                                                 logger.info(
@@ -1266,11 +1275,13 @@ async def aggregate_product(
                                                 "unit": getattr(attr, "unit", None),
                                                 "confidence": getattr(attr, "confidence", 0.95),
                                             })
+                                        logger.info(f"[FINAL PAGE IMAGES] {url} => {source_images}")                                            
                                         extractions.append({
                                             "url": url,
                                             "domain": urlparse(url).netloc,
                                             "attributes": attr_dicts,
-                                            "image_url": image_url,
+                                            "image_urls": source_images,
+
                                             "source_type": "pdf",
                                             "short_description": getattr(extraction_result, "short_description", None),
                                             "long_description": getattr(extraction_result, "long_description", None),
@@ -1285,6 +1296,10 @@ async def aggregate_product(
                                     "utf-8", errors="ignore")
                                 logger.info(
                                     f"Downloaded HTML from {url} - size: {len(html_text)} bytes")
+                                mozu_imgs = extract_mozu_preload_images(html_text)
+                                if mozu_imgs:
+                                    logger.info(f"Detected Mozu preload images ({len(mozu_imgs)}): {mozu_imgs}")
+                                    _merge_images(mozu_imgs)
                                 if len(html_text) > 5000:
                                     from bs4 import BeautifulSoup
                                     visible_text = BeautifulSoup(
@@ -1427,7 +1442,8 @@ async def aggregate_product(
                             taxonomy=taxonomy or "",
                             primary_attributes=attrs_to_use,
                             html_content=html_text,
-                            candidate_images=[] if found_image_global else candidate_images,
+                            candidate_images=candidate_images,
+
                             source_url=url
                         )
                         logger.info(
@@ -1455,9 +1471,8 @@ async def aggregate_product(
                         logger.info(f"=== EXTRACTION RESULTS FROM {url} ===")
                         if extraction_result and extraction_result.product_detected:
                             logger.info("Product detected: YES")
-                            logger.info(
-                                f"Image URL: {extraction_result.image_url if hasattr(extraction_result, 'image_url') else 'None'}"
-                            )
+                            logger.info(f"Image URLs: {getattr(extraction_result, 'image_urls', None) or []}")
+
                             logger.info(
                                 f"Number of attributes extracted: {len(extraction_result.attributes)}")
                             for attr in extraction_result.attributes:
@@ -1468,20 +1483,37 @@ async def aggregate_product(
                             logger.info(
                                 f"Extraction result: {extraction_result}")
                         logger.info("=====================================")
+                        # attr_dicts = []
+                        # image_url = None
+                        # if extraction_result and extraction_result.product_detected:
+                        #     if not found_image_global:
+                        #         if hasattr(extraction_result, "image_urls") :
+                        #             image_url = extraction_result.image_url
+                        #         if not image_url:
+                        #             image_url = await extract_best_image(html_text, url, mpn)
+                        #         if image_url:
+                        #             logger.info(
+                        #                 f"✓ Image locked from {url}: {image_url}")
+                        #             found_image_global = image_url
+                        #     else:
+                        #         image_url = None
                         attr_dicts = []
-                        image_url = None
+                        source_images: List[str] = []
                         if extraction_result and extraction_result.product_detected:
-                            if not found_image_global:
-                                if hasattr(extraction_result, "image_url") and extraction_result.image_url:
-                                    image_url = extraction_result.image_url
-                                if not image_url:
-                                    image_url = await extract_best_image(html_text, url, mpn)
-                                if image_url:
-                                    logger.info(
-                                        f"✓ Image locked from {url}: {image_url}")
-                                    found_image_global = image_url
-                            else:
-                                image_url = None
+                            source_images = list(getattr(extraction_result, "image_urls", None) or [])
+
+                            # union structured Mozu carousel images (if present)
+                            for u in (mozu_imgs or []):
+                                if u not in source_images:
+                                    source_images.append(u)
+                            source_images = source_images[:8]
+
+                            if not source_images:
+                                best = await extract_best_image(html_text, url, mpn)
+                                if best:
+                                    source_images = [best]
+
+                            _merge_images(source_images)
                             if hasattr(extraction_result, 'features'):
                                 features = extraction_result.features
                             if hasattr(extraction_result, "short_description"):
@@ -1647,7 +1679,7 @@ async def aggregate_product(
                                                 "url": pdf_url,
                                                 "domain": urlparse(pdf_url).netloc,
                                                 "attributes": pdf_attrs,
-                                                "image_url": None,
+                                                "image_urls": list(getattr(pdf_result, "image_urls", None) or []),
                                                 "source_type": "pdf",
                                                 "short_description": getattr(pdf_result, "short_description", None),
                                                 "long_description": getattr(pdf_result, "long_description", None),
@@ -1665,11 +1697,14 @@ async def aggregate_product(
                                 logger.warning(
                                     f"Failed to process PDF {pdf_url}: {pdf_err}")
                                 continue
+                        
                         extractions.append({
                             "url": url,
                             "domain": urlparse(url).netloc,
                             "attributes": attr_dicts,
-                            "image_url": image_url,
+                            "image_urls": source_images,
+
+
                             "source_type": "html",
                             "short_description": short_description,
                             "long_description": long_description,
@@ -2067,9 +2102,9 @@ async def aggregate_product(
                 "[TIMING] Marketing Enrichment: %.2fs",
                 time.perf_counter() - enrichment_start,
             )
-        best_image = found_image_global or extract_best_image_fallback(
-            all_extractions)
-        if not best_image and candidate_images:
+        best_image = found_images_global[0] if found_images_global else None
+        if not best_image:
+            best_image = extract_best_image_fallback(all_extractions)
             for candidate in candidate_images:
                 is_valid = await validate_image_url(candidate)
                 if is_valid:
@@ -2114,7 +2149,8 @@ async def aggregate_product(
             },
             'validation_conflicts': validation_conflicts,
             'excel_overrides': excel_overrides,
-            'image_url': best_image,
+            'image_urls': found_images_global,
+            'image_url': best_image,  
             'mode': 'backfill' if 'back filling' in use_case else 'standard'
         }
     except Exception as e:

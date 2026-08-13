@@ -105,10 +105,17 @@ def score_image_url(url: str, mpn: str) -> int:
     return score
 def extract_best_image_fallback(all_extractions: List[Dict]) -> Optional[str]:
     for source in all_extractions:
-        img_url = source.get('image_url')
-        if img_url and isinstance(img_url, str) and img_url.strip():
-            if img_url.startswith('http'):
-                logger.info(f"Using image from {source['url']}: {img_url[:80]}")
-                return img_url.strip()
+        imgs = source.get("image_urls")
+        if isinstance(imgs, list):
+            for u in imgs:
+                if isinstance(u, str) and u.strip().startswith("http"):
+                    logger.info(f"Using image from {source.get('url')}: {u[:80]}")
+                    return u.strip()
+
+        img_url = source.get("image_url")
+        if isinstance(img_url, str) and img_url.strip().startswith("http"):
+            logger.info(f"Using image from {source.get('url')}: {img_url[:80]}")
+            return img_url.strip()
+
     logger.warning("No valid image URL found in any source")
     return None

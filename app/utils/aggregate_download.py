@@ -116,12 +116,15 @@ async def generate_products_excel(
         "lifecycle_stage": "Lifecycle_Stage",
         "launch_date": "Launch_Date",
         "discontinue_status": "Discontinue_Status",
-        "weight": "Weight",
+         "weight": "Weight",
+        "overall_weight": "Weight",
         "weight_unit": "Weight_Unit",
         "length": "Length",
-        "overall_length": "Length",  
+        "overall_length": "Length",
         "width": "Width",
+        "overall_width": "Width",
         "height": "Height",
+        "overall_height": "Height",
         "dimension_unit": "Dimension_Unit",
         "dimensions": "Length",
         "country_of_origin": "Country_of_Origin",
@@ -200,6 +203,27 @@ async def generate_products_excel(
     }
     def normalize_attr_name(s: str) -> str:
         return s.strip().lower().replace('_', '').replace(' ', '').replace('-', '')
+    
+    def resolve_dim_with_overall(model_obj, base_attr, overall_attr):
+        """
+        Returns (value_for_column, leftover_overall_value_or_None).
+        leftover is non-None only when both exist and differ — that
+        leftover should be surfaced as its own attribute, not dropped.
+        """
+        base_val = getattr(model_obj, base_attr, None)
+        overall_val = getattr(model_obj, overall_attr, None)
+        base_val = base_val if base_val not in ('', None) else None
+        overall_val = overall_val if overall_val not in ('', None) else None
+
+        if base_val is not None and overall_val is not None:
+            if str(base_val).strip() == str(overall_val).strip():
+                return base_val, None
+            return base_val, overall_val
+        if base_val is not None:
+            return base_val, None
+        if overall_val is not None:
+            return overall_val, None
+        return None, None
     taxonomy_raw_data = {}
     for p in products:
         tax = p.taxonomy or "Unknown"
@@ -304,8 +328,12 @@ async def generate_products_excel(
             row['image_url_1'] = clean_for_excel(ai_data.pop('main_image'))
         elif 'image' in ai_data:
             row['image_url_1'] = clean_for_excel(ai_data.pop('image'))
-        if not row.get("image_url_1") and p.image_url_1:
-            row["image_url_1"] = p.image_url_1
+        for i in range(1, 9):
+            col = f"image_url_{i}"
+            if not row.get(col):
+                val = getattr(p, col, None)
+                if val:
+                    row[col] = val
         NORM_DEDICATED_MAP = {normalize_attr_name(k): target for k, target in DEDICATED_COLUMN_MAPPING.items()}
         # dedicated_values = []
 
@@ -383,9 +411,14 @@ async def generate_products_excel(
                         and not row["Dimension_Unit"]
                     ):
                         row["Dimension_Unit"] = uom_clean
-        model_length=getattr(p,'length',None)
-        if model_length in ('',None):
-            model_length=getattr(p,'overall_length',None)
+        model_length, leftover_overall_length = resolve_dim_with_overall(
+            p, 'length', 'overall_length')
+        model_width, leftover_overall_width = resolve_dim_with_overall(
+            p, 'width', 'overall_width')
+        model_height, leftover_overall_height = resolve_dim_with_overall(
+            p, 'height', 'overall_height')
+        model_weight, leftover_overall_weight = resolve_dim_with_overall(
+            p, 'weight', 'overall_weight')
         row.update({
              "Sequence": p.aggregation_index or "", 
             "Prod ID": str(p.id) if p.id else "",
@@ -415,13 +448,19 @@ async def generate_products_excel(
             "Taxonomy": taxonomy,
             "Country_of_Origin": row.get("Country_of_Origin") or getattr(p, 'country_of_origin', '') or "",
             "Warranty": row.get("Warranty") or p.warranty or "",
-            "Weight": row.get("Weight") or (str(p.weight) if p.weight else ""),
+            "Weight": row.get("Weight") or (
+                str(model_weight) if model_weight not in ("", None) else ""
+            ),
             "Weight_Unit": row.get("Weight_Unit") or p.weight_unit or "",
             "Length": row.get("Length") or (
-    str(model_length) if model_length not in ("", None) else ""
-),
-            "Width": row.get("Width") or (str(getattr(p, 'width', '')) if getattr(p, 'width', None) else ""),
-            "Height": row.get("Height") or (str(getattr(p, 'height', '')) if getattr(p, 'height', None) else ""),
+                str(model_length) if model_length not in ("", None) else ""
+            ),
+            "Width": row.get("Width") or (
+                str(model_width) if model_width not in ("", None) else ""
+            ),
+            "Height": row.get("Height") or (
+                str(model_height) if model_height not in ("", None) else ""
+            ),
             "Currency": row.get("Currency") or p.currency or "",
             "Base Price": row.get("Base Price") or (str(p.base_price) if p.base_price else ""),
             "Vendor_Name": row.get("Vendor_Name") or p.vendor_name or "",
@@ -431,6 +470,16 @@ async def generate_products_excel(
             "Meta_Description": row.get("Meta_Description") or getattr(p, 'meta_description', '') or "",
             "Search_Keywords": row.get("Search_Keywords") or getattr(p, 'search_keywords', '') or "",
         })
+        leftover_overall_dims = []
+        if leftover_overall_length is not None:
+            leftover_overall_dims.append(("Overall Length", leftover_overall_length, row.get("Dimension_Unit") or ""))
+        if leftover_overall_width is not None:
+            leftover_overall_dims.append(("Overall Width", leftover_overall_width, row.get("Dimension_Unit") or ""))
+        if leftover_overall_height is not None:
+            leftover_overall_dims.append(("Overall Height", leftover_overall_height, row.get("Dimension_Unit") or ""))
+        if leftover_overall_weight is not None:
+            leftover_overall_dims.append(("Overall Weight", leftover_overall_weight, row.get("Weight_Unit") or ""))
+
         features_data = ai_data.pop("features", None) or p.features or []
         if isinstance(features_data, str):
             try:
@@ -448,8 +497,71 @@ async def generate_products_excel(
                     row[f"image_url_{i}"] = img.get("url", "")
                 else:
                     row[f"image_url_{i}"] = str(img) if img else ""
+        # original_attrs_by_norm = {}
+        # linked_length_candidates = []
+
+        # try:
+        #     from app.models.attribute import Attribute, AttributeValue
+        #     val_stmt = (
+        #         select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom,
+        #                AttributeValue.validation_value, AttributeValue.validation_uom)
+        #         .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
+        #         .join(ProductAttributeValueLinkModel, 
+        #               ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
+        #         .where(ProductAttributeValueLinkModel.product_id == p.id)
+        #     )
+        #     val_result = await db.execute(val_stmt)
+        #     for attr_name, value, uom, validation_value, validation_uom in val_result.all():
+        #         k_norm = normalize_attr_name(attr_name)
+        #         if k_norm not in original_attrs_by_norm:
+        #             original_attrs_by_norm[k_norm] = []
+        #         original_attrs_by_norm[k_norm].append({
+        #             'name': attr_name,
+        #             'value': value,
+        #             'uom': uom,
+        #             'validation_value': validation_value,
+        #             'validation_uom': validation_uom
+        #         })
+        #         target_col = NORM_DEDICATED_MAP.get(k_norm)
+
+        #         if target_col == "Length":
+        #             priority = (
+        #                 0
+        #                 if k_norm == normalize_attr_name("Length")
+        #                 else 1
+        #             )
+
+        #             linked_length_candidates.append(
+        #                 (priority, value, uom)
+        #             )
+
+        #     for _, value, uom in sorted(
+        #         linked_length_candidates,
+        #         key=lambda item: item[0]
+        #     ):
+        #         if row.get("Length") not in ("", None):
+        #             break
+
+        #         cleaned_value = clean_for_excel(value)
+
+        #         if cleaned_value in ("", None):
+        #             continue
+
+        #         row["Length"] = cleaned_value
+
+        #         if uom and not row.get("Dimension_Unit"):
+        #             row["Dimension_Unit"] = clean_for_excel(uom)
+
+        # except Exception:
+        #     pass
         original_attrs_by_norm = {}
-        linked_length_candidates = []
+        DIM_COL_TO_OVERALL_LABEL = {
+            "Length": "Overall Length",
+            "Width": "Overall Width",
+            "Height": "Overall Height",
+        }
+        linked_dim_raw = {col: {"base": None, "overall": None} for col in DIM_COL_TO_OVERALL_LABEL}
+        linked_weight_raw = {"base": None, "overall": None}
 
         try:
             from app.models.attribute import Attribute, AttributeValue
@@ -475,33 +587,44 @@ async def generate_products_excel(
                 })
                 target_col = NORM_DEDICATED_MAP.get(k_norm)
 
-                if target_col == "Length":
-                    priority = (
-                        0
-                        if k_norm == normalize_attr_name("Length")
-                        else 1
+                if target_col in DIM_COL_TO_OVERALL_LABEL:
+                    if k_norm == normalize_attr_name(target_col):
+                        linked_dim_raw[target_col]["base"] = (value, uom)
+                    else:
+                        linked_dim_raw[target_col]["overall"] = (value, uom)
+                elif target_col == "Weight":
+                    if k_norm == normalize_attr_name("Weight"):
+                        linked_weight_raw["base"] = (value, uom)
+                    else:
+                        linked_weight_raw["overall"] = (value, uom)
+
+            def _apply_dim_rule(target_col, raw, unit_col, overall_label):
+                base = raw.get("base")
+                overall = raw.get("overall")
+                base_val = clean_for_excel(base[0]) if base else ""
+                overall_val = clean_for_excel(overall[0]) if overall else ""
+
+                if row.get(target_col) in ("", None):
+                    if base_val:
+                        row[target_col] = base_val
+                        if base[1] and not row.get(unit_col):
+                            row[unit_col] = clean_for_excel(base[1])
+                    elif overall_val:
+                        row[target_col] = overall_val
+                        if overall[1] and not row.get(unit_col):
+                            row[unit_col] = clean_for_excel(overall[1])
+                        overall_val = ""
+
+                current_col_val = str(row.get(target_col) or "").strip()
+                if overall_val and overall_val.strip() != current_col_val:
+                    leftover_overall_dims.append(
+                        (overall_label, overall[0], overall[1] or "")
                     )
 
-                    linked_length_candidates.append(
-                        (priority, value, uom)
-                    )
+            for target_col, overall_label in DIM_COL_TO_OVERALL_LABEL.items():
+                _apply_dim_rule(target_col, linked_dim_raw[target_col], "Dimension_Unit", overall_label)
 
-            for _, value, uom in sorted(
-                linked_length_candidates,
-                key=lambda item: item[0]
-            ):
-                if row.get("Length") not in ("", None):
-                    break
-
-                cleaned_value = clean_for_excel(value)
-
-                if cleaned_value in ("", None):
-                    continue
-
-                row["Length"] = cleaned_value
-
-                if uom and not row.get("Dimension_Unit"):
-                    row["Dimension_Unit"] = clean_for_excel(uom)
+            _apply_dim_rule("Weight", linked_weight_raw, "Weight_Unit", "Overall Weight")
 
         except Exception:
             pass
@@ -607,6 +730,20 @@ async def generate_products_excel(
                     row[f"attribute_uom{current_slot}"] = clean_for_excel(uom)
                 row[f"attribute_algorithm{current_slot}"] = ai_data[ai_key].get(
                     "extraction_algorithm", "Algo 1")
+            current_slot += 1
+        seen_leftover_labels = set()
+        for label, value, uom in leftover_overall_dims:
+            if current_slot > MAX_ATTRIBUTES:
+                break
+            if label in seen_leftover_labels:
+                continue
+            cleaned_val = clean_for_excel(value)
+            if not cleaned_val:
+                continue
+            seen_leftover_labels.add(label)
+            row[f"attribute_name{current_slot}"] = label
+            row[f"attribute_value{current_slot}"] = cleaned_val
+            row[f"attribute_uom{current_slot}"] = clean_for_excel(uom) if uom else ""
             current_slot += 1
         if p.source_url:
             row["source_url_1"] = p.source_url
