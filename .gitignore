@@ -1,1 +1,2 @@
-.envlogs/*.log
+.env
+logs/*.log
