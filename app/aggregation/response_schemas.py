@@ -30,8 +30,8 @@ class ExtractionResponse(BaseModel):
     attributes: List[ExtractedAttribute]
     product_detected: bool = Field(description="Is this actually the right product?")
     product_type: Optional[str] = Field(default=None, description="Detected product category")
-    image_url: Optional[str] = None 
-    description: Optional[str] = None 
+    image_urls: Optional[List[str]] = None
+    short_description: Optional[str] = None 
     long_description: Optional[str] = None
     upc: Optional[str] = None
     ean: Optional[str] = None

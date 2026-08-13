@@ -1,6 +1,8 @@
 import json
 import logging
 from typing import List, Optional
+
+from app.aggregation.prompts.extraction_prompts import SYMBOL_STRIPPING_RULE
 logger = logging.getLogger('build_enrichment_prompt')
 
 
@@ -73,6 +75,7 @@ def build_enrichment_prompt(
             2. Long Description
 
             Features: Return an empty list [] only. Do NOT generate any features.
+            {SYMBOL_STRIPPING_RULE}
 
             Return JSON following EnrichmentResponse schema.
             """

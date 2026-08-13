@@ -11,15 +11,59 @@ BLOCKED_KEYWORDS = [
     'share.jpg', 'share.png',
     'camozzi', '3d-carton',
 ]
+import re, json
 
+_MOZU_PRELOAD_RE = re.compile(
+    r'id="data-mz-preload-product">\s*(\{.*?\})\s*</script>',
+    re.DOTALL
+)
+
+def extract_mozu_preload_images(html_text: str) -> list[str]:
+    m = _MOZU_PRELOAD_RE.search(html_text or "")
+    if not m:
+        return []
+
+    try:
+        data = json.loads(m.group(1))
+    except Exception:
+        return []
+
+    images = []
+
+    # main image
+    main = data.get("mainImage") or {}
+    for k in ("src", "imageUrl"):
+        if main.get(k):
+            images.append(main[k])
+
+    # carousel images
+    content = data.get("content") or {}
+    for img in content.get("productImages") or []:
+        src = img.get("src") or img.get("imageUrl")
+        if src:
+            images.append(src)
+
+    # normalize + dedupe (preserve order)
+    out, seen = [], set()
+    for u in images:
+        if u.startswith("//"):
+            u = "https:" + u
+        if u and u not in seen:
+            out.append(u)
+            seen.add(u)
+    return out
 
 async def validate_image_url(url: str, max_retries: int = 2) -> bool:
+    url = (url or "").strip()
     if not url:
         return False
+
+    if url.startswith("//"):
+        url = "https:" + url
     if await _test_image_url(url):
         return True
     if not any(url.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.webp']):
-        for ext in ['.jpg', '.jpeg', '.png', '.webp']:
+        for ext in ['.jpg', '.jpeg', '.png', '.webp', '.gif']:
             test_url = url + ext
             if await _test_image_url(test_url):
                 logger.info(f"✓ Found working URL with extension: {test_url}")

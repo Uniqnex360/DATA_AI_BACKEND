@@ -88,6 +88,13 @@ class Product(UUIDModel,table=True):
     )
     description:Optional[str]=None
     image_url_1:Optional[str]=None
+    image_url_2:Optional[str]=None
+    image_url_3:Optional[str]=None
+    image_url_4:Optional[str]=None
+    image_url_5:Optional[str]=None
+    image_url_6:Optional[str]=None
+    image_url_7:Optional[str]=None
+    image_url_8:Optional[str]=None
     enrichment_status:str=Field(default='pending')
     completeness_score: float = Field(default=0.0)
     attributes:Dict=Field(default={},sa_column=Column(JSON))

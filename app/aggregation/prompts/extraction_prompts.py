@@ -3,6 +3,20 @@ import logging
 from typing import Optional, List
 logger = logging.getLogger('extraction_prompts')
 
+SYMBOL_STRIPPING_RULE = """\
+═══════════════════════════════════════════════════════
+SYMBOL STRIPPING — TRADEMARK/LEGAL MARKS
+═══════════════════════════════════════════════════════
+Remove trademark and legal marking symbols — ®, ™, ©, ℠, and similar —
+from ALL extracted text: product_type, short_description,
+long_description, features, and every attribute name and value.
+- Keep the surrounding text intact; only the symbol itself is removed.
+- Do not add a space where the symbol was removed if none existed.
+- Do not leave double spaces behind after removal.
+- Example: "Whirlpool® 6TH SENSE™ Technology" → "Whirlpool 6TH SENSE Technology"
+- Example: "3M™ Scotch-Brite®" → "3M Scotch-Brite"
+This applies regardless of source — HTML text, JSON-LD data, spec tables, or PDFs.
+═══════════════════════════════════════════════════════"""
 
 def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
     soup = BeautifulSoup(html_content, "html.parser")
@@ -125,8 +139,10 @@ def extract_product_descriptions(html_content: str) -> str:
             desc_text = raw_text
     return desc_text[:10000]
 
+
 def try_paired_feature_benefit_lists(soup) -> List[str]:
-    headings = soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'p', 'strong', 'b'])
+    headings = soup.find_all(
+        ['h1', 'h2', 'h3', 'h4', 'h5', 'p', 'strong', 'b'])
     features_list, benefits_list = None, None
     for h in headings:
         text = (h.get_text(strip=True) or '').lower().rstrip(':').strip()
@@ -134,8 +150,10 @@ def try_paired_feature_benefit_lists(soup) -> List[str]:
             candidate = h.find_next(['ul', 'ol'])
             if candidate:
                 features_list = [
-                    li.get_text(separator=' ', strip=True)          # fixed: 'separator' not 'seperator'
-                    for li in candidate.find_all('li', recursive=False)  # fixed: recursive=False
+                    # fixed: 'separator' not 'seperator'
+                    li.get_text(separator=' ', strip=True)
+                    # fixed: recursive=False
+                    for li in candidate.find_all('li', recursive=False)
                 ]
         elif text in ('benefit', 'benefits'):
             candidate = h.find_next(['ul', 'ol'])
@@ -149,14 +167,17 @@ def try_paired_feature_benefit_lists(soup) -> List[str]:
     if benefits_list is not None:
         benefits_list = [b for b in benefits_list if b and b.strip()]
     if features_list and benefits_list and len(features_list) == len(benefits_list):
-        logger.info(f"Paired feature/benefit lists detected: {len(features_list)} pairs")
-        return [f"{f} — {b}" for f, b in zip(features_list, benefits_list)]   # fixed: real f-string
+        logger.info(
+            f"Paired feature/benefit lists detected: {len(features_list)} pairs")
+        # fixed: real f-string
+        return [f"{f} — {b}" for f, b in zip(features_list, benefits_list)]
     logger.debug(
         f"Feature/Benefit pairing skipped: "
         f"feature_list={len(features_list or [])}, benefit_list={len(benefits_list or [])} (count mismatch or missing)"
     )
     return []
-    
+
+
 def extract_features_section(html_content: str, max_features: int = 20, max_li_search: int = 1000) -> List[str]:
     if not html_content:
         logger.warning("extract_features_section: Empty html_content provided")
@@ -174,9 +195,10 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
     features = []
     seen = set()
     try:
-        paired=try_paired_feature_benefit_lists(soup)
+        paired = try_paired_feature_benefit_lists(soup)
         if paired:
-            logger.info(f"Strategy 0 success:{len(paired)} feature/benefit strings")
+            logger.info(
+                f"Strategy 0 success:{len(paired)} feature/benefit strings")
             return paired
         logger.debug("Strategy 1: Searching for feature headings...")
         strategy1_found = False
@@ -451,6 +473,7 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         - Example: "Ship Weight: 13.6 lb" → SKIP, do not extract
         - Example: "Shipping Weight: 13.5 lb" → SKIP, do not extract
         - Example: "Product Weight: 11.5 lb" → EXTRACT (product spec, not shipping)
+        {SYMBOL_STRIPPING_RULE}
         ═══════════════════════════════════════════════════════════════════
         CRITICAL INSTRUCTION: SEMANTIC ATTRIBUTE MAPPING
         ═══════════════════════════════════════════════════════════════════
@@ -751,41 +774,60 @@ This exclusion overrides instructions to extract all attributes.
         ═══════════════════════════════════════════════════════════════════
         IMAGE EXTRACTION - CRITICAL RULES
         ═══════════════════════════════════════════════════════════════════
-        Find the main product image URL. Follow these rules STRICTLY:
-        1. PRIORITY ORDER (check in this sequence):
-          a) <meta property="og:image" content="...">
-          b) <meta name="twitter:image" content="...">
-          c) <img> tags with attributes: data-zoom, data-image, data-src
-          d) <img> tags with class/id containing: product, main, hero, primary
-          e) <img> tags with src containing the MPN: "{mpn}"
-        2. URL VALIDATION:
+        Find ALL images of THIS SPECIFIC PRODUCT (not just one). Follow these
+        rules STRICTLY:
+        1. WHERE TO LOOK (a page image counts as "this product's image" only
+           if it matches ONE of these):
+          a) It sits inside the main product image gallery/carousel — the
+             same DOM container/section as the primary <img> (class/id
+             containing: product, main, hero, primary, gallery, carousel).
+          b) Its src, data-zoom, data-image, or alt-text contains the MPN
+             "{mpn}" or a close variant of the product name.
+          c) It is the <meta property="og:image"> or <meta name="twitter:image">
+             tag content (always counts as this product's primary image).
+        2. DO NOT INCLUDE:
+          - Related products, "customers also bought", cross-sell, upsell,
+            or recommended-product images
+          - Brand/manufacturer logos, site header/footer/nav images
+          - Customer review photos or Q&A images
+          - Banner, promotional, or advertisement images
+          - Icons, badges, social-media share icons
+          - SVG files, data URIs, placeholder images
+        3. URL VALIDATION (applies to every image returned):
             MUST be absolute URL starting with http:// or https://
             MUST end with image extension: .jpg, .jpeg, .png, .webp, .gif
-            IGNORE: icons, logos, thumbnails, badges, social-media images
-            IGNORE: SVG files, data URIs, placeholder images
-        3. URL COMPLETION:
+        4. URL COMPLETION:
           - If you find a URL WITHOUT extension, look for the same base URL 
             with common extensions in nearby attributes
           - Example: If src="image123", check data-zoom="image123.jpg"
-        4. SIZE PREFERENCE:
+        5. SIZE / DEDUPLICATION:
           - Prefer larger images: look for "large", "zoom", "1200", "hires"
-          - Avoid thumbnails: skip "thumb", "small", "100x100"
-        5. OUTPUT REQUIREMENTS:
-          - Return COMPLETE URL including extension
-          - If no valid image found → return null
+          - Skip thumbnail-only duplicates of an image you already captured
+            in a larger size (same product, same angle, just smaller — do
+            not return both)
+          - Different angles/views of the same product ARE distinct images
+            — include each one
+        6. OUTPUT REQUIREMENTS:
+          - Return a list of COMPLETE URLs, each including extension
+          - List the primary/hero image FIRST, then remaining images in
+            the order they appear on the page
+          - Cap the list at 8 images maximum
+          - If no valid image found → return an empty list []
           - Do NOT return incomplete URLs
           - Do NOT return placeholder URLs
         EXAMPLES:
         BAD OUTPUT:
-        "https://assets.dewalt.com/.../product_image"  (missing extension)
+        ["https://assets.dewalt.com/.../product_image"]  (missing extension)
         GOOD OUTPUT:
-        "https://assets.dewalt.com/.../product_image.jpg"
+        ["https://assets.dewalt.com/.../product_image.jpg"]
         BAD OUTPUT:
-        "https://example.com/logo.svg"  (logo, not product)
+        ["https://example.com/logo.svg", "https://example.com/related-item-4523.jpg"]
+        (logo, not product; related item, not this product)
         GOOD OUTPUT:
-        "https://example.com/products/dcf414b-main-1200x1200.jpg"
-        ═══════════════════════════════════════════════════════════════════
-        ═══════════════════════════════════════════════════════════════════
+        ["https://example.com/products/dcf414b-main-1200x1200.jpg",
+         "https://example.com/products/dcf414b-side-1200x1200.jpg",
+         "https://example.com/products/dcf414b-detail-1200x1200.jpg"]
+         ═══════════════════════════════════════════════════════════════════
         BEFORE RETURNING, VERIFY:
         ═══════════════════════════════════════════════════════════════════
         - Did I extract any value that was NOT visible in the HTML? → If yes, REMOVE it
@@ -804,7 +846,7 @@ This exclusion overrides instructions to extract all attributes.
         {{
   "product_detected": true/false,
   "product_type": "category or null",
-  "image_url": "URL or null",
+    "image_urls": ["URL", "URL", ...],
   "short_description": "1-2 sentences or null",
   "long_description": "3-5 sentences or null",
     "upc": "12-digit UPC code or null",
@@ -943,6 +985,8 @@ Before extracting ANY attribute, check its name:
 - Return fees, return methods, return policies, and refund policies
 - Customer ratings, review ratings, star ratings, and seller ratings
 ═══════════════════════════════════════════════════════
+{SYMBOL_STRIPPING_RULE}
+
 ═══════════════════════════════════════════════════════
 RULE 5: WHAT TO EXTRACT
 ═══════════════════════════════════════════════════════
@@ -980,9 +1024,10 @@ DO NOT EXTRACT:
 ═══════════════════════════════════════════════════════
 RULE 6: IMAGE EXTRACTION
 ═══════════════════════════════════════════════════════
-- If the document text contains a URL ending in .jpg, .jpeg, .png, or .webp
-  that clearly refers to a product image, extract it as image_url.
-- Otherwise set image_url to null.
+- If the document text contains one or more URLs ending in .jpg, .jpeg, .png, .webp, or .gif
+  that clearly refer to product images, extract them into image_urls as a list of absolute URLs.
+- Otherwise set image_urls to an empty list [].
+- Maximum 8 URLs.
 ═══════════════════════════════════════════════════════
 CONFIDENCE SCORING
 ═══════════════════════════════════════════════════════
@@ -1004,7 +1049,7 @@ OUTPUT JSON SCHEMA:
 {{
   "product_detected": true/false,
   "product_type": "category name or null",
-  "image_url": "absolute URL or null",
+    "image_urls": ["absolute URL", "..."],
   "short_description": "1-2 sentence summary or null",
   "long_description": "3-5 sentence description or null",
   "features": ["feature 1", "feature 2", ...],
