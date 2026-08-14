@@ -36,7 +36,7 @@ from app.rules.rule_engine import RuleEngine
 from app.services.canonical_alias_service import enqueue_category_alias_job
 from app.services.category_canonical_resolver import load_category_canonical_winners
 from app.services.product_discovery_service import ProductDiscoveryService
-from app.utils.image_validator import extract_mozu_preload_images, validate_image_url
+from app.utils.image_validator import extract_mozu_preload_images, extract_universal_product_images, is_manufacturer_domain, validate_image_url
 from app.utils.normalization_helper import _standardize_uom_in_attrs, normalize_concatenated_uom
 from app.utils.pdf_utils import is_parts_list_pdf
 from app.utils.remapping import cluster_attributes_by_meaning
@@ -1176,7 +1176,17 @@ async def aggregate_product(
             logger.info(
                 f"Stage 2: Download & Extraction from {len(urls)} sources")
             stage2_start = time.perf_counter()
+            # Track separate image buckets
+            mfg_images_locked = []
+            third_party_images = []
 
+            # Collect all valid Manufacturer/Brand hostnames upfront
+            mfg_hosts = set()
+            if 'manufacturer_domain' in locals() and manufacturer_domain:
+                mfg_hosts.add(urlparse(manufacturer_domain if manufacturer_domain.startswith("http") else f"https://{manufacturer_domain}").netloc.lower().replace("www.", ""))
+            for d in (direct_domains if 'direct_domains' in locals() else []):
+                if d:
+                    mfg_hosts.add(urlparse(d if d.startswith("http") else f"https://{d}").netloc.lower().replace("www.", ""))
             all_extractions = []
             _url_semaphore = asyncio.Semaphore(3)
 
@@ -1299,6 +1309,9 @@ async def aggregate_product(
                                 mozu_imgs = extract_mozu_preload_images(html_text)
                                 if mozu_imgs:
                                     logger.info(f"Detected Mozu preload images ({len(mozu_imgs)}): {mozu_imgs}")
+                                universal_imgs = extract_universal_product_images(html_text, url)
+                                if universal_imgs:
+                                    logger.info(f"[TEST] Universal Extractor found ({len(universal_imgs)}) images from {url}: {universal_imgs}")
                                     _merge_images(mozu_imgs)
                                 if len(html_text) > 5000:
                                     from bs4 import BeautifulSoup
@@ -1497,23 +1510,71 @@ async def aggregate_product(
                         #             found_image_global = image_url
                         #     else:
                         #         image_url = None
+                        # attr_dicts = []
+                        # source_images: List[str] = []
+                        # if extraction_result and extraction_result.product_detected:
+                        #     source_images = list(getattr(extraction_result, "image_urls", None) or [])
+
+                        #     # union structured Mozu carousel images (if present)
+                        #     for u in (mozu_imgs or []):
+                        #         if u not in source_images:
+                        #             source_images.append(u)
+                        #     source_images = source_images[:8]
+
+                        #     if not source_images:
+                        #         best = await extract_best_image(html_text, url, mpn)
+                        #         if best:
+                        #             source_images = [best]
+
+                        #     _merge_images(source_images)
                         attr_dicts = []
                         source_images: List[str] = []
                         if extraction_result and extraction_result.product_detected:
-                            source_images = list(getattr(extraction_result, "image_urls", None) or [])
+                            raw_llm_imgs = list(getattr(extraction_result, "image_urls", None) or [])
+                            
+                            src_host = urlparse(url).netloc.lower().replace("www.", "")
+                            is_mfg_url = is_manufacturer_domain(src_host, mfg_hosts, brand)
 
-                            # union structured Mozu carousel images (if present)
-                            for u in (mozu_imgs or []):
-                                if u not in source_images:
-                                    source_images.append(u)
-                            source_images = source_images[:8]
+                            if is_mfg_url:
+                                # MANUFACTURER SITE: Extract and lock images
+                                source_images = raw_llm_imgs
+                                for u in (mozu_imgs or []):
+                                    if u not in source_images:
+                                        source_images.append(u)
+                                for u in (universal_imgs or []):
+                                    if u not in source_images:
+                                        source_images.append(u)
+                                if not source_images:
+                                    best = await extract_best_image(html_text, url, mpn)
+                                    if best:
+                                        source_images = [best]
 
-                            if not source_images:
-                                best = await extract_best_image(html_text, url, mpn)
-                                if best:
-                                    source_images = [best]
+                                source_images = source_images[:8]
+                                for img in source_images:
+                                    if img not in mfg_images_locked:
+                                        mfg_images_locked.append(img)
+                                logger.info(f"✓ Locked {len(source_images)} Manufacturer images from {url}")
+                            else:
+                                # THIRD-PARTY SITE (e.g. AceHardware): Skip if Manufacturer images are already locked
+                                if not mfg_images_locked:
+                                    source_images = raw_llm_imgs
+                                    for u in (mozu_imgs or []):
+                                        if u not in source_images:
+                                            source_images.append(u)
+                                    for u in (universal_imgs or []):
+                                        if u not in source_images:
+                                            source_images.append(u)
+                                    if not source_images:
+                                        best = await extract_best_image(html_text, url, mpn)
+                                        if best:
+                                            source_images = [best]
 
-                            _merge_images(source_images)
+                                    source_images = source_images[:8]
+                                    for img in source_images:
+                                        if img not in third_party_images:
+                                            third_party_images.append(img)
+                                else:
+                                    logger.info(f"Skipped image extraction for Third-Party site ({url}) - Manufacturer images already locked.")
                             if hasattr(extraction_result, 'features'):
                                 features = extraction_result.features
                             if hasattr(extraction_result, "short_description"):
@@ -2102,14 +2163,31 @@ async def aggregate_product(
                 "[TIMING] Marketing Enrichment: %.2fs",
                 time.perf_counter() - enrichment_start,
             )
+        # --- NEW: Final Priority Decision ---
+        if mfg_images_locked:
+            logger.info(f"✓ Final Decision: Using {len(mfg_images_locked)} Manufacturer image(s) EXCLUSIVELY")
+            found_images_global = mfg_images_locked[:8]
+        elif third_party_images:
+            logger.info(f"⚠️ Final Decision: No manufacturer images found. Using {len(third_party_images)} third-party fallback image(s)")
+            found_images_global = third_party_images[:8]
+        else:
+            # Keep whatever fallback image might have been gathered, or empty list
+            pass
+
         best_image = found_images_global[0] if found_images_global else None
+
+        # Fallback to SearXNG candidate images if no image was extracted from HTML
         if not best_image:
             best_image = extract_best_image_fallback(all_extractions)
+            if best_image and best_image not in found_images_global:
+                found_images_global.append(best_image)
             for candidate in candidate_images:
                 is_valid = await validate_image_url(candidate)
                 if is_valid:
                     logger.info(f"Fallback to SearXNG image: {candidate}")
                     best_image = candidate
+                    if candidate not in found_images_global:
+                        found_images_global.append(candidate)
                     break
         if 'download_service' in locals():
             download_service._cache.clear()

@@ -10,6 +10,8 @@ BLOCKED_KEYWORDS = [
     'facebook', 'twitter', 'og-image',
     'share.jpg', 'share.png',
     'camozzi', '3d-carton',
+     'model-plate', 'model_plate', 'find_model', 'badge',
+    'guide', 'watermark', 'thumb_', '_th.'
 ]
 import re, json
 
@@ -17,7 +19,114 @@ _MOZU_PRELOAD_RE = re.compile(
     r'id="data-mz-preload-product">\s*(\{.*?\})\s*</script>',
     re.DOTALL
 )
+import json
+import re
+from urllib.parse import urljoin
+from bs4 import BeautifulSoup
+def is_manufacturer_domain(src_host: str, mfg_hosts: set, brand: Optional[str] = None) -> bool:
+    src_host = src_host.lower().replace("www.", "")
+    
+    for mh in mfg_hosts:
+        mh = mh.lower().replace("www.", "")
+        # 1. Direct or substring match
+        if mh in src_host or src_host in mh:
+            return True
+            
+        # 2. Root domain match for regional variants (e.g., whirlpool.com vs whirlpool.co.uk)
+        mh_parts = mh.split('.')
+        src_parts = src_host.split('.')
+        if len(mh_parts) >= 2 and len(src_parts) >= 2:
+            # If the root domain matches (e.g., 'whirlpool' == 'whirlpool')
+            if mh_parts[-2] == src_parts[-2]:
+                return True
 
+    # 3. Fallback: check if the brand slug appears in the host
+    if brand:
+        brand_slug = brand.lower().replace(" ", "")
+        if brand_slug in src_host:
+            return True
+            
+    return False
+def extract_universal_product_images(html_text: str, base_url: str) -> list[str]:
+   
+    if not html_text:
+        return []
+
+    found_images = []
+    seen = set()
+
+    def _add_image(img_url: str):
+        if not img_url or not isinstance(img_url, str):
+            return
+        img_url = img_url.strip()
+        if img_url.startswith("//"):
+            img_url = "https:" + img_url
+        elif img_url.startswith("/"):
+            img_url = urljoin(base_url, img_url)
+
+        
+        lower_url = img_url.lower()
+        if any(b in lower_url for b in BLOCKED_KEYWORDS):
+            return
+
+
+        if img_url not in seen:
+            seen.add(img_url)
+            found_images.append(img_url)
+
+    
+    try:
+        soup = BeautifulSoup(html_text, 'html.parser')
+        for script in soup.find_all('script', type='application/ld+json'):
+            if not script.string:
+                continue
+            try:
+                data = json.loads(script.string)
+                
+                items = data if isinstance(data, list) else [data]
+                for item in items:
+                    
+                    if isinstance(item, dict) and item.get('@type') in ['Product', 'IndividualProduct']:
+                        imgs = item.get('image')
+                        if isinstance(imgs, list):
+                            for img in imgs:
+                                _add_image(img if isinstance(img, str) else img.get('url'))
+                        elif isinstance(imgs, str):
+                            _add_image(imgs)
+                        elif isinstance(imgs, dict):
+                            _add_image(imgs.get('url'))
+            except Exception:
+                continue
+    except Exception:
+        pass
+
+    
+    try:
+        if 'soup' not in locals():
+            soup = BeautifulSoup(html_text, 'html.parser')
+
+        
+        for meta in soup.find_all('meta', property=re.compile(r'og:image|twitter:image', re.I)):
+            _add_image(meta.get('content'))
+
+        
+        for img in soup.find_all(['img', 'source', 'a']):
+            
+            for attr in ['data-zoom-image', 'data-large-img', 'data-src', 'data-high-res', 'data-zoom', 'srcset', 'src', 'href']:
+                val = img.get(attr)
+                if val:
+                    
+                    if attr == 'srcset':
+                        for part in val.split(','):
+                            src_url = part.strip().split(' ')[0]
+                            if any(src_url.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.webp']):
+                                _add_image(src_url)
+                    elif any(val.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.webp']):
+                        _add_image(val)
+    except Exception:
+        pass
+
+    return found_images[:8]
 def extract_mozu_preload_images(html_text: str) -> list[str]:
     m = _MOZU_PRELOAD_RE.search(html_text or "")
     if not m:
@@ -30,20 +139,20 @@ def extract_mozu_preload_images(html_text: str) -> list[str]:
 
     images = []
 
-    # main image
+    
     main = data.get("mainImage") or {}
     for k in ("src", "imageUrl"):
         if main.get(k):
             images.append(main[k])
 
-    # carousel images
+    
     content = data.get("content") or {}
     for img in content.get("productImages") or []:
         src = img.get("src") or img.get("imageUrl")
         if src:
             images.append(src)
 
-    # normalize + dedupe (preserve order)
+    
     out, seen = [], set()
     for u in images:
         if u.startswith("//"):
@@ -79,7 +188,7 @@ async def _test_image_url(url: str) -> bool:
     }
     try:
         async with httpx.AsyncClient(timeout=8.0, follow_redirects=True, verify=False) as client:
-            # 2. Try HEAD first (fast)
+            
             response = await client.head(url, headers=headers)
             
             if response.status_code != 200:
