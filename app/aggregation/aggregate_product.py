@@ -20,6 +20,7 @@ from urllib.parse import urlparse
 from app.models.business_rule import BrandPrompt, CategoryPrompt
 from app.models.category import Category
 from app.models.enums import RuleStatus
+from app.models.pdf_validation import PdfValidation
 from app.models.product_attribute_link import ProductAttributeValueLinkModel
 from app.models.brand import Brand
 from app.models.attribute import Attribute, AttributeValue, CategoryAttribute
@@ -28,6 +29,7 @@ from app.aggregation.services.extraction_service import (
 from app.models.product import Product
 from app.models.project import Project
 import asyncio
+from uuid import UUID as _UUID
 from app.utils.attribute_filters import is_distributor_metadata
 from firecrawl import Firecrawl
 from app.aggregation.services.image_service import extract_best_image, extract_best_image_fallback
@@ -38,7 +40,7 @@ from app.services.category_canonical_resolver import load_category_canonical_win
 from app.services.product_discovery_service import ProductDiscoveryService
 from app.utils.image_validator import extract_mozu_preload_images, extract_universal_product_images, is_manufacturer_domain, validate_image_url
 from app.utils.normalization_helper import _standardize_uom_in_attrs, normalize_concatenated_uom
-from app.utils.pdf_utils import is_parts_list_pdf
+from app.utils.pdf_utils import _build_pdf_prompt, is_crossref_pdf, is_parts_list_pdf
 from app.utils.remapping import cluster_attributes_by_meaning
 download_service = HttpDownloadService(timeout=20)
 
@@ -748,7 +750,70 @@ async def _enqueue_alias_job_isolated(category_id):
             await enqueue_category_alias_job(category_id, new_db)
     except Exception as e:
         logger.warning(f"[Stage3Canonicals] isolated alias job failed: {e}")
+async def extract_approved_pdf(
+    validation: "PdfValidation",
+    db: AsyncSession,
+    llm_provider: str = "openai",
+) -> Dict:
+    try:
+        from app.api.v1.endpoints.aggregation import get_product_attributes_for_aggregation
+        pdf_content = await download_service.download(validation.pdf_url)
+        if not pdf_content or pdf_content.get("type") != "pdf":
+            return {"status": "failed", "reason": "PDF download failed"}
 
+        pdf_service = PDFExtractionService(max_pages=10)
+        pdf_text = await pdf_service.extract_text(pdf_content["raw_bytes"])
+        if not pdf_text or len(pdf_text.strip()) < 100:
+            return {"status": "failed", "reason": "PDF text extraction failed"}
+
+        prod_stmt = select(Product).where(Product.product_code == validation.product_code)
+        prod_res = await db.execute(prod_stmt)
+        product = prod_res.scalars().first()
+        if not product:
+            return {"status": "failed", "reason": "Product not found"}
+
+        primary_attrs, _ = await get_product_attributes_for_aggregation(db, product)
+
+        prompt_config = _build_pdf_prompt(
+            pdf_text=pdf_text,
+            title=product.product_name,
+            mpn=product.product_code,
+            brand=product.brand_name,
+            taxonomy=product.taxonomy,
+            primary_attributes=primary_attrs,
+            attribute_chunk=None,
+        )
+
+        extraction_result = await call_llm_with_schema(
+            prompt=prompt_config["prompt"],
+            response_model="ExtractionResponse",
+            llm_provider=llm_provider,
+            estimated_tokens=4000,
+        )
+
+        if not extraction_result or not extraction_result.product_detected:
+            return {"status": "failed", "reason": "Product not detected in PDF"}
+
+        attr_dicts = []
+        for attr in extraction_result.attributes:
+            if is_distributor_metadata(attr.name):
+                continue
+            attr_dicts.append({
+                "name": attr.name,
+                "value": attr.value,
+                "unit": getattr(attr, "unit", None),
+                "confidence": getattr(attr, "confidence", 0.95),
+            })
+
+        return {
+            "status": "success",
+            "attributes": attr_dicts,
+            "image_urls": list(getattr(extraction_result, "image_urls", None) or []),
+            "product": product,
+        }
+    except Exception as e:
+        logger.error(f"extract_approved_pdf failed: {e}", exc_info=True)
+        return {"status": "failed", "reason": str(e)}
 
 async def aggregate_product(
     mpn: str,
@@ -1236,20 +1301,61 @@ async def aggregate_product(
                                         logger.warning(
                                             f"Skipping PDF {url if 'pdf_url' not in dir() else pdf_url} — parts list/exploded view")
                                         return extractions
-                                    logger.info(
-                                        f"Extracted {len(pdf_text)} chars from PDF")
-                                    attrs_to_use = primary_attributes or []
-                                    if attribute_chunk:
-                                        other_attrs = [
-                                            a for a in attrs_to_use if a not in attribute_chunk]
-                                        attrs_to_use = attribute_chunk + other_attrs
-                                    prompt_config = build_pdf_extraction_prompt(
-                                        product_name=title,
+                                    
+                                    logger.info(f"Extracted {len(pdf_text)} chars from PDF")
+                                   
+
+                                    # if is_crossref_pdf(pdf_text):
+                                    if True:  
+                                        prod_stmt = select(Product.id).where(Product.product_code == mpn)
+                                        prod_res = await db.execute(prod_stmt)
+                                        prod_row = prod_res.first()
+                                        prod_id = prod_row[0] if prod_row else None
+
+                                        existing = await db.execute(
+                                            select(PdfValidation).where(
+                                                PdfValidation.pdf_url == url,
+                                                PdfValidation.product_code == mpn,
+                                            )
+                                        )
+                                        validation = existing.scalars().first()
+
+                                        if not validation:
+                                            validation = PdfValidation(
+                                                product_code=mpn,
+                                                product_id=prod_id,
+                                                project_id=_UUID(project_id) if project_id else None,
+                                                pdf_url=url,
+                                                source_page_url=url,
+                                            )
+                                            db.add(validation)
+                                            await db.commit()
+                                            logger.info(f"⏸ PDF needs validation, paused: {url}")
+                                            return extractions
+
+                                        if validation.status == "pending":
+                                            logger.info(f"⏸ PDF validation still pending: {url}")
+                                            return extractions
+
+                                        if validation.status == "rejected":
+                                            logger.info(f"✗ PDF rejected by user, skipping: {url}")
+                                            return extractions
+
+                                        logger.info(f"✓ PDF approved by user, extracting: {url}")
+
+                                    # attrs_to_use = primary_attributes or []
+                                    # if attribute_chunk:
+                                    #     other_attrs = [
+                                    #         a for a in attrs_to_use if a not in attribute_chunk]
+                                    #     attrs_to_use = attribute_chunk + other_attrs
+                                    prompt_config = _build_pdf_prompt(
+                                        pdf_text=pdf_text,
+                                        title=title,
                                         mpn=mpn,
-                                        brand=brand or "",
-                                        taxonomy=taxonomy or "",
-                                        primary_attributes=attrs_to_use,
-                                        pdf_text=pdf_text
+                                        brand=brand,
+                                        taxonomy=taxonomy,
+                                        primary_attributes=primary_attributes,
+                                        attribute_chunk=attribute_chunk
                                     )
                                     html_llm_start = time.perf_counter()
 
@@ -1685,18 +1791,55 @@ async def aggregate_product(
                                                 f"nor title keywords found in PDF text"
                                             )
                                             continue
-                                        attrs_to_use = primary_attributes or []
-                                        if attribute_chunk:
-                                            other_attrs = [
-                                                a for a in attrs_to_use if a not in attribute_chunk]
-                                            attrs_to_use = attribute_chunk + other_attrs
-                                        pdf_prompt = build_pdf_extraction_prompt(
-                                            product_name=title,
+                                        
+                                        # attrs_to_use = primary_attributes or []
+                                        # if attribute_chunk:
+                                        #     other_attrs = [
+                                        #         a for a in attrs_to_use if a not in attribute_chunk]
+                                        #     attrs_to_use = attribute_chunk + other_attrs
+                                        # if is_crossref_pdf(pdf_text):
+                                        if True: 
+                                            existing = await db.execute(
+                                                select(PdfValidation).where(
+                                                    PdfValidation.pdf_url == pdf_url,
+                                                    PdfValidation.product_code == mpn,
+                                                )
+                                            )
+                                            validation = existing.scalars().first()
+
+                                            if not validation:
+                                                prod_stmt = select(Product.id).where(Product.product_code == mpn)
+                                                prod_res = await db.execute(prod_stmt)
+                                                prod_row = prod_res.first()
+                                                validation = PdfValidation(
+                                                    product_code=mpn,
+                                                    product_id=prod_row[0] if prod_row else None,
+                                                    project_id=_UUID(project_id) if project_id else None,
+                                                    pdf_url=pdf_url,
+                                                    source_page_url=url,
+                                                )
+                                                db.add(validation)
+                                                await db.commit()
+                                                logger.info(f"⏸ PDF needs validation, paused: {pdf_url}")
+                                                continue
+
+                                            if validation.status == "pending":
+                                                logger.info(f"⏸ PDF validation still pending: {pdf_url}")
+                                                continue
+
+                                            if validation.status == "rejected":
+                                                logger.info(f"✗ PDF rejected by user, skipping: {pdf_url}")
+                                                continue
+
+                                            logger.info(f"✓ PDF approved by user, extracting: {pdf_url}")
+                                        pdf_prompt = _build_pdf_prompt(
+                                            pdf_text=pdf_text,
+                                            title=title,
                                             mpn=mpn,
-                                            brand=brand or "",
-                                            taxonomy=taxonomy or "",
-                                            primary_attributes=attrs_to_use,
-                                            pdf_text=pdf_text
+                                            brand=brand,
+                                            taxonomy=taxonomy,
+                                            primary_attributes=primary_attributes,
+                                            attribute_chunk=attribute_chunk
                                         )
                                         logger.info(
                                             "[PROMPT] PDF text size: %d chars",

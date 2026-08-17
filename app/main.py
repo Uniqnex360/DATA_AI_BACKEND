@@ -18,7 +18,7 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 from app.core.database import init_db
 from sentence_transformers import SentenceTransformer
-from app.api.v1.endpoints import auth,audit, pdf_extraction,users,golden_records,dashboard,products,rules,projects,extraction,cleansing,aggregation,standardization,enrichment,hitl,publishing,business_rules,reporting
+from app.api.v1.endpoints import auth,audit, pdf_extraction, pdf_validation_router,users,golden_records,dashboard,products,rules,projects,extraction,cleansing,aggregation,standardization,enrichment,hitl,publishing,business_rules,reporting
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api_main")
 logger.info("MASTER PROCESS: Pre-loading SentenceTransformer (Shared Memory)...")
@@ -58,6 +58,8 @@ app.include_router(business_rules.router, prefix=f"{settings.API_V1_STR}/busines
 app.include_router(pdf_extraction.router, prefix=f"{settings.API_V1_STR}/extraction/pdf", tags=["pdf_extraction"])
 app.include_router(auth.router,prefix=f"{settings.API_V1_STR}/auth",tags=['auth'])
 app.include_router(reporting.router,prefix=f"{settings.API_V1_STR}/reporting",tags=['reporting'])
+app.include_router(pdf_validation_router.router,prefix=f"{settings.API_V1_STR}/pdf-validations",tags=['pdf-validations'])
+
 warnings.filterwarnings(
     "ignore",
     category=UserWarning,

@@ -40,3 +40,5 @@ class AttributeMappingResponse(BaseModel):
         ..., 
         description="Dictionary mapping from variant attribute names (keys) to canonical names (values)"
     )
+class PdfValidationDecision(BaseModel):
+    decision: str

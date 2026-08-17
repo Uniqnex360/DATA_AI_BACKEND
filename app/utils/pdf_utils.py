@@ -1,5 +1,8 @@
 import re
 import logging
+from typing import List, Optional
+
+from app.aggregation.prompts.extraction_prompts import build_pdf_extraction_prompt
 
 logger = logging.getLogger("pdf_utils")
 
@@ -21,3 +24,37 @@ def is_parts_list_pdf(pdf_text: str) -> bool:
         logger.warning("PDF identified as parts list/exploded view - skipping")
     
     return is_parts
+CROSSREF_KEYWORDS = [
+    "cross reference", "cross-reference", "interchange",
+    "replaces", "equivalent to", "compatible with",
+    "oem cross", "supersedes", "alternate part"
+]
+
+def is_crossref_pdf(pdf_text: str, min_hits: int = 2) -> bool:
+    text_lower=pdf_text.lower()
+    hits=sum(1 for kw in CROSSREF_KEYWORDS if kw in text_lower)
+    return hits>=min_hits
+
+def _build_pdf_prompt(
+    pdf_text: str,
+    title: str,
+    mpn: str,
+    brand: Optional[str] = None,
+    taxonomy: Optional[str] = None,
+    primary_attributes: Optional[List[str]] = None,
+    attribute_chunk: Optional[List[str]] = None
+):
+    
+    attrs_to_use = primary_attributes or []
+    if attribute_chunk:
+        other_attrs = [a for a in attrs_to_use if a not in attribute_chunk]
+        attrs_to_use = attribute_chunk + other_attrs
+    
+    return build_pdf_extraction_prompt(
+        product_name=title,
+        mpn=mpn,
+        brand=brand or "",
+        taxonomy=taxonomy or "",
+        primary_attributes=attrs_to_use,
+        pdf_text=pdf_text,
+    )
