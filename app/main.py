@@ -71,11 +71,11 @@ warnings.filterwarnings(
     category=UserWarning,
     message=".*Expected `float` but got `Decimal`.*"
 )
-
 async def mark_stale_processing_as_failed():
     """
     On startup, mark any products that were left in 'processing'
-    (e.g. due to worker crash / server restart) as 'failed'.
+    (e.g. due to worker crash / server restart) as 'failed',
+    and refresh project status for affected projects.
     """
     async for db in get_session():
         try:
@@ -129,8 +129,35 @@ async def mark_stale_processing_as_failed():
                 len(product_ids),
             )
 
+            # 3) Refresh project status for each affected project
+            try:
+                # Import here to avoid circular import at module load time
+                from app.api.v1.endpoints.aggregation_router import update_project_status
+
+                for proj_id in project_ids:
+                    try:
+                        await update_project_status(str(proj_id), db)
+                        logger.info(
+                            "Startup cleanup: refreshed project status for %s",
+                            proj_id,
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            "Startup cleanup: failed to update project status for %s: %s",
+                            proj_id,
+                            e,
+                        )
+            except Exception as e:
+                logger.warning(
+                    "Startup cleanup: could not import/update project statuses: %s",
+                    e,
+                )
+
         except Exception as e:
             logger.exception(f"Startup cleanup failed: {e}")
+        finally:
+            # get_session yields one session; break after first iteration
+            break
 @app.on_event("startup")
 async def on_startup():
     await init_db()
