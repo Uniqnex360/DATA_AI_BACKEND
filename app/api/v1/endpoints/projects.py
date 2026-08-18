@@ -40,6 +40,7 @@ def normalize_source_status(status: str | None, project_status: str | None = Non
     if status == "failed":
         return "Failed"
     return "Yet to Start"
+
 @router.get("/", response_model=List[ProjectResponse])
 async def list_projects(
     operation_mode: str | None = None,
@@ -104,6 +105,18 @@ async def list_projects(
                 ProjectProductLink.enrichment_status == 'completed'
             )
             .correlate(Project).scalar_subquery().label('cleaned_count')
+        )
+        enriched_count_subq = (
+            select(func.count(Product.id))
+            .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
+            .where(
+                ProjectProductLink.project_id == Project.id,
+                ProjectProductLink.workflow_stage == "enrichment",
+                ProjectProductLink.enrichment_status == "completed",
+            )
+            .correlate(Project)
+            .scalar_subquery()
+            .label("enriched_count")
         )
         failed_count_subq = (
             select(func.count(Product.id))
@@ -237,7 +250,7 @@ async def list_projects(
                 source_status_subq,
                 func.max(active_job.status).label("processing_status"),
                 func.max(cast(active_source.source_metadata["processing_status"], String)).label(
-                    "source_status"),
+                    "source_status"), enriched_count_subq
             )
             .outerjoin(active_job, and_(
                 active_job.project_id == cast(Project.id, String),
@@ -283,6 +296,7 @@ async def list_projects(
                 row[13].replace('"', '') if row[13] else None,
                 project_status=project.status
             )
+            project_response.enriched_count = row[14] or 0
             projects.append(project_response)
         return projects
     except Exception as e:

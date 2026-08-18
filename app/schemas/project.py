@@ -49,3 +49,4 @@ class ProjectResponse(BaseModel):
     enrichment_pending_count: SafeInt = 0
     pending_count: SafeInt = 0
     model_config = ConfigDict(from_attributes=True)
+    enriched_count: Optional[int] = 0
