@@ -156,7 +156,6 @@ async def mark_stale_processing_as_failed():
         except Exception as e:
             logger.exception(f"Startup cleanup failed: {e}")
         finally:
-            # get_session yields one session; break to avoid iterating again
             break
 @app.on_event("startup")
 async def on_startup():
