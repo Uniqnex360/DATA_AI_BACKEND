@@ -75,11 +75,11 @@ async def mark_stale_processing_as_failed():
     """
     On startup, mark any products that were left in 'processing'
     (e.g. due to worker crash / server restart) as 'failed',
-    and refresh project status for affected projects.
+    and refresh project status for those projects.
     """
     async for db in get_session():
         try:
-            # Find all links still in 'processing'
+            # 1) Find all links still in 'processing'
             res = await db.execute(
                 select(
                     ProjectProductLink.project_id,
@@ -101,14 +101,14 @@ async def mark_stale_processing_as_failed():
                 len(project_ids),
             )
 
-            # 1) Mark those links as failed
+            # 2) Mark those links as failed
             await db.execute(
                 update(ProjectProductLink)
                 .where(ProjectProductLink.enrichment_status == "processing")
                 .values(enrichment_status="failed")
             )
 
-            # 2) Update product_master rows too
+            # 3) Update product_master rows too
             await db.execute(
                 update(Product)
                 .where(Product.id.in_(product_ids))
@@ -129,9 +129,9 @@ async def mark_stale_processing_as_failed():
                 len(product_ids),
             )
 
-            # 3) Refresh project status for each affected project
+            # 4) Refresh project status for each affected project
             try:
-                # Import here to avoid circular import at module load time
+                # Import here to avoid circular imports at module load time
                 from app.api.v1.endpoints.aggregation_router import update_project_status
 
                 for proj_id in project_ids:
@@ -156,7 +156,7 @@ async def mark_stale_processing_as_failed():
         except Exception as e:
             logger.exception(f"Startup cleanup failed: {e}")
         finally:
-            # get_session yields one session; break after first iteration
+            # get_session yields one session; break to avoid iterating again
             break
 @app.on_event("startup")
 async def on_startup():
