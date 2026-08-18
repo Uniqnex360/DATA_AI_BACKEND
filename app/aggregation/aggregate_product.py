@@ -1763,6 +1763,43 @@ async def aggregate_product(
                             html_text, url)
                         logger.info(
                             f"find_pdf_links found {len(pdf_links)} PDF(s) on {url}")
+                        # pdf_keyword_count = html_text.lower().count('.pdf')
+                        # logger.info(
+                        #     f"Sanity Check: The string '.pdf' appears {pdf_keyword_count} times in the raw content.")
+                        # if not pdf_links:
+                        #     logger.info(
+                        #         f"Starting fallback PDF regex search on {len(html_text)} bytes of content.")
+                        #     import re as _re
+                        #     from urllib.parse import urljoin as _urljoin
+                        #     html_pdfs = _re.findall(
+                        #         r'href=["\']([^"\']*\.pdf(?:\?[^"\']*)?)["\']',
+                        #         html_text,
+                        #         _re.IGNORECASE
+                        #     )
+                        #     markdown_pdfs = _re.findall(
+                        #         r'\]\(([^)]*\.pdf(?:\?[^)]*)?)\)',
+                        #         html_text,
+                        #         _re.IGNORECASE
+                        #     )
+                        #     bare_absolute_pdfs = _re.findall(
+                        #         r'(https?://[^\s\'"<>\[\]()]+\.pdf)', html_text)
+                        #     bare_relative_pdfs = _re.findall(
+                        #         r'(/[^\s\'"<>\[\]()]+\.pdf)', html_text, _re.IGNORECASE)
+                        #     logger.info(
+                        #         f"Regex matches -> HTML: {len(html_pdfs)}, MD: {len(markdown_pdfs)}, Abs: {len(bare_absolute_pdfs)}, Rel: {len(bare_relative_pdfs)}")
+                        #     pdf_hrefs = html_pdfs + markdown_pdfs + bare_absolute_pdfs + bare_relative_pdfs
+                        #     logger.info(
+                        #         f"Combined fallback matches: {len(pdf_hrefs)}")
+                        #     for href in pdf_hrefs:
+                        #         full_url = _urljoin(url, href)
+                        #         if full_url not in pdf_links:
+                        #             pdf_links.append(full_url)
+                        #     if pdf_links:
+                        #         logger.info(
+                        #             f"Fallback regex found {len(pdf_links)} PDF link(s) on {url}")
+                        # if pdf_links:
+                        #     logger.info(
+                        #         f" Found {len(pdf_links)} PDF link(s) on {url}")
                         pdf_keyword_count = html_text.lower().count('.pdf')
                         logger.info(
                             f"Sanity Check: The string '.pdf' appears {pdf_keyword_count} times in the raw content.")
