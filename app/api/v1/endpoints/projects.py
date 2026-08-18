@@ -136,6 +136,7 @@ async def list_projects(
             )
             .correlate(Project).scalar_subquery().label('pending_count')
         )
+        target_stage = "enrichment" if tab == "enrichment" else "aggregation"
         completeness_subq = (
             select(func.avg(
                 case(
@@ -147,7 +148,7 @@ async def list_projects(
             .join(ProjectProductLink, Product.id == ProjectProductLink.product_id)
             .where(
                 ProjectProductLink.project_id == Project.id,
-                ProjectProductLink.workflow_stage == "aggregation" 
+                ProjectProductLink.workflow_stage == target_stage
             )
             .correlate(Project)
             .scalar_subquery()
