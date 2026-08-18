@@ -46,6 +46,9 @@ async def list_projects(
     operation_mode: str | None = None,
     tab: str | None = None,
     q: str | None = None,
+    start_date: str | None = Query(None, description="YYYY-MM-DD"),
+    end_date: str | None = Query(None, description="YYYY-MM-DD"),
+    date_field: str | None = Query("updated_at"), 
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user),
     user_id: Optional[str] = Query(None)
@@ -260,6 +263,39 @@ async def list_projects(
             ))
             .outerjoin(active_source, active_source.project_id == Project.id)
         )
+        if start_date and end_date:
+            try:
+                start_dt = datetime.fromisoformat(start_date)
+                end_dt = datetime.fromisoformat(end_date) + timedelta(days=1)  # inclusive
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail="start_date and end_date must be YYYY-MM-DD",
+                )
+
+            # Choose which product date column to filter on
+            if date_field == "created_at":
+                product_date_col = Product.created_at
+            else:
+                product_date_col = Product.updated_at
+
+            # Keep only projects that have at least one product whose
+            # created_at/updated_at is within [start_date, end_date]
+            in_range = (
+                select(1)
+                .select_from(ProjectProductLink)
+                .join(Product, Product.id == ProjectProductLink.product_id)
+                .where(
+                    ProjectProductLink.project_id == Project.id,
+                    product_date_col >= start_dt,
+                    product_date_col < end_dt,
+                )
+                .correlate(Project)
+                .exists()
+            )
+            statement = statement.where(in_range)
+
+        statement = statement.group_by(Project.id).order_by(Project.created_at.desc())
         if auth_filter:
             statement = statement.where(*auth_filter)
         if q:
