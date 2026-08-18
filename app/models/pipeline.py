@@ -42,8 +42,8 @@ class Source(UUIDModel,table=True):
     source_metadata: Dict = Field(
         default={}, 
         sa_column=Column("metadata", JSON),
-        validation_alias="metadata",
-        serialization_alias="metadata"
+        # validation_alias="metadata",
+        # serialization_alias="metadata"
     )
     status:str=Field(default='pending')
     uploaded_at:datetime=Field(default_factory=datetime.utcnow)

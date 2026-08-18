@@ -30,6 +30,7 @@ from app.models.product import Product
 from app.models.project import Project
 import asyncio
 from uuid import UUID as _UUID
+from app.services.crawl4ai_service import render_with_crawl4ai
 from app.utils.attribute_filters import is_distributor_metadata
 from firecrawl import Firecrawl
 from app.aggregation.services.image_service import extract_best_image, extract_best_image_fallback
@@ -683,23 +684,50 @@ async def verify_page_identity_with_llm(url: str, html: str, brand: str, title: 
     for junk in soup(["script", "style", "nav", "footer", "header", "aside"]):
         junk.decompose()
     page_text = soup.get_text(separator=' ', strip=True)
+    # if len(page_text) < 500:
+    #     logger.info(
+    #         f"Verification text for {url} is too thin. Attempting Firecrawl rendering...")
+    #     try:
+    #         fc_client = Firecrawl(api_key=settings.FIRECRAWL_API_KEY)
+    #         fc_result = fc_client.scrape_url(url)
+    #         rendered_text = ""
+    #         if isinstance(fc_result, dict):
+    #             rendered_text = fc_result.get(
+    #                 'markdown') or fc_result.get('content') or ""
+    #         else:
+    #             rendered_text = getattr(fc_result, 'markdown', '') or getattr(
+    #                 fc_result, 'content', '') or ""
+    #         if rendered_text:
+    #             page_text = rendered_text
+    #     except Exception as e:
+    #         logger.warning(f"Firecrawl fallback failed: {e}")
     if len(page_text) < 500:
         logger.info(
-            f"Verification text for {url} is too thin. Attempting Firecrawl rendering...")
+            f"Verification text for {url} is too thin ({len(page_text)} chars). "
+            f"Attempting Crawl4AI rendering..."
+        )
         try:
-            fc_client = Firecrawl(api_key=settings.FIRECRAWL_API_KEY)
-            fc_result = fc_client.scrape_url(url)
-            rendered_text = ""
-            if isinstance(fc_result, dict):
-                rendered_text = fc_result.get(
-                    'markdown') or fc_result.get('content') or ""
+            if getattr(settings, "USE_CRAWL4AI", True):
+                ca_html = await render_with_crawl4ai(url)
+                if ca_html and len(ca_html) > 300:
+                    logger.info(
+                        f"[Crawl4AI] Rendered content for verification - size: {len(ca_html)} bytes"
+                    )
+                    ca_soup = BeautifulSoup(ca_html, 'html.parser')
+                    for junk in ca_soup(["script", "style", "nav", "footer", "header", "aside"]):
+                        junk.decompose()
+                    rendered_text = ca_soup.get_text(separator=' ', strip=True)
+                    if rendered_text and len(rendered_text) > len(page_text):
+                        page_text = rendered_text
+                else:
+                    logger.warning(
+                        "[Crawl4AI] Returned empty/small result for verification. "
+                        "Proceeding with original HTML text."
+                    )
             else:
-                rendered_text = getattr(fc_result, 'markdown', '') or getattr(
-                    fc_result, 'content', '') or ""
-            if rendered_text:
-                page_text = rendered_text
+                logger.info("[Crawl4AI] Disabled by config; skipping.")
         except Exception as e:
-            logger.warning(f"Firecrawl fallback failed: {e}")
+            logger.warning(f"Crawl4AI fallback in verification failed: {e!r}")
     snippet = page_text[:6000]
     prompt = f"""
     You are a Senior Product Data Matcher. Verify if the following web page is the official Product Detail Page (PDP) for the requested item.
@@ -1437,45 +1465,69 @@ async def aggregate_product(
                                     elif is_empty_spa:
                                         logger.info(
                                             f" [SPA Detection] Empty HTML shell detected ({len(visible_text)}b text). Routing to Firecrawl...")
+                                    # if is_bot_blocked or is_empty_spa:
+                                    #     logger.info(
+                                    #         f"[SPA Detection] Large HTML ({len(html_text)}b) but almost no visible text ({len(visible_text)}b). Trying Firecrawl...")
+                                    #     try:
+                                    #         from app.core.config import settings
+                                    #         fc_client = Firecrawl(
+                                    #             api_key=settings.FIRECRAWL_API_KEY)
+                                    #         fc_start = time.perf_counter()
+
+                                    #         fc_result = await asyncio.to_thread(
+                                    #             fc_client.scrape_url,
+                                    #             url,
+                                    #         )
+                                    #         logger.info(
+                                    #             "[TIMING] Firecrawl (%s): %.2fs",
+                                    #             url,
+                                    #             time.perf_counter() - fc_start,
+                                    #         )
+                                    #         fc_html = None
+                                    #         if fc_result:
+                                    #             if isinstance(fc_result, dict):
+                                    #                 fc_html = fc_result.get(
+                                    #                     'html') or fc_result.get('content')
+                                    #             elif hasattr(fc_result, 'html') and fc_result.html:
+                                    #                 fc_html = fc_result.html
+                                    #             elif hasattr(fc_result, 'content') and fc_result.content:
+                                    #                 fc_html = fc_result.content
+                                    #             elif hasattr(fc_result, 'markdown') and fc_result.markdown:
+                                    #                 fc_html = f"<html><body><pre>{fc_result.markdown}</pre></body></html>"
+                                    #         if fc_html and len(fc_html) > 300:
+                                    #             logger.info(
+                                    #                 f"[SPA Detection] Firecrawl rendered content successfully - size: {len(fc_html)} bytes")
+                                    #             html_text = fc_html
+                                    #         else:
+                                    #             logger.warning(
+                                    #                 f"[SPA Detection] Firecrawl returned empty/small result. Proceeding with original HTML.")
+                                    #     except Exception as fc_e:
+                                    #         logger.warning(
+                                    #             f"[SPA Detection] Firecrawl scrape failed: {fc_e}. Proceeding with original HTML.")
                                     if is_bot_blocked or is_empty_spa:
                                         logger.info(
-                                            f"[SPA Detection] Large HTML ({len(html_text)}b) but almost no visible text ({len(visible_text)}b). Trying Firecrawl...")
-                                        try:
-                                            from app.core.config import settings
-                                            fc_client = Firecrawl(
-                                                api_key=settings.FIRECRAWL_API_KEY)
-                                            fc_start = time.perf_counter()
+                                            f"[SPA Detection] Large HTML ({len(html_text)}b) but almost no visible text "
+                                            f"({len(visible_text)}b). Trying Crawl4AI..."
+                                        )
 
-                                            fc_result = await asyncio.to_thread(
-                                                fc_client.scrape_url,
-                                                url,
-                                            )
-                                            logger.info(
-                                                "[TIMING] Firecrawl (%s): %.2fs",
-                                                url,
-                                                time.perf_counter() - fc_start,
-                                            )
-                                            fc_html = None
-                                            if fc_result:
-                                                if isinstance(fc_result, dict):
-                                                    fc_html = fc_result.get(
-                                                        'html') or fc_result.get('content')
-                                                elif hasattr(fc_result, 'html') and fc_result.html:
-                                                    fc_html = fc_result.html
-                                                elif hasattr(fc_result, 'content') and fc_result.content:
-                                                    fc_html = fc_result.content
-                                                elif hasattr(fc_result, 'markdown') and fc_result.markdown:
-                                                    fc_html = f"<html><body><pre>{fc_result.markdown}</pre></body></html>"
-                                            if fc_html and len(fc_html) > 300:
-                                                logger.info(
-                                                    f"[SPA Detection] Firecrawl rendered content successfully - size: {len(fc_html)} bytes")
-                                                html_text = fc_html
-                                            else:
-                                                logger.warning(
-                                                    f"[SPA Detection] Firecrawl returned empty/small result. Proceeding with original HTML.")
-                                        except Exception as fc_e:
-                                            logger.warning(
-                                                f"[SPA Detection] Firecrawl scrape failed: {fc_e}. Proceeding with original HTML.")
+                                        if getattr(settings, "USE_CRAWL4AI", True):
+                                            try:
+                                                ca_html = await render_with_crawl4ai(url)
+                                                if ca_html and len(ca_html) > 300:
+                                                    logger.info(
+                                                        f"[SPA Detection] Crawl4AI rendered content successfully - size: {len(ca_html)} bytes"
+                                                    )
+                                                    html_text = ca_html
+                                                else:
+                                                    logger.warning(
+                                                        "[SPA Detection] Crawl4AI returned empty/small result. "
+                                                        "Proceeding with original HTML."
+                                                    )
+                                            except Exception as e:
+                                                logger.warning(f"[SPA Detection] Crawl4AI scrape failed: {e}. "
+                                                            "Proceeding with original HTML.")
+                                        else:
+                                            logger.info("[SPA Detection] Crawl4AI disabled by config; skipping.")
                                 if cached_html is not None and not is_algo2_run:
                                     cached_html[url] = html_text
                                     logger.info(

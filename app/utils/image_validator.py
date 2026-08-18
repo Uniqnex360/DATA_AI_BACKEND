@@ -63,7 +63,12 @@ def extract_universal_product_images(html_text: str, base_url: str) -> list[str]
             img_url = "https:" + img_url
         elif img_url.startswith("/"):
             img_url = urljoin(base_url, img_url)
-
+        if not img_url.startswith(("http://", "https://")):
+            return
+        from urllib.parse import urlparse
+        path = urlparse(img_url).path.lower()
+        if not any(path.endswith(ext) for ext in ('.jpg', '.jpeg', '.png', '.webp', '.gif')):
+            return
         
         lower_url = img_url.lower()
         if any(b in lower_url for b in BLOCKED_KEYWORDS):
