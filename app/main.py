@@ -1,5 +1,8 @@
 from __future__ import annotations
 import asyncio
+
+from sqlalchemy import update
+from sqlmodel import select
 from app.core.config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,14 +12,17 @@ import os
 import warnings
 
 from app.core.internal_logger import setup_internal_logging
+from app.models.project_product_link import ProjectProductLink
+from app.utils.timezone import now_ist
 from app.workers.canonical_worker import start_canonical_worker
+from app.models.product import Product
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-from app.core.database import init_db
+from app.core.database import init_db, get_session
 from sentence_transformers import SentenceTransformer
 from app.api.v1.endpoints import auth,audit, pdf_extraction, pdf_validation_router,users,golden_records,dashboard,products,rules,projects,extraction,cleansing,aggregation,standardization,enrichment,hitl,publishing,business_rules,reporting
 logging.basicConfig(level=logging.INFO)
@@ -66,11 +72,70 @@ warnings.filterwarnings(
     message=".*Expected `float` but got `Decimal`.*"
 )
 
+async def mark_stale_processing_as_failed():
+    """
+    On startup, mark any products that were left in 'processing'
+    (e.g. due to worker crash / server restart) as 'failed'.
+    """
+    async for db in get_session():
+        try:
+            # Find all links still in 'processing'
+            res = await db.execute(
+                select(
+                    ProjectProductLink.project_id,
+                    ProjectProductLink.product_id,
+                ).where(ProjectProductLink.enrichment_status == "processing")
+            )
+            rows = res.all()
+            if not rows:
+                logger.info("Startup cleanup: no stale 'processing' links found.")
+                return
 
+            product_ids = [r.product_id for r in rows]
+            project_ids = {r.project_id for r in rows}
+
+            logger.warning(
+                "Startup cleanup: found %d stale 'processing' links across %d project(s); "
+                "marking them as failed.",
+                len(product_ids),
+                len(project_ids),
+            )
+
+            # 1) Mark those links as failed
+            await db.execute(
+                update(ProjectProductLink)
+                .where(ProjectProductLink.enrichment_status == "processing")
+                .values(enrichment_status="failed")
+            )
+
+            # 2) Update product_master rows too
+            await db.execute(
+                update(Product)
+                .where(Product.id.in_(product_ids))
+                .values(
+                    enrichment_status="failed",
+                    failure_reason=(
+                        "Marked failed after server restart / worker crash "
+                        "while in 'processing' state"
+                    ),
+                    failed_at=now_ist(),
+                )
+            )
+
+            await db.commit()
+
+            logger.info(
+                "Startup cleanup: marked %d product(s) as failed due to stale 'processing' state.",
+                len(product_ids),
+            )
+
+        except Exception as e:
+            logger.exception(f"Startup cleanup failed: {e}")
 @app.on_event("startup")
 async def on_startup():
     await init_db()
     asyncio.create_task(start_canonical_worker(llm_provider="openai"))
+    asyncio.create_task(mark_stale_processing_as_failed())
 @app.get('/health')
 def health():
     return {'status': 'healthy'}
