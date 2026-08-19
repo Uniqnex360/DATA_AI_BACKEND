@@ -40,7 +40,7 @@ async def generate_products_excel(
             use_case = first_project.use_case.lower()
     use_case = use_case or ""
     MAX_ATTRIBUTES = 100
-    core_headers = ["Sequence","Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name","Title_Recommendation" "Brand", "GTIN",
+    core_headers = ["Sequence","Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name","Title_Recommendation", "Brand", "GTIN",
                     "ean", "upc", "unspc", "MPN", "Status", "Lifecycle_Stage", "Launch_Date", "Discontinue_Status"]
     cat_headers = ["industry_name", "category 1", "category 2", "category 3",
                    "category 4", "category 5", "category 6", "category 7", "category 8", "Taxonomy"]
@@ -397,7 +397,7 @@ async def generate_products_excel(
             "Product_Type": row.get("Product_Type") or getattr(p, 'product_type', '') or "",
             "Parent_SKU": row.get("Parent_SKU") or getattr(p, 'parent_sku', '') or "",
             "Product_Name": row.get("Product_Name") or p.product_name or "",
-            "Title Recommendation":row.get('Title_Recommendation') or p.title_recommendation or "",
+            "Title_Recommendation": row.get("Title_Recommendation") or p.title_recommendation or "",
             "Brand": p.brand_name or row.get("Brand") or "",
             "GTIN": row.get("GTIN") or getattr(p, 'gtin', '') or "",
             "ean": row.get("ean") or getattr(p, 'ean', '') or "",
