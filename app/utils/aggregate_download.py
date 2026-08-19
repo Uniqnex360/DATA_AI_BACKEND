@@ -40,7 +40,7 @@ async def generate_products_excel(
             use_case = first_project.use_case.lower()
     use_case = use_case or ""
     MAX_ATTRIBUTES = 100
-    core_headers = ["Sequence","Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name", "Brand", "GTIN",
+    core_headers = ["Sequence","Prod ID", "SKU", "Product_Type", "Parent_SKU", "Product_Name","Title_Recommendation" "Brand", "GTIN",
                     "ean", "upc", "unspc", "MPN", "Status", "Lifecycle_Stage", "Launch_Date", "Discontinue_Status"]
     cat_headers = ["industry_name", "category 1", "category 2", "category 3",
                    "category 4", "category 5", "category 6", "category 7", "category 8", "Taxonomy"]
@@ -205,11 +205,7 @@ async def generate_products_excel(
         return s.strip().lower().replace('_', '').replace(' ', '').replace('-', '')
     
     def resolve_dim_with_overall(model_obj, base_attr, overall_attr):
-        """
-        Returns (value_for_column, leftover_overall_value_or_None).
-        leftover is non-None only when both exist and differ — that
-        leftover should be surfaced as its own attribute, not dropped.
-        """
+       
         base_val = getattr(model_obj, base_attr, None)
         overall_val = getattr(model_obj, overall_attr, None)
         base_val = base_val if base_val not in ('', None) else None
@@ -335,29 +331,7 @@ async def generate_products_excel(
                 if val:
                     row[col] = val
         NORM_DEDICATED_MAP = {normalize_attr_name(k): target for k, target in DEDICATED_COLUMN_MAPPING.items()}
-        # dedicated_values = []
-
-        # for ai_key in list(ai_data.keys()):
-        #     ai_key_norm = normalize_attr_name(ai_key)
-        #     if ai_key_norm in NORM_DEDICATED_MAP:
-        #         target_col = NORM_DEDICATED_MAP[ai_key_norm]
-        #         if not target_col:
-        #             continue
-        #         priority = (
-        #             0
-        #             if ai_key_norm == normalize_attr_name(target_col)
-        #             else 1
-        #         )
-        #         value = ai_data.pop(ai_key) 
-        #         row[target_col] = clean_for_excel(value)
-        #         if isinstance(value, dict):
-        #             uom = value.get('uom') or value.get('unit')
-        #             if uom:
-        #                 uom_clean = clean_for_excel(uom)
-        #                 if target_col == 'Weight' and not row['Weight_Unit']:
-        #                     row['Weight_Unit'] = uom_clean
-        #                 elif target_col in ['Length', 'Width', 'Height'] and not row['Dimension_Unit']:
-        #                     row['Dimension_Unit'] = uom_clean
+        
         dedicated_values = []
 
         for ai_key in list(ai_data.keys()):
@@ -367,8 +341,6 @@ async def generate_products_excel(
             if not target_col:
                 continue
 
-            # An exact dedicated field takes priority over aliases.
-            # Example: "Length" takes priority over "Overall Length".
             priority = (
                 0
                 if ai_key_norm == normalize_attr_name(target_col)
@@ -386,7 +358,6 @@ async def generate_products_excel(
             value = ai_data.pop(ai_key)
             cleaned_value = clean_for_excel(value)
 
-            # Do not allow an alias to overwrite an already populated value.
             field_selected = (
                 row.get(target_col) in ("", None)
                 and cleaned_value not in ("", None)
@@ -426,6 +397,7 @@ async def generate_products_excel(
             "Product_Type": row.get("Product_Type") or getattr(p, 'product_type', '') or "",
             "Parent_SKU": row.get("Parent_SKU") or getattr(p, 'parent_sku', '') or "",
             "Product_Name": row.get("Product_Name") or p.product_name or "",
+            "Title Recommendation":row.get('Title_Recommendation') or p.title_recommendation or "",
             "Brand": p.brand_name or row.get("Brand") or "",
             "GTIN": row.get("GTIN") or getattr(p, 'gtin', '') or "",
             "ean": row.get("ean") or getattr(p, 'ean', '') or "",
@@ -497,63 +469,7 @@ async def generate_products_excel(
                     row[f"image_url_{i}"] = img.get("url", "")
                 else:
                     row[f"image_url_{i}"] = str(img) if img else ""
-        # original_attrs_by_norm = {}
-        # linked_length_candidates = []
-
-        # try:
-        #     from app.models.attribute import Attribute, AttributeValue
-        #     val_stmt = (
-        #         select(Attribute.attribute_name, AttributeValue.value, AttributeValue.uom,
-        #                AttributeValue.validation_value, AttributeValue.validation_uom)
-        #         .join(AttributeValue, AttributeValue.attribute_id == Attribute.id)
-        #         .join(ProductAttributeValueLinkModel, 
-        #               ProductAttributeValueLinkModel.attribute_value_id == AttributeValue.id)
-        #         .where(ProductAttributeValueLinkModel.product_id == p.id)
-        #     )
-        #     val_result = await db.execute(val_stmt)
-        #     for attr_name, value, uom, validation_value, validation_uom in val_result.all():
-        #         k_norm = normalize_attr_name(attr_name)
-        #         if k_norm not in original_attrs_by_norm:
-        #             original_attrs_by_norm[k_norm] = []
-        #         original_attrs_by_norm[k_norm].append({
-        #             'name': attr_name,
-        #             'value': value,
-        #             'uom': uom,
-        #             'validation_value': validation_value,
-        #             'validation_uom': validation_uom
-        #         })
-        #         target_col = NORM_DEDICATED_MAP.get(k_norm)
-
-        #         if target_col == "Length":
-        #             priority = (
-        #                 0
-        #                 if k_norm == normalize_attr_name("Length")
-        #                 else 1
-        #             )
-
-        #             linked_length_candidates.append(
-        #                 (priority, value, uom)
-        #             )
-
-        #     for _, value, uom in sorted(
-        #         linked_length_candidates,
-        #         key=lambda item: item[0]
-        #     ):
-        #         if row.get("Length") not in ("", None):
-        #             break
-
-        #         cleaned_value = clean_for_excel(value)
-
-        #         if cleaned_value in ("", None):
-        #             continue
-
-        #         row["Length"] = cleaned_value
-
-        #         if uom and not row.get("Dimension_Unit"):
-        #             row["Dimension_Unit"] = clean_for_excel(uom)
-
-        # except Exception:
-        #     pass
+       
         original_attrs_by_norm = {}
         DIM_COL_TO_OVERALL_LABEL = {
             "Length": "Overall Length",
