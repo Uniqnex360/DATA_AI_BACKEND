@@ -15,9 +15,11 @@ from app.utils.timezone import now_ist
 logger=logging.getLogger(__name__)
 router=APIRouter()
 @router.get("/pending")
-async def list_pending_pdf_validations(project_id:Optional[str]=None,db:AsyncSession=Depends(get_session)):
+async def list_pending_pdf_validations(product_code: Optional[str] = None,project_id:Optional[str]=None,db:AsyncSession=Depends(get_session)):
     try:
         stmt=select(PdfValidation).where(PdfValidation.status=='pending')
+        if product_code:
+            stmt=stmt.where(PdfValidation.product_code==product_code)
         if project_id:
             stmt=stmt.where(PdfValidation.project_id==project_id)
         stmt=stmt.order_by(PdfValidation.created_at.desc())

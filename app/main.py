@@ -1,6 +1,5 @@
 from __future__ import annotations
 import asyncio
-
 from sqlalchemy import update
 from sqlmodel import select
 from app.core.config import settings
@@ -10,7 +9,6 @@ import logging
 from pathlib import Path
 import os
 import warnings
-
 from app.core.internal_logger import setup_internal_logging
 from app.models.project_product_link import ProjectProductLink
 from app.utils.timezone import now_ist
@@ -29,7 +27,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("api_main")
 logger.info("MASTER PROCESS: Pre-loading SentenceTransformer (Shared Memory)...")
 setup_internal_logging()
-
 try:
     _global_embedding_model = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
     logger.info("✓ Shared model weights loaded into RAM")
@@ -65,7 +62,6 @@ app.include_router(pdf_extraction.router, prefix=f"{settings.API_V1_STR}/extract
 app.include_router(auth.router,prefix=f"{settings.API_V1_STR}/auth",tags=['auth'])
 app.include_router(reporting.router,prefix=f"{settings.API_V1_STR}/reporting",tags=['reporting'])
 app.include_router(pdf_validation_router.router,prefix=f"{settings.API_V1_STR}/pdf-validations",tags=['pdf-validations'])
-
 warnings.filterwarnings(
     "ignore",
     category=UserWarning,
@@ -79,7 +75,6 @@ async def mark_stale_processing_as_failed():
     """
     async for db in get_session():
         try:
-            # 1) Find all links still in 'processing'
             res = await db.execute(
                 select(
                     ProjectProductLink.project_id,
@@ -90,25 +85,19 @@ async def mark_stale_processing_as_failed():
             if not rows:
                 logger.info("Startup cleanup: no stale 'processing' links found.")
                 return
-
             product_ids = [r.product_id for r in rows]
             project_ids = {r.project_id for r in rows}
-
             logger.warning(
                 "Startup cleanup: found %d stale 'processing' links across %d project(s); "
                 "marking them as failed.",
                 len(product_ids),
                 len(project_ids),
             )
-
-            # 2) Mark those links as failed
             await db.execute(
                 update(ProjectProductLink)
                 .where(ProjectProductLink.enrichment_status == "processing")
                 .values(enrichment_status="failed")
             )
-
-            # 3) Update product_master rows too
             await db.execute(
                 update(Product)
                 .where(Product.id.in_(product_ids))
@@ -121,22 +110,15 @@ async def mark_stale_processing_as_failed():
                     failed_at=now_ist(),
                 )
             )
-
             await db.commit()
-
             logger.info(
                 "Startup cleanup: marked %d product(s) as failed due to stale 'processing' state.",
                 len(product_ids),
             )
-
-            # 4) Refresh project status for each affected project
             try:
-                # Import here to avoid circular imports at module load time
-                from app.api.v1.endpoints.aggregation_router import update_project_status
-
                 for proj_id in project_ids:
                     try:
-                        await update_project_status(str(proj_id), db)
+                        await aggregation.update_project_status(str(proj_id), db)
                         logger.info(
                             "Startup cleanup: refreshed project status for %s",
                             proj_id,
@@ -152,7 +134,6 @@ async def mark_stale_processing_as_failed():
                     "Startup cleanup: could not import/update project statuses: %s",
                     e,
                 )
-
         except Exception as e:
             logger.exception(f"Startup cleanup failed: {e}")
         finally:

@@ -356,9 +356,9 @@ async def aggregate_single_product(
                 detail="Product not found"
             )
         used_llms = product.used_llms or []
-        if request.llm_provider in used_llms:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail=f'Product has been already enriched with LLM,Please try another one!')
+        # if request.llm_provider in used_llms:
+        #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+        #                         detail=f'Product has been already enriched with LLM,Please try another one!')
         logger.info(
             f"Starting single product aggregation:{product.product_code}")
         link_stmt = select(ProjectProductLink).where(

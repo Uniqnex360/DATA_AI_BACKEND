@@ -57,7 +57,6 @@ def build_enrichment_prompt(
             }}
                         """
         else:
-            # No existing description - generate from specs
             prompt = f"""You are a product marketing content generator.
 
             PRODUCT:
