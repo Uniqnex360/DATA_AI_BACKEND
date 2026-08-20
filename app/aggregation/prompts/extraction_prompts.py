@@ -416,6 +416,7 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         features_section = ""
         if features_list:
             features_section = "\n\nPRE-EXTRACTED FEATURES FROM PAGE:\n"
+            logger.info(f"[FEATURES DEBUG] {source_url} => {features_list}")
             for feat in features_list:
                 features_section += f"  • {feat}\n"
             logger.info(f"Pre-extracted {len(features_list)} features for LLM")
