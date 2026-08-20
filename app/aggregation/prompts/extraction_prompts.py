@@ -29,70 +29,22 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
             content = script.string
             if content and len(content) > 100:
                 json_data.append(content)
-    # import json as _json
-    # for jd in json_data[:]:
-    #     try:
-    #         data = _json.loads(jd)
-    #         props = data.get('additionalProperty', [])
-    #         if props:
-    #             lines = []
-    #             for p in props:
-    #                 name = p.get('name', '')
-    #                 value = p.get('value', '')
-    #                 if name and value:
-    #                     lines.append(f"{name}: {value}")
-    #             if lines:
-    #                 json_data.append('\n'.join(lines))
-    #     except:
-    #         pass
     import json as _json
-
-    # Parse and extract specs from JSON-LD additionalProperty
-    parsed_specs_lines = []
-    for jd in json_data[:]:  # Iterate over original JSON strings
+    for jd in json_data[:]:
         try:
             data = _json.loads(jd)
-            # Handle array of objects
-            if isinstance(data, list):
-                for item in data:
-                    if isinstance(item, dict):
-                        props = item.get('additionalProperty', [])
-                        if isinstance(props, list):
-                            for p in props:
-                                if isinstance(p, dict):
-                                    name = p.get('name', '').strip()
-                                    value = p.get('value', '').strip()
-                                    if name and value:
-                                        parsed_specs_lines.append(f"{name}: {value}")
-            # Handle single object
-            elif isinstance(data, dict):
-                props = data.get('additionalProperty', [])
-                if isinstance(props, list):
-                    for p in props:
-                        if isinstance(p, dict):
-                            name = p.get('name', '').strip()
-                            value = p.get('value', '').strip()
-                            if name and value:
-                                parsed_specs_lines.append(f"{name}: {value}")
-        except Exception as e:
-            logger.debug(f"Failed to parse JSON-LD additionalProperty: {e}")
-            continue
-
-    # Also look for Home Depot-style specificationGroup inside script tags
-    import re
-    spec_pattern = r'"__typename":"Specification","specName":"([^"]+)","specValue":"([^"]+)"'
-    matches = re.findall(spec_pattern, html_content)
-    for name, value in matches:
-        name_clean = name.strip()
-        value_clean = value.strip()
-        if name_clean and value_clean:
-            parsed_specs_lines.append(f"{name_clean}: {value_clean}")
-
-    # If we found any parsed specs, add them as a clean text block
-    if parsed_specs_lines:
-        spec_block = "STRUCTURED PRODUCT SPECIFICATIONS (from JSON-LD / React):\n" + "\n".join(parsed_specs_lines)
-        sections.append(spec_block)
-        logger.info(f"[SPEC DEBUG] Added {len(parsed_specs_lines)} structured specs from JSON/React")
+            props = data.get('additionalProperty', [])
+            if props:
+                lines = []
+                for p in props:
+                    name = p.get('name', '')
+                    value = p.get('value', '')
+                    if name and value:
+                        lines.append(f"{name}: {value}")
+                if lines:
+                    json_data.append('\n'.join(lines))
+        except:
+            pass
     for tag in soup(["script", "style", "noscript", "svg"]):
         tag.decompose()
     sections = []
