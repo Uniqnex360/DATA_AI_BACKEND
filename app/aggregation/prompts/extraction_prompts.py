@@ -86,6 +86,20 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
             content = f"RAW PAGE TEXT (Fallback):\n{raw_text[:50000]}"
             logger.info(
                 f"Using raw text fallback: {len(raw_text[:50000])} chars")
+    logger.info(f"[SPEC CAPTURE DEBUG] total unique sections captured: {len(unique_sections)}")
+    for i, s in enumerate(unique_sections[:max_sections]):
+        preview = s[:200].replace("\n", " ")
+        logger.info(f"[SPEC CAPTURE DEBUG] section[{i}] len={len(s)} preview={preview}")
+    
+    # NEW: check specific missing fields against raw html BEFORE any truncation
+    check_fields = ["Ceiling Tile Style", "Approximate Size", "Color Family",
+                     "Commercial/Residential", "Pack Size", "Returnable", "Warranty"]
+    for field in check_fields:
+        logger.info(f"[SPEC CAPTURE DEBUG] '{field}' in raw html_content: {field in html_content}")
+        logger.info(f"[SPEC CAPTURE DEBUG] '{field}' in captured sections (pre-truncate): {any(field in s for s in unique_sections)}")
+
+    content = "\n\n".join(unique_sections[:max_sections])
+            
     MAX_CHARS = 120000
     return content[:MAX_CHARS]
 
