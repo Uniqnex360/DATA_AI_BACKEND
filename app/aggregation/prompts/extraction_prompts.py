@@ -411,6 +411,10 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         primary_attrs_display = "\n".join(
             [f"  {i+1}. {attr}" for i, attr in enumerate(primary_list)])
         spec_content = extract_high_signal_specs(html_content)
+        logger.info(f"[SPEC DEBUG] Captured sections count: {len(spec_content.split('\\n\\n'))}")
+        logger.info(f"[SPEC DEBUG] First 1000 chars: {spec_content[:1000]}")
+        logger.info(f"[SPEC DEBUG] Contains 'Product Height': {'Product Height' in spec_content}")
+        logger.info(f"[SPEC DEBUG] Contains 'Package Quantity': {'Package Quantity' in spec_content}")
         desc_text = extract_product_descriptions(html_content)
         features_list = extract_features_section(html_content)
         features_section = ""
