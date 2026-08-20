@@ -50,7 +50,7 @@ async def generate_products_excel(
                      "Special_Price", "Stock_Qty", "Stock_Status", "Vendor_Name", "Vendor_SKU"]
     media_headers = []
     for i in range(1, 9):
-        media_headers.extend([f"image_name_{i}", f"image_url_{i}"])
+                media_headers.extend([f"image_name_{i}", f"image_url_{i}", f"image_source_url_{i}"])
     for i in range(1, 4):
         media_headers.extend([f"video_name_{i}", f"video_url_{i}"])
     for i in range(1, 6):
@@ -330,8 +330,7 @@ async def generate_products_excel(
                 if isinstance(asset, dict):
                     row[f"image_url_{i}"] = clean_for_excel(asset.get("image_url", ""))
                     row[f"image_name_{i}"] = clean_for_excel(asset.get("source_type", ""))
-                else:
-                    row[f"image_url_{i}"] = clean_for_excel(str(asset))
+                    row[f"image_source_url_{i}"] = clean_for_excel(asset.get("source_page",""))
         NORM_DEDICATED_MAP = {normalize_attr_name(k): target for k, target in DEDICATED_COLUMN_MAPPING.items()}
         
         dedicated_values = []
