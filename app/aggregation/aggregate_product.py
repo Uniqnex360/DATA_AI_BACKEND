@@ -2410,6 +2410,8 @@ async def aggregate_product(
                 best_gtin = source['gtin']
             source_features = source.get('features') or []
             for feat in source_features:
+                if source_features:
+                    logger.info(f"[FEATURE SOURCE DEBUG] {source['url']} contributed features: {source_features}")
                 if feat and feat.strip() and feat not in seen_features:
                     all_features.append(feat)
                     seen_features.add(feat)
@@ -2515,6 +2517,9 @@ async def aggregate_product(
                     break
         if 'download_service' in locals():
             download_service._cache.clear()
+        if cached_html is not None:
+            cached_html.clear()
+            logger.info("Cleared cached HTML for fresh extraction")
         final_features = []
         if hasattr(enrichment_result, 'features') and enrichment_result.features:
             final_features = list(enrichment_result.features)
