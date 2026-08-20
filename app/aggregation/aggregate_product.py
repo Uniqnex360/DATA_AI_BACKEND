@@ -2625,16 +2625,7 @@ def _build_combined_prompt(
     in original_values so the router can write the conflict
     to validation columns.
     """
-    save_all_section = """
-    ═══════════════════════════════════════════════════════
-    SAVE ALL CANONICAL-MAPPED ATTRIBUTES  ★ NO EXCEPTIONS ★
-    ═══════════════════════════════════════════════════════
-    Even if an attribute seems redundant, optional, or low-priority,
-    if it was successfully mapped to a canonical name (e.g., 'Product Width' → 'Width'),
-    you MUST include it in the final output.
-    Dropping any canonical-mapped attribute is a CRITICAL FAILURE.
-    ═══════════════════════════════════════════════════════
-    """
+    
     canonical_section = ""
     if canonical_names:
         names_list = "\n".join(f"  - {n}" for n in canonical_names)
@@ -2707,7 +2698,6 @@ def _build_combined_prompt(
 You are a Senior Product Data Engineer. Process the raw product attributes below.
 Your job: clean → unify synonyms → standardize → return ONE canonical attribute per concept.
 {canonical_section}
-{save_all_section}
 {mandatory_section} 
 STRICT DATA RETENTION MANDATE:
     1. If an attribute like 'AMPS' or 'Voltage' is in the input, it MUST be in the output.
