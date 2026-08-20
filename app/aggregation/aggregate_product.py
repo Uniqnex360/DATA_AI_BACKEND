@@ -2625,6 +2625,16 @@ def _build_combined_prompt(
     in original_values so the router can write the conflict
     to validation columns.
     """
+    save_all_section = """
+    ═══════════════════════════════════════════════════════
+    SAVE ALL CANONICAL-MAPPED ATTRIBUTES  ★ NO EXCEPTIONS ★
+    ═══════════════════════════════════════════════════════
+    Even if an attribute seems redundant, optional, or low-priority,
+    if it was successfully mapped to a canonical name (e.g., 'Product Width' → 'Width'),
+    you MUST include it in the final output.
+    Dropping any canonical-mapped attribute is a CRITICAL FAILURE.
+    ═══════════════════════════════════════════════════════
+    """
     canonical_section = ""
     if canonical_names:
         names_list = "\n".join(f"  - {n}" for n in canonical_names)
@@ -2680,25 +2690,24 @@ def _build_combined_prompt(
     the preferred unit shown here — regardless of how the source wrote it.
     ═══════════════════════════════════════════════════════
     """
-    mandatory_section = ""
-    if len(set(a['name'] for a in raw_attrs)) > 10:
-        all_unique_names = sorted(set(a['name'] for a in raw_attrs))
-        names_checklist = "\n".join(f"  ☐ {n}" for n in all_unique_names)
-        mandatory_section = f"""
-        ═══════════════════════════════════════════════════════
-        MANDATORY ATTRIBUTES CHECKLIST  ★ DO NOT SKIP ANY ★
-        ═══════════════════════════════════════════════════════
-        The following {len(all_unique_names)} unique attribute names were found
-        across all sources. You MUST include EVERY one in your output.
-        After producing your JSON, count your output attributes.
-        If you have fewer than {len(all_unique_names)}, you have FAILED.
+    all_unique_names = sorted(set(a['name'] for a in raw_attrs))
+    names_checklist = "\n".join(f"  ☐ {n}" for n in all_unique_names)
+    mandatory_section = f"""
+    ═══════════════════════════════════════════════════════
+    MANDATORY ATTRIBUTES CHECKLIST  ★ DO NOT SKIP ANY ★
+    ═══════════════════════════════════════════════════════
+    The following {len(all_unique_names)} unique attribute names were found
+    across all sources. You MUST include EVERY one in your output.
+    After producing your JSON, count your output attributes.
+    If you have fewer than {len(all_unique_names)}, you have FAILED.
     {names_checklist}
-        ═══════════════════════════════════════════════════════
-        """
+    ═══════════════════════════════════════════════════════
+    """
     prompt = f"""
 You are a Senior Product Data Engineer. Process the raw product attributes below.
 Your job: clean → unify synonyms → standardize → return ONE canonical attribute per concept.
 {canonical_section}
+{save_all_section}
 {mandatory_section} 
 STRICT DATA RETENTION MANDATE:
     1. If an attribute like 'AMPS' or 'Voltage' is in the input, it MUST be in the output.
