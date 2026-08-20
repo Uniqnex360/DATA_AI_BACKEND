@@ -2493,7 +2493,7 @@ async def aggregate_product(
                 if isinstance(best_image, str):
                     best_image_dict = {
                         "image_url": best_image,
-                        "source_page_url": "fallback",
+                        "source_page_url": urls[0] if urls else "unknown_source",
                         "source_type": "fallback",
                         "is_primary": True
                     }
@@ -2510,7 +2510,7 @@ async def aggregate_product(
                     if candidate not in [a.get("image_url") for a in found_image_assets_global]:
                         found_image_assets_global.append({
                             "image_url": candidate,
-                            "source_page_url": "searxng_fallback",
+                            "source_page_url": urls[0] if urls else "unknown_source",
                             "source_type": "image_search",
                             "is_primary": True
                         })
