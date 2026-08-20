@@ -18,57 +18,225 @@ long_description, features, and every attribute name and value.
 This applies regardless of source — HTML text, JSON-LD data, spec tables, or PDFs.
 ═══════════════════════════════════════════════════════"""
 
+# def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
+#     soup = BeautifulSoup(html_content, "html.parser")
+#     idx = html_content.find('Ceiling Tile Style')
+#     if idx != -1:
+#         logger.info(f"[RAW CONTEXT DEBUG] Ceiling Tile Style context:\n{html_content[max(0,idx-300):idx+500]}")
+#     json_data = []
+#     for script in soup.find_all("script"):
+#         if script.get("type") in ["application/ld+json", "application/json"] or script.get("id") == "__NEXT_DATA__":
+#             content = script.string
+#             if content and len(content) > 100:
+#                 json_data.append(content)
+#     import json as _json
+#     for jd in json_data[:]:
+#         try:
+#             data = _json.loads(jd)
+#             props = data.get('additionalProperty', [])
+#             if props:
+#                 lines = []
+#                 for p in props:
+#                     name = p.get('name', '')
+#                     value = p.get('value', '')
+#                     if name and value:
+#                         lines.append(f"{name}: {value}")
+#                 if lines:
+#                     json_data.append('\n'.join(lines))
+#         except:
+#             pass
+#     for tag in soup(["script", "style", "noscript", "svg"]):
+#         tag.decompose()
+#     sections = []
+#     if json_data:
+#         json_data_sorted = sorted(json_data, key=len)
+#         for jd in json_data_sorted:
+#             if len(jd) < 50000:
+#                 sections.append(jd)
+#     for table in soup.find_all("table"):
+#         rows = table.find_all("tr")
+#         if len(rows) >= 3:
+#             sections.append(str(table))
+#     for dl in soup.find_all("dl"):
+#         if len(dl.find_all("dt")) >= 2:
+#             sections.append(str(dl))
+#     for div in soup.find_all("div"):
+#         children = div.find_all(["div", "span", "p"], recursive=False)
+#         if len(children) >= 4:
+#             texts = [c.get_text(strip=True)
+#                      for c in children if c.get_text(strip=True)]
+#             if len(texts) >= 4 and len(" ".join(texts)) < 6000:
+#                 sections.append(str(div))
+#     feature_keywords = ["feature", "highlight",
+#                         "benefit", "selling-point", "key-point"]
+#     for section in soup.find_all(['section', 'div']):
+#         elem_id = (section.get('id') or '').lower()
+#         elem_class = ' '.join(section.get('class') or []).lower()
+#         combined = f"{elem_id} {elem_class}"
+#         if any(k in combined for k in feature_keywords):
+#             text = section.get_text(separator='\n', strip=True)
+#             if 100 < len(text) < 15000:
+#                 sections.append(str(section))
+#                 logger.info(
+#                     f"Captured features section: id='{elem_id}' class='{elem_class}' len={len(text)}")
+#     unique_sections = list(dict.fromkeys(sections))
+#     content = "\n\n".join(unique_sections[:max_sections])
+#     non_json_content = "\n\n".join(
+#         s for s in unique_sections[:max_sections] if not s.strip().startswith('{'))
+#     if len(non_json_content.strip()) < 5000 and len(html_content) > 100000:
+#         raw_text = soup.get_text(separator="\n", strip=True)
+#         if len(raw_text) > 100:
+#             content = f"RAW PAGE TEXT (Fallback):\n{raw_text[:50000]}"
+#             logger.info(
+#                 f"Using raw text fallback: {len(raw_text[:50000])} chars")
+#     logger.info(f"[SPEC CAPTURE DEBUG] total unique sections captured: {len(unique_sections)}")
+#     for i, s in enumerate(unique_sections[:max_sections]):
+#         preview = s[:200].replace("\n", " ")
+#         logger.info(f"[SPEC CAPTURE DEBUG] section[{i}] len={len(s)} preview={preview}")
+    
+#     # NEW: check specific missing fields against raw html BEFORE any truncation
+#     check_fields = ["Ceiling Tile Style", "Approximate Size", "Color Family",
+#                      "Commercial/Residential", "Pack Size", "Returnable", "Warranty"]
+#     for field in check_fields:
+#         logger.info(f"[SPEC CAPTURE DEBUG] '{field}' in raw html_content: {field in html_content}")
+#         logger.info(f"[SPEC CAPTURE DEBUG] '{field}' in captured sections (pre-truncate): {any(field in s for s in unique_sections)}")
+
+#     content = "\n\n".join(unique_sections[:max_sections])
+            
+#     MAX_CHARS = 120000
+#     return content[:MAX_CHARS]
 def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
+    from bs4 import BeautifulSoup
+    import json as _json
+    import re
+    
     soup = BeautifulSoup(html_content, "html.parser")
+
     idx = html_content.find('Ceiling Tile Style')
     if idx != -1:
         logger.info(f"[RAW CONTEXT DEBUG] Ceiling Tile Style context:\n{html_content[max(0,idx-300):idx+500]}")
+
+    # ✅ DEFINE sections IMMEDIATELY — before anything appends to it
+    sections = []
+
+    # Collect JSON scripts
     json_data = []
     for script in soup.find_all("script"):
         if script.get("type") in ["application/ld+json", "application/json"] or script.get("id") == "__NEXT_DATA__":
             content = script.string
             if content and len(content) > 100:
                 json_data.append(content)
-    import json as _json
+
+    # === Parse structured specs (JSON-LD + React) ===
+    parsed_specs_lines = []
+
     for jd in json_data[:]:
         try:
             data = _json.loads(jd)
-            props = data.get('additionalProperty', [])
-            if props:
-                lines = []
-                for p in props:
-                    name = p.get('name', '')
-                    value = p.get('value', '')
-                    if name and value:
-                        lines.append(f"{name}: {value}")
-                if lines:
-                    json_data.append('\n'.join(lines))
-        except:
-            pass
+            if isinstance(data, list):
+                for item in data:
+                    if isinstance(item, dict):
+                        # Check @graph within list items
+                        if '@graph' in item:
+                            for node in item['@graph']:
+                                if isinstance(node, dict):
+                                    props = node.get('additionalProperty', [])
+                                    if isinstance(props, list):
+                                        for p in props:
+                                            if isinstance(p, dict):
+                                                name = (p.get('name', '') or '').strip()
+                                                value = (p.get('value', '') or '').strip()
+                                                if name and value:
+                                                    parsed_specs_lines.append(f"{name}: {value}")
+                        
+                        # Regular additionalProperty
+                        props = item.get('additionalProperty', [])
+                        if isinstance(props, list):
+                            for p in props:
+                                if isinstance(p, dict):
+                                    name = (p.get('name', '') or '').strip()
+                                    value = (p.get('value', '') or '').strip()
+                                    if name and value:
+                                        parsed_specs_lines.append(f"{name}: {value}")
+                                        
+            elif isinstance(data, dict):
+                # Check for @graph array (Schema.org graph structure)
+                if '@graph' in data:
+                    for node in data['@graph']:
+                        if isinstance(node, dict):
+                            props = node.get('additionalProperty', [])
+                            for p in props:
+                                name = (p.get('name', '') or '').strip()
+                                value = (p.get('value', '') or '').strip()
+                                if name and value:
+                                    parsed_specs_lines.append(f"{name}: {value}")
+                
+                # Regular additionalProperty at root
+                props = data.get('additionalProperty', [])
+                if isinstance(props, list):
+                    for p in props:
+                        if isinstance(p, dict):
+                            name = (p.get('name', '') or '').strip()
+                            value = (p.get('value', '') or '').strip()
+                            if name and value:
+                                parsed_specs_lines.append(f"{name}: {value}")
+        except Exception as e:
+            logger.debug(f"Failed to parse JSON-LD: {e}")
+            continue
+
+    # Parse Home Depot React specificationGroup
+    spec_pattern = r'"__typename":"Specification","specName":"([^"]+)","specValue":"([^"]+)"'
+    matches = re.findall(spec_pattern, html_content)
+    for name, value in matches:
+        name_clean = name.strip()
+        value_clean = value.strip()
+        if name_clean and value_clean:
+            parsed_specs_lines.append(f"{name_clean}: {value_clean}")
+
+    # Deduplicate while preserving order
+    parsed_specs_lines = list(dict.fromkeys(parsed_specs_lines))
+
+    # ✅ NOW it's safe to append — sections is already defined
+    if parsed_specs_lines:
+        spec_block = "STRUCTURED PRODUCT SPECIFICATIONS (from JSON-LD / React):\n" + "\n".join(parsed_specs_lines)
+        sections.append(spec_block)
+        logger.info(f"[SPEC DEBUG] Added {len(parsed_specs_lines)} structured specs from JSON/React")
+
+    # Remove scripts/styles
     for tag in soup(["script", "style", "noscript", "svg"]):
         tag.decompose()
-    sections = []
+
+    # Add raw JSON blocks (sorted by length) - but skip ones we already parsed to avoid duplication
     if json_data:
         json_data_sorted = sorted(json_data, key=len)
         for jd in json_data_sorted:
             if len(jd) < 50000:
+                # Skip if this JSON contains specs we already extracted (avoid duplication)
+                if '"specName"' in jd or '"additionalProperty"' in jd:
+                    continue
                 sections.append(jd)
+
+    # Tables
     for table in soup.find_all("table"):
         rows = table.find_all("tr")
         if len(rows) >= 3:
             sections.append(str(table))
+
+    # Definition lists
     for dl in soup.find_all("dl"):
         if len(dl.find_all("dt")) >= 2:
             sections.append(str(dl))
+
+    # Divs with multiple children
     for div in soup.find_all("div"):
         children = div.find_all(["div", "span", "p"], recursive=False)
         if len(children) >= 4:
-            texts = [c.get_text(strip=True)
-                     for c in children if c.get_text(strip=True)]
+            texts = [c.get_text(strip=True) for c in children if c.get_text(strip=True)]
             if len(texts) >= 4 and len(" ".join(texts)) < 6000:
                 sections.append(str(div))
-    feature_keywords = ["feature", "highlight",
-                        "benefit", "selling-point", "key-point"]
+
+    # Feature sections
+    feature_keywords = ["feature", "highlight", "benefit", "selling-point", "key-point"]
     for section in soup.find_all(['section', 'div']):
         elem_id = (section.get('id') or '').lower()
         elem_class = ' '.join(section.get('class') or []).lower()
@@ -77,35 +245,40 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
             text = section.get_text(separator='\n', strip=True)
             if 100 < len(text) < 15000:
                 sections.append(str(section))
-                logger.info(
-                    f"Captured features section: id='{elem_id}' class='{elem_class}' len={len(text)}")
+                logger.info(f"Captured features section: id='{elem_id}' class='{elem_class}' len={len(text)}")
+
     unique_sections = list(dict.fromkeys(sections))
     content = "\n\n".join(unique_sections[:max_sections])
-    non_json_content = "\n\n".join(
-        s for s in unique_sections[:max_sections] if not s.strip().startswith('{'))
+
+    non_json_content = "\n\n".join(s for s in unique_sections[:max_sections] if not s.strip().startswith('{'))
     if len(non_json_content.strip()) < 5000 and len(html_content) > 100000:
         raw_text = soup.get_text(separator="\n", strip=True)
         if len(raw_text) > 100:
             content = f"RAW PAGE TEXT (Fallback):\n{raw_text[:50000]}"
-            logger.info(
-                f"Using raw text fallback: {len(raw_text[:50000])} chars")
+            logger.info(f"Using raw text fallback: {len(raw_text[:50000])} chars")
+
     logger.info(f"[SPEC CAPTURE DEBUG] total unique sections captured: {len(unique_sections)}")
     for i, s in enumerate(unique_sections[:max_sections]):
         preview = s[:200].replace("\n", " ")
         logger.info(f"[SPEC CAPTURE DEBUG] section[{i}] len={len(s)} preview={preview}")
-    
-    # NEW: check specific missing fields against raw html BEFORE any truncation
+
     check_fields = ["Ceiling Tile Style", "Approximate Size", "Color Family",
-                     "Commercial/Residential", "Pack Size", "Returnable", "Warranty"]
+                    "Commercial/Residential", "Pack Size", "Returnable", "Warranty"]
+    
+    # Check in raw HTML
     for field in check_fields:
         logger.info(f"[SPEC CAPTURE DEBUG] '{field}' in raw html_content: {field in html_content}")
         logger.info(f"[SPEC CAPTURE DEBUG] '{field}' in captured sections (pre-truncate): {any(field in s for s in unique_sections)}")
+    
+    # Check specifically in parsed specs
+    if parsed_specs_lines:
+        spec_block_text = "\n".join(parsed_specs_lines)
+        for field in check_fields:
+            if field in spec_block_text:
+                logger.info(f"[SPEC CAPTURE DEBUG] '{field}' in PARSED specs: True")
 
-    content = "\n\n".join(unique_sections[:max_sections])
-            
     MAX_CHARS = 120000
     return content[:MAX_CHARS]
-
 
 def extract_product_descriptions(html_content: str) -> str:
     from bs4 import BeautifulSoup
