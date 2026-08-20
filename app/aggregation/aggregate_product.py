@@ -1471,7 +1471,7 @@ async def aggregate_product(
                                 if universal_imgs:
                                     logger.info(
                                         f"[TEST] Universal Extractor found ({len(universal_imgs)}) images from {url}: {universal_imgs}")
-                                    _merge_images(mozu_imgs, url, 'html')
+                                    _merge_images(universal_imgs, url, 'html')
                                 if len(html_text) > 5000:
                                     from bs4 import BeautifulSoup
                                     visible_text = BeautifulSoup(
