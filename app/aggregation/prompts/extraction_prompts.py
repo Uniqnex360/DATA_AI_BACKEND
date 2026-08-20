@@ -20,6 +20,9 @@ This applies regardless of source — HTML text, JSON-LD data, spec tables, or P
 
 def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
     soup = BeautifulSoup(html_content, "html.parser")
+    idx = html_content.find('Ceiling Tile Style')
+    if idx != -1:
+        logger.info(f"[RAW CONTEXT DEBUG] Ceiling Tile Style context:\n{html_content[max(0,idx-300):idx+500]}")
     json_data = []
     for script in soup.find_all("script"):
         if script.get("type") in ["application/ld+json", "application/json"] or script.get("id") == "__NEXT_DATA__":
