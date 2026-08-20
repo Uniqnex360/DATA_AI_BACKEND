@@ -324,12 +324,14 @@ async def generate_products_excel(
             row['image_url_1'] = clean_for_excel(ai_data.pop('main_image'))
         elif 'image' in ai_data:
             row['image_url_1'] = clean_for_excel(ai_data.pop('image'))
-        for i in range(1, 9):
-            col = f"image_url_{i}"
-            if not row.get(col):
-                val = getattr(p, col, None)
-                if val:
-                    row[col] = val
+        if hasattr(p, 'image_assets') and p.image_assets:
+            assets = p.image_assets if isinstance(p.image_assets, list) else []
+            for i, asset in enumerate(assets[:8], 1):
+                if isinstance(asset, dict):
+                    row[f"image_url_{i}"] = clean_for_excel(asset.get("image_url", ""))
+                    row[f"image_name_{i}"] = clean_for_excel(asset.get("source_type", ""))
+                else:
+                    row[f"image_url_{i}"] = clean_for_excel(str(asset))
         NORM_DEDICATED_MAP = {normalize_attr_name(k): target for k, target in DEDICATED_COLUMN_MAPPING.items()}
         
         dedicated_values = []

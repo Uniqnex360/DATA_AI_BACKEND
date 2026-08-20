@@ -6,7 +6,6 @@ from app.core.config import settings
 from app.llm import call_llm_with_schema
 from typing import Dict, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.aggregation.pipeline import AggregationPipeline
 from sqlmodel import or_, select
 from app.aggregation.prompts.enrichment_prompts import build_enrichment_prompt
 from app.aggregation.services.pdf_service import PDFExtractionService
@@ -46,18 +45,6 @@ from app.utils.remapping import cluster_attributes_by_meaning
 download_service = HttpDownloadService(timeout=20)
 
 logger = logging.getLogger("aggregate_product")
-
-
-def build_pipeline() -> AggregationPipeline:
-    return AggregationPipeline(
-        search_service=SerpApiSearchService(max_results=5),
-        download_service=HttpDownloadService(timeout=30),
-        extraction_service=ExtractionService(extractors=[
-            HtmlExtractor(),
-            PlaywrightExtractor(),
-            PdfExtractor(),
-        ]),
-    )
 
 
 def chunk_attributes(attributes: List[str], chunk_size: int = 10) -> List[List[str]]:
@@ -630,7 +617,7 @@ def is_result_actually_product(result: dict, brand: str, title: str, mpn: str = 
     content_to_check = (result.get('title', '')+" " +
                         result.get('snippet', "")).lower()
     brand_lower = brand.lower()
-    
+
     if brand_lower not in content_to_check and brand_lower not in url:
         return False
     snippet = (result.get("title", "") + " " +
@@ -778,6 +765,8 @@ async def _enqueue_alias_job_isolated(category_id):
             await enqueue_category_alias_job(category_id, new_db)
     except Exception as e:
         logger.warning(f"[Stage3Canonicals] isolated alias job failed: {e}")
+
+
 async def extract_approved_pdf(
     validation: "PdfValidation",
     db: AsyncSession,
@@ -794,7 +783,8 @@ async def extract_approved_pdf(
         if not pdf_text or len(pdf_text.strip()) < 100:
             return {"status": "failed", "reason": "PDF text extraction failed"}
 
-        prod_stmt = select(Product).where(Product.product_code == validation.product_code)
+        prod_stmt = select(Product).where(
+            Product.product_code == validation.product_code)
         prod_res = await db.execute(prod_stmt)
         product = prod_res.scalars().first()
         if not product:
@@ -843,6 +833,7 @@ async def extract_approved_pdf(
         logger.error(f"extract_approved_pdf failed: {e}", exc_info=True)
         return {"status": "failed", "reason": str(e)}
 
+
 async def aggregate_product(
     mpn: str,
     title: str,
@@ -885,14 +876,26 @@ async def aggregate_product(
         if missing_llm_provider is None:
             missing_llm_provider = llm_provider
         candidate_images = []
-        found_images_global = []
-        def _merge_images(urls: Optional[List[str]]):
-            if not urls:
+        # found_image_assets_global = []
+        found_image_assets_global: list[dict] = []
+
+        def _merge_images(image_urls: Optional[List[str]], source_page_url: str, source_type: str, is_primary: bool = False):
+            if not image_urls:
                 return
-            for u in urls:
-                if u and u not in found_images_global:
-                    found_images_global.append(u)
-            del found_images_global[8:]
+            seen_urls = {a['image_url']
+                         for a in found_image_assets_global if a.get('image_url')}
+            for idx, u in enumerate(image_urls):
+                if not u or u in seen_urls:
+                    continue
+
+                found_image_assets_global.append({
+                    "image_url": u,
+                    "source_page_url": source_page_url,
+                    "source_type": source_type,
+                    "is_primary": is_primary and idx == 0,
+                })
+                seen_urls.add(u)
+            del found_image_assets_global[8:]
         all_extractions = []
         if is_algo2_run and cached_urls and cached_html:
             logger.info(
@@ -939,7 +942,8 @@ async def aggregate_product(
                 extracted_gtin = None
 
                 if extraction_result and extraction_result.product_detected:
-                    _merge_images(getattr(extraction_result, "image_urls", None) or [])
+                    _merge_images(getattr(extraction_result,
+                                  "image_urls", None) or [], url, 'html')
                     extracted_upc = getattr(extraction_result, "upc", None)
                     extracted_ean = getattr(extraction_result, "ean", None)
                     extracted_gtin = getattr(extraction_result, "gtin", None)
@@ -1276,13 +1280,14 @@ async def aggregate_product(
             # Collect all valid Manufacturer/Brand hostnames upfront
             mfg_hosts = set()
             if 'manufacturer_domain' in locals() and manufacturer_domain:
-                mfg_hosts.add(urlparse(manufacturer_domain if manufacturer_domain.startswith("http") else f"https://{manufacturer_domain}").netloc.lower().replace("www.", ""))
+                mfg_hosts.add(urlparse(manufacturer_domain if manufacturer_domain.startswith(
+                    "http") else f"https://{manufacturer_domain}").netloc.lower().replace("www.", ""))
             for d in (direct_domains if 'direct_domains' in locals() else []):
                 if d:
-                    mfg_hosts.add(urlparse(d if d.startswith("http") else f"https://{d}").netloc.lower().replace("www.", ""))
+                    mfg_hosts.add(urlparse(d if d.startswith(
+                        "http") else f"https://{d}").netloc.lower().replace("www.", ""))
             all_extractions = []
             _url_semaphore = asyncio.Semaphore(3)
-
 
             async def process_url(url):
                 url_start = time.perf_counter()
@@ -1329,13 +1334,14 @@ async def aggregate_product(
                                         logger.warning(
                                             f"Skipping PDF {url if 'pdf_url' not in dir() else pdf_url} — parts list/exploded view")
                                         return extractions
-                                    
-                                    logger.info(f"Extracted {len(pdf_text)} chars from PDF")
-                                   
+
+                                    logger.info(
+                                        f"Extracted {len(pdf_text)} chars from PDF")
 
                                     # if is_crossref_pdf(pdf_text):
-                                    if True:  
-                                        prod_stmt = select(Product.id).where(Product.product_code == mpn)
+                                    if True:
+                                        prod_stmt = select(Product.id).where(
+                                            Product.product_code == mpn)
                                         prod_res = await db.execute(prod_stmt)
                                         prod_row = prod_res.first()
                                         prod_id = prod_row[0] if prod_row else None
@@ -1352,24 +1358,29 @@ async def aggregate_product(
                                             validation = PdfValidation(
                                                 product_code=mpn,
                                                 product_id=prod_id,
-                                                project_id=_UUID(project_id) if project_id else None,
+                                                project_id=_UUID(
+                                                    project_id) if project_id else None,
                                                 pdf_url=url,
                                                 source_page_url=url,
                                             )
                                             db.add(validation)
                                             await db.commit()
-                                            logger.info(f"⏸ PDF needs validation, paused: {url}")
+                                            logger.info(
+                                                f"⏸ PDF needs validation, paused: {url}")
                                             return extractions
 
                                         if validation.status == "pending":
-                                            logger.info(f"⏸ PDF validation still pending: {url}")
+                                            logger.info(
+                                                f"⏸ PDF validation still pending: {url}")
                                             return extractions
 
                                         if validation.status == "rejected":
-                                            logger.info(f"✗ PDF rejected by user, skipping: {url}")
+                                            logger.info(
+                                                f"✗ PDF rejected by user, skipping: {url}")
                                             return extractions
 
-                                        logger.info(f"✓ PDF approved by user, extracting: {url}")
+                                        logger.info(
+                                            f"✓ PDF approved by user, extracting: {url}")
 
                                     # attrs_to_use = primary_attributes or []
                                     # if attribute_chunk:
@@ -1403,8 +1414,10 @@ async def aggregate_product(
                                         # image_url = None
                                         # if hasattr(extraction_result, "image_urls") :
                                         #     image_url = extraction_result.image_url
-                                        source_images = list(getattr(extraction_result, "image_urls", None) or [])
-                                        _merge_images(source_images)
+                                        source_images = list(
+                                            getattr(extraction_result, "image_urls", None) or [])
+                                        _merge_images(
+                                            source_images, url, 'html')
                                         for attr in extraction_result.attributes:
                                             if is_distributor_metadata(attr.name):
                                                 logger.info(
@@ -1419,12 +1432,20 @@ async def aggregate_product(
                                                 "unit": getattr(attr, "unit", None),
                                                 "confidence": getattr(attr, "confidence", 0.95),
                                             })
-                                        logger.info(f"[FINAL PAGE IMAGES] {url} => {source_images}")                                            
+                                        logger.info(
+                                            f"[FINAL PAGE IMAGES] {url} => {source_images}")
                                         extractions.append({
                                             "url": url,
                                             "domain": urlparse(url).netloc,
                                             "attributes": attr_dicts,
-                                            "image_urls": source_images,
+                                            "image_assets": [
+                                                {
+                                                    "image_url": img,
+                                                    "source_page_url": url,
+                                                    "source_type": source.get('source_type', 'html')
+                                                }
+                                                for img in source_images
+                                            ],
 
                                             "source_type": "pdf",
                                             "short_description": getattr(extraction_result, "short_description", None),
@@ -1440,13 +1461,17 @@ async def aggregate_product(
                                     "utf-8", errors="ignore")
                                 logger.info(
                                     f"Downloaded HTML from {url} - size: {len(html_text)} bytes")
-                                mozu_imgs = extract_mozu_preload_images(html_text)
+                                mozu_imgs = extract_mozu_preload_images(
+                                    html_text)
                                 if mozu_imgs:
-                                    logger.info(f"Detected Mozu preload images ({len(mozu_imgs)}): {mozu_imgs}")
-                                universal_imgs = extract_universal_product_images(html_text, url)
+                                    logger.info(
+                                        f"Detected Mozu preload images ({len(mozu_imgs)}): {mozu_imgs}")
+                                universal_imgs = extract_universal_product_images(
+                                    html_text, url)
                                 if universal_imgs:
-                                    logger.info(f"[TEST] Universal Extractor found ({len(universal_imgs)}) images from {url}: {universal_imgs}")
-                                    _merge_images(mozu_imgs)
+                                    logger.info(
+                                        f"[TEST] Universal Extractor found ({len(universal_imgs)}) images from {url}: {universal_imgs}")
+                                    _merge_images(mozu_imgs, url, 'html')
                                 if len(html_text) > 5000:
                                     from bs4 import BeautifulSoup
                                     visible_text = BeautifulSoup(
@@ -1525,9 +1550,10 @@ async def aggregate_product(
                                                     )
                                             except Exception as e:
                                                 logger.warning(f"[SPA Detection] Crawl4AI scrape failed: {e}. "
-                                                            "Proceeding with original HTML.")
+                                                               "Proceeding with original HTML.")
                                         else:
-                                            logger.info("[SPA Detection] Crawl4AI disabled by config; skipping.")
+                                            logger.info(
+                                                "[SPA Detection] Crawl4AI disabled by config; skipping.")
                                 if cached_html is not None and not is_algo2_run:
                                     cached_html[url] = html_text
                                     logger.info(
@@ -1642,7 +1668,8 @@ async def aggregate_product(
                         logger.info(f"=== EXTRACTION RESULTS FROM {url} ===")
                         if extraction_result and extraction_result.product_detected:
                             logger.info("Product detected: YES")
-                            logger.info(f"Image URLs: {getattr(extraction_result, 'image_urls', None) or []}")
+                            logger.info(
+                                f"Image URLs: {getattr(extraction_result, 'image_urls', None) or []}")
 
                             logger.info(
                                 f"Number of attributes extracted: {len(extraction_result.attributes)}")
@@ -1688,14 +1715,16 @@ async def aggregate_product(
                         attr_dicts = []
                         source_images: List[str] = []
                         if extraction_result and extraction_result.product_detected:
-                            raw_llm_imgs = list(getattr(extraction_result, "image_urls", None) or [])
-                            
-                            src_host = urlparse(url).netloc.lower().replace("www.", "")
-                            is_mfg_url = is_manufacturer_domain(src_host, mfg_hosts, brand)
+                            raw_llm_imgs = list(
+                                getattr(extraction_result, "image_urls", None) or [])
+
+                            src_host = urlparse(
+                                url).netloc.lower().replace("www.", "")
+                            is_mfg_url = is_manufacturer_domain(
+                                src_host, mfg_hosts, brand)
 
                             if is_mfg_url:
-                                # MANUFACTURER SITE: Extract and lock images
-                                source_images = raw_llm_imgs
+                                source_images = raw_llm_imgs[:]
                                 for u in (mozu_imgs or []):
                                     if u not in source_images:
                                         source_images.append(u)
@@ -1711,11 +1740,12 @@ async def aggregate_product(
                                 for img in source_images:
                                     if img not in mfg_images_locked:
                                         mfg_images_locked.append(img)
-                                logger.info(f"✓ Locked {len(source_images)} Manufacturer images from {url}")
+                                logger.info(
+                                    f"✓ Locked {len(source_images)} Manufacturer images from {url}")
                             else:
                                 # THIRD-PARTY SITE (e.g. AceHardware): Skip if Manufacturer images are already locked
                                 if not mfg_images_locked:
-                                    source_images = raw_llm_imgs
+                                    source_images = raw_llm_imgs[:]
                                     for u in (mozu_imgs or []):
                                         if u not in source_images:
                                             source_images.append(u)
@@ -1732,7 +1762,8 @@ async def aggregate_product(
                                         if img not in third_party_images:
                                             third_party_images.append(img)
                                 else:
-                                    logger.info(f"Skipped image extraction for Third-Party site ({url}) - Manufacturer images already locked.")
+                                    logger.info(
+                                        f"Skipped image extraction for Third-Party site ({url}) - Manufacturer images already locked.")
                             if hasattr(extraction_result, 'features'):
                                 features = extraction_result.features
                             if hasattr(extraction_result, "short_description"):
@@ -1880,14 +1911,14 @@ async def aggregate_product(
                                                 f"nor title keywords found in PDF text"
                                             )
                                             continue
-                                        
+
                                         # attrs_to_use = primary_attributes or []
                                         # if attribute_chunk:
                                         #     other_attrs = [
                                         #         a for a in attrs_to_use if a not in attribute_chunk]
                                         #     attrs_to_use = attribute_chunk + other_attrs
                                         # if is_crossref_pdf(pdf_text):
-                                        if True: 
+                                        if True:
                                             existing = await db.execute(
                                                 select(PdfValidation).where(
                                                     PdfValidation.pdf_url == pdf_url,
@@ -1897,30 +1928,36 @@ async def aggregate_product(
                                             validation = existing.scalars().first()
 
                                             if not validation:
-                                                prod_stmt = select(Product.id).where(Product.product_code == mpn)
+                                                prod_stmt = select(Product.id).where(
+                                                    Product.product_code == mpn)
                                                 prod_res = await db.execute(prod_stmt)
                                                 prod_row = prod_res.first()
                                                 validation = PdfValidation(
                                                     product_code=mpn,
                                                     product_id=prod_row[0] if prod_row else None,
-                                                    project_id=_UUID(project_id) if project_id else None,
+                                                    project_id=_UUID(
+                                                        project_id) if project_id else None,
                                                     pdf_url=pdf_url,
                                                     source_page_url=url,
                                                 )
                                                 db.add(validation)
                                                 await db.commit()
-                                                logger.info(f"⏸ PDF needs validation, paused: {pdf_url}")
+                                                logger.info(
+                                                    f"⏸ PDF needs validation, paused: {pdf_url}")
                                                 continue
 
                                             if validation.status == "pending":
-                                                logger.info(f"⏸ PDF validation still pending: {pdf_url}")
+                                                logger.info(
+                                                    f"⏸ PDF validation still pending: {pdf_url}")
                                                 continue
 
                                             if validation.status == "rejected":
-                                                logger.info(f"✗ PDF rejected by user, skipping: {pdf_url}")
+                                                logger.info(
+                                                    f"✗ PDF rejected by user, skipping: {pdf_url}")
                                                 continue
 
-                                            logger.info(f"✓ PDF approved by user, extracting: {pdf_url}")
+                                            logger.info(
+                                                f"✓ PDF approved by user, extracting: {pdf_url}")
                                         pdf_prompt = _build_pdf_prompt(
                                             pdf_text=pdf_text,
                                             title=title,
@@ -1968,16 +2005,28 @@ async def aggregate_product(
                                                     "unit": getattr(attr, "unit", None),
                                                     "confidence": getattr(attr, "confidence", 0.95)
                                                 })
+                                            pdf_images = list(
+                                                getattr(pdf_result, "image_urls", None) or [])
+                                            _merge_images(
+                                                pdf_images, pdf_url, 'pdf')
+
                                             extractions.append({
                                                 "url": pdf_url,
                                                 "domain": urlparse(pdf_url).netloc,
                                                 "attributes": pdf_attrs,
-                                                "image_urls": list(getattr(pdf_result, "image_urls", None) or []),
+                                                 "image_assets": [
+                                                    {
+                                                        "image_url": img,
+                                                        "source_page_url": pdf_url,
+                                                        "source_type": "pdf"
+                                                    }
+                                                    for img in (list(getattr(pdf_result, "image_urls", None) or []))
+                                                ],
                                                 "source_type": "pdf",
                                                 "short_description": getattr(pdf_result, "short_description", None),
                                                 "long_description": getattr(pdf_result, "long_description", None),
                                                 "features": getattr(pdf_result, "features", None) or [],
-                                                   "upc": getattr(pdf_result, "upc", None),
+                                                "upc": getattr(pdf_result, "upc", None),
                                                 "ean": getattr(pdf_result, "ean", None),
                                                 "gtin": getattr(pdf_result, "gtin", None),
                                             })
@@ -1990,19 +2039,26 @@ async def aggregate_product(
                                 logger.warning(
                                     f"Failed to process PDF {pdf_url}: {pdf_err}")
                                 continue
-                        
+
                         extractions.append({
                             "url": url,
                             "domain": urlparse(url).netloc,
                             "attributes": attr_dicts,
-                            "image_urls": source_images,
+                            "image_assets": [
+                                {
+                                    "image_url": img,
+                                    "source_page_url": url,
+                                    "source_type": content_type if content_type in ['html', 'pdf'] else 'html'
+                                }
+                                for img in source_images
+                            ],
 
 
                             "source_type": "html",
                             "short_description": short_description,
                             "long_description": long_description,
                             "features": features,
-                             "upc": page_upc,
+                            "upc": page_upc,
                             "ean": page_ean,
                             "gtin": page_gtin,
                         })
@@ -2360,7 +2416,8 @@ async def aggregate_product(
             if best_short_description and best_long_description:
                 break
         logger.info("Stage 6: Marketing Enrichment")
-        logger.info(f"[DEBUG FEATURES] all_features going into enrichment: {all_features}")
+        logger.info(
+            f"[DEBUG FEATURES] all_features going into enrichment: {all_features}")
         enrichment_config = build_enrichment_prompt(
             golden_attributes=golden_attr_dicts,
             product_name=title,
@@ -2395,31 +2452,50 @@ async def aggregate_product(
                 "[TIMING] Marketing Enrichment: %.2fs",
                 time.perf_counter() - enrichment_start,
             )
-        # --- NEW: Final Priority Decision ---
-        if mfg_images_locked:
-            logger.info(f"✓ Final Decision: Using {len(mfg_images_locked)} Manufacturer image(s) EXCLUSIVELY")
-            found_images_global = mfg_images_locked[:8]
-        elif third_party_images:
-            logger.info(f"⚠️ Final Decision: No manufacturer images found. Using {len(third_party_images)} third-party fallback image(s)")
-            found_images_global = third_party_images[:8]
-        else:
-            # Keep whatever fallback image might have been gathered, or empty list
-            pass
+        # # --- NEW: Final Priority Decision ---
+        # if mfg_images_locked:
+        #     logger.info(
+        #         f"✓ Final Decision: Using {len(mfg_images_locked)} Manufacturer image(s) EXCLUSIVELY")
+        #     found_image_assets_global = mfg_images_locked[:8]
+        # elif third_party_images:
+        #     logger.info(
+        #         f"⚠️ Final Decision: No manufacturer images found. Using {len(third_party_images)} third-party fallback image(s)")
+        #     found_image_assets_global = third_party_images[:8]
+        # else:
+        #     pass
+                # --- NEW: Final Priority Decision (Preserves Dict Structure) ---
+        prioritized_assets = []
+        
+        # 1. Prioritize Manufacturer images
+        for asset in found_image_assets_global:
+            if asset['image_url'] in mfg_images_locked:
+                prioritized_assets.append(asset)
+                
+        # 2. Fallback to Third-Party images if no manufacturer images exist
+        if not prioritized_assets:
+            for asset in found_image_assets_global:
+                if asset['image_url'] in third_party_images:
+                    prioritized_assets.append(asset)
+                    
+        # 3. If still empty, keep whatever we have
+        if not prioritized_assets:
+            prioritized_assets = found_image_assets_global
 
-        best_image = found_images_global[0] if found_images_global else None
+        found_image_assets_global = prioritized_assets[:8]
 
-        # Fallback to SearXNG candidate images if no image was extracted from HTML
+        best_image = found_image_assets_global[0] if found_image_assets_global else None
+
         if not best_image:
             best_image = extract_best_image_fallback(all_extractions)
-            if best_image and best_image not in found_images_global:
-                found_images_global.append(best_image)
+            if best_image and best_image not in found_image_assets_global:
+                found_image_assets_global.append(best_image)
             for candidate in candidate_images:
                 is_valid = await validate_image_url(candidate)
                 if is_valid:
                     logger.info(f"Fallback to SearXNG image: {candidate}")
                     best_image = candidate
-                    if candidate not in found_images_global:
-                        found_images_global.append(candidate)
+                    if candidate not in found_image_assets_global:
+                        found_image_assets_global.append(candidate)
                     break
         if 'download_service' in locals():
             download_service._cache.clear()
@@ -2428,7 +2504,8 @@ async def aggregate_product(
             final_features = list(enrichment_result.features)
         elif all_features:
             final_features = all_features
-        logger.info(f"[DEBUG FEATURES] final_features after enrichment: {final_features}")
+        logger.info(
+            f"[DEBUG FEATURES] final_features after enrichment: {final_features}")
         seen_final = set()
         deduped_features = []
         for f in final_features:
@@ -2453,14 +2530,14 @@ async def aggregate_product(
                 'features': deduped_features,
                 'sources_consulted': list({s['url'] for s in all_extractions}),
                 'confidence': avg_conf,
-                 'upc': best_upc or "",
+                'upc': best_upc or "",
                 'ean': best_ean or "",
                 'gtin': best_gtin or "",
             },
             'validation_conflicts': validation_conflicts,
             'excel_overrides': excel_overrides,
-            'image_urls': found_images_global,
-            'image_url': best_image,  
+            'image_assets': found_image_assets_global, 
+            'image_url': found_image_assets_global[0]['image_url'] if found_image_assets_global else None,
             'mode': 'backfill' if 'back filling' in use_case else 'standard'
         }
     except Exception as e:

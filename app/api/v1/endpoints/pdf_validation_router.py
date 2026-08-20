@@ -77,14 +77,28 @@ async def resolve_pdf_validation(
                 sources.append(v.pdf_url)
             product.sources_consulted = sources
             flag_modified(product, "sources_consulted")
-            found_images = result.get("image_urls") or []
-            slot = next((i for i in range(1, 9) if not getattr(product, f"image_url_{i}", None)), None)
-            for img_url in found_images:
-                if slot is None or slot > 8:
-                    break
-                if await validate_image_url(img_url):
-                    setattr(product, f"image_url_{slot}", img_url)
-                    slot += 1
+            # found_images = result.get("image_urls") or []
+            # slot = next((i for i in range(1, 9) if not getattr(product, f"image_url_{i}", None)), None)
+            # for img_url in found_images:
+            #     if slot is None or slot > 8:
+            #         break
+            #     if await validate_image_url(img_url):
+            #         setattr(product, f"image_url_{slot}", img_url)
+            #         slot += 1
+            new_assets=result.get('image_assets') or []
+            if new_assets:
+                existing_assets=product.image_assets or []
+                existing_urls={a.get('image_url') for a in existing_assets if isinstance(a,dict)}
+                for asset in new_assets:
+                    if isinstance(asset,dict):
+                        img_url=asset.get('image_url')
+                        if img_url and await validate_image_url(img_url):
+                            if img_url not in existing_urls:
+                                existing_assets.append(asset)
+                                existing_urls.add(img_url)
+                product.image_assets=existing_assets
+                flag_modified(product,'image_assets')
+                logger.info(f"✓ Saved {len(existing_assets)} validated image assets from approved PDF for {v.product_code}")
 
             db.add(product)
             await db.commit()

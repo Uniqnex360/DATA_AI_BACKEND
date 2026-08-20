@@ -699,8 +699,15 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                     'taxonomy', existing_product.taxonomy)
                                 existing_product.description = product_data.get(
                                     'description', existing_product.description)
-                                existing_product.image_url_1 = product_data.get(
-                                    'image_url', existing_product.image_url_1)
+                                img_url = product_data.get('image_url')
+                                if img_url:
+                                    
+                                    existing_product.image_assets = [{
+                                            "image_url": img_url,
+                                            'source_page_url':product_data.get('source_url',''),
+                                            'source_type':'pdf',
+                                            'is_primary':True
+                                            }]
                                 existing_product.workflow_stage = workflow_stage
                                 existing_product.enrichment_status = enrichment_status
                                 existing_product.ready_for_export = is_ready_for_export
@@ -732,7 +739,12 @@ async def process_fresh_pdf_aggregation(batch_id: str, mpns: List[str], project_
                                     taxonomy=product_data.get('taxonomy', ''),
                                     description=product_data.get(
                                         'description', ''),
-                                    image_url_1=product_data.get('image_url'),
+                                    image_assets=[{
+                                        "image_url": product_data.get('image_url', ''),
+                                        "source_page_url": product_data.get('source_url', ''),
+                                        "source_type": "pdf",
+                                        "is_primary": True
+                                    }] if product_data.get('image_url') else None,
                                     workflow_stage=workflow_stage,
                                     enrichment_status=enrichment_status,
                                     ready_for_export=is_ready_for_export,
@@ -1490,7 +1502,14 @@ async def upsert_product_from_extraction(
         existing_product.sku = prod_dict.get('sku', "")
         existing_product.taxonomy = prod_dict.get('taxonomy', '')
         existing_product.description = prod_dict.get('description', '')
-        existing_product.image_url_1 = prod_dict.get('image_url', '')
+        img_url = prod_dict.get('image_url')
+        if img_url:
+            existing_product.image_assets = [{
+                "image_url": img_url,
+                "source_page_url": source_url,
+                "source_type": "pdf",
+                "is_primary": True
+            }]
         existing_product.workflow_stage = workflow_stage
         existing_product.needs_enrichment = needs_enrichment
         existing_product.ready_for_export = ready_for_export
@@ -1534,7 +1553,12 @@ async def upsert_product_from_extraction(
             sku=prod_dict.get('sku', ""),
             taxonomy=prod_dict.get('taxonomy', ''),
             description=prod_dict.get('description', ''),
-            image_url_1=prod_dict.get('image_url', ''),
+            image_assets=[{
+                "image_url": prod_dict.get('image_url', ''),
+                "source_page_url": source_url,
+                "source_type": "pdf",
+                "is_primary": True
+            }] if prod_dict.get('image_url') else None,
             workflow_stage=workflow_stage,
             needs_enrichment=needs_enrichment,
             ready_for_export=ready_for_export,
