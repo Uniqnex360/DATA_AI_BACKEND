@@ -677,6 +677,28 @@ This exclusion overrides instructions to extract all attributes.
         - DO NOT extract: Brand, MPN, Category, Division, Shipping info
         - ONLY extract technical product specifications
         ═══════════════════════════════════════════════════════════════════
+        ═══════════════════════════════════════════════════════
+🚫 FEATURES EXCLUSION RULES — CHECK FIRST, ALWAYS 🚫
+═══════════════════════════════════════════════════════
+BEFORE extracting ANY text as a "feature", check if it contains these topics:
+
+❌ SHIPPING: "Free Shipping", "Ships same day", "Delivery", "$50 ship free"
+❌ FINANCING: "Revolving Financing", "29.99%", "Payment options", "Installments"  
+❌ STOCK: "In Stock", "Available", "Inventory Status"
+❌ CUSTOMER SERVICE: "Chat with Experts", "Phone support", "Live Chat"
+❌ POLICIES: "Right Part Pledge", "Hassle Free Returns", "90-day returns"
+
+IF ANY of these topics appear → SKIP that text entirely. 
+These are website boilerplate, NOT product features.
+
+✅ ONLY extract actual product characteristics:
+- "16-inch diameter wheel assembly"
+- "Replaces part numbers 734-0591, 734-0765"  
+- "Heavy-duty steel construction"
+- "Fits Cub Cadet lawn tractors"
+
+REMEMBER: Product features describe the PHYSICAL ITEM, not the shopping experience.
+═══════════════════════════════════════════════════════
        CONTENT FOR EXTRACTION:
        {features_section} 
         {spec_content}

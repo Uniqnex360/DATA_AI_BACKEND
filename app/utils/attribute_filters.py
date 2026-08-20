@@ -1,7 +1,8 @@
 
 import re
-from typing import Optional
-
+from typing import List, Optional
+import logging
+logger=logging.getLogger(__name__)
 BLOCKED_DISTRIBUTOR_ATTRIBUTES = {
     "itemnumber",
     "distributoritemnumber",
@@ -65,7 +66,8 @@ def is_distributor_metadata(name: Optional[str]) -> bool:
 
     if normalized in BLOCKED_DISTRIBUTOR_ATTRIBUTES:
         return True
-
+    if "price" in normalized and normalized not in {"price", "baseprice", "saleprice", "listprice"}:
+        return True
     if normalized.startswith(("return", "returns", "refund")):
         if normalized.endswith(("fee", "fees", "method", "policy")):
             return True
@@ -85,3 +87,37 @@ def is_distributor_metadata(name: Optional[str]) -> bool:
             return True
 
     return False
+
+def filter_commerce_features(features: List[str]) -> List[str]:
+    if not features:
+        return features
+        
+    filtered = []
+    commerce_keywords = [
+        'shipping', 'free shipping', 'delivery', 'ship free', 'same day', '$50 ship', '$45',
+        'financing', 'payment', 'revolving', 'installment', '29.99%', 'standard revolving',
+        'in stock', 'available', 'stock status', 'inventory',
+        'return', 'exchange', 'refund', 'hassle free', '90-day',
+        'customer service', 'support', 'chat', 'phone', 'experts', 'live chat',
+        'guarantee', 'pledge', 'satisfaction', 'shop with confidence', 'right part pledge'
+    ]
+    
+    product_keywords = [
+        'part', 'replaces', 'compatible', 'fits', 'diameter', 'width', 'material', 
+        'design', 'construction', 'steel', 'aluminum', 'assembly', 'wheel', 'tire'
+    ]
+    
+    for feature in features:
+        feature_lower = feature.lower()
+        
+        if any(keyword in feature_lower for keyword in commerce_keywords):
+            logger.info(f"[FEATURE FILTER] Removed commerce feature: {feature}")
+            continue
+            
+        if (any(keyword in feature_lower for keyword in product_keywords) or 
+            len(feature.split()) <= 8):
+            filtered.append(feature)
+        else:
+            logger.info(f"[FEATURE FILTER] Removed non-product feature: {feature}")
+    
+    return filtered
