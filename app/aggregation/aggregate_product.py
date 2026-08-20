@@ -2487,15 +2487,31 @@ async def aggregate_product(
 
         if not best_image:
             best_image = extract_best_image_fallback(all_extractions)
-            if best_image and best_image not in found_image_assets_global:
-                found_image_assets_global.append(best_image)
+            if best_image:
+                if isinstance(best_image, str):
+                    best_image_dict = {
+                        "image_url": best_image,
+                        "source_page_url": "fallback",
+                        "source_type": "fallback",
+                        "is_primary": True
+                    }
+                    if best_image not in [a.get("image_url") for a in found_image_assets_global]:
+                        found_image_assets_global.append(best_image_dict)
+                elif isinstance(best_image, dict) and best_image not in found_image_assets_global:
+                    found_image_assets_global.append(best_image)
+            
             for candidate in candidate_images:
                 is_valid = await validate_image_url(candidate)
                 if is_valid:
                     logger.info(f"Fallback to SearXNG image: {candidate}")
                     best_image = candidate
-                    if candidate not in found_image_assets_global:
-                        found_image_assets_global.append(candidate)
+                    if candidate not in [a.get("image_url") for a in found_image_assets_global]:
+                        found_image_assets_global.append({
+                            "image_url": candidate,
+                            "source_page_url": "searxng_fallback",
+                            "source_type": "image_search",
+                            "is_primary": True
+                        })
                     break
         if 'download_service' in locals():
             download_service._cache.clear()

@@ -2,7 +2,6 @@
 import re
 from typing import Optional
 
-
 BLOCKED_DISTRIBUTOR_ATTRIBUTES = {
     "itemnumber",
     "distributoritemnumber",
@@ -30,6 +29,19 @@ BLOCKED_DISTRIBUTOR_ATTRIBUTES = {
     "reviewrating",
     "sellerrating",
     "storerating",
+
+    "instock",
+    "outofstock",
+    "stock",
+    "stockstatus",
+    "stocklevel",
+    "stockavailability",
+    "availability",
+    "inventorystatus",
+    "inventorylevel",
+    "unitsavailable",
+    "quantityavailable",
+    "stockquantity",
 }
 
 
@@ -68,6 +80,8 @@ def is_distributor_metadata(name: Optional[str]) -> bool:
             "store",
         )
         if normalized.startswith(rating_prefixes):
+            return True
+        if "stock" in normalized or "availability" in normalized or "inventory" in normalized:
             return True
 
     return False

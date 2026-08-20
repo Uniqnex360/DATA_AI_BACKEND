@@ -907,6 +907,7 @@ async def run_extraction_task(source_id: str, content: str):
                         'mpn', 'sku', 'product_code']}
                     if not product:
                         product = Product(
+                            product_name=title or sku or "Unknown Product", 
                             product_code=sku,
                             brand_name=brand,
                             mpn=sku,

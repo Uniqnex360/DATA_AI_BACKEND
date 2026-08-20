@@ -503,6 +503,13 @@ DO NOT extract:
 - Review Rating
 - Seller Rating
 - Store Rating
+- In Stock
+- Stock Status
+- Availability
+- Inventory Status
+- Out of Stock
+- Stock Level
+- Units Available
 
 Examples:
 - "Item #: 5395850" → SKIP
@@ -511,6 +518,9 @@ Examples:
 - "Return Policy: 30 Days" → SKIP
 - "Rating: 4.8 out of 5" → SKIP
 - "Customer Rating: 4.5 Stars" → SKIP
+- "In Stock: Yes" → SKIP
+- "Availability: 12 units" → SKIP
+- "Stock Status: Available" → SKIP
 
 IMPORTANT:
 Do not confuse customer/store ratings with technical ratings.

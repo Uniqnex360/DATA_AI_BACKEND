@@ -60,7 +60,7 @@ async def fetch_html_with_crawl4ai(url: str) -> Optional[str]:
 
 async def main():
     url = sys.argv[1] if len(sys.argv) > 1 else \
-        "https://www.aeg.ie/laundry/washing-machines/washing-machine/L6FBK141B/"
+        "https://www.tractorsupply.com/tsc/product/skilskil-pwr-core-20-20v-dual-function-inflator-tool-only-6068648"
 
     logger.info(f"Testing Crawl4AI on: {url}")
     html = await fetch_html_with_crawl4ai(url)
