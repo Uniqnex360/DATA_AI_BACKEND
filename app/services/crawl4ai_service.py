@@ -1,4 +1,4 @@
-# app/services/crawl4ai_service.py
+
 import logging
 from typing import Optional
 
@@ -8,7 +8,6 @@ logger = logging.getLogger("crawl4ai_service")
 
 
 async def render_with_crawl4ai(url: str) -> Optional[str]:
-    """Return rendered HTML for a URL using Crawl4AI, or None on failure."""
     browser_config = BrowserConfig(
         headless=True,
         browser_type="chromium",
@@ -16,9 +15,9 @@ async def render_with_crawl4ai(url: str) -> Optional[str]:
 
     run_config = CrawlerRunConfig(
         cache_mode=CacheMode.BYPASS,
-        wait_until="domcontentloaded",   # lifecycle event
-        page_timeout=45000,              # ms
-        delay_before_return_html=2.0,    # small extra wait for JS
+        wait_until="domcontentloaded",   
+        page_timeout=45000,              
+        delay_before_return_html=2.0,    
         scan_full_page=True,
         magic=True,
     )

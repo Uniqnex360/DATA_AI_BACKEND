@@ -498,8 +498,14 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
                     levels = 0
                     while parent and levels < 3:
                         try:
-                            parent_text += (parent.get_text(strip=True)
-                                            or '').lower() + " "
+                            # parent_text += (parent.get_text(strip=True)
+                            #                 or '').lower() + " "
+                            # parent = parent.find_parent()
+                            # levels += 1
+                            heading_tags = parent.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'strong', 'b'], recursive=False)
+                            heading_text = " ".join(h.get_text(strip=True) or '' for h in heading_tags).lower()
+                            class_id_text = f"{parent.get('id','')} {' '.join(parent.get('class') or [])}".lower()
+                            parent_text += heading_text + " " + class_id_text + " "
                             parent = parent.find_parent()
                             levels += 1
                         except Exception as parent_err:
