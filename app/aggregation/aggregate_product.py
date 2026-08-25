@@ -1595,7 +1595,8 @@ async def aggregate_product(
                                         1 for kw in title_keywords if kw in html_lower)
                                     title_match_ratio = title_hits / \
                                         len(title_keywords)
-                                    if brand.lower() in html_lower and title_match_ratio >= 0.6:
+                                    is_likely_pdp = search_service.is_likely_pdp_url(url)  
+                                    if brand.lower() in html_lower and title_match_ratio >= 0.6 and is_likely_pdp:
                                         logger.info(
                                             f"✓ Recovery: ID {mpn} missing, but Brand + Name ({int(title_match_ratio*100)}%) matched on {url}")
                                     else:
@@ -1681,6 +1682,19 @@ async def aggregate_product(
                             logger.info(
                                 f"Extraction result: {extraction_result}")
                         logger.info("=====================================")
+                        if extraction_result and extraction_result.product_detected:
+                            extracted_part_no = None
+                            for attr in extraction_result.attributes:
+                                if attr.name.lower() in ('part no.', 'part number', 'mpn', 'model number'):
+                                    extracted_part_no = str(attr.value).strip().lower()
+                                    break
+                            
+                            if extracted_part_no and is_mpn_valid:
+                                target_mpn_clean = mpn.strip().lower().replace('-', '').replace(' ', '')
+                                extracted_clean = extracted_part_no.replace('-', '').replace(' ', '')
+                                if target_mpn_clean not in extracted_clean and extracted_clean not in target_mpn_clean:
+                                    logger.warning(f"⛔ MPN mismatch: extracted Part No. '{extracted_part_no}' doesn't match target MPN '{mpn}' on {url}. Rejecting source.")
+                                    return []
                         # attr_dicts = []
                         # image_url = None
                         # if extraction_result and extraction_result.product_detected:
@@ -2521,10 +2535,14 @@ async def aggregate_product(
             cached_html.clear()
             logger.info("Cleared cached HTML for fresh extraction")
         final_features = []
-        if hasattr(enrichment_result, 'features') and enrichment_result.features:
-            final_features = list(enrichment_result.features)
-        elif all_features:
+        if all_features:
             final_features = all_features
+            
+            
+        elif hasattr(enrichment_result, 'features') and enrichment_result.features:
+            final_features = list(enrichment_result.features)
+        # elif all_features:
+        #     final_features = all_features
         logger.info(
             f"[DEBUG FEATURES] final_features after enrichment: {final_features}")
         seen_final = set()
