@@ -94,7 +94,6 @@ class ManufacturerUrl(BaseModel):
         }
     }
 class ManufacturerUrlResponse(BaseModel):
-    """Response containing ranked manufacturer URLs."""
     verified_urls: List[ManufacturerUrl] = Field(
         default_factory=list,
         description="List of verified manufacturer URLs"
@@ -103,7 +102,6 @@ class ManufacturerUrlResponse(BaseModel):
         "extra": "forbid"
     }
 class NavigationResponse(BaseModel):
-    """LLM response for navigation step"""
     url: str
     exact_match: bool = False
     page_type: str
@@ -137,6 +135,8 @@ class SmartSearchService(ISearchService):
             '/styles',
             '/compliance-',
             '/materials',
+            '/reviews/', '/review/', '/ratings/', '/rating/',
+    '/q-and-a/', '/questions-and-answers/', '/write-a-review',
         ]
         if any(p in url_lower for p in reject_patterns):
             logger.info(
