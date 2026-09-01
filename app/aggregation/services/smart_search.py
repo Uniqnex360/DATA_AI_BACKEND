@@ -335,13 +335,25 @@ class SmartSearchService(ISearchService):
                 targeted_query_no_site = f"{targeted_query_no_site} {' '.join(domains)}"
                 logger.info(
                     f"Targeted query (no site: fallback): {targeted_query_no_site}")
-        web_task = self.searxng._search(base_query)
-        targeted_task = self.searxng._search(targeted_query_str)
-        search_id = mpn if is_mpn_valid else title
-        image_task = self.searxng.search_images(f"{brand} {search_id}")
-        web_results, targeted_results, image_results = await asyncio.gather(
-            web_task, targeted_task, image_task, return_exceptions=True
-        )
+        has_site_restriction = 'site:' in targeted_query_str
+
+        if has_site_restriction:
+            targeted_task = self.searxng._search(targeted_query_str)
+            search_id = mpn if is_mpn_valid else title
+            image_task = self.searxng.search_images(f"{brand} {search_id}")
+            targeted_results, image_results = await asyncio.gather(
+                targeted_task, image_task, return_exceptions=True
+            )
+            web_results = []
+            logger.info("Taxonomy/category prompt restricts to specific sites — skipping open web search")
+        else:
+            web_task = self.searxng._search(base_query)
+            targeted_task = self.searxng._search(targeted_query_str)
+            search_id = mpn if is_mpn_valid else title
+            image_task = self.searxng.search_images(f"{brand} {search_id}")
+            web_results, targeted_results, image_results = await asyncio.gather(
+                web_task, targeted_task, image_task, return_exceptions=True
+            )
         if targeted_query_no_site and (isinstance(targeted_results, Exception) or not targeted_results or len(targeted_results) == 0):
             logger.info(
                 f"Site: query failed, trying without site: {targeted_query_no_site}")
