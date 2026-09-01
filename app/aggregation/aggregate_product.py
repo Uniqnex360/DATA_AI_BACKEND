@@ -1584,9 +1584,10 @@ async def aggregate_product(
                                 f"Skipping {url} — Soft 404 / Page Not Found detected. Matched: {matched_phrase}")
                             return []
                         if is_mpn_valid:
-                            if mpn.lower() in html_lower:
-                                logger.info(
-                                    f"✓ MPN verified in HTML for {url}")
+                            mpn_in_body = mpn.lower() in html_lower
+                            mpn_in_url = mpn.lower() in url.lower()
+                            if mpn_in_body or mpn_in_url:
+                                logger.info(f"✓ MPN verified ({'body' if mpn_in_body else 'URL'}) for {url}")
                             else:
                                 title_keywords = [
                                     w.lower() for w in title.split() if len(w) > 3]
@@ -1601,9 +1602,12 @@ async def aggregate_product(
                                     url_match_ratio = url_hits / len(title_keywords) if title_keywords else 0
                                     combined_ratio = max(title_match_ratio, url_match_ratio)
 
-                                    if brand.lower() in html_lower and combined_ratio >= 0.6 and is_likely_pdp:
+                                    brand_in_body_or_url = brand.lower() in html_lower or brand.lower() in url_lower.replace('-', ' ')
+                                    if brand_in_body_or_url and combined_ratio >= 0.6 and is_likely_pdp:
                                         logger.info(
-                                            f"✓ Recovery: ID {mpn} missing, but Brand + Name ({int(title_match_ratio*100)}%) matched on {url}")
+                                            f"✓ Recovery: ID {mpn} missing, but Brand + Name ({int(combined_ratio*100)}%) "
+                                            f"matched via {'URL' if url_match_ratio > title_match_ratio else 'body'} on {url}"
+                                        )
                                     else:
                                         logger.warning(
                                             f"Skipping {url} — Neither MPN nor strong Title match found.")
