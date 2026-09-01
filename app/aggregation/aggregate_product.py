@@ -1596,7 +1596,12 @@ async def aggregate_product(
                                     title_match_ratio = title_hits / \
                                         len(title_keywords)
                                     is_likely_pdp = search_service.is_likely_pdp_url(url)  
-                                    if brand.lower() in html_lower and title_match_ratio >= 0.6 and is_likely_pdp:
+                                    url_lower = url.lower()
+                                    url_hits = sum(1 for kw in title_keywords if kw.replace('-', '') in url_lower.replace('-', ''))
+                                    url_match_ratio = url_hits / len(title_keywords) if title_keywords else 0
+                                    combined_ratio = max(title_match_ratio, url_match_ratio)
+
+                                    if brand.lower() in html_lower and combined_ratio >= 0.6 and is_likely_pdp:
                                         logger.info(
                                             f"✓ Recovery: ID {mpn} missing, but Brand + Name ({int(title_match_ratio*100)}%) matched on {url}")
                                     else:
