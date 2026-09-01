@@ -183,6 +183,7 @@ async def discover_manufacturer_urls(
     taxonomy_parts = taxonomy.split(" > ")
     main_category = taxonomy_parts[-1] if taxonomy_parts else taxonomy
     is_mpn_valid = mpn and str(mpn).strip().lower() != 'none'
+    
     if is_mpn_valid:
         search_queries = [
             f"{brand} {main_category} official website",
@@ -1583,6 +1584,7 @@ async def aggregate_product(
                             logger.warning(
                                 f"Skipping {url} — Soft 404 / Page Not Found detected. Matched: {matched_phrase}")
                             return []
+                        logger.info(f"[MATCH CHECK] Starting match validation for {url} (mpn={mpn}, brand={brand})")
                         if is_mpn_valid:
                             mpn_in_body = mpn.lower() in html_lower
                             mpn_in_url = mpn.lower() in url.lower()
@@ -1596,6 +1598,7 @@ async def aggregate_product(
                                         1 for kw in title_keywords if kw in html_lower)
                                     title_match_ratio = title_hits / \
                                         len(title_keywords)
+                                    
                                     is_likely_pdp = search_service.is_likely_pdp_url(url)  
                                     url_lower = url.lower()
                                     url_hits = sum(1 for kw in title_keywords if kw.replace('-', '') in url_lower.replace('-', ''))
@@ -1620,12 +1623,16 @@ async def aggregate_product(
                             if title_keywords:
                                 title_hits = sum(
                                     1 for kw in title_keywords if kw in html_lower)
-                                if (title_hits / len(title_keywords) >= 0.5):
+                                url_lower_tk = url.lower().replace('-', ' ').replace('/', ' ')
+                                url_hits = sum(
+                                    1 for kw in title_keywords if kw.replace('-', '') in url_lower_tk.replace(' ', ''))
+                                combined_hits = max(title_hits, url_hits)
+                                if (combined_hits / len(title_keywords) >= 0.5):
                                     logger.info(
-                                        f"✓ Title keywords verified in HTML for {url} (No MPN in DB)")
+    f"✓ Title/URL keywords verified for {url} (No MPN in DB, via {'URL' if url_hits > title_hits else 'body'})")
                                 else:
                                     logger.warning(
-                                        f" Skipping {url} — No MPN in DB and title match too low.")
+    f" Skipping {url} — No MPN in DB and title/URL match too low.")
                                     return []
                             else:
                                 return []
