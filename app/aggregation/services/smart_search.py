@@ -320,17 +320,19 @@ class SmartSearchService(ISearchService):
         import re
         targeted_query_no_site = None
         if 'site:' in targeted_query_str:
-            site_match = re.search(r'site:(\S+)', targeted_query_str)
-            if site_match:
-                domain = site_match.group(1).replace('www.', '')
+            site_matches = re.findall(r'site:(\S+)', targeted_query_str)
+            if site_matches:
+                domains = [d.replace('www.', '') for d in site_matches]
                 targeted_query_no_site = re.sub(
                     r'site:\S+\s*', '', targeted_query_str).strip()
+                targeted_query_no_site = re.sub(
+                    r'\bOR\b', '', targeted_query_no_site).strip()
                 if is_mpn_valid and mpn.isdigit():
                     targeted_query_no_site = re.sub(
                         r'\b' + mpn + r'\b', '', targeted_query_no_site).strip()
-                    targeted_query_no_site = re.sub(
-                        r'\s+', ' ', targeted_query_no_site)
-                targeted_query_no_site = f"{targeted_query_no_site} {domain}"
+                targeted_query_no_site = re.sub(
+                    r'\s+', ' ', targeted_query_no_site)
+                targeted_query_no_site = f"{targeted_query_no_site} {' '.join(domains)}"
                 logger.info(
                     f"Targeted query (no site: fallback): {targeted_query_no_site}")
         web_task = self.searxng._search(base_query)
@@ -347,12 +349,12 @@ class SmartSearchService(ISearchService):
             if targeted_results and not isinstance(targeted_results, Exception):
                 logger.info(
                     f"Fallback (no site:) found {len(targeted_results)} results")
-                domain = targeted_query_no_site.split(
-                )[-1].replace('.co.uk', '')
+                fallback_domains = re.findall(r'site:(\S+)', targeted_query_str)
+                fallback_domains = [d.replace('www.', '').replace('.co.uk', '') for d in fallback_domains]
                 brand_lower = (brand or "").lower()
                 targeted_results = [
                     r for r in targeted_results
-                    if domain in r.get('url', '') or brand_lower in r.get('url', '').lower()
+                    if any(d in r.get('url', '') for d in fallback_domains) or brand_lower in r.get('url', '').lower()
                 ]
                 logger.info(
                     f"No-site results filtered: {len(targeted_results)} results")
@@ -483,6 +485,11 @@ class SmartSearchService(ISearchService):
                 hallucinated = len(result.selected_urls) - len(filtered)
                 if hallucinated:
                     logger.warning(f"Removed {hallucinated} hallucinated URLs")
+                pdp_filtered = [u for u in filtered if self.is_likely_pdp_url(u)]
+                non_pdp_removed = len(filtered) - len(pdp_filtered)
+                if non_pdp_removed:
+                    logger.info(f"Removed {non_pdp_removed} non-PDP URLs (reviews/ratings/etc.) after LLM selection")
+                filtered = pdp_filtered
                 candidate_imgs = result.candidate_image_urls if result.candidate_image_urls else []
                 logger.info(f"Smart search for {mpn}: {filtered}")
                 final_urls = filtered
@@ -490,12 +497,13 @@ class SmartSearchService(ISearchService):
             logger.exception(f"LLM filtering failed: {e}")
             final_urls = [r["url"] for r in web_results[:self.max_results]]
         if final_urls and targeted_query_str and 'site:' in targeted_query_str:
-            site_match = re.search(r'site:(\S+)', targeted_query_str)
-            if site_match:
-                preferred_domain = site_match.group(1).replace('www.', '')
+            site_matches = re.findall(r'site:(\S+)', targeted_query_str)
+            if site_matches:
+                preferred_domains = [d.replace('www.', '') for d in site_matches]
                 preferred_urls = [
                     r['url'] for r in web_results
-                    if preferred_domain in r.get('url', '')
+                    if any(pd in r.get('url', '') for pd in preferred_domains)
+                    and self.is_likely_pdp_url(r['url'])
                 ]
                 if preferred_urls:
                     final_urls = preferred_urls[:2] + \
