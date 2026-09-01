@@ -67,20 +67,36 @@ class HttpDownloadService(IDownloadService):
             has_spec_values = bool(
                 re.search(r'(?:height|width|length|weight|depth)\s*[":]\s*\d+\.?\d*\s*(?:in|cm|mm|lb|kg|oz|ft)', html_text, re.IGNORECASE)
             )
-            logger.info(f"Shell detection: nav_count={nav_count}, has_spec_values={has_spec_values}")
-            if nav_count > 15 and not has_spec_values:
+            is_too_small = len(html_text) < 5000
+            is_bot_blocked = (
+                "just a moment" in html_text.lower() or
+                "verify you are human" in html_text.lower() or
+                "enable javascript and cookies" in html_text.lower() or
+                ("cloudflare" in html_text.lower() and "ray id" in html_text.lower()) or
+                "access denied" in html_text.lower()
+            )
+            logger.info(
+            f"Shell detection: nav_count={nav_count}, has_spec_values={has_spec_values}, "
+            f"size={len(html_text)}b, too_small={is_too_small}, bot_blocked={is_bot_blocked}"
+            )
+
+            if (nav_count > 15 and not has_spec_values) or is_too_small or is_bot_blocked:
                 needs_playwright = True
-                logger.info(f"TRIGGERING Playwright fallback for {url}")
+                logger.info(f"TRIGGERING Playwright fallback for {url} "
+                            f"(big_shell={nav_count > 15 and not has_spec_values}, "
+                            f"too_small={is_too_small}, bot_blocked={is_bot_blocked})")
             else:
                 logger.info(f"NOT triggering Playwright for {url}")
         
         if (result is None or needs_playwright) and self.use_playwright_fallback:
 
             logger.info(f"curl_cffi {'failed' if not result else 'got shell HTML'} for {url}, trying Playwright...")
-            result = await self._download_playwright(url)
-        if result: self._cache[url] = result
+            pw_result = await self._download_playwright(url)
+            if pw_result:
+                result = pw_result
+        if result:
+            self._cache[url] = result
         return result
-
     async def _download_curl(self, url: str) -> Optional[Dict]:
         try:
             proxies = {"http": self.proxy, "https": self.proxy} if self.proxy else None
