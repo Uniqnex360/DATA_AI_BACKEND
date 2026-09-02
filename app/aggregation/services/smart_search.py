@@ -356,25 +356,32 @@ class SmartSearchService(ISearchService):
             query_no_site = re.sub(r'\bOR\b', '', query_no_site).strip()
             query_no_site = re.sub(r'\s+', ' ', query_no_site)
 
-            per_site_tasks = [
-                self.searxng._search(f"site:{d} {query_no_site}")
-                for d in domains
-            ]
-            search_id = mpn if is_mpn_valid else title
-            image_task = self.searxng.search_images(f"{brand} {search_id}")
+            per_site_results = []
+            for d in domains:
+                try:
+                    res = await self.searxng._search(f"site:{d} {query_no_site}")
+                    per_site_results.append(res or [])
+                    logger.info(f"Per-site search '{d}': {len(res or [])} results")
+                except Exception as e:
+                    logger.warning(f"Per-site search failed for {d}: {e}")
+                    per_site_results.append([])
+                await asyncio.sleep(0.3)
 
-            gathered = await asyncio.gather(*per_site_tasks, image_task, return_exceptions=True)
-            per_site_results, image_results = gathered[:-1], gathered[-1]
+            search_id = mpn if is_mpn_valid else title
+            try:
+                image_results = await self.searxng.search_images(f"{brand} {search_id}")
+            except Exception as e:
+                logger.warning(f"Image search failed: {e}")
+                image_results = []
 
             targeted_results = []
             for site_res in per_site_results:
-                if isinstance(site_res, Exception):
-                    logger.warning(f"Per-site search failed: {site_res}")
-                    continue
-                targeted_results.extend(site_res or [])
+                targeted_results.extend(site_res)
 
             web_results = []
-            logger.info(f"Taxonomy/category prompt restricts to specific sites — ran {len(domains)} per-site searches: {domains}")
+            logger.info(
+                f"Taxonomy/category prompt restricts to specific sites — ran {len(domains)} per-site searches: {domains}"
+            )
         else:
             web_task = self.searxng._search(base_query)
             targeted_task = self.searxng._search(targeted_query_str)
