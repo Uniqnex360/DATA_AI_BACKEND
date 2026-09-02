@@ -136,7 +136,7 @@ class SmartSearchService(ISearchService):
             '/styles',
             '/compliance-',
             '/materials',
-            '/reviews/', '/review/', '/ratings/', '/rating/',
+            '/reviews/', '/review/', '/ratings/', '/rating/', '/questions',
             '/q-and-a/', '/questions-and-answers/', '/write-a-review',
         ]
         reject_word_patterns = [
@@ -570,15 +570,17 @@ class SmartSearchService(ISearchService):
             site_matches = re.findall(r'site:(\S+)', targeted_query_str)
             if site_matches:
                 preferred_domains = [d.replace('www.', '') for d in site_matches]
-                preferred_urls = [
-                    r['url'] for r in web_results
-                    if any(pd in r.get('url', '') for pd in preferred_domains)
-                    and self.is_likely_pdp_url(r['url'])
-                ]
+                seen_pref_domains = set()
+                preferred_urls = []
+                for r in web_results:
+                    url = r.get('url', '')
+                    matched_domain = next((pd for pd in preferred_domains if pd in url), None)
+                    if matched_domain and self.is_likely_pdp_url(url) and matched_domain not in seen_pref_domains:
+                        preferred_urls.append(url)
+                        seen_pref_domains.add(matched_domain)
                 if preferred_urls:
                     final_urls = preferred_urls[:self.max_results] + [u for u in final_urls if u not in preferred_urls]
-                    logger.info(
-                        f"Boosted preferred domain URLs: {preferred_urls[:2]}")
+                    logger.info(f"Boosted preferred domain URLs (one per domain): {preferred_urls[:self.max_results]}")
         if direct_scored:
             final_urls = list(dict.fromkeys(direct_scored + final_urls))
             logger.info(f"Merged direct + broad URLs: {final_urls}")
