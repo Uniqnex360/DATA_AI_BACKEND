@@ -576,7 +576,7 @@ class SmartSearchService(ISearchService):
                     and self.is_likely_pdp_url(r['url'])
                 ]
                 if preferred_urls:
-                    final_urls = preferred_urls[:2] + \
+                    final_urls = preferred_urls[:self.max_results] + \
                         [u for u in final_urls if u not in preferred_urls]
                     logger.info(
                         f"Boosted preferred domain URLs: {preferred_urls[:2]}")
