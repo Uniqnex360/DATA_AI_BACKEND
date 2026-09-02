@@ -360,7 +360,8 @@ class SmartSearchService(ISearchService):
             for d in domains:
                 try:
                     res = await self.searxng._search(f"site:{d} {query_no_site}")
-                    per_site_results.append(res or [])
+                    res = [r for r in (res or []) if d in r.get('url', '').lower()]  
+                    per_site_results.append(res)
                     logger.info(f"Per-site search '{d}': {len(res or [])} results")
                 except Exception as e:
                     logger.warning(f"Per-site search failed for {d}: {e}")
