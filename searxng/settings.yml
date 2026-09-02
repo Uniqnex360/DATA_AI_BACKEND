@@ -1,6 +1,6 @@
-# settings.yml
+# settings.yml - Complete fixed configuration
 
-use_default_settings: false 
+use_default_settings: true
 
 server:
   secret_key: "12121123123"
@@ -9,76 +9,75 @@ server:
 
 search:
   safe_search: 0
-  default_lang: "en"
+  default_lang: "en"              # ← Forces English results
   formats:
     - html
     - json
 
 outgoing:
-  request_timeout: 15.0
+  request_timeout: 10.0
   useragent_suffix: ""
   pool_connections: 100
   pool_maxsize: 20
   enable_http2: true
 
 engines:
-  # ── DISABLED (all blocked/CAPTCHA'd) ────────────────
+  # ── GOOGLE ──────────────────────────────────────────
   - name: google
     engine: google
     shortcut: g
-    categories: general
-    disabled: true
+    language: "en"
+    region: "en-US"
+    safesearch: 0
+    timeout: 10
+    weight: 2                     # ← Higher weight = more trusted
+    disabled: false
 
-  - name: brave
-    engine: brave
-    shortcut: brave
-    categories: general
-    disabled: true
-
-  # ── BING (primary) ──────────────────────────────────
+  # ── BING ────────────────────────────────────────────
   - name: bing
     engine: bing
     shortcut: b
-    categories: general
-    timeout: 15.0
-    weight: 3
+    language: "en"
+    region: "en-US"
+    safesearch: 0
+    timeout: 10
+    weight: 2
     disabled: false
 
-  # ── DUCKDUCKGO (reliable, no CAPTCHA) ───────────────
+  # ── DUCKDUCKGO ──────────────────────────────────────
   - name: duckduckgo
     engine: duckduckgo
     shortcut: ddg
-    categories: general
-    timeout: 15.0
-    weight: 2
-    disabled: false
-
-  # ── MOJEEK (independent crawler) ────────────────────
-  - name: mojeek
-    engine: mojeek
-    shortcut: mj
-    categories: general
-    timeout: 15.0
-    weight: 2
-    disabled: false
-    base_url: https://www.mojeek.com
-
-  # ── WIKIPEDIA (for brand/product info) ──────────────
-  - name: wikipedia
-    engine: wikipedia
-    shortcut: wp
-    categories: general
-    timeout: 15.0
+    language: "en"
+    safesearch: 0
+    timeout: 10
     weight: 1
     disabled: false
 
-  # ── IMAGES ──────────────────────────────────────────
-  - name: google images
-    engine: google_images
-    categories: images
+  # ── BRAVE ───────────────────────────────────────────
+  - name: brave
+    engine: brave
+    shortcut: brave
+    region: "en-US"
+    safesearch: 0
+    timeout: 10
+    weight: 1
     disabled: false
 
+  # ── GOOGLE IMAGES (for product images) ──────────────
+  - name: google images
+    engine: google_images
+    shortcut: gimg
+    language: "en"
+    region: "en-US"
+    timeout: 10
+    disabled: false
+
+  # ── BING IMAGES ─────────────────────────────────────
   - name: bing images
     engine: bing_images
-    categories: images
+    shortcut: bimg
+    language: "en"
+    region: "en-US"
+    timeout: 10
     disabled: false
