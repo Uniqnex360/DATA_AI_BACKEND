@@ -1,7 +1,5 @@
 # settings.yml
 
-# CRITICAL FIX 1: Set to false. 
-# If true, SearXNG uses 50+ other engines that ignore your "site:" filters.
 use_default_settings: false 
 
 server:
@@ -17,44 +15,73 @@ search:
     - json
 
 outgoing:
-  request_timeout: 10.0
+  request_timeout: 15.0
   useragent_suffix: ""
   pool_connections: 100
   pool_maxsize: 20
   enable_http2: true
 
 engines:
-  # ── GOOGLE ──────────────────────────────────────────
-  # Best at respecting "site:domain.com"
+  # ── DISABLED (all blocked/CAPTCHA'd) ────────────────
   - name: google
     engine: google
     shortcut: g
     categories: general
-    timeout: 10
-    weight: 3
-    disabled: false
+    disabled: true
 
-  # ── BING ────────────────────────────────────────────
-  - name: bing
-    engine: bing
-    shortcut: b
-    categories: general
-    timeout: 10
-    weight: 2
-    disabled: false
-
-  # ── BRAVE ───────────────────────────────────────────
-  # Very strict with SKU and MPN matching
   - name: brave
     engine: brave
     shortcut: brave
     categories: general
-    timeout: 10
+    disabled: true
+
+  # ── BING (primary, may be rate-limited) ─────────────
+  - name: bing
+    engine: bing
+    shortcut: b
+    categories: general
+    timeout: 15.0
+    weight: 3
+    disabled: false
+
+  # ── DUCKDUCKGO (reliable, no CAPTCHA) ───────────────
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+    categories: general
+    timeout: 15.0
+    weight: 2
+    disabled: false
+
+  # ── MOJEEK (independent crawler, great for products) ─
+  - name: mojeek
+    engine: mojeek
+    shortcut: mj
+    categories: general
+    timeout: 15.0
+    weight: 2
+    disabled: false
+    base_url: https://www.mojeek.com
+
+  # ── QWANT (European, good for technical specs) ──────
+  - name: qwant
+    engine: qwant
+    shortcut: qw
+    categories: general
+    timeout: 15.0
+    weight: 1
+    disabled: false
+
+  # ── WIKIPEDIA (for brand/product info) ──────────────
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: wp
+    categories: general
+    timeout: 15.0
     weight: 1
     disabled: false
 
   # ── IMAGES ──────────────────────────────────────────
-  # Keep these separate from the "general" product search
   - name: google images
     engine: google_images
     categories: images
