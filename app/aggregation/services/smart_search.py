@@ -524,7 +524,7 @@ class SmartSearchService(ISearchService):
         - A URL like dewalt.com/ or dewalt.com/products IS NOT acceptable
         - PREFER: specific product pages with the MPN in the URL, manufacturer official product pages, industrial distributors, PDF datasheets
         - If fewer than {self.max_results} good URLs exist, return only the valid ones — do not pad with irrelevant URLs
-        - PREFER DOMAIN DIVERSITY: if multiple distinct retailer domains each have a valid product-specific page, include at least one URL per domain (up to {self.max_results}) rather than multiple pages from the same domain
+        - MANDATORY DOMAIN DIVERSITY: If results exist from more than one retailer domain in the WEB SEARCH RESULTS above, you MUST include at least one URL from each distinct domain in your selection (as long as it's a valid product page), even if one domain's match is stronger. Do not select multiple URLs from the same domain unless no other domain has a valid candidate.
         Return a JSON object with:
         - "selected_urls": list of chosen web URLs (empty list if none are relevant)
         - "candidate_image_urls": list of image URLs matching this product (max 3)
