@@ -361,12 +361,15 @@ class SmartSearchService(ISearchService):
                 try:
                     res = await self.searxng._search(f"site:{d} {query_no_site}")
                     res = [r for r in (res or []) if d in r.get('url', '').lower()]
-                    if not res:
+                    has_pdp_candidate = any(self.is_likely_pdp_url(r.get('url', '')) for r in res)
+                    if not res or not has_pdp_candidate:
                         simple_query = f"site:{d} {brand} {mpn}"
-                        logger.info(f"Per-site '{d}' got 0 results, retrying simple: {simple_query}")
+                        logger.info(f"Per-site '{d}' got {len(res)} results but no PDP candidate, retrying simple: {simple_query}")
                         await asyncio.sleep(0.3)
                         res_retry = await self.searxng._search(simple_query)
-                        res = [r for r in (res_retry or []) if d in r.get('url', '').lower()]
+                        res_retry = [r for r in (res_retry or []) if d in r.get('url', '').lower()]
+                        if res_retry:
+                            res = res_retry
                     per_site_results.append(res)
                     logger.info(f"Per-site search '{d}': {len(res)} results (domain-filtered)")
                 except Exception as e:
