@@ -115,7 +115,10 @@ class SmartSearchService(ISearchService):
         parsed = urlparse(url)
         url_lower = (parsed.scheme + "://" +
                      parsed.netloc + parsed.path).lower()
-        reject_patterns = [
+        # NEW
+        import re
+
+        reject_path_patterns = [
             '/lighting/', '/sale', '/january-sale',
             '/collections/', '/brands/',
             '/search', '/category',
@@ -129,19 +132,27 @@ class SmartSearchService(ISearchService):
             '/blog/', '/news/', '/articles/',
             '/journal/', '/editorial/',
             'social-stories', 'social+stories',
-            'forum', 'topic', 'thread', 'community', 'answers',
-            'how-to', 'wiki', 'recipe', 'brewing', 'download', 'article',
-            'member', 'trophies', '/pages/',
+            '/pages/',
             '/styles',
             '/compliance-',
             '/materials',
             '/reviews/', '/review/', '/ratings/', '/rating/',
-    '/q-and-a/', '/questions-and-answers/', '/write-a-review',
+            '/q-and-a/', '/questions-and-answers/', '/write-a-review',
         ]
-        if any(p in url_lower for p in reject_patterns):
-            logger.info(
-                f"   Rejected PDP check (category/sale pattern): {url}")
+        reject_word_patterns = [
+            'forum', 'topic', 'thread', 'community', 'answers',
+            'how-to', 'wiki', 'recipe', 'brewing', 'download', 'article',
+            'member', 'trophies',
+        ]
+
+        if any(p in url_lower for p in reject_path_patterns):
+            logger.info(f"   Rejected PDP check (category/sale pattern): {url}")
             return False
+
+        for w in reject_word_patterns:
+            if re.search(rf'(?<![a-z0-9]){re.escape(w)}(?![a-z0-9])', url_lower):
+                logger.info(f"   Rejected PDP check (word match '{w}'): {url}")
+                return False
         path_segments = [s for s in parsed.path.strip('/').split('/') if s]
         generic_keywords = ['lighting', 'lanterns', 'pendant', 'wall-lights', 'ceiling-lights',
                             'outdoor', 'indoor', 'task', 'sale', 'collection', 'category',
@@ -337,15 +348,33 @@ class SmartSearchService(ISearchService):
                     f"Targeted query (no site: fallback): {targeted_query_no_site}")
         has_site_restriction = 'site:' in targeted_query_str
 
+        # NEW
         if has_site_restriction:
-            targeted_task = self.searxng._search(targeted_query_str)
+            site_matches = re.findall(r'site:(\S+)', targeted_query_str)
+            domains = [d.replace('www.', '') for d in site_matches]
+            query_no_site = re.sub(r'site:\S+\s*', '', targeted_query_str).strip()
+            query_no_site = re.sub(r'\bOR\b', '', query_no_site).strip()
+            query_no_site = re.sub(r'\s+', ' ', query_no_site)
+
+            per_site_tasks = [
+                self.searxng._search(f"site:{d} {query_no_site}")
+                for d in domains
+            ]
             search_id = mpn if is_mpn_valid else title
             image_task = self.searxng.search_images(f"{brand} {search_id}")
-            targeted_results, image_results = await asyncio.gather(
-                targeted_task, image_task, return_exceptions=True
-            )
+
+            gathered = await asyncio.gather(*per_site_tasks, image_task, return_exceptions=True)
+            per_site_results, image_results = gathered[:-1], gathered[-1]
+
+            targeted_results = []
+            for site_res in per_site_results:
+                if isinstance(site_res, Exception):
+                    logger.warning(f"Per-site search failed: {site_res}")
+                    continue
+                targeted_results.extend(site_res or [])
+
             web_results = []
-            logger.info("Taxonomy/category prompt restricts to specific sites — skipping open web search")
+            logger.info(f"Taxonomy/category prompt restricts to specific sites — ran {len(domains)} per-site searches: {domains}")
         else:
             web_task = self.searxng._search(base_query)
             targeted_task = self.searxng._search(targeted_query_str)
