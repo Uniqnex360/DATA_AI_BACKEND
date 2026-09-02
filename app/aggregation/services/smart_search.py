@@ -545,6 +545,17 @@ class SmartSearchService(ISearchService):
                 if hallucinated:
                     logger.warning(f"Removed {hallucinated} hallucinated URLs")
                 pdp_filtered = [u for u in filtered if self.is_likely_pdp_url(u)]
+                from urllib.parse import urlparse
+                seen_domains = {urlparse(u).netloc.replace('www.', '') for u in pdp_filtered}
+                all_pdp_candidates = [r['url'] for r in web_results if self.is_likely_pdp_url(r['url'])]
+                for cand in all_pdp_candidates:
+                    dom = urlparse(cand).netloc.replace('www.', '')
+                    if dom not in seen_domains and len(pdp_filtered) < self.max_results:
+                        pdp_filtered.append(cand)
+                        seen_domains.add(dom)
+                        logger.info(f"Force-added domain-diversity candidate: {cand}")
+
+                filtered = pdp_filtered
                 non_pdp_removed = len(filtered) - len(pdp_filtered)
                 if non_pdp_removed:
                     logger.info(f"Removed {non_pdp_removed} non-PDP URLs (reviews/ratings/etc.) after LLM selection")
