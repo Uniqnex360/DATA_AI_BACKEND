@@ -140,7 +140,7 @@ class SmartSearchService(ISearchService):
             '/q-and-a/', '/questions-and-answers/', '/write-a-review',
         ]
         reject_word_patterns = [
-            'forum', 'topic', 'thread', 'community', 'answers',
+            'forum', 'topic',  'community', 'answers',
             'how-to', 'wiki', 'recipe', 'brewing', 'download', 'article',
             'member', 'trophies',
         ]
