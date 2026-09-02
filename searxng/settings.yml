@@ -35,7 +35,7 @@ engines:
     categories: general
     disabled: true
 
-  # ── BING (primary, may be rate-limited) ─────────────
+  # ── BING (primary) ──────────────────────────────────
   - name: bing
     engine: bing
     shortcut: b
@@ -53,7 +53,7 @@ engines:
     weight: 2
     disabled: false
 
-  # ── MOJEEK (independent crawler, great for products) ─
+  # ── MOJEEK (independent crawler) ────────────────────
   - name: mojeek
     engine: mojeek
     shortcut: mj
@@ -62,15 +62,6 @@ engines:
     weight: 2
     disabled: false
     base_url: https://www.mojeek.com
-
-  # ── QWANT (European, good for technical specs) ──────
-  - name: qwant
-    engine: qwant
-    shortcut: qw
-    categories: general
-    timeout: 15.0
-    weight: 1
-    disabled: false
 
   # ── WIKIPEDIA (for brand/product info) ──────────────
   - name: wikipedia
