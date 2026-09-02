@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import logging
 from typing import Optional, List
 logger = logging.getLogger('extraction_prompts')
+
 SYMBOL_STRIPPING_RULE = """\
 ═══════════════════════════════════════════════════════
 SYMBOL STRIPPING — TRADEMARK/LEGAL MARKS
@@ -16,28 +17,126 @@ long_description, features, and every attribute name and value.
 - Example: "3M™ Scotch-Brite®" → "3M Scotch-Brite"
 This applies regardless of source — HTML text, JSON-LD data, spec tables, or PDFs.
 ═══════════════════════════════════════════════════════"""
+
+# def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
+#     soup = BeautifulSoup(html_content, "html.parser")
+#     idx = html_content.find('Ceiling Tile Style')
+#     if idx != -1:
+#         logger.info(f"[RAW CONTEXT DEBUG] Ceiling Tile Style context:\n{html_content[max(0,idx-300):idx+500]}")
+#     json_data = []
+#     for script in soup.find_all("script"):
+#         if script.get("type") in ["application/ld+json", "application/json"] or script.get("id") == "__NEXT_DATA__":
+#             content = script.string
+#             if content and len(content) > 100:
+#                 json_data.append(content)
+#     import json as _json
+#     for jd in json_data[:]:
+#         try:
+#             data = _json.loads(jd)
+#             props = data.get('additionalProperty', [])
+#             if props:
+#                 lines = []
+#                 for p in props:
+#                     name = p.get('name', '')
+#                     value = p.get('value', '')
+#                     if name and value:
+#                         lines.append(f"{name}: {value}")
+#                 if lines:
+#                     json_data.append('\n'.join(lines))
+#         except:
+#             pass
+#     for tag in soup(["script", "style", "noscript", "svg"]):
+#         tag.decompose()
+#     sections = []
+#     if json_data:
+#         json_data_sorted = sorted(json_data, key=len)
+#         for jd in json_data_sorted:
+#             if len(jd) < 50000:
+#                 sections.append(jd)
+#     for table in soup.find_all("table"):
+#         rows = table.find_all("tr")
+#         if len(rows) >= 3:
+#             sections.append(str(table))
+#     for dl in soup.find_all("dl"):
+#         if len(dl.find_all("dt")) >= 2:
+#             sections.append(str(dl))
+#     for div in soup.find_all("div"):
+#         children = div.find_all(["div", "span", "p"], recursive=False)
+#         if len(children) >= 4:
+#             texts = [c.get_text(strip=True)
+#                      for c in children if c.get_text(strip=True)]
+#             if len(texts) >= 4 and len(" ".join(texts)) < 6000:
+#                 sections.append(str(div))
+#     feature_keywords = ["feature", "highlight",
+#                         "benefit", "selling-point", "key-point"]
+#     for section in soup.find_all(['section', 'div']):
+#         elem_id = (section.get('id') or '').lower()
+#         elem_class = ' '.join(section.get('class') or []).lower()
+#         combined = f"{elem_id} {elem_class}"
+#         if any(k in combined for k in feature_keywords):
+#             text = section.get_text(separator='\n', strip=True)
+#             if 100 < len(text) < 15000:
+#                 sections.append(str(section))
+#                 logger.info(
+#                     f"Captured features section: id='{elem_id}' class='{elem_class}' len={len(text)}")
+#     unique_sections = list(dict.fromkeys(sections))
+#     content = "\n\n".join(unique_sections[:max_sections])
+#     non_json_content = "\n\n".join(
+#         s for s in unique_sections[:max_sections] if not s.strip().startswith('{'))
+#     if len(non_json_content.strip()) < 5000 and len(html_content) > 100000:
+#         raw_text = soup.get_text(separator="\n", strip=True)
+#         if len(raw_text) > 100:
+#             content = f"RAW PAGE TEXT (Fallback):\n{raw_text[:50000]}"
+#             logger.info(
+#                 f"Using raw text fallback: {len(raw_text[:50000])} chars")
+#     logger.info(f"[SPEC CAPTURE DEBUG] total unique sections captured: {len(unique_sections)}")
+#     for i, s in enumerate(unique_sections[:max_sections]):
+#         preview = s[:200].replace("\n", " ")
+#         logger.info(f"[SPEC CAPTURE DEBUG] section[{i}] len={len(s)} preview={preview}")
+    
+#     # NEW: check specific missing fields against raw html BEFORE any truncation
+#     check_fields = ["Ceiling Tile Style", "Approximate Size", "Color Family",
+#                      "Commercial/Residential", "Pack Size", "Returnable", "Warranty"]
+#     for field in check_fields:
+#         logger.info(f"[SPEC CAPTURE DEBUG] '{field}' in raw html_content: {field in html_content}")
+#         logger.info(f"[SPEC CAPTURE DEBUG] '{field}' in captured sections (pre-truncate): {any(field in s for s in unique_sections)}")
+
+#     content = "\n\n".join(unique_sections[:max_sections])
+            
+#     MAX_CHARS = 120000
+#     return content[:MAX_CHARS]
 def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
     from bs4 import BeautifulSoup
     import json as _json
     import re
+    
     soup = BeautifulSoup(html_content, "html.parser")
+
     idx = html_content.find('Ceiling Tile Style')
     if idx != -1:
         logger.info(f"[RAW CONTEXT DEBUG] Ceiling Tile Style context:\n{html_content[max(0,idx-300):idx+500]}")
+
+    # ✅ DEFINE sections IMMEDIATELY — before anything appends to it
     sections = []
+
+    # Collect JSON scripts
     json_data = []
     for script in soup.find_all("script"):
         if script.get("type") in ["application/ld+json", "application/json"] or script.get("id") == "__NEXT_DATA__":
             content = script.string
             if content and len(content) > 100:
                 json_data.append(content)
+
+    # === Parse structured specs (JSON-LD + React) ===
     parsed_specs_lines = []
+
     for jd in json_data[:]:
         try:
             data = _json.loads(jd)
             if isinstance(data, list):
                 for item in data:
                     if isinstance(item, dict):
+                        # Check @graph within list items
                         if '@graph' in item:
                             for node in item['@graph']:
                                 if isinstance(node, dict):
@@ -49,6 +148,8 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
                                                 value = (p.get('value', '') or '').strip()
                                                 if name and value:
                                                     parsed_specs_lines.append(f"{name}: {value}")
+                        
+                        # Regular additionalProperty
                         props = item.get('additionalProperty', [])
                         if isinstance(props, list):
                             for p in props:
@@ -57,7 +158,9 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
                                     value = (p.get('value', '') or '').strip()
                                     if name and value:
                                         parsed_specs_lines.append(f"{name}: {value}")
+                                        
             elif isinstance(data, dict):
+                # Check for @graph array (Schema.org graph structure)
                 if '@graph' in data:
                     for node in data['@graph']:
                         if isinstance(node, dict):
@@ -67,6 +170,8 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
                                 value = (p.get('value', '') or '').strip()
                                 if name and value:
                                     parsed_specs_lines.append(f"{name}: {value}")
+                
+                # Regular additionalProperty at root
                 props = data.get('additionalProperty', [])
                 if isinstance(props, list):
                     for p in props:
@@ -78,6 +183,8 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
         except Exception as e:
             logger.debug(f"Failed to parse JSON-LD: {e}")
             continue
+
+    # Parse Home Depot React specificationGroup
     spec_pattern = r'"__typename":"Specification","specName":"([^"]+)","specValue":"([^"]+)"'
     matches = re.findall(spec_pattern, html_content)
     for name, value in matches:
@@ -85,33 +192,50 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
         value_clean = value.strip()
         if name_clean and value_clean:
             parsed_specs_lines.append(f"{name_clean}: {value_clean}")
+
+    # Deduplicate while preserving order
     parsed_specs_lines = list(dict.fromkeys(parsed_specs_lines))
+
+    # ✅ NOW it's safe to append — sections is already defined
     if parsed_specs_lines:
         spec_block = "STRUCTURED PRODUCT SPECIFICATIONS (from JSON-LD / React):\n" + "\n".join(parsed_specs_lines)
         sections.append(spec_block)
         logger.info(f"[SPEC DEBUG] Added {len(parsed_specs_lines)} structured specs from JSON/React")
+
+    # Remove scripts/styles
     for tag in soup(["script", "style", "noscript", "svg"]):
         tag.decompose()
+
+    # Add raw JSON blocks (sorted by length) - but skip ones we already parsed to avoid duplication
     if json_data:
         json_data_sorted = sorted(json_data, key=len)
         for jd in json_data_sorted:
             if len(jd) < 50000:
+                # Skip if this JSON contains specs we already extracted (avoid duplication)
                 if '"specName"' in jd or '"additionalProperty"' in jd:
                     continue
                 sections.append(jd)
+
+    # Tables
     for table in soup.find_all("table"):
         rows = table.find_all("tr")
         if len(rows) >= 3:
             sections.append(str(table))
+
+    # Definition lists
     for dl in soup.find_all("dl"):
         if len(dl.find_all("dt")) >= 2:
             sections.append(str(dl))
+
+    # Divs with multiple children
     for div in soup.find_all("div"):
         children = div.find_all(["div", "span", "p"], recursive=False)
         if len(children) >= 4:
             texts = [c.get_text(strip=True) for c in children if c.get_text(strip=True)]
             if len(texts) >= 4 and len(" ".join(texts)) < 6000:
                 sections.append(str(div))
+
+    # Feature sections
     feature_keywords = ["feature", "highlight", "benefit", "selling-point", "key-point"]
     for section in soup.find_all(['section', 'div']):
         elem_id = (section.get('id') or '').lower()
@@ -122,30 +246,40 @@ def extract_high_signal_specs(html_content: str, max_sections: int = 25) -> str:
             if 100 < len(text) < 15000:
                 sections.append(str(section))
                 logger.info(f"Captured features section: id='{elem_id}' class='{elem_class}' len={len(text)}")
+
     unique_sections = list(dict.fromkeys(sections))
     content = "\n\n".join(unique_sections[:max_sections])
+
     non_json_content = "\n\n".join(s for s in unique_sections[:max_sections] if not s.strip().startswith('{'))
     if len(non_json_content.strip()) < 5000 and len(html_content) > 100000:
         raw_text = soup.get_text(separator="\n", strip=True)
         if len(raw_text) > 100:
             content = f"RAW PAGE TEXT (Fallback):\n{raw_text[:50000]}"
             logger.info(f"Using raw text fallback: {len(raw_text[:50000])} chars")
+
     logger.info(f"[SPEC CAPTURE DEBUG] total unique sections captured: {len(unique_sections)}")
     for i, s in enumerate(unique_sections[:max_sections]):
         preview = s[:200].replace("\n", " ")
         logger.info(f"[SPEC CAPTURE DEBUG] section[{i}] len={len(s)} preview={preview}")
+
     check_fields = ["Ceiling Tile Style", "Approximate Size", "Color Family",
                     "Commercial/Residential", "Pack Size", "Returnable", "Warranty"]
+    
+    # Check in raw HTML
     for field in check_fields:
         logger.info(f"[SPEC CAPTURE DEBUG] '{field}' in raw html_content: {field in html_content}")
         logger.info(f"[SPEC CAPTURE DEBUG] '{field}' in captured sections (pre-truncate): {any(field in s for s in unique_sections)}")
+    
+    # Check specifically in parsed specs
     if parsed_specs_lines:
         spec_block_text = "\n".join(parsed_specs_lines)
         for field in check_fields:
             if field in spec_block_text:
                 logger.info(f"[SPEC CAPTURE DEBUG] '{field}' in PARSED specs: True")
+
     MAX_CHARS = 120000
     return content[:MAX_CHARS]
+
 def extract_product_descriptions(html_content: str) -> str:
     from bs4 import BeautifulSoup
     soup = BeautifulSoup(html_content, "html.parser")
@@ -194,6 +328,8 @@ def extract_product_descriptions(html_content: str) -> str:
         if len(raw_text) > 100:
             desc_text = raw_text
     return desc_text[:10000]
+
+
 def try_paired_feature_benefit_lists(soup) -> List[str]:
     headings = soup.find_all(
         ['h1', 'h2', 'h3', 'h4', 'h5', 'p', 'strong', 'b'])
@@ -204,7 +340,9 @@ def try_paired_feature_benefit_lists(soup) -> List[str]:
             candidate = h.find_next(['ul', 'ol'])
             if candidate:
                 features_list = [
+                    # fixed: 'separator' not 'seperator'
                     li.get_text(separator=' ', strip=True)
+                    # fixed: recursive=False
                     for li in candidate.find_all('li', recursive=False)
                 ]
         elif text in ('benefit', 'benefits'):
@@ -221,27 +359,15 @@ def try_paired_feature_benefit_lists(soup) -> List[str]:
     if features_list and benefits_list and len(features_list) == len(benefits_list):
         logger.info(
             f"Paired feature/benefit lists detected: {len(features_list)} pairs")
+        # fixed: real f-string
         return [f"{f} — {b}" for f, b in zip(features_list, benefits_list)]
     logger.debug(
         f"Feature/Benefit pairing skipped: "
         f"feature_list={len(features_list or [])}, benefit_list={len(benefits_list or [])} (count mismatch or missing)"
     )
     return []
-PROMO_BLACKLIST = [
-    'free delivery', 'free shipping', 'qualifying online purchase',
-    'exclusive offer', 'instant saving', 'download bonus', 'ace app',
-    'reward', 'points earned', 'sign up', 'membership',
-    'financing', 'payment option', 'installment',
-    'in stock', 'chat with', 'live chat', 'phone support',
-    'return policy', 'hassle free return', '90-day return',
-    'right part pledge', 'restocking fee'
-]
 
-SECTION_BLACKLIST = ['rewards', 'loyalty', 'membership', 'signup', 'newsletter', 'subscribe']
 
-def _is_promo_text(text: str) -> bool:
-    t = text.lower()
-    return any(kw in t for kw in PROMO_BLACKLIST)
 def extract_features_section(html_content: str, max_features: int = 20, max_li_search: int = 1000) -> List[str]:
     if not html_content:
         logger.warning("extract_features_section: Empty html_content provided")
@@ -288,8 +414,7 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
                                     if (feature_text and
                                         len(feature_text) > 10 and
                                         len(feature_text) < 500 and
-                                                    feature_text not in seen and
-        not _is_promo_text(feature_text)):
+                                            feature_text not in seen):
                                         features.append(feature_text)
                                         seen.add(feature_text)
                                         logger.debug(
@@ -330,8 +455,6 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
                 try:
                     section_id = feature_section.get('id', '')
                     section_class = ' '.join(feature_section.get('class', []))
-                    if any(b in section_class.lower() or b in section_id.lower() for b in SECTION_BLACKLIST):
-                        continue
                     logger.debug(
                         f"Strategy 2: Found feature section - id='{section_id}' class='{section_class}'")
                     lis = feature_section.find_all('li')[:max_li_search]
@@ -342,8 +465,7 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
                             if (feature_text and
                                 len(feature_text) > 10 and
                                 len(feature_text) < 500 and
-                                            feature_text not in seen and
-        not _is_promo_text(feature_text)):
+                                    feature_text not in seen):
                                 features.append(feature_text)
                                 seen.add(feature_text)
                                 strategy2_found = True
@@ -376,6 +498,10 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
                     levels = 0
                     while parent and levels < 3:
                         try:
+                            # parent_text += (parent.get_text(strip=True)
+                            #                 or '').lower() + " "
+                            # parent = parent.find_parent()
+                            # levels += 1
                             heading_tags = parent.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'strong', 'b'], recursive=False)
                             heading_text = " ".join(h.get_text(strip=True) or '' for h in heading_tags).lower()
                             class_id_text = f"{parent.get('id','')} {' '.join(parent.get('class') or [])}".lower()
@@ -390,12 +516,6 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
                         'feature', 'benefit', 'highlight', 'why choose', 'key point', 'selling point']
                     has_feature_context = any(
                         k in parent_text for k in feature_keywords)
-                    feature_keywords = [
-                        'feature', 'benefit', 'highlight', 'why choose', 'key point', 'selling point']
-                    has_feature_context = any(
-                        k in parent_text for k in feature_keywords)
-                    if any(b in parent_text for b in SECTION_BLACKLIST):
-                        continue
                     if has_feature_context:
                         logger.debug(
                             f"Strategy 3: Found ul/ol with feature context at list index {ul_idx}")
@@ -408,8 +528,7 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
                                 if (feature_text and
                                     len(feature_text) > 10 and
                                     len(feature_text) < 500 and
-                                                feature_text not in seen and
-        not _is_promo_text(feature_text)):
+                                        feature_text not in seen):
                                     features.append(feature_text)
                                     seen.add(feature_text)
                                     strategy3_found = True
@@ -447,6 +566,8 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
         logger.error(
             f"extract_features_section: Unexpected error: {e}", exc_info=True)
         return []
+
+
 def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: str,
                             primary_attributes: list, html_content: str,
                             candidate_images: Optional[List[str]] = None, source_url: str = "") -> dict:
@@ -486,8 +607,7 @@ def build_extraction_prompt(product_name: str, mpn: str, brand: str, taxonomy: s
         primary_attrs_display = "\n".join(
             [f"  {i+1}. {attr}" for i, attr in enumerate(primary_list)])
         spec_content = extract_high_signal_specs(html_content)
-        _spec_section_count = len(spec_content.split("\n\n"))
-        logger.info(f"[SPEC DEBUG] Captured sections count: {_spec_section_count}")
+        logger.info(f"[SPEC DEBUG] Captured sections count: {len(spec_content.split('\\n\\n'))}")
         logger.info(f"[SPEC DEBUG] First 1000 chars: {spec_content[:1000]}")
         logger.info(f"[SPEC DEBUG] Contains 'Product Height': {'Product Height' in spec_content}")
         logger.info(f"[SPEC DEBUG] Contains 'Package Quantity': {'Package Quantity' in spec_content}")
@@ -563,8 +683,9 @@ CRITICAL: DISTRIBUTOR/RETAILER METADATA EXCLUSION
 ═══════════════════════════════════════════════════════
 The following fields are distributor, retailer, customer-service, or
 website metadata. They are NOT product technical specifications.
+
 DO NOT extract:
-- Item 
+- Item #
 - Item No.
 - Item Number
 - Distributor Item Number
@@ -590,8 +711,9 @@ DO NOT extract:
 - Out of Stock
 - Stock Level
 - Units Available
+
 Examples:
-- "Item 
+- "Item #: 5395850" → SKIP
 - "Return Fees: 15%" → SKIP
 - "Return Method: Mail" → SKIP
 - "Return Policy: 30 Days" → SKIP
@@ -600,14 +722,17 @@ Examples:
 - "In Stock: Yes" → SKIP
 - "Availability: 12 units" → SKIP
 - "Stock Status: Available" → SKIP
+
 IMPORTANT:
 Do not confuse customer/store ratings with technical ratings.
+
 Technical product ratings must still be extracted:
 - "Voltage Rating: 600 V" → EXTRACT
 - "Pressure Rating: 150 psi" → EXTRACT
 - "IP Rating: IP65" → EXTRACT
 - "Fire Rating: Class A" → EXTRACT
 - "Power Rating: 100 W" → EXTRACT
+
 This exclusion overrides instructions to extract all attributes.
 ═══════════════════════════════════════════════════════
         The HTML may use DIFFERENT words than the PRIMARY ATTRIBUTES list.
@@ -756,18 +881,22 @@ This exclusion overrides instructions to extract all attributes.
 🚫 FEATURES EXCLUSION RULES — CHECK FIRST, ALWAYS 🚫
 ═══════════════════════════════════════════════════════
 BEFORE extracting ANY text as a "feature", check if it contains these topics:
+
 ❌ SHIPPING: "Free Shipping", "Ships same day", "Delivery", "$50 ship free"
 ❌ FINANCING: "Revolving Financing", "29.99%", "Payment options", "Installments"  
 ❌ STOCK: "In Stock", "Available", "Inventory Status"
 ❌ CUSTOMER SERVICE: "Chat with Experts", "Phone support", "Live Chat"
 ❌ POLICIES: "Right Part Pledge", "Hassle Free Returns", "90-day returns"
+
 IF ANY of these topics appear → SKIP that text entirely. 
 These are website boilerplate, NOT product features.
+
 ✅ ONLY extract actual product characteristics:
 - "16-inch diameter wheel assembly"
 - "Replaces part numbers 734-0591, 734-0765"  
 - "Heavy-duty steel construction"
 - "Fits Cub Cadet lawn tractors"
+
 REMEMBER: Product features describe the PHYSICAL ITEM, not the shopping experience.
 ═══════════════════════════════════════════════════════
        CONTENT FOR EXTRACTION:
@@ -955,6 +1084,7 @@ REMEMBER: Product features describe the PHYSICAL ITEM, not the shopping experien
   "long_description": "3-5 sentences or null",
     "upc": "12-digit UPC code or null",
   "ean": "13-digit EAN code or null",
+
   "features": ["feature 1", ...],
   "attributes": [
     {{"name": "Attribute Name", "value": "value", "unit": "unit or null", "confidence": 0.95}}
@@ -974,6 +1104,8 @@ REMEMBER: Product features describe the PHYSICAL ITEM, not the shopping experien
     except Exception as e:
         logger.error(f"Build_extraction_prompt failed: {e}")
         return None
+
+
 def build_pdf_extraction_prompt(
     product_name: str,
     mpn: str,
@@ -1082,11 +1214,12 @@ Before extracting ANY attribute, check its name:
 - Example: "Ship Weight: 13.6 lb" → SKIP, do not extract
 - Example: "Shipping Weight: 13.5 lb" → SKIP, do not extract
 - Example: "Product Weight: 11.5 lb" → EXTRACT (product spec, not shipping)
-- Distributor/retailer Item 
+- Distributor/retailer Item # or Item Number
 - Return fees, return methods, return policies, and refund policies
 - Customer ratings, review ratings, star ratings, and seller ratings
 ═══════════════════════════════════════════════════════
 {SYMBOL_STRIPPING_RULE}
+
 ═══════════════════════════════════════════════════════
 RULE 5: WHAT TO EXTRACT
 ═══════════════════════════════════════════════════════
