@@ -1,6 +1,8 @@
-# settings.yml - Complete fixed configuration
+# settings.yml
 
-use_default_settings: true
+# CRITICAL FIX 1: Set to false. 
+# If true, SearXNG uses 50+ other engines that ignore your "site:" filters.
+use_default_settings: false 
 
 server:
   secret_key: "12121123123"
@@ -9,7 +11,7 @@ server:
 
 search:
   safe_search: 0
-  default_lang: "en"              # ← Forces English results
+  default_lang: "en"
   formats:
     - html
     - json
@@ -23,61 +25,42 @@ outgoing:
 
 engines:
   # ── GOOGLE ──────────────────────────────────────────
+  # Best at respecting "site:domain.com"
   - name: google
     engine: google
     shortcut: g
-    language: "en"
-    region: "en-US"
-    safesearch: 0
+    categories: general
     timeout: 10
-    weight: 2                     # ← Higher weight = more trusted
+    weight: 3
     disabled: false
 
   # ── BING ────────────────────────────────────────────
   - name: bing
     engine: bing
     shortcut: b
-    language: "en"
-    region: "en-US"
-    safesearch: 0
+    categories: general
     timeout: 10
     weight: 2
     disabled: false
 
-  # ── DUCKDUCKGO ──────────────────────────────────────
-  - name: duckduckgo
-    engine: duckduckgo
-    shortcut: ddg
-    language: "en"
-    safesearch: 0
-    timeout: 10
-    weight: 1
-    disabled: false
-
   # ── BRAVE ───────────────────────────────────────────
+  # Very strict with SKU and MPN matching
   - name: brave
     engine: brave
     shortcut: brave
-    region: "en-US"
-    safesearch: 0
+    categories: general
     timeout: 10
     weight: 1
     disabled: false
 
-  # ── GOOGLE IMAGES (for product images) ──────────────
+  # ── IMAGES ──────────────────────────────────────────
+  # Keep these separate from the "general" product search
   - name: google images
     engine: google_images
-    shortcut: gimg
-    language: "en"
-    region: "en-US"
-    timeout: 10
+    categories: images
     disabled: false
 
-  # ── BING IMAGES ─────────────────────────────────────
   - name: bing images
     engine: bing_images
-    shortcut: bimg
-    language: "en"
-    region: "en-US"
-    timeout: 10
+    categories: images
     disabled: false
