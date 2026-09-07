@@ -44,7 +44,6 @@ async def update_product_images(product: Product, result: Dict[str, Any]) -> Non
             if not img_url:
                 continue
             
-            # ✅ ACTUAL NETWORK VALIDATION (same as your old code)
             is_valid = await validate_image_url(img_url)
             
             if is_valid:
@@ -59,6 +58,24 @@ async def update_product_images(product: Product, result: Dict[str, Any]) -> Non
             logger.warning(f"⚠ No valid image assets found after validation for {product.product_code}")
     else:
         logger.warning(f"⚠ No image assets provided in result for {product.product_code}")
+def apply_aggregation_failure(product:Product,link:ProjectProductLink,error_type:str,error_message:str,db_session:AsyncSession)->None:
+    has_existing_data=bool(product.attributes) and product.completeness_score>0
+    product.failure_reason=f"{error_type}:{error_message}"[:1000]
+    product.failed_at=now_ist()
+    if has_existing_data:
+        logger.info(
+            f"{product.product_code} aggregation attempt failed, but existing data present "
+            f"(completeness={product.completeness_score}%) — keeping as completed, not failed."
+        )
+        product.enrichment_status='completed'
+        link.enrichment_status='completed'
+    else:
+        product.enrichment_status='failed'
+        product.completeness_score=0.0
+        product.data_quality_score=0.0
+        link.enrichment_status='failed'
+    db_session.add(link)
+    db_session.add(product)
 async def update_project_status(db_session: AsyncSession, project_id: str) -> None:
     stmt = select(
         func.count(Product.id).label("total"),
@@ -665,12 +682,7 @@ async def get_product_attributes_for_aggregation(
     db: AsyncSession,
     product: Product
 ) -> tuple[List[str], Dict[str, Dict[str, str]]]:
-    """
-    Get primary attribute names and existing data for a product.
-    Returns: (primary_attr_names, existing_data)
-    - primary_attr_names: category attrs + product attrs (deduplicated)
-    - existing_data: {attr_name: {value, uom}}
-    """
+  
     primary_attr_names = []
     existing_data = {}
     if product.category_id:
@@ -1112,22 +1124,22 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                             'reason', 'Unknown aggregation error')
                         error_type = aggregation_result.get(
                             'error_type', 'AggregationError')
-                        product.enrichment_status = 'failed'
-                        product.failure_reason = f"{error_type}: {error_msg}"[:1000]
-                        product.failed_at=now_ist()
-                        link.enrichment_status = 'failed'
-                        db_session.add(link)
-                        db_session.add(product)
+                        # product.enrichment_status = 'failed'
+                        # product.failure_reason = f"{error_type}: {error_msg}"[:1000]
+                        # product.failed_at=now_ist()
+                        # link.enrichment_status = 'failed'
+                        # db_session.add(link)
+                        # db_session.add(product)
+                        apply_aggregation_failure(product, link, error_type, error_msg, db_session)
                         failed += 1
-                        db_session.add(product)
-                        await db_session.execute(
-                            update(ProjectProductLink)
-                            .where(
-                                ProjectProductLink.product_id == product.id,
-                                ProjectProductLink.project_id == job.project_id
-                            )
-                            .values(enrichment_status='failed')
-                        )
+                        # await db_session.execute(
+                        #     update(ProjectProductLink)
+                        #     .where(
+                        #         ProjectProductLink.product_id == product.id,
+                        #         ProjectProductLink.project_id == job.project_id
+                        #     )
+                        #     .values(enrichment_status='failed')
+                        # )
                         failed_products.append({
                             'sku': product.product_code,
                             'error': error_msg,
@@ -1140,12 +1152,14 @@ async def run_project_aggregation_task(job_id: str, llm_provider: str = 'openai'
                     error_msg = f"{type(e).__name__}: {str(e)[:500]}"
                     logger.error(
                         f"Error aggregating {product.product_code}: {error_msg}")
-                    product.enrichment_status = 'failed'
-                    product.failure_reason = error_msg
-                    product.failed_at = now_ist()
-                    link.enrichment_status = 'failed'
-                    db_session.add(link)
-                    db_session.add(product)
+                    apply_aggregation_failure(product, link, type(e).__name__, error_msg, db_session)
+
+                    # product.enrichment_status = 'failed'
+                    # product.failure_reason = error_msg
+                    # product.failed_at = now_ist()
+                    # link.enrichment_status = 'failed'
+                    # db_session.add(link)
+                    # db_session.add(product)
                     failed += 1
                     failed_products.append({
                         'sku': product.product_code,
@@ -1634,14 +1648,13 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
             else:
                 error_msg = result.get('reason', 'Unknown Error')
                 error_type = result.get('error_type', 'AggregationError')
-                product.enrichment_status = 'failed'
-                product.failure_reason = f"{error_type}: {error_msg}"[:1000]
-                product.failed_at = now_ist()
+                # product.enrichment_status = 'failed'
+                # product.failure_reason = f"{error_type}: {error_msg}"[:1000]
+                # product.failed_at = now_ist()
                 if link:
-                    link.enrichment_status = 'failed'
-                    db_session.add(link)
+                    apply_aggregation_failure(product, link, error_type, error_msg, db_session)
                 failure_reason = result.get('reason', 'Unknown Error')
-                db_session.add(product)
+                # db_session.add(product)
                 logger.error(
                     f"Single product aggregation failed: {product.product_code}. Reason: {failure_reason}")
             db_session.add(product)
@@ -1656,22 +1669,30 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
             error_msg = f"{type(e).__name__}: {str(e)[:500]}"
             logger.error(
                 f"Single product aggregation failed: {error_msg}", exc_info=True)
-            logger.error(f"Traceback: {traceback.format_exc()}")
             try:
                 product = await db_session.get(Product, product_id)
-                if product:
-                    product.enrichment_status = 'failed'
-                    product.failure_reason = error_msg
-                    product.failed_at = now_ist()
-                    if link:
-                        link.enrichment_status = 'failed'
-                        db_session.add(link)
-                    db_session.add(product)
+                if product and link:
+                    apply_aggregation_failure(product, link, type(e).__name__, str(e)[:500], db_session)
                     await db_session.commit()
-                    if link:
-                        await refresh_project_status(str(link.project_id))
+                    await refresh_project_status(str(link.project_id))
             except Exception:
                 pass
+            # logger.error(f"Traceback: {traceback.format_exc()}")
+            # try:
+            #     product = await db_session.get(Product, product_id)
+            #     if product:
+            #         product.enrichment_status = 'failed'
+            #         product.failure_reason = error_msg
+            #         product.failed_at = now_ist()
+            #         if link:
+            #             link.enrichment_status = 'failed'
+            #             db_session.add(link)
+            #         db_session.add(product)
+            #         await db_session.commit()
+            #         if link:
+            #             await refresh_project_status(str(link.project_id))
+            # except Exception:
+            #     pass
 worker_pool = get_worker_pool(process_function=run_single_product_aggregation)
 async def aggregate_with_retry(
     db_session,
