@@ -1,8 +1,37 @@
 # settings.yml - Complete fixed configuration
+#
+# CHANGED 2026-09-07:
+#   1. use_default_settings: true  ->  keep_only block
+#      `true` kept ~100 default engines active (openverse, unsplash, wikidata,
+#      academic aggregators). When google/bing/ddg/brave got CAPTCHA-blocked from
+#      this EC2 IP, those junk engines answered instead -- returning IMDb pages
+#      for "JER0840-12" and Brazilian history journals for "The Clapper buy".
+#      keep_only retains all other framework defaults but restricts the engine
+#      list to exactly the names below.
+#   2. Added mojeek + qwant: independent indexes that do NOT block datacenter IPs.
+#      With google/ddg/brave/startpage CAPTCHA'd, these are what will actually
+#      answer. Bing is currently the most tolerant of the big four.
+#   3. Added qwant images / duckduckgo images as image fallbacks.
+#   4. secret_key must be replaced -- see note below.
 
-use_default_settings: true
+use_default_settings:
+  engines:
+    keep_only:
+      # general web
+      - google
+      - bing
+      - duckduckgo
+      - brave
+      - mojeek
+      - qwant
+      # images (required by search_images())
+      - google images
+      - bing images
+      - duckduckgo images
+      - qwant images
 
 server:
+  # CHANGE THIS: openssl rand -hex 32
   secret_key: "12121123123"
   limiter: false
   image_proxy: false
@@ -16,13 +45,20 @@ search:
 
 outgoing:
   request_timeout: 10.0
+  max_request_timeout: 15.0
   useragent_suffix: ""
   pool_connections: 100
   pool_maxsize: 20
   enable_http2: true
+  # Uncomment with a residential/rotating proxy to unblock google/ddg/brave.
+  # This is the only way to make the big engines work from an EC2 IP.
+  # proxies:
+  #   all://:
+  #     - http://USER:PASS@PROXY_HOST:PORT
 
 engines:
   # ── GOOGLE ──────────────────────────────────────────
+  # CAPTCHA (suspended_time=3600) from this IP -- kept in case a proxy is added
   - name: google
     engine: google
     shortcut: g
@@ -34,6 +70,7 @@ engines:
     disabled: false
 
   # ── BING ────────────────────────────────────────────
+  # Most tolerant of the big four from datacenter IPs
   - name: bing
     engine: bing
     shortcut: b
@@ -45,6 +82,7 @@ engines:
     disabled: false
 
   # ── DUCKDUCKGO ──────────────────────────────────────
+  # Currently CAPTCHA + HTTP 403 from this IP
   - name: duckduckgo
     engine: duckduckgo
     shortcut: ddg
@@ -55,11 +93,34 @@ engines:
     disabled: false
 
   # ── BRAVE ───────────────────────────────────────────
+  # Rate-limited (suspended_time=180) from this IP
   - name: brave
     engine: brave
     shortcut: brave
     region: "en-US"
     safesearch: 0
+    timeout: 10
+    weight: 1
+    disabled: false
+
+  # ── MOJEEK ── NEW ───────────────────────────────────
+  # Independent crawler, does not block datacenter IPs.
+  # Lower recall on retail SKUs, but it answers.
+  - name: mojeek
+    engine: mojeek
+    shortcut: mjk
+    timeout: 10
+    weight: 1
+    disabled: false
+
+  # ── QWANT ── NEW ────────────────────────────────────
+  # Bing-backed with a separate quota
+  - name: qwant
+    engine: qwant
+    shortcut: qw
+    categories: [general, web]
+    qwant_categ: web
+    language: "en"
     timeout: 10
     weight: 1
     disabled: false
