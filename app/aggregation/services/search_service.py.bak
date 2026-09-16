@@ -129,7 +129,7 @@ class SerpApiSearchService:
             logger.warning(f"[SearXNG] Failed: {e}")
         seen_urls = set()
         merged = []
-        for r in firecrawl_results + searxng_results:
+        for r in searxng_results + firecrawl_results:
             url = r.get("link", "")
             if url and url not in seen_urls:
                 seen_urls.add(url)
