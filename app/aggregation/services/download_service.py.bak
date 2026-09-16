@@ -162,15 +162,6 @@ class HttpDownloadService(IDownloadService):
                     ignore_https_errors=True
                 )
                 page = await context.new_page()
-                try:
-                    await page.add_init_script("""
-                        Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
-                        window.chrome = { runtime: {} };
-                        Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
-                        Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
-                    """)
-                except Exception:
-                    pass
 
                 
                 response=await page.goto(url, timeout=self.timeout * 1000, wait_until="networkidle")
@@ -253,25 +244,8 @@ class HttpDownloadService(IDownloadService):
                         except: pass
                 except: pass
 
-                # Wait for potential Cloudflare / Turnstile challenges to resolve
-                await page.wait_for_timeout(2500)
+                await page.wait_for_timeout(2000)
                 content = await page.content()
-                if content and (len(content) < 5000 or any(s in content.lower() for s in ["just a moment", "turnstile", "cf-chl", "security check"])):
-                    logger.info(f"Bot challenge or small shell detected ({len(content)}b) on {url}. Waiting for DOM resolution...")
-                    for attempt in range(4):
-                        await page.wait_for_timeout(2000)
-                        content = await page.content()
-                        if len(content) > 5000 and "just a moment" not in content.lower():
-                            logger.info(f"✓ Challenge resolved / DOM expanded: {len(content)} bytes")
-                            break
-
-                # For heavy React/client apps (like Grainger), wait for spec tables if available
-                if "grainger.com" in url.lower():
-                    try:
-                        await page.wait_for_selector('[data-testid*="spec"], table, .specifications', timeout=5000)
-                        content = await page.content()
-                    except Exception:
-                        pass
                 
                
                 # await browser.close()
