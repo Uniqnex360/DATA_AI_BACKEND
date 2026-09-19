@@ -426,7 +426,7 @@ class SmartSearchService(ISearchService):
             image_results = []
         if not web_results and not targeted_results:
             logger.warning(f"SearXNG returned no results for {mpn}")
-            return [], []
+            return (direct_scored or []), []
         image_urls = list({img.get("img_src")
                           for img in image_results if img.get("img_src")})
         seen_urls = set()
@@ -444,7 +444,7 @@ class SmartSearchService(ISearchService):
             f"[DEBUG] URLs after domain filter (before relevance check): {[r.get('url') for r in merged[:10]]}")
         if not merged:
             logger.warning(f"All results blocked for {mpn}")
-            return [], image_urls[:3]
+            return (direct_scored or []), image_urls[:3]
         logger.info(f"After domain filter: {len(merged)} results for {mpn}")
         brand_lower = (brand or "").lower()
         mpn_lower = (mpn or "").lower()
@@ -497,7 +497,7 @@ class SmartSearchService(ISearchService):
         else:
             logger.warning(
                 f"Pre-filter: no relevant results for {mpn} — all off-topic")
-            return [], image_urls[:3]
+            return (direct_scored or []), image_urls[:3]
         web_text = "\n".join(
             f"[{i+1}] {r.get('title', 'No title')}\n    URL: {r['url']}\n    Description: {r.get('content', '')[:150]}"
             for i, r in enumerate(web_results[:15])
