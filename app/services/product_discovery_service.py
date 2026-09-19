@@ -104,6 +104,48 @@ class ProductDiscoveryService:
         if not discovered_url:
             logger.warning("No manufacturer domain found")
         return discovered_url
+    def _extract_nested_product_url(self, html: str, base_url: str, mpn: str = None, title: str = None):
+        import re
+        from urllib.parse import urljoin, urlparse
+
+        pats = [
+            r'href=["\'](/product/[^"\']+)["\']',
+            r'href=["\'](https?://[^"\']+/product/[^"\']+)["\']',
+            r'href=["\'](/item/[^"\']+)["\']',
+            r'href=["\'](https?://[^"\']+/item/[^"\']+)["\']',
+        ]
+        found = []
+        for pat in pats:
+            found.extend(re.findall(pat, html))
+
+        netloc = urlparse(base_url).netloc
+        resolved = list(
+            dict.fromkeys([
+                urljoin(base_url, u)
+                for u in found
+                if urlparse(urljoin(base_url, u)).netloc == netloc
+            ])
+        )
+        if not resolved:
+            return None
+        if len(resolved) == 1:
+            return resolved[0]
+
+        title_words = [w.lower() for w in (title or "").split() if len(w) > 3]
+        target_mpn = (mpn or "").lower().replace("-", "").replace(" ", "")
+
+        best_link, best_score = None, 0
+        for u in resolved:
+            u_clean = u.lower().replace("-", "").replace(" ", "")
+            if target_mpn and target_mpn in u_clean:
+                return u
+            u_slug = urlparse(u).path.lower().replace("-", " ")
+            score = sum(1 for w in title_words if w in u_slug)
+            if score > best_score:
+                best_score = score
+                best_link = u
+
+        return best_link or resolved[0]
     async def find_product_page(
     self,
     domain: str,
@@ -241,10 +283,15 @@ class ProductDiscoveryService:
                 taxonomy=taxonomy
             )
             if verification["is_valid"]:
+                raw_html = verification.get("html") or ""
+                nested_pdp = self._extract_nested_product_url(raw_html, url, mpn=mpn, title=title) if raw_html else None
+                final_url = nested_pdp if nested_pdp else url
+                if nested_pdp and nested_pdp != url:
+                    logger.info(f"✓ Drilled down from archive {url} to canonical PDP: {final_url}")
                 logger.info(
-                    f" Verified product page ({verification['score']}): {url}"
+                    f" Verified product page ({verification['score']}): {final_url}"
                 )
-                return url  
+                return final_url
             if verification["score"] > best_score:
                 best_score = verification["score"]
                 best_url = url
@@ -333,7 +380,8 @@ class ProductDiscoveryService:
                     content = await self.download_service.download(url)
             if not content or content.get("type") != "html":
                 return {"is_valid": False, "score": 0}
-            html = content["raw_bytes"].decode("utf-8", errors="ignore").lower()
+            raw_html_content = content["raw_bytes"].decode("utf-8", errors="ignore")
+            html = raw_html_content.lower()
             logger.info(f" URL: {url}")
             brand_lower = brand.lower() if brand else ""
             mpn_lower = mpn.lower() if mpn else ""
@@ -447,7 +495,8 @@ class ProductDiscoveryService:
                 "score": score,
                 "brand_found": has_brand,
                 "mpn_found": has_mpn,
-                "upc_found": has_upc
+                "upc_found": has_upc,
+                "html": raw_html_content
             }
         except Exception as e:
             logger.warning(f"Verification failed for {url}: {e}")

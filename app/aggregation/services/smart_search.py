@@ -115,14 +115,13 @@ class SmartSearchService(ISearchService):
         parsed = urlparse(url)
         url_lower = (parsed.scheme + "://" +
                      parsed.netloc + parsed.path).lower()
-        # NEW
         import re
 
         reject_path_patterns = [
             '/lighting/', '/sale', '/january-sale',
             '/collections/', '/brands/',
             '/search', '/category',
-            '?page=',
+            '?page=','/size/','/upc/','/load-capacity/','/product-category/','/tag/',
             '/stores/', '/store-locator/', '/find-a-store/',
             '/locations/', '/our-stores/',
             '/login', '/register', '/account',
