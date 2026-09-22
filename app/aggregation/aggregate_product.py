@@ -1619,7 +1619,7 @@ async def aggregate_product(
                             if hasattr(extraction_result, 'features'):
                                 features = extraction_result.features
                             # Fallback: Extract features from HTML bullets if LLM returned none
-                            if (not features or any("casters" in str(f).lower() for f in features)) and html_text:
+                            if not features and html_text:
                                 import re as _re
                                 # Look inside product description container first
                                 _desc_block = _re.search(r'(?:woocommerce-product-details__short-description|tab-description)[^>]*>(.*?)</div>', html_text, _re.DOTALL)
