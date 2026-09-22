@@ -1323,6 +1323,9 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                             long_desc = golden.get('long_description')
                         if not features and golden.get('features'):
                             features = golden.get('features')
+                        if not locals().get('best_upc'): best_upc = golden.get('upc')
+                        if not locals().get('best_ean'): best_ean = golden.get('ean')
+                        if not locals().get('best_gtin'): best_gtin = golden.get('gtin')
                     await asyncio.sleep(1)
                 result = {
                     'status': 'success' if merged_ai_data else 'failed',
@@ -1331,7 +1334,10 @@ async def run_single_product_aggregation(product_id: str, llm_provider: str = 'o
                         'sources_consulted': list(set(all_sources)),
                         'short_description': short_desc or product.short_description,
                         'long_description': long_desc or product.long_description,
-                        'features': features or product.features
+                        'features': features or product.features,
+                        'upc': locals().get('best_upc'),
+                        'ean': locals().get('best_ean'),
+                        'gtin': locals().get('best_gtin')
                     },
                      'image_assets': merged_image_assets,  
                     'image_url': merged_image_assets[0]['image_url'] if merged_image_assets else None
