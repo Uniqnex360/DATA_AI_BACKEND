@@ -326,7 +326,8 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
                             if (feature_text and
                                 len(feature_text) > 10 and
                                 len(feature_text) < 500 and
-                                    feature_text not in seen):
+                                    feature_text not in seen and
+                                    not _is_junk_feature(feature_text)):
                                 features.append(feature_text)
                                 seen.add(feature_text)
                                 strategy2_found = True
@@ -385,7 +386,8 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
                                 if (feature_text and
                                     len(feature_text) > 10 and
                                     len(feature_text) < 500 and
-                                        feature_text not in seen):
+                                        feature_text not in seen and
+                                        not _is_junk_feature(feature_text)):
                                     features.append(feature_text)
                                     seen.add(feature_text)
                                     strategy3_found = True
