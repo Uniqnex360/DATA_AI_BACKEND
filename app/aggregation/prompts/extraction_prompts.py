@@ -300,6 +300,56 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
                 return features
         except Exception as strategy1_err:
             logger.warning(f"Strategy 1 failed: {strategy1_err}")
+        logger.debug("Strategy 1.5: Searching for bare summary bullet list (WooCommerce-style)...")
+        strategy1_5_found = False
+        try:
+            # WooCommerce puts the real product summary in class="summary" or "product-summary"
+            summary_containers = soup.find_all(
+                ['div', 'section'],
+                attrs={'class': lambda x: x and any(
+                    k in ' '.join(x).lower() for k in ['summary', 'entry-summary', 'product-info', 'product-details']
+                )}
+            )
+            for container in summary_containers:
+                try:
+                    # Only look at <ul> that are NOT the tab nav (tab nav is usually <ul class="tabs"> or similar)
+                    uls = container.find_all('ul', recursive=True)
+                    for ul in uls:
+                        ul_class = ' '.join(ul.get('class') or []).lower()
+                        if any(skip in ul_class for skip in ['tab', 'nav', 'product_meta', 'breadcrumb']):
+                            continue
+                        lis = ul.find_all('li', recursive=False)[:max_li_search]
+                        if len(lis) < 2:
+                            continue
+                        candidate_features = []
+                        for li in lis:
+                            try:
+                                feature_text = li.get_text(separator=' ', strip=True)
+                                if (feature_text and
+                                    len(feature_text) > 10 and
+                                    len(feature_text) < 500 and
+                                        feature_text not in seen and
+                                        not _is_junk_feature(feature_text)):
+                                    candidate_features.append(feature_text)
+                            except Exception as li_err:
+                                logger.debug(f"Strategy 1.5: Failed to extract <li>: {li_err}")
+                                continue
+                        # Require at least 2 valid bullets to trust this as a feature list
+                        if len(candidate_features) >= 2:
+                            for f in candidate_features:
+                                if f not in seen:
+                                    features.append(f)
+                                    seen.add(f)
+                            strategy1_5_found = True
+                            logger.info(
+                                f"Strategy 1.5 SUCCESS: {len(candidate_features)} features from bare summary bullet list")
+                except Exception as container_err:
+                    logger.debug(f"Strategy 1.5: Error processing container: {container_err}")
+                    continue
+            if strategy1_5_found and features:
+                return features
+        except Exception as strategy1_5_err:
+            logger.warning(f"Strategy 1.5 failed: {strategy1_5_err}")
         logger.debug(
             "Strategy 2: Searching for feature sections by class/id...")
         strategy2_found = False
