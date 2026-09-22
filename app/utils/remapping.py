@@ -41,9 +41,16 @@ async def get_embedding_model():
     if _embedding_model is None:
         from sentence_transformers import SentenceTransformer
         logger.info("Loading embedding model (first call, will be cached)")
-        _embedding_model = await asyncio.to_thread(
-            SentenceTransformer, 'all-MiniLM-L6-v2', device='cpu'
-        )
+        # Check if master process pre-loaded the model into app.main
+        import sys
+        main_mod = sys.modules.get('app.main') or sys.modules.get('main')
+        if hasattr(main_mod, 'shared_model') and main_mod.shared_model is not None:
+            _embedding_model = main_mod.shared_model
+            logger.info("Using pre-loaded shared SentenceTransformer from app.main")
+        else:
+            _embedding_model = await asyncio.to_thread(
+                lambda: SentenceTransformer('all-MiniLM-L6-v2', device='cpu', model_kwargs={'low_cpu_mem_usage': False})
+            )
     return _embedding_model
 
 
