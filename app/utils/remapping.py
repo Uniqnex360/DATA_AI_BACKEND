@@ -34,22 +34,36 @@ def _should_skip_container_clustering(name_a: str, name_b: str) -> bool:
         return True
     return False
 
+_embedding_model_lock = asyncio.Lock()
+
 
 async def get_embedding_model():
-
     global _embedding_model
-    if _embedding_model is None:
+    if _embedding_model is not None:
+        return _embedding_model
+    async with _embedding_model_lock:
+        # Re-check inside the lock: another coroutine may have finished loading
+        # while we were waiting on the lock.
+        if _embedding_model is not None:
+            return _embedding_model
         from sentence_transformers import SentenceTransformer
-        logger.info("Loading embedding model (first call, will be cached)")
-        # Check if master process pre-loaded the model into app.main
         import sys
         main_mod = sys.modules.get('app.main') or sys.modules.get('main')
-        if hasattr(main_mod, 'shared_model') and main_mod.shared_model is not None:
-            _embedding_model = main_mod.shared_model
+        shared = (
+            getattr(main_mod, 'shared_model', None)
+            or getattr(main_mod, '_global_embedding_model', None)
+        )
+        if shared is not None:
+            _embedding_model = shared
             logger.info("Using pre-loaded shared SentenceTransformer from app.main")
         else:
+            logger.info("shared model NOT found in app.main — loading fresh in this worker")
             _embedding_model = await asyncio.to_thread(
-                lambda: SentenceTransformer('all-MiniLM-L6-v2', device='cpu', model_kwargs={'low_cpu_mem_usage': False})
+                lambda: SentenceTransformer(
+                    'all-MiniLM-L6-v2',
+                    device='cpu',
+                    model_kwargs={'low_cpu_mem_usage': True},
+                )
             )
     return _embedding_model
 
