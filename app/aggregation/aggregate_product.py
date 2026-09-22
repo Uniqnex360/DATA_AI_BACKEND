@@ -1619,11 +1619,18 @@ async def aggregate_product(
                             if hasattr(extraction_result, 'features'):
                                 features = extraction_result.features
                             # Fallback: Extract features from HTML bullets if LLM returned none
-                            if not features and html_text:
+                            if (not features or any("casters" in str(f).lower() for f in features)) and html_text:
                                 import re as _re
-                                _bullets = _re.findall(r'<li[^>]*>(.*?)</li>', html_text, _re.DOTALL)
+                                # Look inside product description container first
+                                _desc_block = _re.search(r'(?:woocommerce-product-details__short-description|tab-description)[^>]*>(.*?)</div>', html_text, _re.DOTALL)
+                                _scope = _desc_block.group(1) if _desc_block else html_text
+                                _bullets = _re.findall(r'<li[^>]*>(.*?)</li>', _scope, _re.DOTALL)
+                                if not _bullets:
+                                    _bullets = _re.findall(r'<p[^>]*>(.*?)</p>', _scope, _re.DOTALL)
                                 _clean_b = [_re.sub(r'<[^>]+>', '', b).strip() for b in _bullets]
-                                features = [b for b in _clean_b if 15 < len(b) < 300][:6]
+                                _clean_b = [b for b in _clean_b if 15 < len(b) < 300 and not any(nav in b.lower() for nav in ["caster", "socket", "cart", "account", "login"])]
+                                if _clean_b:
+                                    features = _clean_b[:6]
 
                             if hasattr(extraction_result, "short_description"):
                                 short_description = extraction_result.short_description
@@ -1632,7 +1639,7 @@ async def aggregate_product(
                             if hasattr(extraction_result, "upc"):
                                 page_upc = extraction_result.upc
                             # Fallback: Extract UPC from HTML /upc/ tags or barcode text
-                            if not page_upc and html_text:
+                            if (not page_upc or not str(page_upc).strip()) and html_text:
                                 import re as _re
                                 _upc_m = _re.search(r'/upc/(\d{11,14})', html_text) or _re.search(r'(?:upc|barcode)[:\s]+(\d{11,14})', html_text, _re.IGNORECASE)
                                 if _upc_m:
@@ -2067,6 +2074,18 @@ async def aggregate_product(
                 continue
             filtered_attributes.append(attr)
         golden_attributes = filtered_attributes
+
+        # Auto-map 'Dimensions (Length, Width, Height)' to 'Dimensions' (Fix Issue 3)
+        _dim_paren = next((a for a in golden_attributes if a.name == "Dimensions (Length, Width, Height)"), None)
+        if _dim_paren and not any(a.name == "Dimensions" for a in golden_attributes):
+            from app.schemas.aggregation import FinalAttribute as _FA
+            golden_attributes.append(_FA(
+                name="Dimensions",
+                value=_dim_paren.value,
+                unit=_dim_paren.unit,
+                confidence=1.0,
+                sources=_dim_paren.sources if hasattr(_dim_paren, "sources") else []
+            ))
 
         # Auto-map Quantity to Package Quantity if missing (Fix Issue 4)
         _g_names = {a.name for a in golden_attributes}
