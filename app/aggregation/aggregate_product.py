@@ -2075,44 +2075,44 @@ async def aggregate_product(
             filtered_attributes.append(attr)
         golden_attributes = filtered_attributes
 
-        # Auto-map 'Dimensions (Length, Width, Height)' to 'Dimensions' (Fix Issue 3)
-        _dim_paren = next((a for a in golden_attributes if a.name == "Dimensions (Length, Width, Height)"), None)
-        if _dim_paren and not any(a.name == "Dimensions" for a in golden_attributes):
-            from app.schemas.aggregation import FinalAttribute as _FA
-            golden_attributes.append(_FA(
-                name="Dimensions",
-                value=_dim_paren.value,
-                unit=_dim_paren.unit,
-                confidence=1.0,
-                sources=_dim_paren.sources if hasattr(_dim_paren, "sources") else []
-            ))
+        # # Auto-map 'Dimensions (Length, Width, Height)' to 'Dimensions' (Fix Issue 3)
+        # _dim_paren = next((a for a in golden_attributes if a.name == "Dimensions (Length, Width, Height)"), None)
+        # if _dim_paren and not any(a.name == "Dimensions" for a in golden_attributes):
+        #     from app.schemas.aggregation import FinalAttribute as _FA
+        #     golden_attributes.append(_FA(
+        #         name="Dimensions",
+        #         value=_dim_paren.value,
+        #         unit=_dim_paren.unit,
+        #         confidence=1.0,
+        #         sources=_dim_paren.sources if hasattr(_dim_paren, "sources") else []
+        #     ))
 
-        # Auto-map Quantity to Package Quantity if missing (Fix Issue 4)
-        _g_names = {a.name for a in golden_attributes}
-        _qty_attr = next((a for a in golden_attributes if a.name.lower() in ("quantity", "qty")), None)
-        if _qty_attr and not any(k in _g_names for k in ("Package Quantity", "Pack Size", "Package Qty")):
-            from app.schemas.aggregation import FinalAttribute as _FA
-            golden_attributes.append(_FA(
-                name="Package Quantity",
-                value=_qty_attr.value,
-                unit=None,
-                confidence=1.0,
-                sources=_qty_attr.sources if hasattr(_qty_attr, "sources") else []
-            ))
+        # # Auto-map Quantity to Package Quantity if missing (Fix Issue 4)
+        # _g_names = {a.name for a in golden_attributes}
+        # _qty_attr = next((a for a in golden_attributes if a.name.lower() in ("quantity", "qty")), None)
+        # if _qty_attr and not any(k in _g_names for k in ("Package Quantity", "Pack Size", "Package Qty")):
+        #     from app.schemas.aggregation import FinalAttribute as _FA
+        #     golden_attributes.append(_FA(
+        #         name="Package Quantity",
+        #         value=_qty_attr.value,
+        #         unit=None,
+        #         confidence=1.0,
+        #         sources=_qty_attr.sources if hasattr(_qty_attr, "sources") else []
+        #     ))
 
-        # Auto-extract Product Dimensions from Title if only Package Dimensions exists (Fix Issue 3)
-        if not any(k in _g_names for k in ("Dimensions", "Product Dimensions", "Item Dimensions", "Overall Dimensions")):
-            import re as _re
-            _dim_m = _re.search(r'(\d+(?:-\d+/\d+)?(?:\s*x\s*\d+(?:-\d+/\d+)?)*\s*(?:inch|in\.|mm|cm|ft))', title or "", _re.IGNORECASE)
-            if _dim_m:
-                from app.schemas.aggregation import FinalAttribute as _FA
-                golden_attributes.append(_FA(
-                    name="Product Dimensions",
-                    value=_dim_m.group(1),
-                    unit="in" if "in" in _dim_m.group(1).lower() else None,
-                    confidence=0.95,
-                    sources=[]
-                ))
+        # # Auto-extract Product Dimensions from Title if only Package Dimensions exists (Fix Issue 3)
+        # if not any(k in _g_names for k in ("Dimensions", "Product Dimensions", "Item Dimensions", "Overall Dimensions")):
+        #     import re as _re
+        #     _dim_m = _re.search(r'(\d+(?:-\d+/\d+)?(?:\s*x\s*\d+(?:-\d+/\d+)?)*\s*(?:inch|in\.|mm|cm|ft))', title or "", _re.IGNORECASE)
+        #     if _dim_m:
+        #         from app.schemas.aggregation import FinalAttribute as _FA
+        #         golden_attributes.append(_FA(
+        #             name="Product Dimensions",
+        #             value=_dim_m.group(1),
+        #             unit="in" if "in" in _dim_m.group(1).lower() else None,
+        #             confidence=0.95,
+        #             sources=[]
+        #         ))
 
         golden_attr_dicts_temp = [
             {'name': a.name, 'value': a.value, 'unit': a.unit}
