@@ -184,6 +184,17 @@ def extract_product_descriptions(html_content: str) -> str:
         if len(raw_text) > 100:
             desc_text = raw_text
     return desc_text[:10000]
+
+_JUNK_FEATURE_PATTERNS = {'description', 'additional information', 'reviews', 'specifications'}
+
+def _is_junk_feature(text: str) -> bool:
+    t = text.strip().lower()
+    if t in _JUNK_FEATURE_PATTERNS:
+        return True
+    if t.startswith('add to cart'):
+        return True
+    return False
+
 def try_paired_feature_benefit_lists(soup) -> List[str]:
     headings = soup.find_all(
         ['h1', 'h2', 'h3', 'h4', 'h5', 'p', 'strong', 'b'])
@@ -263,7 +274,8 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
                                     if (feature_text and
                                         len(feature_text) > 10 and
                                         len(feature_text) < 500 and
-                                            feature_text not in seen):
+                                            feature_text not in seen and
+                                            not _is_junk_feature(feature_text)):
                                         features.append(feature_text)
                                         seen.add(feature_text)
                                         logger.debug(
