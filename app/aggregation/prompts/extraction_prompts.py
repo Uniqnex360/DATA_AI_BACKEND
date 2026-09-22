@@ -307,7 +307,7 @@ def extract_features_section(html_content: str, max_features: int = 20, max_li_s
             summary_containers = soup.find_all(
                 ['div', 'section'],
                 attrs={'class': lambda x: x and any(
-                    k in ' '.join(x).lower() for k in ['summary', 'entry-summary', 'product-info', 'product-details']
+                    k in ' '.join(x).lower() for k in ['summary', 'entry-summary', 'product-info', 'product-details', 'bullets']
                 )}
             )
             for container in summary_containers:
