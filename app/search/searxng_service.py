@@ -1,4 +1,6 @@
 import logging
+import re
+from urllib.parse import urlparse
 from typing import List, Optional
 import aiohttp
 from app.aggregation.interfaces import ISearchService
@@ -111,4 +113,19 @@ class SearXNGSearchService(ISearchService):
                 data = await resp.json()
                 results = data.get("results", [])
                 results.sort(key=lambda r: r.get("score", 0), reverse=True)
+
+                site_matches = re.findall(r'site:(\S+)', query)
+                if site_matches:
+                    allowed_domains = [d.lower().replace("www.", "").strip("/").split("/")[0] for d in site_matches]
+                    filtered_results = []
+                    for r in results:
+                        u = r.get("url", "")
+                        if u:
+                            netloc = urlparse(u).netloc.lower().replace("www.", "")
+                            if any(netloc == d or netloc.endswith("." + d) for d in allowed_domains):
+                                filtered_results.append(r)
+                            else:
+                                logger.info(f"[SearXNG] Filtered out off-target domain '{netloc}' (query had site: {allowed_domains}): {u}")
+                    return filtered_results
+
                 return results

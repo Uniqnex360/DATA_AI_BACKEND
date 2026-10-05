@@ -27,7 +27,7 @@ class ProductDiscoveryService:
         parts = urlsplit(url)
         return urlunsplit((parts.scheme, parts.netloc, parts.path.rstrip("/"), "", ""))
     @staticmethod
-    def _exact_mpn_match(text: str, mpn: str) -> bool:
+    def _exact_mpn_match(text: str, mpn: str,brand:Optional[str]=None) -> bool:
         import re
         if not mpn or str(mpn).lower() in ['none', 'null', 'nan']:
             return False
@@ -39,8 +39,32 @@ class ProductDiscoveryService:
         if not tokens:
             return False
         if len(tokens) == 1:
-            return re.search(rf"(?<![a-z0-9]){re.escape(tokens[0])}(?![a-z0-9])", text) is not None
-        return all(re.search(rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])", text) for t in tokens)
+            if re.search(rf"(?<![a-z0-9]){re.escape(tokens[0])}(?![a-z0-9])", text) is not None:
+                return True
+        else:
+            if all(re.search(rf"(?<![a-z0-9]){re.escape(t)}(?![a-z0-9])", text) for t in tokens):
+                return True
+        clean_mpn = re.sub(r'[^a-z0-9]', '', mpn)
+        clean_text = re.sub(r'[^a-z0-9]', '', text)    
+        if len(clean_mpn)>=4:
+            if clean_mpn in clean_text:
+                return True
+        candidate_prefixes=[]
+        if brand:
+            clean_brand = re.sub(r'[^a-z0-9]', '', brand.lower())
+            candidate_prefixes.extend([clean_brand, clean_brand[:2], clean_brand[:3]])
+        if "-" in mpn:
+            first_part= re.sub(r'[^a-z0-9]', '', mpn.split('-')[0])
+            if 2<=len(first_part)<=4:
+                candidate_prefixes.append(first_part)
+        for prefix in set(candidate_prefixes):
+            if prefix and clean_mpn.startswith(prefix) and len(clean_mpn)>len(prefix)+2:
+                sub_mpn = clean_mpn[len(prefix):]
+                if len(sub_mpn)>=4 and sub_mpn in clean_text:
+                    return True
+        return False
+
+            
     async def discover_manufacturer_domain(
         self,
         brand: str,
@@ -241,7 +265,7 @@ class ProductDiscoveryService:
                     logger.info(f"Skipping sibling variant URL: {url}")
                     continue
             url_lower = url.lower()
-            if self._exact_mpn_match(path, mpn):
+            if self._exact_mpn_match(path, mpn,brand=brand):
                 mpm_matching_urls.append(url)
                 logger.info(f"Found MPN in URL: {url}")
             elif any(x in url_lower for x in ["/product/", "/products/", "/item/"]):
@@ -392,9 +416,9 @@ class ProductDiscoveryService:
             logger.info(f" Brand '{brand_lower}' in HTML: {has_brand}")
             has_mpn = False
             if mpn_lower:
-                has_mpn = self._exact_mpn_match(html, mpn) or self._exact_mpn_match(path, mpn)
-                logger.info(f" MPN found in HTML (exact match): {self._exact_mpn_match(html, mpn)}")
-                logger.info(f" MPN found in URL path (exact match): {self._exact_mpn_match(path, mpn)}")
+                has_mpn = self._exact_mpn_match(html, mpn,brand=brand) or self._exact_mpn_match(path, mpn,brand=brand)
+                logger.info(f" MPN found in HTML (exact match): {self._exact_mpn_match(html, mpn,brand=brand)}")
+                logger.info(f" MPN found in URL path (exact match): {self._exact_mpn_match(path, mpn,brand=brand)}")
                 logger.info(f" MPN found (any method): {has_mpn}")
             has_upc = upc_lower in html if upc_lower else False
             is_mpn_valid = mpn and str(mpn).strip().lower() != 'none'
