@@ -1451,8 +1451,16 @@ async def aggregate_product(
                             return []
                         logger.info(f"[MATCH CHECK] Starting match validation for {url} (mpn={mpn}, brand={brand})")
                         if is_mpn_valid:
-                            mpn_in_body = mpn.lower() in html_lower
-                            mpn_in_url = mpn.lower() in url.lower()
+                            # mpn_in_body = mpn.lower() in html_lower
+                            # mpn_in_url = mpn.lower() in url.lower()
+                            # if mpn_in_body or mpn_in_url:
+                            #     logger.info(f"✓ MPN verified ({'body' if mpn_in_body else 'URL'}) for {url}")
+                            mpn_clean=mpn.lower()
+                            mpn_in_body=mpn_clean in html_lower
+                            mpn_in_url=mpn_clean in url.lower()
+                            if not (mpn_in_body or mpn_in_url):
+                                mpn_in_body=ProductDiscoveryService._exact_mpn_match(html_lower,mpn,brand=brand)
+                                mpn_in_url = ProductDiscoveryService._exact_mpn_match(url.lower(), mpn, brand=brand)
                             if mpn_in_body or mpn_in_url:
                                 logger.info(f"✓ MPN verified ({'body' if mpn_in_body else 'URL'}) for {url}")
                             else:
