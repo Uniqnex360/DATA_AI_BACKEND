@@ -94,6 +94,10 @@ class HttpDownloadService(IDownloadService):
             pw_result = await self._download_playwright(url)
             if pw_result:
                 result = pw_result
+            else:
+                fc_result=await self._download_firecrawl(url)
+                if fc_result:
+                    result=fc_result
         if result:
             self._cache[url] = result
         return result
@@ -133,7 +137,36 @@ class HttpDownloadService(IDownloadService):
         finally:
             
             gc.collect()
+    async def _download_firecrawl(self, url: str) -> Optional[Dict]:
+        """Bypass Akamai / Cloudflare bot blocks using Firecrawl's residential scraping proxy."""
+        try:
+            import os
+            from app.core.config import settings
+            api_key = getattr(settings, "FIRECRAWL_API_KEY", None) or os.getenv("FIRECRAWL_API_KEY")
+            if not api_key:
+                return None
 
+            import httpx
+            logger.info(f"Routing bot-blocked URL to Firecrawl Scrape: {url}")
+            async with httpx.AsyncClient(timeout=45.0) as client:
+                resp = await client.post(
+                    "https://api.firecrawl.dev/v1/scrape",
+                    headers={"Authorization": f"Bearer {api_key}"},
+                    json={"url": url, "formats": ["html"], "waitFor": 3000}
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    html = data.get("data", {}).get("html") or ""
+                    if len(html) > 5000:
+                        logger.info(f"✓ Firecrawl Scrape successfully fetched {len(html)} bytes for {url}")
+                        return {
+                            "source_url": url,
+                            "raw_bytes": html.encode("utf-8"),
+                            "type": "html",
+                        }
+        except Exception as e:
+            logger.warning(f"Firecrawl Scrape failed for {url}: {e}")
+        return None
     async def _download_playwright(self, url: str) -> Optional[Dict]:
         page = None
         context = None
