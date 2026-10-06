@@ -173,9 +173,9 @@ class HttpDownloadService(IDownloadService):
                     res_data = data.get("data", {})
                     html = res_data.get("html") or ""
                     markdown = res_data.get("markdown") or ""
-
+                    text_content = markdown if markdown and len(markdown) > 500 else html
                     # 1. Prefer full HTML if available
-                    if len(html) > 5000:
+                    if text_content and len(text_content) > 500:
                         logger.info(f"✓ Firecrawl Scrape successfully fetched {len(html)} bytes HTML for {url}")
                         return {
                             "source_url": url,

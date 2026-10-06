@@ -1150,14 +1150,22 @@ async def aggregate_product(
                     else:
                         logger.info(
                             "Manufacturer domain has no product page. Searching broader web...")
-                        if is_mpn_valid and title:
-                            fallback_queries.append(f'{mpn} {title}')
+                        clean_core = re.split(r"[:;,\-–—]", title)[0].strip() if title else ""
+                        if brand and clean_core.lower().startswith(brand.lower()):
+                            clean_core = clean_core[len(brand):].strip()
+                        core_words = " ".join(clean_core.split()[:4]).strip()
+                        
                         if is_mpn_valid:
-                            fallback_queries.append(f'{mpn} {brand} buy')
-                            fallback_queries.append(f'{mpn}')
-                        if title:
-                            fallback_queries.append(f"{brand} {title}")
-                            fallback_queries.append(f"{title} {brand} shop")
+                            if core_words:
+                                fallback_queries.append(f"{brand} {mpn} {core_words}".strip())
+                            fallback_queries.append(f"{brand} {mpn} buy".strip())
+                            fallback_queries.append(f"{brand} {mpn}".strip())
+                            if title and title != core_words:
+                                fallback_queries.append(f"{mpn} {title}")
+                        else:
+                            if core_words:
+                                fallback_queries.append(f"{brand} {core_words}".strip())
+                                fallback_queries.append(f"{brand} {core_words} buy".strip())
                 for fb_query in fallback_queries:
                     if urls:
                         break
