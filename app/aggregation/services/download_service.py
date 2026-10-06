@@ -176,10 +176,11 @@ class HttpDownloadService(IDownloadService):
                     text_content = markdown if markdown and len(markdown) > 500 else html
                     # 1. Prefer full HTML if available
                     if text_content and len(text_content) > 500:
-                        logger.info(f"✓ Firecrawl Scrape successfully fetched {len(html)} bytes HTML for {url}")
+                        logger.info(f"✓ Firecrawl Scrape successfully fetched {len(text_content)} chars for {url}")
                         return {
                             "source_url": url,
-                            "raw_bytes": html.encode("utf-8"),
+                            "raw_bytes": text_content.encode("utf-8"),
+
                             "type": "html",
                         }
 
