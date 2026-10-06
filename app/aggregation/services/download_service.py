@@ -6,6 +6,8 @@ from app.aggregation.interfaces import IDownloadService
 from curl_cffi import requests 
 from playwright.async_api import async_playwright
 
+from app.services.crawl4ai_service import render_with_crawl4ai
+
 logger = logging.getLogger("download_service")
 
 
@@ -98,6 +100,17 @@ class HttpDownloadService(IDownloadService):
                 fc_result=await self._download_firecrawl(url)
                 if fc_result:
                     result=fc_result
+                if not fc_result:
+                    try:
+                        ca_html = await render_with_crawl4ai(url)
+                        if ca_html and len(ca_html) > 2000:
+                            result = {
+                                "source_url": url,
+                                "raw_bytes": ca_html.encode("utf-8"),
+                                "type": "html",
+                            }
+                    except Exception as e:
+                        logger.warning(f"Crawl4AI fallback failed: {e}")
         if result:
             self._cache[url] = result
         return result
@@ -157,13 +170,26 @@ class HttpDownloadService(IDownloadService):
                 )
                 if resp.status_code == 200:
                     data = resp.json()
-                    html = data.get("data", {}).get("html") or ""
+                    res_data = data.get("data", {})
+                    html = res_data.get("html") or ""
+                    markdown = res_data.get("markdown") or ""
+
+                    # 1. Prefer full HTML if available
                     if len(html) > 5000:
-                        logger.info(f"✓ Firecrawl Scrape successfully fetched {len(html)} bytes for {url}")
+                        logger.info(f"✓ Firecrawl Scrape successfully fetched {len(html)} bytes HTML for {url}")
                         return {
                             "source_url": url,
                             "raw_bytes": html.encode("utf-8"),
                             "type": "html",
+                        }
+
+                    # 2. If HTML is missing/small, use Markdown! (LLM extracts specs from markdown perfectly)
+                    if len(markdown) > 500:
+                        logger.info(f"✓ Firecrawl Scrape successfully fetched {len(markdown)} chars Markdown for {url}")
+                        return {
+                            "source_url": url,
+                            "raw_bytes": markdown.encode("utf-8"),
+                            "type": "html",  # Treated as text by the LLM
                         }
         except Exception as e:
             logger.warning(f"Firecrawl Scrape failed for {url}: {e}")
