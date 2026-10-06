@@ -276,14 +276,30 @@ class HttpDownloadService(IDownloadService):
                
                 # await browser.close()
 
-                if content and len(content) > 5000:
-                    logger.info(f"Playwright FULL HTML fetched: {len(content)} bytes from {url}")
-                    return {
-                        "source_url": url,
-                        "raw_bytes": content.encode("utf-8"),
-                        "type": "html",
-                    }
-                logger.warning(f"⚠ Playwright returned small HTML ({len(content)}) for {url}")
+                if content:
+                    content_lower = content.lower()
+                    # Check for Akamai, Cloudflare, or Bot blocks that are larger than 5000 bytes
+                    is_challenge_page = any(phrase in content_lower for phrase in [
+                        "technical difficulty",
+                        "error ref:",
+                        "access denied",
+                        "verify you are human",
+                        "enable javascript and cookies",
+                        "just a moment..."
+                    ])
+                    if is_challenge_page:
+                        logger.warning(f"⚠ Playwright fetched bot/error challenge page ({len(content)}b) for {url}")
+                        return None
+
+                    if len(content) > 5000:
+                        logger.info(f"Playwright FULL HTML fetched: {len(content)} bytes from {url}")
+                        return {
+                            "source_url": url,
+                            "raw_bytes": content.encode("utf-8"),
+                            "type": "html",
+                        }
+
+                logger.warning(f"⚠ Playwright returned small or invalid HTML ({len(content) if content else 0}) for {url}")
                 return None
 
             except Exception as e:
