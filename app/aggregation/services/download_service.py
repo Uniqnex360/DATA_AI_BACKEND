@@ -152,7 +152,8 @@ class HttpDownloadService(IDownloadService):
                 resp = await client.post(
                     "https://api.firecrawl.dev/v1/scrape",
                     headers={"Authorization": f"Bearer {api_key}"},
-                    json={"url": url, "formats": ["html"], "waitFor": 3000}
+                    json={"url": url, "formats": ["html", "markdown"], "onlyMainContent": False, "waitFor": 3000}
+
                 )
                 if resp.status_code == 200:
                     data = resp.json()

@@ -1648,7 +1648,7 @@ async def aggregate_product(
                                     _bullets = _re.findall(r'<p[^>]*>(.*?)</p>', _scope, _re.DOTALL)
                                 _clean_b = [_re.sub(r'<[^>]+>', '', b).strip() for b in _bullets]
                                 _blocked_phrases = [
-                                    "technical difficulty", "error ref", "access denied", 
+                                   "skip to main", "skip to content", "technical difficulty", "error ref", "access denied", 
                                     "please call us", "cannot complete your request", 
                                     "verify you are human", "enable javascript", "cloudflare",
                                     "caster", "socket", "cart", "account", "login"
