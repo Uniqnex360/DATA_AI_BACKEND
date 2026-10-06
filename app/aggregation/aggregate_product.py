@@ -1176,7 +1176,14 @@ async def aggregate_product(
                             search_res = await discovery_service.search_service.search(fb_query)
 
                             if search_res:
-                                fb_results = [{'url': r.get('link') or r.get('url')} for r in search_res if r.get('link') or r.get('url')]
+                                fb_results = [
+                                    {
+                                        'url': r.get('link') or r.get('url'),
+                                        'title': r.get('title', ''),
+                                        'snippet': r.get('snippet') or r.get('description') or r.get('content', '')
+                                    }
+                                    for r in search_res if r.get('link') or r.get('url')
+                                ]
                         except Exception as e:
                             logger.warning(f"Unified fallback search failed: {e}")
                         if not fb_results:
