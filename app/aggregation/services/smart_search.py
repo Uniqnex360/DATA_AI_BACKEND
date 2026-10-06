@@ -118,6 +118,7 @@ class SmartSearchService(ISearchService):
         import re
 
         reject_path_patterns = [
+             '/b/',   
             '/lighting/', '/sale', '/january-sale',
             '/collections/', '/brands/',
             '/search', '/category',
@@ -133,6 +134,7 @@ class SmartSearchService(ISearchService):
             'social-stories', 'social+stories',
             '/pages/',
             '/styles',
+            '/hc/en-us', 
             '/compliance-',
             '/materials',
             '/reviews/', '/review/', '/ratings/', '/rating/', '/questions',
@@ -162,6 +164,12 @@ class SmartSearchService(ISearchService):
                     f"   Rejected PDP check (generic keyword '{segment}'): {url}")
                 return False
         if len(path_segments) < 1:
+            return False
+        if len(path_segments) == 1 and '-' not in path_segments[0] and '_' not in path_segments[0]:
+            logger.info(f"   Rejected PDP check (single non-slug segment): {url}")
+            return False
+        if len(path_segments) == 1 and re.match(r'^[a-z]{2}(-[a-z]{2})?$', path_segments[0]):
+            logger.info(f"   Rejected PDP check (locale homepage): {url}")
             return False
         logger.info(f"  ✓ Accepted PDP check: {url}")
         return True
