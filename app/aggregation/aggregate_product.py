@@ -1448,6 +1448,7 @@ async def aggregate_product(
                             "404 error",
                             "error 404",
                             "page you requested was not found",
+                             "we cannot complete your request due to a technical difficulty",
                             "no longer available",
                             "couldn't find the page",
                             "this page doesn't exist",
@@ -1646,7 +1647,13 @@ async def aggregate_product(
                                 if not _bullets:
                                     _bullets = _re.findall(r'<p[^>]*>(.*?)</p>', _scope, _re.DOTALL)
                                 _clean_b = [_re.sub(r'<[^>]+>', '', b).strip() for b in _bullets]
-                                _clean_b = [b for b in _clean_b if 15 < len(b) < 300 and not any(nav in b.lower() for nav in ["caster", "socket", "cart", "account", "login"])]
+                                _blocked_phrases = [
+                                    "technical difficulty", "error ref", "access denied", 
+                                    "please call us", "cannot complete your request", 
+                                    "verify you are human", "enable javascript", "cloudflare",
+                                    "caster", "socket", "cart", "account", "login"
+                                ]
+                                _clean_b = [b for b in _clean_b if 15 < len(b) < 300 and not any(nav in b.lower() for nav in _blocked_phrases)]
                                 if _clean_b:
                                     features = _clean_b[:6]
 
