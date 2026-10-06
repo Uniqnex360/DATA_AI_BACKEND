@@ -1109,15 +1109,16 @@ async def aggregate_product(
             manufacturer_has_product = len(direct_urls) > 0
             has_site_restriction = bool(category_prompt_text and 'site:' in category_prompt_text) or \
                         bool(brand_prompt_text and 'site:' in brand_prompt_text)
-            if not urls and has_site_restriction:
+            if not urls:
+                if has_site_restriction:
 
-                logger.info(
-                        f"Taxonomy/brand prompt restricts to specific sites and all were blocked/empty for {mpn}. "
-                        f"Not falling back to open web search."
-                    )
-            elif not urls:
-                logger.info(
-                    f"Smart search found no URLs for {mpn}. Trying fallback searches...")
+                    logger.info(
+                            f"Taxonomy/brand prompt restricts to specific sites and all were blocked/empty for {mpn}. "
+                            f"Not falling back to open web search."
+                        )
+                else:
+                    logger.info(
+                        f"Smart search found no URLs for {mpn}. Trying fallback searches...")
                 import httpx as _httpx
                 BLOCKED_FALLBACK = [
                     "youtube.com", "facebook.com", "twitter.com", "reddit.com",
@@ -1162,31 +1163,40 @@ async def aggregate_product(
                         break
                     try:
                         logger.info(f"Fallback query: '{fb_query}'")
-                        async with _httpx.AsyncClient(timeout=30.0) as client:
-                            response = await client.get(
-                                f"{settings.SEARXNG_URL}/search",
-                                params={"q": fb_query, "format": "json",
-                                        "categories": "general"}
-                            )
-                        if response.status_code == 200:
-                            fb_results = response.json().get("results", [])
-                            for r in fb_results:
-                                url = r.get("url", "")
-                                if not is_result_actually_product(r, brand, title, mpn=mpn if is_mpn_valid else None):
-                                    logger.info(
-                                        f"Skipping irrelevant result: {url}")
-                                    continue
-                                if not any(d in url.lower() for d in BLOCKED_FALLBACK) and not url.lower().endswith(".pdf"):
-                                    urls.append(url)
-                                    if len(urls) >= 3:
-                                        break
-                            urls = [
-                                url for url in urls if search_service.is_likely_pdp_url(url)]
-                            logger.info(
-                                f"Fallback URLs after PDP filter: {urls}")
-                            if urls:
+                        fb_results=[]
+                        try:
+                            search_res = await discovery_service.search_service.search(fb_query)
+
+                            if search_res:
+                                fb_results = [{'url': r.get('link') or r.get('url')} for r in search_res if r.get('link') or r.get('url')]
+                        except Exception as e:
+                            logger.warning(f"Unified fallback search failed: {e}")
+                        if not fb_results:
+                            async with _httpx.AsyncClient(timeout=30.0) as client:
+                                response = await client.get(
+                                    f"{settings.SEARXNG_URL}/search",
+                                    params={"q": fb_query, "format": "json",
+                                            "categories": "general"}
+                                )
+                            if response.status_code == 200:
+                                fb_results = response.json().get("results", [])
+                        for r in fb_results:
+                            url = r.get("url", "")
+                            if not is_result_actually_product(r, brand, title, mpn=mpn if is_mpn_valid else None):
                                 logger.info(
-                                    f"Fallback search found {len(urls)} URLs for {mpn}: {urls}")
+                                    f"Skipping irrelevant result: {url}")
+                                continue
+                            if not any(d in url.lower() for d in BLOCKED_FALLBACK) and not url.lower().endswith(".pdf"):
+                                urls.append(url)
+                                if len(urls) >= 3:
+                                    break
+                        urls = [
+                            url for url in urls if search_service.is_likely_pdp_url(url)]
+                        logger.info(
+                            f"Fallback URLs after PDP filter: {urls}")
+                        if urls:
+                            logger.info(
+                                f"Fallback search found {len(urls)} URLs for {mpn}: {urls}")
                     except Exception as e:
                         logger.warning(
                             f"Fallback search failed for '{fb_query}': {e}")
